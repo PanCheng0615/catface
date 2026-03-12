@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account · CatFace</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: radial-gradient(circle at top left, #ffe6eb 0%, #fafafa 40%, #f3f4ff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: #222;
+    }
+    a { color: #2f6feb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h1, h2, h3, p { margin: 0; }
+    button, input, textarea, select { font: inherit; }
+
+    .shell {
+      width: min(1080px, 100%);
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.12);
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+      overflow: hidden;
+    }
+    @media (max-width: 920px) {
+      .shell { grid-template-columns: minmax(0, 1fr); }
+    }
+    .left { padding: 26px 26px 22px; }
+    .right {
+      background: radial-gradient(circle at top, #ff2442 0%, #ff7a66 45%, #ffc1a6 100%);
+      color: #fff;
+      padding: 26px 24px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .back-link {
+      font-size: 13px;
+      color: #666;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 800;
+      color: #ff2442;
+      font-size: 18px;
+      margin-top: 8px;
+    }
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: #ff2442;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+    }
+
+    .title {
+      margin-top: 12px;
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .sub {
+      margin-top: 6px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .section {
+      margin-top: 14px;
+      border: 1px solid #f1f1f1;
+      border-radius: 18px;
+      padding: 14px 14px 16px;
+      background: #fff;
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .section h2 { font-size: 15px; }
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f5f5f5;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field.full { grid-column: 1 / -1; }
+    .label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+    }
+    .input, .select, .textarea {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: #fafafa;
+      outline: none;
+      color: #111827;
+      font-size: 14px;
+    }
+    .textarea { min-height: 92px; resize: vertical; background: #fff; }
+    .input:focus, .select:focus, .textarea:focus {
+      border-color: #ffd0d7;
+      background: #fff;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 13px;
+      color: #444;
+      margin-top: 2px;
+    }
+    .tags label { cursor: pointer; }
+
+    .actions {
+      margin-top: 12px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn {
+      border-radius: 999px;
+      padding: 10px 16px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .btn-primary {
+      background: #ff2442;
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(255,36,66,.22);
+    }
+    .btn-primary:hover { background: #e61e3a; }
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #444;
+    }
+    .btn-danger {
+      background: #111827;
+      color: #fff;
+    }
+    .btn-link {
+      background: transparent;
+      color: #2f6feb;
+      font-weight: 700;
+      padding: 0;
+    }
+
+    .banner {
+      display: none;
+      margin-top: 12px;
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: #ecfdf3;
+      color: #027a48;
+      font-weight: 700;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+    .banner.show { display: block; }
+
+    .right h2 { margin: 0 0 6px; font-size: 20px; }
+    .right p { margin: 0; font-size: 13px; line-height: 1.6; opacity: .95; }
+    .right-list { margin-top: 12px; padding-left: 18px; font-size: 13px; line-height: 1.8; }
+    .right-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .right a { color: #fff; text-decoration: underline; }
+    .small-note { font-size: 12px; opacity: .92; }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="left">
+      <div class="top-row">
+        <a href="index.html" class="back-link">← Back to Home</a>
+        <a href="log-in.html" class="back-link">Log in / Sign up</a>
+      </div>
+
+      <div class="logo">
+        <span class="logo-mark">🐱</span>
+        <span>CatFace</span>
+      </div>
+
+      <h1 class="title">My Account</h1>
+      <p class="sub">Manage your profile, adoption preferences, and your cat’s information.</p>
+
+      <div class="section" aria-label="User profile">
+        <div class="section-head">
+          <h2>Profile</h2>
+          <span class="pill" id="loginStatus">Not logged in</span>
+        </div>
+        <div class="grid">
+          <div class="field">
+            <div class="label">Nickname</div>
+            <input class="input" id="uName" type="text" placeholder="Enter nickname">
+          </div>
+          <div class="field">
+            <div class="label">Email</div>
+            <input class="input" id="uEmail" type="email" placeholder="Enter email">
+          </div>
+        </div>
+      </div>
+
+      <div class="section" aria-label="Adoption preferences">
+        <div class="section-head">
+          <h2>Adoption preferences</h2>
+          <span class="pill">Used for matching</span>
+        </div>
+        <div class="grid">
+          <div class="field">
+            <div class="label">Preferred gender</div>
+            <select class="select" id="prefGender">
+              <option value="">Any</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="no-preference">No preference</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="label">Preferred age</div>
+            <select class="select" id="prefAge">
+              <option value="">Any</option>
+              <option value="kitten">Kitten (0–1 year)</option>
+              <option value="adult">Adult (1–7 years)</option>
+              <option value="senior">Senior (7+ years)</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="label">Preferred breed</div>
+            <select class="select" id="prefBreed">
+              <option value="">Any</option>
+              <option value="domestic-short-hair">Domestic short hair</option>
+              <option value="british-shorthair">British Shorthair</option>
+              <option value="ragdoll">Ragdoll</option>
+              <option value="persian">Persian</option>
+              <option value="american-shorthair">American Shorthair</option>
+              <option value="mix">Mixed / Rescue cat</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="label">Home environment</div>
+            <select class="select" id="prefHome">
+              <option value="">Optional</option>
+              <option value="quiet">Quiet (1–2 adults)</option>
+              <option value="family-kids">Family with children</option>
+              <option value="other-pets">Already have other pets</option>
+              <option value="first-time">First-time cat owner</option>
+            </select>
+          </div>
+          <div class="field full">
+            <div class="label">Personality tags (multiple)</div>
+            <div class="tags">
+              <label><input type="checkbox" id="tagPlayful"> Playful / Active</label>
+              <label><input type="checkbox" id="tagGentle"> Gentle / Calm</label>
+              <label><input type="checkbox" id="tagKid"> Good with kids</label>
+              <label><input type="checkbox" id="tagBeginner"> Good for first-time owners</label>
+              <label><input type="checkbox" id="tagSpecial"> OK with special needs</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section" aria-label="My cat info">
+        <div class="section-head">
+          <h2>My cat</h2>
+          <span class="pill">For adopters / owners</span>
+        </div>
+        <div class="grid">
+          <div class="field full">
+            <label class="label" style="display:flex; align-items:center; gap:8px;">
+              <input type="checkbox" id="hasCat">
+              I have adopted a cat / I already have a cat
+            </label>
+          </div>
+          <div class="field">
+            <div class="label">Cat ID</div>
+            <input class="input" id="catId" type="text" placeholder="Auto generated after sign up" readonly>
+          </div>
+          <div class="field">
+            <div class="label">Cat name</div>
+            <input class="input" id="catName" type="text" placeholder="Enter cat name">
+          </div>
+          <div class="field">
+            <div class="label">Breed</div>
+            <input class="input" id="catBreed" type="text" placeholder="e.g. Domestic shorthair">
+          </div>
+          <div class="field">
+            <div class="label">Gender</div>
+            <select class="select" id="catGender">
+              <option value="">Not specified</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Unknown">Unknown</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="label">Birthday</div>
+            <input class="input" id="catBirthday" type="date">
+          </div>
+          <div class="field">
+            <div class="label">Spay/Neuter</div>
+            <select class="select" id="catNeuter">
+              <option value="">Not specified</option>
+              <option value="Completed">Completed</option>
+              <option value="Not Yet">Not Yet</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="label">Vaccination</div>
+            <input class="input" id="catVaccination" type="text" placeholder="e.g. Rabies + FVRCP">
+          </div>
+          <div class="field">
+            <div class="label">Allergies</div>
+            <input class="input" id="catAllergies" type="text" placeholder="Optional">
+          </div>
+          <div class="field full">
+            <div class="label">Notes</div>
+            <textarea class="textarea" id="catNotes" placeholder="Any notes about your cat..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-secondary" type="button" id="resetBtn">Reset</button>
+        <button class="btn btn-primary" type="button" id="saveBtn">Save changes</button>
+        <button class="btn btn-danger" type="button" id="logoutBtn">Log out</button>
+      </div>
+      <div class="banner" id="savedBanner">Saved successfully.</div>
+    </section>
+
+    <aside class="right" aria-label="Quick links">
+      <div>
+        <h2>Quick actions</h2>
+        <p>Jump to key features:</p>
+        <div class="right-links">
+          <a href="index.html">Community</a>
+          <a href="adoption.html">Adoption</a>
+          <a href="health.html">Health</a>
+          <a href="cat-facebook.html">Post</a>
+        </div>
+        <ul class="right-list">
+          <li>Update your adoption preferences to improve matching.</li>
+          <li>If you have a cat, keep your cat ID and health info updated.</li>
+          <li>You can share health data with clinics on the Health page.</li>
+        </ul>
+      </div>
+      <div class="small-note">Data is stored locally in your browser (`localStorage`).</div>
+    </aside>
+  </div>
+
+  <script>
+    (function () {
+      var USER_KEY = "catface_user";
+
+      function readUser() {
+        try {
+          var raw = window.localStorage.getItem(USER_KEY);
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+          return null;
+        }
+      }
+      function writeUser(user) {
+        try {
+          window.localStorage.setItem(USER_KEY, JSON.stringify(user));
+        } catch (e) {}
+      }
+      function clearUser() {
+        try {
+          window.localStorage.removeItem(USER_KEY);
+        } catch (e) {}
+      }
+
+      var loginStatus = document.getElementById("loginStatus");
+      var savedBanner = document.getElementById("savedBanner");
+
+      var uName = document.getElementById("uName");
+      var uEmail = document.getElementById("uEmail");
+
+      var prefGender = document.getElementById("prefGender");
+      var prefAge = document.getElementById("prefAge");
+      var prefBreed = document.getElementById("prefBreed");
+      var prefHome = document.getElementById("prefHome");
+      var tagPlayful = document.getElementById("tagPlayful");
+      var tagGentle = document.getElementById("tagGentle");
+      var tagKid = document.getElementById("tagKid");
+      var tagBeginner = document.getElementById("tagBeginner");
+      var tagSpecial = document.getElementById("tagSpecial");
+
+      var hasCat = document.getElementById("hasCat");
+      var catId = document.getElementById("catId");
+      var catName = document.getElementById("catName");
+      var catBreed = document.getElementById("catBreed");
+      var catGender = document.getElementById("catGender");
+      var catBirthday = document.getElementById("catBirthday");
+      var catNeuter = document.getElementById("catNeuter");
+      var catVaccination = document.getElementById("catVaccination");
+      var catAllergies = document.getElementById("catAllergies");
+      var catNotes = document.getElementById("catNotes");
+
+      var resetBtn = document.getElementById("resetBtn");
+      var saveBtn = document.getElementById("saveBtn");
+      var logoutBtn = document.getElementById("logoutBtn");
+
+      function getTagsFromUI() {
+        var tags = [];
+        if (tagPlayful.checked) tags.push("playful");
+        if (tagGentle.checked) tags.push("gentle");
+        if (tagKid.checked) tags.push("good-with-kids");
+        if (tagBeginner.checked) tags.push("beginner-friendly");
+        if (tagSpecial.checked) tags.push("special-needs-ok");
+        return tags;
+      }
+      function setTagsToUI(tags) {
+        var set = new Set(Array.isArray(tags) ? tags : []);
+        tagPlayful.checked = set.has("playful");
+        tagGentle.checked = set.has("gentle");
+        tagKid.checked = set.has("good-with-kids");
+        tagBeginner.checked = set.has("beginner-friendly");
+        tagSpecial.checked = set.has("special-needs-ok");
+      }
+
+      function applyCatEnabledState() {
+        var enabled = !!hasCat.checked;
+        [
+          catId, catName, catBreed, catGender, catBirthday,
+          catNeuter, catVaccination, catAllergies, catNotes
+        ].forEach(function (el) {
+          el.disabled = !enabled;
+          el.style.opacity = enabled ? "" : "0.6";
+        });
+      }
+
+      function loadToUI() {
+        savedBanner.classList.remove("show");
+        var user = readUser();
+        if (!user) user = {};
+
+        var isLoggedIn = !!user.email;
+        loginStatus.textContent = isLoggedIn ? "Logged in" : "Not logged in";
+
+        uName.value = user.name || "";
+        uEmail.value = user.email || "";
+
+        var pref = user.preferences || {};
+        prefGender.value = pref.gender || "";
+        prefAge.value = pref.age || "";
+        prefBreed.value = pref.breed || "";
+        prefHome.value = pref.home || "";
+        setTagsToUI(pref.tags || []);
+
+        var cat = user.myCat || {};
+        hasCat.checked = !!cat.hasCat;
+        catId.value = cat.catId || "";
+        catName.value = cat.name || "";
+        catBreed.value = cat.breed || "";
+        catGender.value = cat.gender || "";
+        catBirthday.value = cat.birthday || "";
+        catNeuter.value = cat.neuter || "";
+        catVaccination.value = cat.vaccination || "";
+        catAllergies.value = cat.allergies || "";
+        catNotes.value = cat.notes || "";
+
+        applyCatEnabledState();
+      }
+
+      function saveFromUI() {
+        var current = readUser() || {};
+        current.name = uName.value.trim();
+        current.email = uEmail.value.trim();
+        current.preferences = {
+          gender: prefGender.value,
+          age: prefAge.value,
+          breed: prefBreed.value,
+          home: prefHome.value,
+          tags: getTagsFromUI()
+        };
+        current.myCat = {
+          hasCat: !!hasCat.checked,
+          catId: catId.value.trim(),
+          name: catName.value.trim(),
+          breed: catBreed.value.trim(),
+          gender: catGender.value,
+          birthday: catBirthday.value,
+          neuter: catNeuter.value,
+          vaccination: catVaccination.value.trim(),
+          allergies: catAllergies.value.trim(),
+          notes: catNotes.value.trim()
+        };
+
+        writeUser(current);
+        savedBanner.classList.add("show");
+        window.setTimeout(function () {
+          savedBanner.classList.remove("show");
+        }, 2200);
+      }
+
+      hasCat.addEventListener("change", function () {
+        applyCatEnabledState();
+      });
+      resetBtn.addEventListener("click", loadToUI);
+      saveBtn.addEventListener("click", saveFromUI);
+      logoutBtn.addEventListener("click", function () {
+        if (!confirm("Log out now?")) return;
+        clearUser();
+        loadToUI();
+        alert("Logged out.");
+      });
+
+      loadToUI();
+    })();
+  </script>
+</body>
+</html>

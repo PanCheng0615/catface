@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications - Cat Platform</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+    a { text-decoration: none; color: inherit; }
+    button, input { font: inherit; }
+
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 56px;
+      background: #fff;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 100;
+    }
+    .logo {
+      width: 120px;
+      height: 36px;
+      background: #ff2442;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 18px;
+      border-radius: 4px;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 56px;
+      left: 0;
+      width: 200px;
+      bottom: 0;
+      background: #fff;
+      border-right: 1px solid #eee;
+      padding: 20px 0;
+      z-index: 99;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-top {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-nav {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      font-size: 15px;
+      color: #333;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav .active {
+      background: #f5f5f5;
+      color: #ff2442;
+    }
+    .sidebar-nav .icon {
+      width: 22px;
+      text-align: center;
+      font-size: 18px;
+    }
+    .login-btn {
+      display: block;
+      width: 160px;
+      margin: 20px auto;
+      height: 44px;
+      line-height: 44px;
+      text-align: center;
+      background: #ff2442;
+      color: #fff;
+      border-radius: 22px;
+      font-size: 16px;
+    }
+    .login-tip {
+      margin: 0 16px;
+      padding: 16px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #666;
+    }
+    .login-tip h4 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      color: #333;
+    }
+    .login-tip ul {
+      margin: 0;
+      padding-left: 18px;
+      line-height: 1.8;
+    }
+    .sidebar-bottom {
+      margin-top: 8px;
+      padding: 12px 20px 0;
+      border-top: 1px solid #f3f3f3;
+    }
+    .rescue-entry {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #555;
+      padding: 10px 0 4px;
+    }
+    .rescue-entry .label {
+      font-weight: 600;
+    }
+    .rescue-entry small {
+      display: block;
+      font-size: 12px;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    .main {
+      margin-left: 200px;
+      margin-top: 56px;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .page-shell {
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .ghost-btn {
+      border: 1px solid #ececec;
+      background: #fff;
+      color: #333;
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .notice-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .notice-card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.04);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: border-color .2s ease, transform .15s ease;
+    }
+    .notice-card:hover,
+    .notice-card.active {
+      border-color: #ffd3dc;
+      transform: translateY(-1px);
+    }
+    .notice-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+    .notice-icon.likes { background: #fff0f3; }
+    .notice-icon.follows { background: #eff6ff; }
+    .notice-icon.comments { background: #f0fdf4; }
+    .notice-card strong {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+    .notice-card small {
+      color: #777;
+      line-height: 1.5;
+    }
+
+    .message-panel {
+      background: #fff;
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.04);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .message-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .search-input {
+      width: min(280px, 100%);
+      border: 1px solid #ececec;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: #fafafa;
+      outline: none;
+    }
+
+    .message-list {
+      display: flex;
+      flex-direction: column;
+    }
+    .message-item {
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 16px 8px;
+      border-bottom: 1px solid #f1f1f1;
+      cursor: pointer;
+    }
+    .message-item:hover {
+      background: #fcfcfc;
+    }
+    .message-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #f2f2f2;
+      display: block;
+    }
+    .message-main {
+      min-width: 0;
+    }
+    .message-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .message-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #222;
+    }
+    .message-time {
+      font-size: 12px;
+      color: #999;
+      white-space: nowrap;
+    }
+    .message-snippet {
+      color: #666;
+      line-height: 1.6;
+      font-size: 14px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .message-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .message-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #f5f5f5;
+      font-size: 12px;
+      color: #666;
+    }
+    .message-unread {
+      min-width: 22px;
+      height: 22px;
+      border-radius: 11px;
+      background: #ff2442;
+      color: #fff;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+      font-weight: 700;
+    }
+
+    .detail-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.36);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 500;
+    }
+    .detail-overlay.open {
+      display: flex;
+    }
+    .detail-modal {
+      width: min(760px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.16);
+    }
+    .detail-head {
+      padding: 18px 20px;
+      border-bottom: 1px solid #f1f1f1;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+    }
+    .detail-head-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .detail-close {
+      border: none;
+      background: #f5f5f5;
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .detail-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .detail-card {
+      border: 1px solid #f1f1f1;
+      border-radius: 16px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    .detail-card h3 {
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .detail-card p {
+      color: #666;
+      line-height: 1.7;
+      margin: 0;
+    }
+
+    @media (max-width: 960px) {
+      .notice-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 760px) {
+      .sidebar {
+        position: static;
+        width: auto;
+        border-right: none;
+        border-bottom: 1px solid #eee;
+      }
+      .main {
+        margin-left: 0;
+      }
+      .message-item {
+        grid-template-columns: 48px minmax(0, 1fr);
+      }
+      .message-item > :last-child {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header" role="banner">
+    <a href="index.html" class="logo">cat face</a>
+  </header>
+
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <ul class="sidebar-nav">
+        <li><a href="index.html"><span class="icon">💬</span> Community</a></li>
+        <li><a href="adoption.html"><span class="icon">🐱</span> Adoption</a></li>
+        <li><a href="health.html"><span class="icon">🩺</span> Health</a></li>
+        <li><a href="notifications.html" class="active"><span class="icon">🔔</span> Notifications</a></li>
+        <li><a href="account.html"><span class="icon">👤</span> Account</a></li>
+        <li><a href="cat-mall.html"><span class="icon">🛍️</span> Store</a></li>
+      </ul>
+      <a href="log-in.html" class="login-btn">Log in</a>
+      <div class="login-tip">
+        <h4>Log in now to:</h4>
+        <ul>
+          <li>See cat content that understands you better</li>
+          <li>Search adoption, health, and notes</li>
+          <li>View your saved and liked posts</li>
+          <li>Interact and communicate with others better</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <a href="rescue-dashboard.html" class="rescue-entry">
+        <span class="icon">🚑</span>
+        <span>
+          <span class="label">Rescue Dashboard</span>
+          <small>Quick view of stray rescue status</small>
+        </span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-shell">
+      <section class="notice-cards" aria-label="Notification categories">
+        <article class="notice-card active" data-filter="likes">
+          <div class="notice-icon likes">❤</div>
+          <div>
+            <strong>Likes</strong>
+          </div>
+        </article>
+        <article class="notice-card" data-filter="follows">
+          <div class="notice-icon follows">👤</div>
+          <div>
+            <strong>New Follows</strong>
+          </div>
+        </article>
+        <article class="notice-card" data-filter="comments">
+          <div class="notice-icon comments">💬</div>
+          <div>
+            <strong>Comments</strong>
+          </div>
+        </article>
+      </section>
+
+      <section class="message-panel">
+        <div class="message-toolbar">
+          <input class="search-input" type="text" placeholder="Search notifications">
+        </div>
+
+        <div class="message-list">
+          <article class="message-item" data-type="social" data-title="26 HKU stat + ds chat" data-detail="You were invited into the 26 HKU stat + ds group chat. This thread includes student discussion, resource sharing, and social replies." data-category="Comments" data-time="Sat">
+            <img class="message-avatar" src="https://images.unsplash.com/photo-1543852786-1cf6624b9987?auto=format&fit=crop&w=120&h=120&q=80" alt="Group avatar">
+            <div class="message-main">
+              <div class="message-top">
+                <div class="message-name">26 HKU stat+ds chat 3</div>
+                <div class="message-time">Sat</div>
+              </div>
+              <div class="message-snippet">"#我想要两颗西柚" joined the group chat and mentioned your shared post.</div>
+              <div class="message-meta">
+                <span class="message-tag">Comments</span>
+              </div>
+            </div>
+            <span class="message-unread">3</span>
+          </article>
+
+          <article class="message-item" data-type="social" data-title="Qiqi" data-detail="Qiqi replied to your latest cat rescue update with a short reaction comment." data-category="Comments" data-time="Fri">
+            <img class="message-avatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&h=120&q=80" alt="Qiqi avatar">
+            <div class="message-main">
+              <div class="message-top">
+                <div class="message-name">Qiqi</div>
+                <div class="message-time">Fri</div>
+              </div>
+              <div class="message-snippet">Commented on your post: “That made me laugh.”</div>
+              <div class="message-meta">
+                <span class="message-tag">Comments</span>
+              </div>
+            </div>
+            <span class="message-unread">1</span>
+          </article>
+
+          <article class="message-item" data-type="social" data-title="Jinshan Big Bro" data-detail="This user followed your profile and left a direct contact email in the message preview." data-category="New Follows" data-time="03-02">
+            <img class="message-avatar" src="https://images.unsplash.com/photo-1525253086316-d0c936c814f8?auto=format&fit=crop&w=120&h=120&q=80" alt="Follower avatar">
+            <div class="message-main">
+              <div class="message-top">
+                <div class="message-name">Jinshan Big Bro</div>
+                <div class="message-time">03-02</div>
+              </div>
+              <div class="message-snippet">Started following you and shared an email address for collaboration.</div>
+              <div class="message-meta">
+                <span class="message-tag">New Follows</span>
+              </div>
+            </div>
+            <span class="message-unread">1</span>
+          </article>
+
+          <article class="message-item" data-type="social" data-title="Shu Zixue" data-detail="This follower liked your adoption experience post and also saved your cat diary note." data-category="Likes" data-time="03-01">
+            <img class="message-avatar" src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=120&h=120&q=80" alt="User avatar">
+            <div class="message-main">
+              <div class="message-top">
+                <div class="message-name">Shu Zixue</div>
+                <div class="message-time">03-01</div>
+              </div>
+              <div class="message-snippet">Liked and saved your rescue experience update.</div>
+              <div class="message-meta">
+                <span class="message-tag">Likes</span>
+              </div>
+            </div>
+            <span class="message-unread">2</span>
+          </article>
+
+          <article class="message-item" data-type="social" data-title="nosqlhh" data-detail="This notification previews a direct message request and contact email from another user." data-category="Comments" data-time="02-27">
+            <img class="message-avatar" src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=120&h=120&q=80" alt="User avatar">
+            <div class="message-main">
+              <div class="message-top">
+                <div class="message-name">nosqlhh</div>
+                <div class="message-time">02-27</div>
+              </div>
+              <div class="message-snippet">Sent you a private message request about the cat profile design.</div>
+              <div class="message-meta">
+                <span class="message-tag">Comments</span>
+              </div>
+            </div>
+            <span class="message-unread">1</span>
+          </article>
+
+          <article class="message-item" data-type="system" data-title="System Message" data-detail="Your recent order is about to be auto-confirmed. Please check delivery status if needed." data-category="System" data-time="02-25">
+            <img class="message-avatar" src="https://images.unsplash.com/photo-1560807707-8cc77767d783?auto=format&fit=crop&w=120&h=120&q=80" alt="System avatar">
+            <div class="message-main">
+              <div class="message-top">
+                <div class="message-name">System Message</div>
+                <div class="message-time">02-25</div>
+              </div>
+              <div class="message-snippet">Your order will be automatically confirmed soon.</div>
+              <div class="message-meta">
+                <span class="message-tag">System</span>
+              </div>
+            </div>
+            <span class="message-unread">1</span>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <section class="detail-overlay" id="detail-overlay" aria-hidden="true">
+    <div class="detail-modal" role="dialog" aria-label="Notification detail">
+      <div class="detail-head">
+        <div class="detail-head-main">
+          <img class="message-avatar" id="detail-avatar" src="" alt="Notification avatar">
+          <div>
+            <h2 id="detail-title">Message Title</h2>
+            <p id="detail-meta" style="margin-top: 4px; color: #888;">Category · Time</p>
+          </div>
+        </div>
+        <button class="detail-close" type="button" id="detail-close-btn">×</button>
+      </div>
+      <div class="detail-body">
+        <article class="detail-card">
+          <h3>Message Preview</h3>
+          <p id="detail-body-text">Notification detail content will appear here.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const cards = document.querySelectorAll(".notice-card");
+      const items = document.querySelectorAll(".message-item");
+      const overlay = document.getElementById("detail-overlay");
+      const closeBtn = document.getElementById("detail-close-btn");
+      const detailAvatar = document.getElementById("detail-avatar");
+      const detailTitle = document.getElementById("detail-title");
+      const detailMeta = document.getElementById("detail-meta");
+      const detailBodyText = document.getElementById("detail-body-text");
+
+      cards.forEach(function (card) {
+        card.addEventListener("click", function () {
+          cards.forEach(function (item) { item.classList.remove("active"); });
+          card.classList.add("active");
+        });
+      });
+
+      items.forEach(function (item) {
+        item.addEventListener("click", function () {
+          const avatar = item.querySelector(".message-avatar");
+          const title = item.getAttribute("data-title") || "";
+          const category = item.getAttribute("data-category") || "";
+          const time = item.getAttribute("data-time") || "";
+          const detail = item.getAttribute("data-detail") || "";
+
+          detailAvatar.src = avatar ? avatar.src : "";
+          detailTitle.textContent = title;
+          detailMeta.textContent = category + " · " + time;
+          detailBodyText.textContent = detail;
+
+          overlay.classList.add("open");
+          overlay.setAttribute("aria-hidden", "false");
+        });
+      });
+
+      function closeDetail() {
+        overlay.classList.remove("open");
+        overlay.setAttribute("aria-hidden", "true");
+      }
+
+      closeBtn.addEventListener("click", closeDetail);
+      overlay.addEventListener("click", function (event) {
+        if (event.target === overlay) {
+          closeDetail();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

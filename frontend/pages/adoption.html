@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adoption Recommendations — Cat Platform</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(180deg, #fff7f8 0%, #f5f5f5 220px);
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 40px;
+      gap: 16px;
+    }
+    h1, h2, h3, h4, p { margin: 0; }
+    button, input, textarea { font: inherit; }
+    a { color: #2f6feb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .page-shell {
+      width: 100%;
+      max-width: 1120px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .page-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .back-link {
+      color: #555;
+      font-size: 14px;
+    }
+    .topbar-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .ghost-btn,
+    .solid-btn,
+    .action-link {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+    .ghost-btn {
+      background: #fff;
+      color: #333;
+      box-shadow: 0 4px 14px rgba(0,0,0,.08);
+    }
+    .solid-btn {
+      background: #ff5a76;
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(255,90,118,.25);
+    }
+    .action-link {
+      background: transparent;
+      color: #2f6feb;
+      padding: 0;
+    }
+    .ghost-btn:hover,
+    .solid-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    header {
+      background: #fff;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(17, 24, 39, .06);
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .header-copy {
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #fff0f3;
+      color: #ff3355;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    header h1 { font-size: 28px; }
+    .header-copy p {
+      color: #666;
+      line-height: 1.6;
+    }
+    .header-flow {
+      min-width: 260px;
+      background: #fff8ed;
+      border: 1px solid #ffe0b3;
+      border-radius: 18px;
+      padding: 18px;
+    }
+    .header-flow h2 {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .header-flow ol {
+      margin: 0;
+      padding-left: 18px;
+      color: #67563d;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    main {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .adoption-stage {
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(17, 24, 39, .06);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .stage-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .stage-top p {
+      color: #666;
+      line-height: 1.6;
+      max-width: 560px;
+    }
+
+    .deck-wrapper {
+      position: relative;
+      height: min(70vh, 540px);
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 18px;
+    }
+    .card-stack {
+      position: relative;
+      width: min(420px, 100%);
+      height: 100%;
+    }
+    .cat-card {
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.16);
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 24px;
+      overflow: hidden;
+    }
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      overflow: hidden;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .card-front {
+      background: transparent;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 16px 16px 20px;
+      opacity: 1;
+      transform: scale(1);
+    }
+    .card-front::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.7) 100%);
+      z-index: 1;
+    }
+    .card-back {
+      background: #fff;
+      color: #333;
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 14px;
+      opacity: 0;
+      transform: scale(0.95);
+      pointer-events: none;
+    }
+    .cat-card.flipped .card-front {
+      opacity: 0;
+      transform: scale(0.95);
+      pointer-events: none;
+    }
+    .cat-card.flipped .card-back {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+    .card-back p {
+      line-height: 1.6;
+    }
+    .card-back-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .card-back-actions button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: #f3f4f6;
+      color: #333;
+      cursor: pointer;
+    }
+    .cat-card:nth-child(1) { transform: translate(0, -12px) scale(1); z-index: 5; }
+    .cat-card:nth-child(2) { transform: translate(0, 10px) scale(.96); opacity: .9; z-index: 4; }
+    .cat-card:nth-child(3) { transform: translate(0, 28px) scale(.92); opacity: .7; z-index: 3; }
+    .cat-card:nth-child(4) { transform: translate(0, 46px) scale(.88); opacity: .5; z-index: 2; }
+    .cat-card:nth-child(5) { transform: translate(0, 64px) scale(.84); opacity: .3; z-index: 1; }
+    .cat-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .cat-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(.88);
+    }
+    .cat-info {
+      position: relative;
+      z-index: 2;
+      text-shadow: 0 4px 16px rgba(0,0,0,.85);
+    }
+    .cat-name {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .cat-meta {
+      font-size: 14px;
+      opacity: .92;
+      margin-bottom: 8px;
+    }
+    .cat-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 12px;
+    }
+    .cat-tag {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.35);
+    }
+
+    .swipe-actions {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      margin-top: 10px;
+    }
+    .swipe-btn {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,.18);
+      background: #fff;
+    }
+    .swipe-btn.nope {
+      color: #ff2442;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .swipe-btn.nope.is-active {
+      background: #ff2442;
+      color: #fff;
+    }
+    .swipe-btn.like {
+      color: #2ecc71;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .swipe-btn.like.is-active {
+      background: #2ecc71;
+      color: #fff;
+    }
+    .swipe-btn:hover { transform: translateY(-1px); }
+
+    .hint {
+      font-size: 13px;
+      color: #777;
+      text-align: center;
+      margin-top: 4px;
+      line-height: 1.6;
+      max-width: 520px;
+    }
+    .cat-card.swipe-left {
+      transition: transform 0.32s ease-out, opacity 0.32s ease-out;
+      transform: translateX(-120%) rotate(-18deg);
+      opacity: 0;
+    }
+    .cat-card.swipe-right {
+      transition: transform 0.32s ease-out, opacity 0.32s ease-out;
+      transform: translateX(120%) rotate(18deg);
+      opacity: 0;
+    }
+
+    .liked-panel {
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(17, 24, 39, .06);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: 100%;
+    }
+    .liked-panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    .liked-panel-header p {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .liked-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+      overflow: hidden;
+    }
+    .liked-item,
+    .empty-state {
+      border: 1px solid #ececec;
+      border-radius: 18px;
+      padding: 14px;
+      background: #fafafa;
+    }
+    .liked-item {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .liked-item-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .liked-item small,
+    .empty-state {
+      color: #777;
+      line-height: 1.6;
+    }
+    .liked-item-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .liked-panel-footer {
+      margin-top: auto;
+      padding-top: 2px;
+    }
+    footer {
+      padding-left: 16px;
+    }
+    .liked-panel-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      background: transparent;
+      color: #2f6feb;
+      font-size: 14px;
+      padding: 0;
+      cursor: pointer;
+    }
+    .liked-panel-link:hover {
+      text-decoration: underline;
+    }
+    .liked-panel-link[hidden] {
+      display: none;
+    }
+    .pill-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #ecfdf3;
+      color: #027a48;
+    }
+
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      width: min(360px, calc(100vw - 32px));
+      background: #1f2937;
+      color: #fff;
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.24);
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 80;
+    }
+    .toast.show { display: flex; }
+    .toast p { line-height: 1.6; color: #e5e7eb; }
+    .toast-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .toast-actions button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+    .toast-actions .primary {
+      background: #fff;
+      color: #111827;
+    }
+    .toast-actions .secondary {
+      background: rgba(255,255,255,.14);
+      color: #fff;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17,24,39,.56);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 120;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      width: min(900px, 100%);
+      max-height: min(88vh, 900px);
+      overflow: auto;
+      background: #fff;
+      border-radius: 28px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.2);
+      position: relative;
+    }
+    .modal.narrow {
+      width: min(620px, 100%);
+    }
+    .modal.medium {
+      width: min(760px, 100%);
+    }
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 50%;
+      background: #f3f4f6;
+      color: #333;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .profile-layout {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 0;
+    }
+    .profile-cover {
+      min-height: 100%;
+      background: #111827;
+      color: #fff;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .profile-cover img {
+      width: 100%;
+      aspect-ratio: 1 / 1.08;
+      object-fit: cover;
+      border-radius: 22px;
+    }
+    .profile-cover p {
+      color: rgba(255,255,255,.82);
+      line-height: 1.6;
+    }
+    .profile-main {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .profile-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+    .profile-head p {
+      color: #666;
+      margin-top: 6px;
+      line-height: 1.6;
+    }
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tag-row span {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      font-size: 12px;
+      color: #374151;
+    }
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .info-card {
+      border: 1px solid #ececec;
+      border-radius: 18px;
+      padding: 16px;
+      background: #fafafa;
+    }
+    .info-card h4 {
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+    .info-card.full {
+      grid-column: 1 / -1;
+    }
+    .info-card p,
+    .info-card li {
+      color: #555;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+    .profile-list {
+      display: grid;
+      gap: 10px;
+    }
+    .profile-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ececec;
+    }
+    .profile-row:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .profile-label {
+      color: #667085;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .profile-value {
+      color: #111827;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: right;
+    }
+    .profile-photo-wrap img {
+      width: 100%;
+      height: 260px;
+      object-fit: cover;
+      border-radius: 16px;
+      display: block;
+      background: #fff;
+    }
+    .info-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .timeline-item {
+      border-left: 3px solid #ffd3dc;
+      padding-left: 12px;
+      line-height: 1.6;
+      color: #555;
+      font-size: 14px;
+    }
+    .profile-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .form-shell {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .form-shell p {
+      color: #666;
+      line-height: 1.6;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .field.full { grid-column: 1 / -1; }
+    .field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+    }
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      border: 1px solid #d8dce3;
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #fff;
+      color: #111827;
+    }
+    .field textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    .status-box {
+      border-radius: 18px;
+      padding: 14px 16px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      line-height: 1.6;
+      display: none;
+    }
+    .status-box.show {
+      display: block;
+    }
+    .liked-full-list {
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .liked-full-list .empty-state {
+      background: #fafafa;
+    }
+    .chat-shell {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-height: min(78vh, 760px);
+    }
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      padding-right: 52px;
+    }
+    .chat-header-main {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      min-width: 0;
+    }
+    .chat-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .chat-header-copy p {
+      margin-top: 4px;
+      color: #666;
+      line-height: 1.5;
+    }
+    .chat-status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #eff6ff;
+      color: #1d4ed8;
+      white-space: nowrap;
+    }
+    .chat-thread {
+      flex: 1;
+      min-height: 320px;
+      max-height: 440px;
+      overflow: auto;
+      border: 1px solid #ececec;
+      border-radius: 22px;
+      background: linear-gradient(180deg, #fafafa 0%, #fff 100%);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .chat-message {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 78%;
+    }
+    .chat-message.user {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+    .chat-message.org {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+    .chat-message.system {
+      align-self: center;
+      max-width: 90%;
+      align-items: center;
+    }
+    .chat-bubble {
+      border-radius: 18px;
+      padding: 12px 14px;
+      line-height: 1.6;
+      font-size: 14px;
+      word-break: break-word;
+      box-shadow: 0 6px 18px rgba(17, 24, 39, .05);
+    }
+    .chat-message.user .chat-bubble {
+      background: #ff5a76;
+      color: #fff;
+      border-bottom-right-radius: 6px;
+    }
+    .chat-message.org .chat-bubble {
+      background: #fff;
+      color: #333;
+      border: 1px solid #ececec;
+      border-bottom-left-radius: 6px;
+    }
+    .chat-message.system .chat-bubble {
+      background: #f3f4f6;
+      color: #555;
+      text-align: center;
+      font-size: 13px;
+      box-shadow: none;
+    }
+    .chat-meta {
+      font-size: 12px;
+      color: #8b8b8b;
+      padding: 0 4px;
+    }
+    .chat-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+      gap: 8px;
+      width: 100%;
+    }
+    .chat-images img {
+      width: 100%;
+      height: 108px;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid rgba(0,0,0,.06);
+      background: #fff;
+    }
+    .chat-note {
+      color: #666;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .chat-preview {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .chat-preview[hidden] {
+      display: none;
+    }
+    .chat-preview-item {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+    }
+    .chat-preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .chat-preview-item button {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(17,24,39,.72);
+      color: #fff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .chat-composer {
+      border: 1px solid #ececec;
+      border-radius: 22px;
+      padding: 16px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      resize: none;
+      min-height: 92px;
+      font: inherit;
+      color: #111827;
+      background: transparent;
+      line-height: 1.6;
+    }
+    .chat-composer-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .chat-left-actions,
+    .chat-right-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .attach-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #333;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .attach-btn input {
+      display: none;
+    }
+    .chat-send-btn {
+      border: none;
+      border-radius: 999px;
+      background: #ff5a76;
+      color: #fff;
+      padding: 10px 18px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(255,90,118,.24);
+    }
+    .chat-secondary-btn {
+      border: none;
+      border-radius: 999px;
+      background: #fff;
+      color: #333;
+      padding: 10px 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,.08);
+    }
+
+    @media (max-width: 980px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+      .liked-panel {
+        order: -1;
+      }
+      .profile-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 680px) {
+      body {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+      header,
+      .adoption-stage,
+      .liked-panel {
+        padding: 18px;
+      }
+      .deck-wrapper {
+        min-height: 360px;
+      }
+      .form-grid,
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+      .chat-header {
+        padding-right: 42px;
+      }
+      .chat-header-main {
+        align-items: flex-start;
+      }
+      .chat-thread {
+        max-height: 360px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <div class="page-topbar">
+      <a class="back-link" href="index.html">← Back to Home</a>
+      <div class="topbar-actions">
+        <button class="ghost-btn" type="button" id="open-liked-panel">Liked Cats (<span id="liked-count-top">0</span>)</button>
+      </div>
+    </div>
+
+    <header>
+      <div class="header-copy">
+        <div class="eyebrow">Adoption + Cat Account Flow</div>
+        <h1>Adoption Recommendations</h1>
+        <p>
+          Swipe right to like a cat. After liking, the cat is saved to your interested list, where you can open the
+          cat's full account page, review the rescue notes and health summary, then contact the rescue organization or
+          submit a formal adoption application.
+        </p>
+      </div>
+      <aside class="header-flow" aria-label="Flow summary">
+        <h2>Suggested flow</h2>
+        <ol>
+          <li>Like a cat</li>
+          <li>Open full cat account</li>
+          <li>Contact rescue organization</li>
+          <li>Submit application for review</li>
+        </ol>
+      </aside>
+    </header>
+
+    <main>
+      <section class="adoption-stage" aria-label="Adoption cards and actions">
+        <div class="stage-top">
+          <div>
+            <h2>Swipe to discover</h2>
+            <p>Click a card to flip and preview the rescue details.</p>
+          </div>
+        </div>
+
+        <section aria-label="Cats for Adoption Cards" class="deck-wrapper">
+          <div class="card-stack">
+            <article class="cat-card" data-cat-id="orange">
+              <div class="card-inner">
+                <div class="card-face card-front">
+                  <div class="cat-bg"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000&q=80" alt="Orange cat"></div>
+                  <div class="cat-info">
+                    <div class="cat-name">Orange · Orange Boy</div>
+                    <div class="cat-meta">1 year old · Male · Affectionate · Neutered · Vaccinated</div>
+                    <div class="cat-tags">
+                      <span class="cat-tag">Friendly</span>
+                      <span class="cat-tag">Good for First-Time Owners</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-face card-back">
+                  <div>
+                    <h3>Orange · Orange Boy</h3>
+                    <p><strong>Gender:</strong> Male</p>
+                    <p><strong>Age:</strong> 1 year old</p>
+                    <p><strong>Vaccinated:</strong> Yes (Triple vaccine + Rabies vaccine)</p>
+                    <p><strong>Found at:</strong> XX District Stray Cat Rescue Center</p>
+                    <p style="margin-top: 8px; color: #666;">Orange is very friendly and affectionate, loves being held and playing with wand toys, and is ideal for first-time cat adopters.</p>
+                  </div>
+                  <div class="card-back-actions">
+                    <button type="button" class="open-profile-btn">View Full Profile</button>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="cat-card" data-cat-id="shadow">
+              <div class="card-inner">
+                <div class="card-face card-front">
+                  <div class="cat-bg"><img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000&q=80" alt="Cow cat"></div>
+                  <div class="cat-info">
+                    <div class="cat-name">Shadow · Tuxedo Cat</div>
+                    <div class="cat-meta">3 years old · Male · A bit shy · Super affectionate once familiar</div>
+                    <div class="cat-tags">
+                      <span class="cat-tag">Cat Experience Preferred</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-face card-back">
+                  <div>
+                    <h3>Shadow · Tuxedo Cat</h3>
+                    <p><strong>Gender:</strong> Male</p>
+                    <p><strong>Age:</strong> 3 years old</p>
+                    <p><strong>Vaccinated:</strong> Yes (Triple vaccine + Rabies vaccine)</p>
+                    <p><strong>Found at:</strong> Near XX Park (Stray rescue)</p>
+                    <p style="margin-top: 8px; color: #666;">Shadow is shy at first, but quickly becomes affectionate after trust is built. Best for adopters with some cat experience.</p>
+                  </div>
+                  <div class="card-back-actions">
+                    <button type="button" class="open-profile-btn">View Full Profile</button>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="cat-card" data-cat-id="tiger">
+              <div class="card-inner">
+                <div class="card-face card-front">
+                  <div class="cat-bg"><img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000&q=80" alt="Tabby kitten"></div>
+                  <div class="cat-info">
+                    <div class="cat-name">Tiger · Tabby Kitten</div>
+                    <div class="cat-meta">6 months old · Male · Playful · Neutered · Vaccinated</div>
+                    <div class="cat-tags">
+                      <span class="cat-tag">Good with Kids</span>
+                      <span class="cat-tag">Very Active</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-face card-back">
+                  <div>
+                    <h3>Tiger · Tabby Kitten</h3>
+                    <p><strong>Gender:</strong> Male</p>
+                    <p><strong>Age:</strong> 6 months old</p>
+                    <p><strong>Vaccinated:</strong> Yes (Triple vaccine + Rabies vaccine)</p>
+                    <p><strong>Found at:</strong> XX Animal Shelter</p>
+                    <p style="margin-top: 8px; color: #666;">Tiger is energetic, social and playful, and would fit an active family that can give him plenty of interaction and toys.</p>
+                  </div>
+                  <div class="card-back-actions">
+                    <button type="button" class="open-profile-btn">View Full Profile</button>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="cat-card" data-cat-id="whiskers">
+              <div class="card-inner">
+                <div class="card-face card-front">
+                  <div class="cat-bg"><img src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000&q=80" alt="Senior cat"></div>
+                  <div class="cat-info">
+                    <div class="cat-name">Whiskers · Senior Cat</div>
+                    <div class="cat-meta">8 years old · Female · Calm · Neutered · Vaccinated</div>
+                    <div class="cat-tags">
+                      <span class="cat-tag">Quiet Home Preferred</span>
+                      <span class="cat-tag">Good for Seniors</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-face card-back">
+                  <div>
+                    <h3>Whiskers · Senior Cat</h3>
+                    <p><strong>Gender:</strong> Female</p>
+                    <p><strong>Age:</strong> 8 years old</p>
+                    <p><strong>Vaccinated:</strong> Yes (Triple vaccine + Rabies vaccine)</p>
+                    <p><strong>Found at:</strong> XX Senior Cat Rescue</p>
+                    <p style="margin-top: 8px; color: #666;">Whiskers is gentle and very calm, making her a strong match for adopters seeking a quiet companion and a stable home routine.</p>
+                  </div>
+                  <div class="card-back-actions">
+                    <button type="button" class="open-profile-btn">View Full Profile</button>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="cat-card" data-cat-id="snow">
+              <div class="card-inner">
+                <div class="card-face card-front">
+                  <div class="cat-bg"><img src="https://images.unsplash.com/photo-1517331156700-3c241d2b4d83?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000&q=80" alt="White Persian cat"></div>
+                  <div class="cat-info">
+                    <div class="cat-name">Snow · White Persian Mix</div>
+                    <div class="cat-meta">1 month · Female · Elegant · Vaccinated</div>
+                    <div class="cat-tags">
+                      <span class="cat-tag">Quiet Environment</span>
+                      <span class="cat-tag">Needs Grooming</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-face card-back">
+                  <div>
+                    <h3>Snow · White Persian Mix</h3>
+                    <p><strong>Gender:</strong> Female</p>
+                    <p><strong>Age:</strong> 1 month</p>
+                    <p><strong>Vaccinated:</strong> First dose completed</p>
+                    <p><strong>Found at:</strong> XX Cat Rescue (Owner surrender)</p>
+                    <p style="margin-top: 8px; color: #666;">Snow is a young kitten who needs a gentle environment, regular grooming support and an adopter ready for kitten-stage care.</p>
+                  </div>
+                  <div class="card-back-actions">
+                    <button type="button" class="open-profile-btn">View Full Profile</button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div class="swipe-actions">
+            <button class="swipe-btn nope" type="button" aria-label="Dislike (swipe left)">✕</button>
+            <button class="swipe-btn like" type="button" aria-label="Like (swipe right)">❤</button>
+          </div>
+          <div class="hint">Click ✕ for dislike and ❤ for like.</div>
+        </section>
+      </section>
+
+      <aside class="liked-panel" aria-label="Liked cats">
+        <div class="liked-panel-header">
+          <div>
+            <h2>Liked Cats</h2>
+            <p>Save interested cats first, then open the full cat account to continue the adoption process.</p>
+          </div>
+          <span class="pill-status"><span id="liked-count-side">0</span> saved</span>
+        </div>
+        <div class="liked-list" id="liked-list">
+          <div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>
+        </div>
+        <div class="liked-panel-footer">
+          <button class="liked-panel-link" type="button" id="open-liked-list-link" hidden>Open liked cats list →</button>
+        </div>
+      </aside>
+    </main>
+
+    <footer><a href="index.html">Back to Home</a></footer>
+  </div>
+
+  <section class="toast" id="like-toast" aria-live="polite">
+    <h3 id="toast-title">Saved to liked cats</h3>
+    <p id="toast-copy">You can now open the full cat account and continue to contact the rescue organization.</p>
+    <div class="toast-actions">
+      <button type="button" class="primary" id="toast-open-profile">View Full Profile</button>
+      <button type="button" class="secondary" id="toast-open-liked">Open Liked Cats</button>
+    </div>
+  </section>
+
+  <section class="modal-overlay" id="profile-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-label="Cat full profile">
+      <button class="modal-close" type="button" data-close="profile-overlay">×</button>
+      <div class="profile-layout">
+        <aside class="profile-cover">
+          <div>
+            <img id="profile-image" src="" alt="Cat profile image">
+            <div style="margin-top: 16px;">
+              <div class="eyebrow" id="profile-status">Available for Adoption</div>
+              <h2 id="profile-name" style="margin-top: 12px;"></h2>
+              <p id="profile-short"></p>
+            </div>
+          </div>
+          <div>
+            <p id="profile-account-note"></p>
+          </div>
+        </aside>
+        <div class="profile-main">
+          <div class="profile-head">
+            <div>
+              <h2>Cat Profile</h2>
+              <p id="profile-org"></p>
+            </div>
+            <div class="tag-row" id="profile-tags"></div>
+          </div>
+
+          <div class="profile-grid">
+            <article class="info-card">
+              <h4>Basic Information</h4>
+              <div class="profile-list">
+                <div class="profile-row"><span class="profile-label">Cat ID</span><span class="profile-value" id="profile-cat-id">CAT-001</span></div>
+                <div class="profile-row"><span class="profile-label">Cat Name</span><span class="profile-value" id="profile-cat-name-value">Orange</span></div>
+                <div class="profile-row"><span class="profile-label">Breed</span><span class="profile-value" id="profile-breed">Domestic Shorthair</span></div>
+                <div class="profile-row"><span class="profile-label">Gender</span><span class="profile-value" id="profile-gender">Female</span></div>
+                <div class="profile-row"><span class="profile-label">Age</span><span class="profile-value" id="profile-age">1 year</span></div>
+                <div class="profile-row"><span class="profile-label">Birthday</span><span class="profile-value" id="profile-birthday">2024-02-14</span></div>
+              </div>
+            </article>
+            <article class="info-card">
+              <h4>Health and Adoption Information</h4>
+              <div class="profile-list">
+                <div class="profile-row"><span class="profile-label">Personality</span><span class="profile-value" id="profile-personality">Friendly and playful</span></div>
+                <div class="profile-row"><span class="profile-label">Spayed / Neutered</span><span class="profile-value" id="profile-spayed">Yes</span></div>
+                <div class="profile-row"><span class="profile-label">Vaccination Status</span><span class="profile-value" id="profile-vaccination-status">Core vaccines completed</span></div>
+                <div class="profile-row"><span class="profile-label">Found Location</span><span class="profile-value" id="profile-found-location">Kowloon City</span></div>
+                <div class="profile-row"><span class="profile-label">Allergy History</span><span class="profile-value" id="profile-allergy-history">No known allergies</span></div>
+                <div class="profile-row"><span class="profile-label">Adoption Status</span><span class="profile-value" id="profile-adoption-status">Available</span></div>
+              </div>
+            </article>
+          </div>
+
+          <article class="info-card full">
+            <h4>Display Photo</h4>
+            <div class="profile-photo-wrap">
+              <img id="profile-display-photo" src="" alt="Cat display photo">
+            </div>
+          </article>
+
+          <div class="profile-actions">
+            <button class="solid-btn" type="button" id="contact-org-btn">Contact Rescue Organization</button>
+            <button class="ghost-btn" type="button" id="apply-adopt-btn">Apply to Adopt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="modal-overlay" id="liked-overlay" aria-hidden="true">
+    <div class="modal medium" role="dialog" aria-label="Full liked cats list">
+      <button class="modal-close" type="button" data-close="liked-overlay">×</button>
+      <div class="form-shell">
+        <div>
+          <h2>Liked Cats List</h2>
+          <p>Review all the cats you have liked, then open the full cat account or contact the rescue organization from here.</p>
+        </div>
+        <div class="liked-full-list" id="liked-full-list">
+          <div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="modal-overlay" id="contact-overlay" aria-hidden="true">
+    <div class="modal medium" role="dialog" aria-label="Contact rescue organization">
+      <button class="modal-close" type="button" data-close="contact-overlay">×</button>
+      <div class="chat-shell">
+        <div class="chat-header">
+          <div class="chat-header-main">
+            <img class="chat-avatar" id="chat-cat-image" src="" alt="Cat avatar">
+            <div class="chat-header-copy">
+              <h2 id="contact-title">Contact Rescue Organization</h2>
+              <p id="contact-subtitle">Start a consultation about this cat and continue the conversation with the rescue organization.</p>
+            </div>
+          </div>
+          <span class="chat-status-badge" id="chat-status-badge">Awaiting your message</span>
+        </div>
+
+        <div class="chat-thread" id="chat-thread" aria-live="polite"></div>
+
+        <div class="chat-note">
+          This is a lightweight consultation chat for adoption questions. You can send text and up to 3 images in one message.
+        </div>
+
+        <div class="chat-preview" id="chat-preview" hidden></div>
+
+        <form id="contact-form" class="chat-composer">
+          <textarea class="chat-input" id="chat-message-input" name="message" placeholder="Type your message about this cat..."></textarea>
+          <div class="chat-composer-row">
+            <div class="chat-left-actions">
+              <label class="attach-btn" for="chat-image-input">
+                <span>＋ Add image</span>
+                <input id="chat-image-input" type="file" accept="image/*" multiple>
+              </label>
+            </div>
+            <div class="chat-right-actions">
+              <button class="chat-secondary-btn" type="button" id="chat-apply-link">Apply to Adopt</button>
+              <button class="chat-send-btn" type="submit">Send</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="modal-overlay" id="apply-overlay" aria-hidden="true">
+    <div class="modal narrow" role="dialog" aria-label="Apply to adopt">
+      <button class="modal-close" type="button" data-close="apply-overlay">×</button>
+      <div class="form-shell">
+        <div>
+          <h2>Apply to Adopt</h2>
+          <p id="apply-subtitle">Submit a formal adoption request after reading the full cat account and rescue requirements.</p>
+        </div>
+
+        <form id="apply-form">
+          <div class="form-grid">
+            <div class="field">
+              <label for="apply-name">Full name</label>
+              <input id="apply-name" name="name" type="text" placeholder="Enter your name" required>
+            </div>
+            <div class="field">
+              <label for="apply-phone">Contact number</label>
+              <input id="apply-phone" name="phone" type="text" placeholder="Enter phone / WhatsApp" required>
+            </div>
+            <div class="field">
+              <label for="apply-experience">Cat experience</label>
+              <select id="apply-experience" name="experience" required>
+                <option value="">Select</option>
+                <option>First-time adopter</option>
+                <option>Have adopted before</option>
+                <option>Currently own other cats</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="apply-home">Home situation</label>
+              <select id="apply-home" name="home" required>
+                <option value="">Select</option>
+                <option>Apartment</option>
+                <option>House</option>
+                <option>Shared living</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label for="apply-reason">Why do you want to adopt this cat?</label>
+              <textarea id="apply-reason" name="reason" placeholder="Describe why this cat is a good match for you." required></textarea>
+            </div>
+          </div>
+
+          <div class="status-box" id="apply-status"></div>
+
+          <div class="form-actions">
+            <button class="ghost-btn" type="button" data-close="apply-overlay">Cancel</button>
+            <button class="solid-btn" type="submit">Submit Application</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const cats = {
+        orange: {
+          id: "orange",
+          catId: "CAT-001",
+          name: "Orange",
+          title: "Orange Boy",
+          age: "1 year",
+          gender: "Male",
+          breed: "Domestic Shorthair",
+          birthday: "2025-02-14",
+          personalityProfile: "Friendly and playful",
+          spayedNeutered: "Yes",
+          vaccinationStatus: "Core vaccines completed",
+          foundLocation: "Market district rescue zone",
+          allergyHistory: "No known allergies",
+          temperament: "Affectionate, friendly, playful",
+          status: "Available",
+          image: "https://images.unsplash.com/photo-1592194996308-7b43878e84a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&h=1000&q=80",
+          summary: "A rescue-center favorite with a gentle temperament and strong interest in people.",
+          health: "Neutered, vaccinated, and recently completed a general health check with no major concerns.",
+          rescueOrg: "XX District Stray Cat Rescue Center",
+          rescueNotes: "Orange was rescued from a market area and adapted quickly to indoor foster care. He enjoys wand toys and seeks human contact.",
+          accountNote: "This cat account collects Orange's rescue timeline, health updates, and adoption requirements in one place.",
+          tags: ["Friendly", "Good for First-Time Owners", "Indoor Ready"],
+          requirements: [
+            "Indoor home only",
+            "Stable adopter contact information",
+            "Willing to provide adjustment time during the first 2 weeks"
+          ],
+          basic: "Male · 1 year old · Domestic Shorthair · Neutered · Good with people",
+          updates: [
+            "2026-03-02: Finished booster vaccination and routine health review.",
+            "2026-02-20: Foster parent reported strong appetite and playful daily routine.",
+            "2026-02-10: Rescue center uploaded a new personality assessment."
+          ]
+        },
+        shadow: {
+          id: "shadow",
+          catId: "CAT-002",
+          name: "Shadow",
+          title: "Tuxedo Cat",
+          age: "3 years",
+          gender: "Male",
+          breed: "Tuxedo Domestic Cat",
+          birthday: "2022-09-03",
+          personalityProfile: "Quiet and observant",
+          spayedNeutered: "Yes",
+          vaccinationStatus: "Vaccinated, booster pending",
+          foundLocation: "Park-side rescue point",
+          allergyHistory: "Mild chicken sensitivity",
+          temperament: "Shy at first, affectionate after bonding",
+          status: "Available",
+          image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&h=1000&q=80",
+          summary: "A calm tuxedo cat who needs patience in the beginning and rewards trust with deep attachment.",
+          health: "Vaccinated and neutered. No critical medical issues, but needs a quieter home environment.",
+          rescueOrg: "Shadow Park Foster Network",
+          rescueNotes: "Shadow was rescued near a park and took longer to settle in, so the rescue team recommends an adopter with some cat-care experience.",
+          accountNote: "Shadow's account focuses on trust-building updates and long-term temperament observations from foster care.",
+          tags: ["Experienced Adopter Preferred", "Quiet Home", "Slow Warm-Up"],
+          requirements: [
+            "Low-noise environment preferred",
+            "Adopter should understand shy-cat adjustment behavior",
+            "Home visit or virtual environment check before final approval"
+          ],
+          basic: "Male · 3 years old · Tuxedo cat · Vaccinated · Best with patient adopters",
+          updates: [
+            "2026-03-01: Started sleeping near the foster's desk during work hours.",
+            "2026-02-24: Rescue team noted improved confidence around visitors.",
+            "2026-02-06: New enrichment toys introduced to reduce stress."
+          ]
+        },
+        tiger: {
+          id: "tiger",
+          catId: "CAT-004",
+          name: "Tiger",
+          title: "Tabby Kitten",
+          age: "6 months",
+          gender: "Male",
+          breed: "Tabby Domestic Shorthair",
+          birthday: "2025-09-01",
+          personalityProfile: "Energetic and social",
+          spayedNeutered: "Yes",
+          vaccinationStatus: "Kitten vaccination schedule in progress",
+          foundLocation: "Shelter intake transfer",
+          allergyHistory: "No known allergies",
+          temperament: "Energetic, curious, social",
+          status: "Available",
+          image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&h=1000&q=80",
+          summary: "A young kitten with high energy and strong play needs, ideal for an active household.",
+          health: "Vaccinated and neutered. Active and healthy, with no notable health issues reported.",
+          rescueOrg: "XX Animal Shelter",
+          rescueNotes: "Tiger was transferred from shelter intake into a foster home and quickly showed strong social behavior with people and toys.",
+          accountNote: "Tiger's account shows growth updates, play habits, and suitability notes for family adopters.",
+          tags: ["Good with Kids", "Very Active", "Playful"],
+          requirements: [
+            "Needs daily play and enrichment",
+            "Adopter should prepare safe kitten-proof indoor space",
+            "Prefer a family ready for regular interaction"
+          ],
+          basic: "Male · 6 months old · Tabby kitten · Neutered · Highly interactive",
+          updates: [
+            "2026-03-03: Foster uploaded new play-session photos.",
+            "2026-02-18: Weight and appetite reviewed with normal growth.",
+            "2026-02-01: Tiger completed first socialization milestone."
+          ]
+        },
+        whiskers: {
+          id: "whiskers",
+          catId: "CAT-003",
+          name: "Whiskers",
+          title: "Senior Cat",
+          age: "8 years",
+          gender: "Female",
+          breed: "Domestic Shorthair",
+          birthday: "2017-06-11",
+          personalityProfile: "Gentle and calm",
+          spayedNeutered: "Yes",
+          vaccinationStatus: "Senior vaccine review needed",
+          foundLocation: "Owner-care transition case",
+          allergyHistory: "Sensitive to dust",
+          temperament: "Calm, gentle, quiet",
+          status: "Available",
+          image: "https://images.unsplash.com/photo-1573865526739-10659fec78a5?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&h=1000&q=80",
+          summary: "A mature companion cat who prefers slow routines, quiet affection, and predictable surroundings.",
+          health: "Vaccinated, neutered and under routine senior wellness observation. No current urgent concerns.",
+          rescueOrg: "XX Senior Cat Rescue",
+          rescueNotes: "Whiskers entered rescue after an owner-care transition and adjusted well to a peaceful foster home.",
+          accountNote: "Whiskers' account highlights senior care routines, wellness checks, and daily comfort needs.",
+          tags: ["Quiet Home Preferred", "Senior Friendly", "Low Activity"],
+          requirements: [
+            "Quiet indoor household preferred",
+            "Routine wellness check commitment",
+            "Adopter should be comfortable with senior cat care"
+          ],
+          basic: "Female · 8 years old · Senior cat · Calm personality · Good fit for gentle homes",
+          updates: [
+            "2026-03-04: Updated senior wellness report added by foster partner.",
+            "2026-02-22: Rescue team recorded excellent appetite and rest schedule.",
+            "2026-02-11: New comfort-bed photos uploaded to account."
+          ]
+        },
+        snow: {
+          id: "snow",
+          catId: "CAT-005",
+          name: "Snow",
+          title: "White Persian Mix",
+          age: "1 month",
+          gender: "Female",
+          breed: "White Persian Mix",
+          birthday: "2026-01-28",
+          personalityProfile: "Gentle and sensitive",
+          spayedNeutered: "No",
+          vaccinationStatus: "First vaccination dose completed",
+          foundLocation: "Owner surrender intake",
+          allergyHistory: "No allergy record",
+          temperament: "Gentle, young, sensitive",
+          status: "Available",
+          image: "https://images.unsplash.com/photo-1517331156700-3c241d2b4d83?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&h=1000&q=80",
+          summary: "A very young kitten who needs attentive care, a clean indoor setup, and regular grooming support.",
+          health: "First vaccination dose completed. Needs ongoing kitten monitoring and regular grooming preparation.",
+          rescueOrg: "XX Cat Rescue",
+          rescueNotes: "Snow came from an owner surrender case and is now under foster observation to ensure healthy early development.",
+          accountNote: "Snow's account tracks kitten-stage health milestones and grooming needs for the rescue team and future adopter.",
+          tags: ["Kitten Care", "Needs Grooming", "Quiet Environment"],
+          requirements: [
+            "Adopter must understand kitten feeding and follow-up vaccination schedule",
+            "Indoor-only environment",
+            "Commitment to grooming and regular updates during adjustment period"
+          ],
+          basic: "Female · 1 month · Persian mix kitten · Early-stage care required",
+          updates: [
+            "2026-03-05: Foster added feeding and sleep routine notes.",
+            "2026-02-26: First vaccination dose recorded in account.",
+            "2026-02-12: Intake notes and owner-surrender summary uploaded."
+          ]
+        }
+      };
+
+      const stack = document.querySelector(".card-stack");
+      if (!stack) return;
+
+      const nopeBtn = document.querySelector(".swipe-btn.nope");
+      const likeBtn = document.querySelector(".swipe-btn.like");
+      const openLikedPanelBtn = document.getElementById("open-liked-panel");
+      const likedList = document.getElementById("liked-list");
+      const likedFullList = document.getElementById("liked-full-list");
+      const openLikedListLink = document.getElementById("open-liked-list-link");
+      const likedCountTop = document.getElementById("liked-count-top");
+      const likedCountSide = document.getElementById("liked-count-side");
+
+      const likeToast = document.getElementById("like-toast");
+      const toastTitle = document.getElementById("toast-title");
+      const toastCopy = document.getElementById("toast-copy");
+      const toastOpenProfile = document.getElementById("toast-open-profile");
+      const toastOpenLiked = document.getElementById("toast-open-liked");
+
+      const profileOverlay = document.getElementById("profile-overlay");
+      const likedOverlay = document.getElementById("liked-overlay");
+      const contactOverlay = document.getElementById("contact-overlay");
+      const applyOverlay = document.getElementById("apply-overlay");
+
+      const profileImage = document.getElementById("profile-image");
+      const profileStatus = document.getElementById("profile-status");
+      const profileName = document.getElementById("profile-name");
+      const profileShort = document.getElementById("profile-short");
+      const profileAccountNote = document.getElementById("profile-account-note");
+      const profileOrg = document.getElementById("profile-org");
+      const profileTags = document.getElementById("profile-tags");
+      const profileCatId = document.getElementById("profile-cat-id");
+      const profileCatNameValue = document.getElementById("profile-cat-name-value");
+      const profileBreed = document.getElementById("profile-breed");
+      const profileGender = document.getElementById("profile-gender");
+      const profileAge = document.getElementById("profile-age");
+      const profileBirthday = document.getElementById("profile-birthday");
+      const profilePersonality = document.getElementById("profile-personality");
+      const profileSpayed = document.getElementById("profile-spayed");
+      const profileVaccinationStatus = document.getElementById("profile-vaccination-status");
+      const profileFoundLocation = document.getElementById("profile-found-location");
+      const profileAllergyHistory = document.getElementById("profile-allergy-history");
+      const profileAdoptionStatus = document.getElementById("profile-adoption-status");
+      const profileDisplayPhoto = document.getElementById("profile-display-photo");
+
+      const contactTitle = document.getElementById("contact-title");
+      const contactSubtitle = document.getElementById("contact-subtitle");
+      const applySubtitle = document.getElementById("apply-subtitle");
+      const contactForm = document.getElementById("contact-form");
+      const applyForm = document.getElementById("apply-form");
+      const applyStatus = document.getElementById("apply-status");
+      const chatThread = document.getElementById("chat-thread");
+      const chatStatusBadge = document.getElementById("chat-status-badge");
+      const chatCatImage = document.getElementById("chat-cat-image");
+      const chatMessageInput = document.getElementById("chat-message-input");
+      const chatImageInput = document.getElementById("chat-image-input");
+      const chatPreview = document.getElementById("chat-preview");
+      const chatApplyLink = document.getElementById("chat-apply-link");
+
+      const contactOrgBtn = document.getElementById("contact-org-btn");
+      const applyAdoptBtn = document.getElementById("apply-adopt-btn");
+
+      const likedCats = [];
+      const conversations = {};
+      let activeCatId = null;
+      let toastTimer = null;
+      let isAnimating = false;
+      let pendingChatImages = [];
+      const likedPreviewLimit = 2;
+
+      function getCurrentCard() {
+        return stack.querySelector(".cat-card:first-child");
+      }
+
+      function getCardId(card) {
+        return card ? card.getAttribute("data-cat-id") : null;
+      }
+
+      function openModal(overlay) {
+        overlay.classList.add("open");
+        overlay.setAttribute("aria-hidden", "false");
+      }
+
+      function closeModal(overlay) {
+        overlay.classList.remove("open");
+        overlay.setAttribute("aria-hidden", "true");
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function formatTime(value) {
+        const date = typeof value === "string" ? new Date(value) : value;
+        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      }
+
+      function getOrgReply(cat, userMessage) {
+        const lastText = (userMessage.text || "").trim();
+        if (lastText) {
+          return "Thanks for contacting " + cat.rescueOrg + " about " + cat.name + ". We received your message and will review it with the rescue notes before guiding you to the next adoption step.";
+        }
+        return "We received your images for " + cat.name + ". The rescue team will review them and continue the conversation shortly.";
+      }
+
+      function createConversation(cat) {
+        return {
+          status: "Awaiting your message",
+          messages: [
+            {
+              sender: "system",
+              text: "Conversation created for " + cat.name + ". Introduce yourself, share why you are interested, and attach photos if you want to show your home setup.",
+              images: [],
+              time: new Date().toISOString()
+            },
+            {
+              sender: "org",
+              text: "Hello, this is " + cat.rescueOrg + ". Feel free to ask questions about " + cat.name + "'s personality, health status, or adoption requirements.",
+              images: [],
+              time: new Date().toISOString()
+            }
+          ]
+        };
+      }
+
+      function ensureConversation(catId) {
+        if (!conversations[catId]) {
+          conversations[catId] = createConversation(cats[catId]);
+        }
+        return conversations[catId];
+      }
+
+      function renderChatPreview() {
+        if (!pendingChatImages.length) {
+          chatPreview.hidden = true;
+          chatPreview.innerHTML = "";
+          return;
+        }
+
+        chatPreview.hidden = false;
+        chatPreview.innerHTML = pendingChatImages.map(function (image, index) {
+          return [
+            '<div class="chat-preview-item" data-preview-index="' + index + '">',
+            '  <img src="' + image.src + '" alt="' + escapeHtml(image.name) + '">',
+            '  <button type="button" aria-label="Remove image">×</button>',
+            '</div>'
+          ].join("");
+        }).join("");
+      }
+
+      function renderChatThread(catId) {
+        const conversation = ensureConversation(catId);
+        const cat = cats[catId];
+
+        chatCatImage.src = cat.image;
+        chatCatImage.alt = cat.name + " avatar";
+        contactTitle.textContent = "Chat about " + cat.name;
+        contactSubtitle.textContent = cat.rescueOrg + " can review your messages and images before moving the adoption process forward.";
+        chatStatusBadge.textContent = conversation.status;
+
+        chatThread.innerHTML = conversation.messages.map(function (message) {
+          const textHtml = message.text ? '<div class="chat-bubble">' + escapeHtml(message.text).replace(/\n/g, "<br>") + "</div>" : "";
+          const imagesHtml = message.images && message.images.length
+            ? '<div class="chat-images">' + message.images.map(function (image) {
+                return '<img src="' + image.src + '" alt="' + escapeHtml(image.name || "Chat image") + '">';
+              }).join("") + "</div>"
+            : "";
+
+          return [
+            '<div class="chat-message ' + message.sender + '">',
+            textHtml,
+            imagesHtml,
+            '<div class="chat-meta">' + formatTime(message.time) + "</div>",
+            "</div>"
+          ].join("");
+        }).join("");
+
+        chatThread.scrollTop = chatThread.scrollHeight;
+      }
+
+      function resetChatComposer() {
+        chatMessageInput.value = "";
+        chatImageInput.value = "";
+        pendingChatImages = [];
+        renderChatPreview();
+      }
+
+      function renderLikedItem(cat) {
+        return [
+          '<article class="liked-item" data-liked-id="' + cat.id + '">',
+          '  <div class="liked-item-top">',
+          '    <div>',
+          '      <h3>' + cat.name + ' · ' + cat.title + '</h3>',
+          '      <small>' + cat.age + ' · ' + cat.gender + ' · ' + cat.temperament + '</small>',
+          '    </div>',
+          '    <span class="pill-status">Saved</span>',
+          '  </div>',
+          '  <small>' + cat.summary + '</small>',
+          '  <div class="liked-item-actions">',
+          '    <button class="ghost-btn open-liked-profile" type="button">View Full Profile</button>',
+          '    <button class="ghost-btn open-liked-contact" type="button">Contact Organization</button>',
+          '  </div>',
+          '</article>'
+        ].join("");
+      }
+
+      function updateLikedUI() {
+        likedCountTop.textContent = likedCats.length;
+        likedCountSide.textContent = likedCats.length;
+
+        if (!likedCats.length) {
+          likedList.innerHTML = '<div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>';
+          likedFullList.innerHTML = '<div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>';
+          openLikedListLink.hidden = true;
+          return;
+        }
+
+        likedList.innerHTML = likedCats.slice(0, likedPreviewLimit).map(function (catId) {
+          return renderLikedItem(cats[catId]);
+        }).join("");
+
+        likedFullList.innerHTML = likedCats.map(function (catId) {
+          return renderLikedItem(cats[catId]);
+        }).join("");
+
+        if (likedCats.length > likedPreviewLimit) {
+          openLikedListLink.hidden = false;
+          openLikedListLink.textContent = "Open liked cats list (" + likedCats.length + ")";
+        } else {
+          openLikedListLink.hidden = true;
+        }
+      }
+
+      function showToast(cat) {
+        toastTitle.textContent = cat.name + " was added to your liked cats";
+        toastCopy.textContent = "Open " + cat.name + "'s full account to view profile details, rescue notes, and continue the adoption contact flow.";
+        likeToast.classList.add("show");
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          likeToast.classList.remove("show");
+        }, 5000);
+      }
+
+      function ensureLiked(catId) {
+        if (likedCats.indexOf(catId) === -1) {
+          likedCats.unshift(catId);
+          updateLikedUI();
+        }
+      }
+
+      function renderProfile(catId) {
+        const cat = cats[catId];
+        if (!cat) return;
+        activeCatId = catId;
+
+        profileImage.src = cat.image;
+        profileImage.alt = cat.name + " profile image";
+        profileStatus.textContent = cat.status;
+        profileName.textContent = cat.name;
+        profileShort.textContent = (cat.catId || cat.id.toUpperCase()) + " · " + cat.breed;
+        profileAccountNote.textContent = cat.summary;
+        profileOrg.textContent = "Rescue organization: " + cat.rescueOrg;
+        profileCatId.textContent = cat.catId || cat.id.toUpperCase();
+        profileCatNameValue.textContent = cat.name;
+        profileBreed.textContent = cat.breed;
+        profileGender.textContent = cat.gender;
+        profileAge.textContent = cat.age;
+        profileBirthday.textContent = cat.birthday || "Unknown";
+        profilePersonality.textContent = cat.personalityProfile || cat.temperament;
+        profileSpayed.textContent = cat.spayedNeutered || "Not provided";
+        profileVaccinationStatus.textContent = cat.vaccinationStatus || cat.health;
+        profileFoundLocation.textContent = cat.foundLocation || "Not provided";
+        profileAllergyHistory.textContent = cat.allergyHistory || "No allergy record";
+        profileAdoptionStatus.textContent = cat.status;
+        profileDisplayPhoto.src = cat.image;
+        profileDisplayPhoto.alt = cat.name + " display photo";
+
+        profileTags.innerHTML = cat.tags.map(function (tag) {
+          return "<span>" + tag + "</span>";
+        }).join("");
+      }
+
+      function openProfile(catId) {
+        ensureLiked(catId);
+        renderProfile(catId);
+        openModal(profileOverlay);
+      }
+
+      function openContact(catId) {
+        const cat = cats[catId];
+        if (!cat) return;
+        activeCatId = catId;
+        ensureConversation(catId);
+        resetChatComposer();
+        renderChatThread(catId);
+        openModal(contactOverlay);
+      }
+
+      function openApply(catId) {
+        const cat = cats[catId];
+        if (!cat) return;
+        activeCatId = catId;
+        applySubtitle.textContent = "Submit a formal adoption request for " + cat.name + ". The rescue organization will review your application and continue the process.";
+        applyStatus.classList.remove("show");
+        applyStatus.textContent = "";
+        openModal(applyOverlay);
+      }
+
+      function swipe(direction) {
+        if (isAnimating) return;
+        const current = getCurrentCard();
+        if (!current) return;
+
+        const currentCatId = getCardId(current);
+        isAnimating = true;
+
+        if (direction === "left" && nopeBtn) {
+          nopeBtn.classList.add("is-active");
+          setTimeout(function () {
+            nopeBtn.classList.remove("is-active");
+          }, 260);
+        }
+
+        if (direction === "right" && likeBtn) {
+          likeBtn.classList.add("is-active");
+          setTimeout(function () {
+            likeBtn.classList.remove("is-active");
+          }, 260);
+          ensureLiked(currentCatId);
+          showToast(cats[currentCatId]);
+        }
+
+        current.style.transition = "";
+        current.style.transform = "";
+
+        const cls = direction === "right" ? "swipe-right" : "swipe-left";
+        current.classList.add(cls);
+
+        current.addEventListener("transitionend", function handler() {
+          current.removeEventListener("transitionend", handler);
+          current.classList.remove(cls);
+          current.style.transition = "";
+          current.classList.remove("flipped");
+          stack.appendChild(current);
+          isAnimating = false;
+        });
+      }
+
+      nopeBtn.addEventListener("click", function () {
+        swipe("left");
+      });
+
+      likeBtn.addEventListener("click", function () {
+        const current = getCurrentCard();
+        const catId = getCardId(current);
+        swipe("right");
+        activeCatId = catId;
+      });
+
+      openLikedPanelBtn.addEventListener("click", function () {
+        openModal(likedOverlay);
+      });
+
+      openLikedListLink.addEventListener("click", function () {
+        openModal(likedOverlay);
+      });
+
+      toastOpenProfile.addEventListener("click", function () {
+        if (activeCatId) openProfile(activeCatId);
+      });
+
+      toastOpenLiked.addEventListener("click", function () {
+        openModal(likedOverlay);
+      });
+
+      stack.querySelectorAll(".cat-card").forEach(function (card) {
+        const profileButton = card.querySelector(".open-profile-btn");
+        const cardId = getCardId(card);
+
+        if (profileButton) {
+          profileButton.addEventListener("click", function (event) {
+            event.stopPropagation();
+            openProfile(cardId);
+          });
+        }
+
+        card.addEventListener("click", function () {
+          if (isAnimating) return;
+          card.classList.toggle("flipped");
+        });
+
+        let startX = null;
+        let currentX = null;
+        let dragging = false;
+
+        function onPointerDown(event) {
+          if (isAnimating) return;
+          if (event.target.closest(".open-profile-btn")) return;
+          const e = event.touches ? event.touches[0] : event;
+          startX = e.clientX;
+          currentX = startX;
+          dragging = true;
+          card.style.transition = "";
+        }
+
+        function onPointerMove(event) {
+          if (!dragging || isAnimating) return;
+          const e = event.touches ? event.touches[0] : event;
+          currentX = e.clientX;
+          const deltaX = currentX - startX;
+          const current = getCurrentCard();
+
+          if (current !== card) return;
+
+          card.style.transform = "translateX(" + deltaX + "px) rotate(" + (deltaX / 15) + "deg)";
+          card.style.boxShadow = "0 16px 40px rgba(0,0,0,.25)";
+
+          if (event.cancelable) {
+            event.preventDefault();
+          }
+        }
+
+        function onPointerUp() {
+          if (!dragging || isAnimating) return;
+          dragging = false;
+
+          const current = getCurrentCard();
+          if (current !== card) {
+            card.style.transform = "";
+            card.style.boxShadow = "";
+            return;
+          }
+
+          const deltaX = currentX - startX;
+          const threshold = 80;
+
+          if (Math.abs(deltaX) > threshold) {
+            const direction = deltaX > 0 ? "right" : "left";
+            card.style.transform = "";
+            card.style.boxShadow = "";
+            activeCatId = cardId;
+            swipe(direction);
+          } else {
+            card.style.transition = "transform 0.25s ease, box-shadow 0.25s ease";
+            card.style.transform = "translateX(0) rotate(0deg)";
+            card.style.boxShadow = "";
+            card.addEventListener("transitionend", function handle() {
+              card.removeEventListener("transitionend", handle);
+              card.style.transition = "";
+            });
+          }
+        }
+
+        card.addEventListener("mousedown", function (event) {
+          if (event.button !== 0) return;
+          onPointerDown(event);
+          window.addEventListener("mousemove", onPointerMove);
+          window.addEventListener("mouseup", function handleUp(upEvent) {
+            window.removeEventListener("mousemove", onPointerMove);
+            window.removeEventListener("mouseup", handleUp);
+            onPointerUp(upEvent);
+          });
+        });
+
+        card.addEventListener("touchstart", onPointerDown, { passive: false });
+        card.addEventListener("touchmove", onPointerMove, { passive: false });
+        card.addEventListener("touchend", onPointerUp);
+        card.addEventListener("touchcancel", onPointerUp);
+      });
+
+      function handleLikedListActions(event) {
+        const item = event.target.closest("[data-liked-id]");
+        if (!item) return;
+        const catId = item.getAttribute("data-liked-id");
+
+        if (event.target.closest(".open-liked-profile")) {
+          openProfile(catId);
+        }
+
+        if (event.target.closest(".open-liked-contact")) {
+          openContact(catId);
+        }
+      }
+
+      likedList.addEventListener("click", handleLikedListActions);
+      likedFullList.addEventListener("click", handleLikedListActions);
+
+      contactOrgBtn.addEventListener("click", function () {
+        if (activeCatId) openContact(activeCatId);
+      });
+
+      applyAdoptBtn.addEventListener("click", function () {
+        if (activeCatId) openApply(activeCatId);
+      });
+
+      chatPreview.addEventListener("click", function (event) {
+        const previewItem = event.target.closest("[data-preview-index]");
+        if (!previewItem || !event.target.closest("button")) return;
+        const index = Number(previewItem.getAttribute("data-preview-index"));
+        pendingChatImages.splice(index, 1);
+        renderChatPreview();
+      });
+
+      chatImageInput.addEventListener("change", function (event) {
+        const files = Array.from(event.target.files || []).slice(0, 3);
+        if (!files.length) return;
+
+        Promise.all(files.map(function (file) {
+          return new Promise(function (resolve) {
+            const reader = new FileReader();
+            reader.onload = function () {
+              resolve({ name: file.name, src: reader.result });
+            };
+            reader.readAsDataURL(file);
+          });
+        })).then(function (images) {
+          pendingChatImages = images;
+          renderChatPreview();
+        });
+      });
+
+      chatApplyLink.addEventListener("click", function () {
+        if (activeCatId) {
+          closeModal(contactOverlay);
+          openApply(activeCatId);
+        }
+      });
+
+      contactForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        if (!activeCatId) return;
+
+        const conversationCatId = activeCatId;
+        const text = chatMessageInput.value.trim();
+        if (!text && !pendingChatImages.length) return;
+
+        const conversation = ensureConversation(conversationCatId);
+        const userMessage = {
+          sender: "user",
+          text: text,
+          images: pendingChatImages.slice(),
+          time: new Date().toISOString()
+        };
+
+        conversation.messages.push(userMessage);
+        conversation.status = "Waiting for rescue reply";
+        renderChatThread(conversationCatId);
+        resetChatComposer();
+
+        window.setTimeout(function () {
+          const cat = cats[conversationCatId];
+          conversation.messages.push({
+            sender: "org",
+            text: getOrgReply(cat, userMessage),
+            images: [],
+            time: new Date().toISOString()
+          });
+          conversation.status = "Conversation active";
+          if (activeCatId === conversationCatId) {
+            renderChatThread(conversationCatId);
+          }
+        }, 900);
+      });
+
+      applyForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const cat = cats[activeCatId];
+        applyStatus.textContent = "Your adoption application for " + cat.name + " has been submitted. Current status: Submitted. The rescue organization will review your information before arranging further contact.";
+        applyStatus.classList.add("show");
+        applyForm.reset();
+      });
+
+      document.querySelectorAll("[data-close]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          const targetId = button.getAttribute("data-close");
+          const target = document.getElementById(targetId);
+          if (target) closeModal(target);
+        });
+      });
+
+      [profileOverlay, likedOverlay, contactOverlay, applyOverlay].forEach(function (overlay) {
+        overlay.addEventListener("click", function (event) {
+          if (event.target === overlay) {
+            closeModal(overlay);
+          }
+        });
+      });
+
+      updateLikedUI();
+      const firstCard = getCurrentCard();
+      if (firstCard) {
+        activeCatId = getCardId(firstCard);
+      }
+    })();
+  </script>
+</body>
+</html>
