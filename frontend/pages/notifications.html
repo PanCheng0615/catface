@@ -462,96 +462,8 @@
           <input class="search-input" type="text" placeholder="Search notifications">
         </div>
 
-        <div class="message-list">
-          <article class="message-item" data-type="social" data-title="26 HKU stat + ds chat" data-detail="You were invited into the 26 HKU stat + ds group chat. This thread includes student discussion, resource sharing, and social replies." data-category="Comments" data-time="Sat">
-            <img class="message-avatar" src="https://images.unsplash.com/photo-1543852786-1cf6624b9987?auto=format&fit=crop&w=120&h=120&q=80" alt="Group avatar">
-            <div class="message-main">
-              <div class="message-top">
-                <div class="message-name">26 HKU stat+ds chat 3</div>
-                <div class="message-time">Sat</div>
-              </div>
-              <div class="message-snippet">"#我想要两颗西柚" joined the group chat and mentioned your shared post.</div>
-              <div class="message-meta">
-                <span class="message-tag">Comments</span>
-              </div>
-            </div>
-            <span class="message-unread">3</span>
-          </article>
-
-          <article class="message-item" data-type="social" data-title="Qiqi" data-detail="Qiqi replied to your latest cat rescue update with a short reaction comment." data-category="Comments" data-time="Fri">
-            <img class="message-avatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&h=120&q=80" alt="Qiqi avatar">
-            <div class="message-main">
-              <div class="message-top">
-                <div class="message-name">Qiqi</div>
-                <div class="message-time">Fri</div>
-              </div>
-              <div class="message-snippet">Commented on your post: “That made me laugh.”</div>
-              <div class="message-meta">
-                <span class="message-tag">Comments</span>
-              </div>
-            </div>
-            <span class="message-unread">1</span>
-          </article>
-
-          <article class="message-item" data-type="social" data-title="Jinshan Big Bro" data-detail="This user followed your profile and left a direct contact email in the message preview." data-category="New Follows" data-time="03-02">
-            <img class="message-avatar" src="https://images.unsplash.com/photo-1525253086316-d0c936c814f8?auto=format&fit=crop&w=120&h=120&q=80" alt="Follower avatar">
-            <div class="message-main">
-              <div class="message-top">
-                <div class="message-name">Jinshan Big Bro</div>
-                <div class="message-time">03-02</div>
-              </div>
-              <div class="message-snippet">Started following you and shared an email address for collaboration.</div>
-              <div class="message-meta">
-                <span class="message-tag">New Follows</span>
-              </div>
-            </div>
-            <span class="message-unread">1</span>
-          </article>
-
-          <article class="message-item" data-type="social" data-title="Shu Zixue" data-detail="This follower liked your adoption experience post and also saved your cat diary note." data-category="Likes" data-time="03-01">
-            <img class="message-avatar" src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=120&h=120&q=80" alt="User avatar">
-            <div class="message-main">
-              <div class="message-top">
-                <div class="message-name">Shu Zixue</div>
-                <div class="message-time">03-01</div>
-              </div>
-              <div class="message-snippet">Liked and saved your rescue experience update.</div>
-              <div class="message-meta">
-                <span class="message-tag">Likes</span>
-              </div>
-            </div>
-            <span class="message-unread">2</span>
-          </article>
-
-          <article class="message-item" data-type="social" data-title="nosqlhh" data-detail="This notification previews a direct message request and contact email from another user." data-category="Comments" data-time="02-27">
-            <img class="message-avatar" src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=120&h=120&q=80" alt="User avatar">
-            <div class="message-main">
-              <div class="message-top">
-                <div class="message-name">nosqlhh</div>
-                <div class="message-time">02-27</div>
-              </div>
-              <div class="message-snippet">Sent you a private message request about the cat profile design.</div>
-              <div class="message-meta">
-                <span class="message-tag">Comments</span>
-              </div>
-            </div>
-            <span class="message-unread">1</span>
-          </article>
-
-          <article class="message-item" data-type="system" data-title="System Message" data-detail="Your recent order is about to be auto-confirmed. Please check delivery status if needed." data-category="System" data-time="02-25">
-            <img class="message-avatar" src="https://images.unsplash.com/photo-1560807707-8cc77767d783?auto=format&fit=crop&w=120&h=120&q=80" alt="System avatar">
-            <div class="message-main">
-              <div class="message-top">
-                <div class="message-name">System Message</div>
-                <div class="message-time">02-25</div>
-              </div>
-              <div class="message-snippet">Your order will be automatically confirmed soon.</div>
-              <div class="message-meta">
-                <span class="message-tag">System</span>
-              </div>
-            </div>
-            <span class="message-unread">1</span>
-          </article>
+        <div class="message-list" id="notificationList">
+          <!-- 列表由 notifications.js 根据 GET /api/notifications 动态渲染 -->
         </div>
       </section>
     </div>
@@ -578,54 +490,7 @@
     </div>
   </section>
 
-  <script>
-    (function () {
-      const cards = document.querySelectorAll(".notice-card");
-      const items = document.querySelectorAll(".message-item");
-      const overlay = document.getElementById("detail-overlay");
-      const closeBtn = document.getElementById("detail-close-btn");
-      const detailAvatar = document.getElementById("detail-avatar");
-      const detailTitle = document.getElementById("detail-title");
-      const detailMeta = document.getElementById("detail-meta");
-      const detailBodyText = document.getElementById("detail-body-text");
-
-      cards.forEach(function (card) {
-        card.addEventListener("click", function () {
-          cards.forEach(function (item) { item.classList.remove("active"); });
-          card.classList.add("active");
-        });
-      });
-
-      items.forEach(function (item) {
-        item.addEventListener("click", function () {
-          const avatar = item.querySelector(".message-avatar");
-          const title = item.getAttribute("data-title") || "";
-          const category = item.getAttribute("data-category") || "";
-          const time = item.getAttribute("data-time") || "";
-          const detail = item.getAttribute("data-detail") || "";
-
-          detailAvatar.src = avatar ? avatar.src : "";
-          detailTitle.textContent = title;
-          detailMeta.textContent = category + " · " + time;
-          detailBodyText.textContent = detail;
-
-          overlay.classList.add("open");
-          overlay.setAttribute("aria-hidden", "false");
-        });
-      });
-
-      function closeDetail() {
-        overlay.classList.remove("open");
-        overlay.setAttribute("aria-hidden", "true");
-      }
-
-      closeBtn.addEventListener("click", closeDetail);
-      overlay.addEventListener("click", function (event) {
-        if (event.target === overlay) {
-          closeDetail();
-        }
-      });
-    })();
-  </script>
+  <script src="../js/config.js"></script>
+  <script src="../js/notifications.js"></script>
 </body>
 </html>

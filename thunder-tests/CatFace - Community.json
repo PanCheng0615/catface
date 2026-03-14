@@ -1,0 +1,31 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "CatFace - Community",
+  "collectionId": "catface-community",
+  "dateExported": "2026-03-14",
+  "version": "1.1",
+  "folders": [],
+  "requests": [
+    {
+      "name": "Health Check",
+      "method": "GET",
+      "url": "http://localhost:3000/api/health",
+      "headers": [],
+      "body": {},
+      "params": []
+    },
+    {
+      "name": "GET Posts (Community List)",
+      "method": "GET",
+      "url": "http://localhost:3000/api/community/posts",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "params": []
+    }
+  ]
+}
