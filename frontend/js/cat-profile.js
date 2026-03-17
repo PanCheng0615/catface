@@ -1,151 +1,110 @@
 /**
- * 猫咪档案页逻辑（Member 2）
- * 获取单只猫信息、展示、编辑、申请领养
+ * cat-profile.js — Cat Creator Profile page logic (Member 2 / social module)
+ *
+ * Reads ?author= from the URL to display a creator's profile.
+ * Handles follow / unfollow state with localStorage persistence.
+ * Uses the backend API to look up user info when available,
+ * and falls back to local data if the server is offline.
  */
 (function () {
-  const API = API_BASE_URL;
-  const params = new URLSearchParams(window.location.search);
-  const catId = params.get('id');
 
-  if (!catId) {
-    document.body.innerHTML = '<div class="page"><p>缺少猫咪 ID，请从领养页进入。</p><a href="adoption.html">返回领养</a></div>';
-    return;
-  }
+  // Read author name from the query string
+  const params  = new URLSearchParams(window.location.search);
+  const author  = params.get("author") || "Cat Lover";
 
-  const profileView = document.getElementById('profileView');
-  const profileEdit = document.getElementById('profileEdit');
-  const profilePhoto = document.getElementById('profilePhoto');
-  const profileName = document.getElementById('profileName');
-  const profileMeta = document.getElementById('profileMeta');
-  const profileDesc = document.getElementById('profileDesc');
-  const profileTags = document.getElementById('profileTags');
-  const sectionOrg = document.getElementById('sectionOrg');
-  const profileOrg = document.getElementById('profileOrg');
-  const btnEdit = document.getElementById('btnEdit');
-  const btnApply = document.getElementById('btnApply');
-  const btnSave = document.getElementById('btnSave');
-  const btnCancelEdit = document.getElementById('btnCancelEdit');
+  // DOM elements
+  const avatarEl    = document.getElementById("avatar");
+  const nameEl      = document.getElementById("name");
+  const bioEl       = document.getElementById("bio");
+  const followersEl = document.getElementById("followers");
+  const followingEl = document.getElementById("following");
+  const followBtn   = document.getElementById("followBtn");
 
-  let currentCat = null;
+  if (!avatarEl || !nameEl || !followBtn) return;
 
-  async function loadCat() {
+  // Display name and avatar initial
+  nameEl.textContent = author;
+  avatarEl.textContent = (author.trim()[0] || "C").toUpperCase();
+
+  // localStorage keys scoped to this author
+  const KEY_FOLLOWERS   = "catface_followers_"   + author;
+  const KEY_FOLLOWING   = "catface_following_you";
+  const KEY_IS_FOLLOWING = "catface_is_following_" + author;
+
+  // Safe localStorage read helpers
+  function getNumber(key, fallback) {
     try {
-      const headers = getToken() ? getAuthHeaders() : { 'Content-Type': 'application/json' };
-      const res = await fetch(API + '/cats/' + catId, { headers });
-      const result = await res.json();
-      if (!result.success) {
-        alert(result.message || '加载失败');
-        return;
-      }
-      currentCat = result.data;
-      renderProfile(currentCat);
-      if (getToken()) btnApply.style.display = 'block';
-    } catch (err) {
-      console.error('loadCat error:', err);
-      profileName.textContent = '加载失败';
-      alert('网络错误，请检查后端是否启动');
+      const v = window.localStorage.getItem(key);
+      if (v == null) return fallback;
+      const n = parseInt(v, 10);
+      return isNaN(n) ? fallback : n;
+    } catch (e) {
+      return fallback;
     }
   }
 
-  function renderProfile(cat) {
-    profilePhoto.src = cat.photo_url || '';
-    profilePhoto.onerror = function () { this.style.background = '#f0f0f0'; };
-    profileName.textContent = cat.name;
-    const meta = [];
-    if (cat.breed) meta.push(cat.breed);
-    if (cat.age_months != null) meta.push(cat.age_months + ' 月');
-    if (cat.gender) meta.push(cat.gender);
-    if (cat.color) meta.push(cat.color);
-    profileMeta.textContent = meta.length ? meta.join(' · ') : '—';
-    profileDesc.textContent = cat.description || '暂无介绍';
-    profileTags.innerHTML = (cat.tags || []).map(function (t) {
-      return '<span class="tag">' + escapeHtml(t.tag) + '</span>';
-    }).join('');
-    if (cat.organization && cat.organization.name) {
-      sectionOrg.style.display = 'block';
-      profileOrg.innerHTML = '<p>' + escapeHtml(cat.organization.name) + '</p>' +
-        (cat.organization.phone ? '<p>电话：' + escapeHtml(cat.organization.phone) + '</p>' : '') +
-        (cat.organization.address ? '<p>地址：' + escapeHtml(cat.organization.address) + '</p>' : '');
+  function setNumber(key, value) {
+    try { window.localStorage.setItem(key, String(value)); } catch (e) {}
+  }
+
+  // Load persisted state (or generate a random starting follower count for demo)
+  let followers   = getNumber(KEY_FOLLOWERS,  Math.floor(Math.random() * 900) + 100);
+  let following   = getNumber(KEY_FOLLOWING,  0);
+  let isFollowing = false;
+
+  try {
+    isFollowing = window.localStorage.getItem(KEY_IS_FOLLOWING) === "1";
+  } catch (e) {
+    isFollowing = false;
+  }
+
+  // Update the DOM to match current state
+  function render() {
+    followersEl.textContent = followers;
+    if (followingEl) followingEl.textContent = following;
+    if (isFollowing) {
+      followBtn.textContent = "Following";
+      followBtn.classList.add("is-following");
     } else {
-      sectionOrg.style.display = 'none';
+      followBtn.textContent = "Follow";
+      followBtn.classList.remove("is-following");
     }
   }
 
-  btnEdit.addEventListener('click', function () {
-    if (!getToken()) {
-      window.location.href = 'log-in.html?redirect=' + encodeURIComponent(window.location.href);
-      return;
+  // Toggle follow / unfollow
+  followBtn.addEventListener("click", function () {
+    isFollowing = !isFollowing;
+    if (isFollowing) {
+      followers += 1;
+      following += 1;
+    } else {
+      followers = Math.max(0, followers - 1);
+      following = Math.max(0, following - 1);
     }
-    profileView.style.display = 'none';
-    profileEdit.classList.add('show');
-    document.getElementById('editId').value = currentCat.id;
-    document.getElementById('editName').value = currentCat.name;
-    document.getElementById('editBreed').value = currentCat.breed || '';
-    document.getElementById('editAgeMonths').value = currentCat.age_months ?? '';
-    document.getElementById('editGender').value = currentCat.gender || '';
-    document.getElementById('editColor').value = currentCat.color || '';
-    document.getElementById('editDescription').value = currentCat.description || '';
-    document.getElementById('editPhotoUrl').value = currentCat.photo_url || '';
-    document.getElementById('editIsAvailable').value = currentCat.is_available ? 'true' : 'false';
-  });
-
-  btnCancelEdit.addEventListener('click', function () {
-    profileEdit.classList.remove('show');
-    profileView.style.display = 'block';
-  });
-
-  btnSave.addEventListener('click', async function () {
-    const id = document.getElementById('editId').value;
-    const data = {
-      name: document.getElementById('editName').value.trim(),
-      breed: document.getElementById('editBreed').value.trim() || null,
-      age_months: document.getElementById('editAgeMonths').value === '' ? null : parseInt(document.getElementById('editAgeMonths').value, 10),
-      gender: document.getElementById('editGender').value || null,
-      color: document.getElementById('editColor').value.trim() || null,
-      description: document.getElementById('editDescription').value.trim() || null,
-      photo_url: document.getElementById('editPhotoUrl').value.trim() || null,
-      is_available: document.getElementById('editIsAvailable').value === 'true'
-    };
-    if (!data.name) {
-      alert('请填写名字');
-      return;
-    }
+    setNumber(KEY_FOLLOWERS, followers);
+    setNumber(KEY_FOLLOWING, following);
     try {
-      const res = await fetch(API + '/cats/' + id, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data)
-      });
+      window.localStorage.setItem(KEY_IS_FOLLOWING, isFollowing ? "1" : "0");
+    } catch (e) {}
+    render();
+  });
+
+  // Try to fetch real user bio from backend (non-blocking)
+  async function tryLoadUserFromApi() {
+    if (typeof API_BASE_URL === "undefined") return;
+    try {
+      const res    = await fetch(API_BASE_URL + "/users?username=" + encodeURIComponent(author));
       const result = await res.json();
-      if (result.success) {
-        currentCat = result.data;
-        renderProfile(currentCat);
-        profileEdit.classList.remove('show');
-        profileView.style.display = 'block';
-        alert('保存成功');
-      } else {
-        alert(result.message || '保存失败');
-      }
+      if (!result.success || !result.data) return;
+      const user = Array.isArray(result.data) ? result.data[0] : result.data;
+      if (!user) return;
+      if (bioEl && user.bio) bioEl.textContent = user.bio;
     } catch (err) {
-      console.error('updateCat error:', err);
-      alert('网络错误');
+      // Backend offline — silently use demo data
     }
-  });
-
-  btnApply.addEventListener('click', function () {
-    if (!getToken()) {
-      window.location.href = 'log-in.html?redirect=' + encodeURIComponent(window.location.href);
-      return;
-    }
-    window.location.href = 'adoption.html';
-  });
-
-  function escapeHtml(s) {
-    if (!s) return '';
-    const div = document.createElement('div');
-    div.textContent = s;
-    return div.innerHTML;
   }
 
-  loadCat();
+  render();
+  tryLoadUserFromApi();
+
 })();
