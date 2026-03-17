@@ -12,7 +12,8 @@ async function getMe(req, res) {
       select: {
         id: true,
         email: true,
-        name: true,
+        username: true,
+        display_name: true,
         role: true
       }
     });
@@ -43,17 +44,18 @@ async function getMe(req, res) {
 // PUT /api/users/me
 async function updateMe(req, res) {
   try {
-    const { name } = req.body;
+    const { display_name } = req.body;
 
     const updated = await prisma.user.update({
       where: { id: req.user.id },
       data: {
-        name: name ?? undefined
+        display_name: display_name ?? undefined
       },
       select: {
         id: true,
         email: true,
-        name: true,
+        username: true,
+        display_name: true,
         role: true
       }
     });

@@ -8,9 +8,9 @@ const prisma = new PrismaClient();
 // POST /api/auth/register
 async function register(req, res) {
   try {
-    const { email, password, name, role } = req.body;
+    const { email, password, username, display_name, role } = req.body;
 
-    if (!email || !password) {
+    if (!email || !password || !username) {
       return res.status(422).json({
         success: false,
         error: 'ValidationError',
@@ -39,8 +39,9 @@ async function register(req, res) {
       data: {
         email,
         password: hashedPassword,
-        name: name || '',
-        role: role || 'user' // 默认普通用户
+        username,                         // 必填
+        display_name: display_name || '', // 可选
+        role: role || 'user'
       }
     });
 
@@ -53,7 +54,8 @@ async function register(req, res) {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          username: user.username,
+          display_name: user.display_name,
           role: user.role
         }
       },
@@ -113,7 +115,8 @@ async function login(req, res) {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
+          username: user.username,
+          display_name: user.display_name,
           role: user.role
         }
       },
