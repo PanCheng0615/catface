@@ -1,6 +1,6 @@
 # CatFace — Git 并行开发从零搭建手册
 
-> **适用人群**: 完全零基础 | **系统**: Windows 10/11 | **工具**: GitHub Desktop（图形界面，不需要记命令）
+> **适用人群**: 完全零基础 | **系统**: Windows 10/11 | **人数**: 6人 | **工具**: GitHub Desktop（图形界面，不需要记命令）
 >
 > 本手册分为三部分：**一次性初始化**（只做一次）、**每日开发流程**（每天重复）、**合并代码流程**（功能完成后做）。
 
@@ -33,12 +33,13 @@
 你的电脑（本地）          GitHub 网站（云端）
 ─────────────────         ─────────────────────────
 你的代码文件夹    ←同步→   catface 仓库（所有人共享）
-                           ├── main 分支（最终成品）
+                           ├── main 分支（最终成品，受保护）
                            ├── feature/auth 分支（Member 1 的工作区）
                            ├── feature/cats 分支（Member 2 的工作区）
                            ├── feature/community 分支（Member 3 的工作区）
                            ├── feature/frontend 分支（Member 4 的工作区）
-                           └── feature/health 分支（Member 5 的工作区）
+                           ├── feature/health 分支（Member 5 的工作区）
+                           └── feature/rescue 分支（Member 6 的工作区）
 ```
 
 **核心概念（只需记这5个词）**：
@@ -244,13 +245,14 @@ uploads/
 3. 点击 **New Branch**
 4. 按下表输入你的分支名称：
 
-| 成员 | 分支名称 |
-|------|---------|
-| Member 1 | `feature/auth` |
-| Member 2 | `feature/cats` |
-| Member 3 | `feature/community` |
-| Member 4 | `feature/frontend` |
-| Member 5 | `feature/health` |
+| 成员 | 分支名称 | 负责模块 |
+|------|---------|---------|
+| Member 1 | `feature/auth` | 后端基础 + 用户系统 |
+| Member 2 | `feature/cats` | 猫咪档案 + 领养模块 |
+| Member 3 | `feature/community` | 社区模块 |
+| Member 4 | `feature/frontend` | 前端统筹 + 全局整合 |
+| Member 5 | `feature/health` | 数据库 + 健康/诊所 |
+| Member 6 | `feature/rescue` | 聊天功能 + 救助机构后台 |
 
 5. 点击 **Create Branch**
 6. 点击 **Publish Branch**，把分支推送到 GitHub
@@ -447,9 +449,10 @@ const PORT = 8080;
 |------|--------|---------|
 | Member 1 | `feature/auth` | 后端基础 + 用户系统 |
 | Member 2 | `feature/cats` | 猫咪档案 + 领养模块 |
-| Member 3 | `feature/community` | 社区 + 聊天功能 |
+| Member 3 | `feature/community` | 社区模块 |
 | Member 4 | `feature/frontend` | 前端统筹 + 全局整合 |
-| Member 5 | `feature/health` | 数据库 + 健康/机构模块 |
+| Member 5 | `feature/health` | 数据库 + 健康/诊所模块 |
+| Member 6 | `feature/rescue` | 聊天功能 + 救助机构后台 |
 
 ---
 
@@ -458,26 +461,62 @@ const PORT = 8080;
 > 把这个卡片截图贴到桌面
 
 ```
-┌──────────────────────────────────────┐
-│       每天开始工作：                  │
-│  1. 打开 GitHub Desktop              │
-│  2. 确认分支是"feature/你的名字"      │
-│  3. 点击 Pull origin（同步最新）      │
-│  4. 开始写代码                        │
-│                                      │
-│       写完一小段功能：                │
-│  1. Ctrl+S 保存文件                  │
-│  2. GitHub Desktop 左侧查看改动      │
-│  3. 填写 Summary（一句话说明改了啥）  │
-│  4. 点击 Commit to feature/xxx       │
-│  5. 点击 Push origin                 │
-│                                      │
-│       绝对不做的事：                  │
-│  ✗ 不在 main 分支上写代码            │
-│  ✗ 不 commit .env 文件              │
-│  ✗ 不修改别人负责的文件              │
-└──────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│  分支对照（找到自己贴这里）：             │
+│  Member 1 → feature/auth                 │
+│  Member 2 → feature/cats                 │
+│  Member 3 → feature/community            │
+│  Member 4 → feature/frontend             │
+│  Member 5 → feature/health               │
+│  Member 6 → feature/rescue               │
+├──────────────────────────────────────────┤
+│  每天开始工作：                           │
+│  1. 打开 GitHub Desktop                  │
+│  2. 确认分支是"feature/你的分支"          │
+│  3. 点击 Pull origin（同步最新）          │
+│  4. 开始写代码                            │
+├──────────────────────────────────────────┤
+│  写完一小段功能：                         │
+│  1. Ctrl+S 保存文件                      │
+│  2. GitHub Desktop 左侧查看改动          │
+│  3. 填写 Summary（一句话说明改了啥）      │
+│  4. 点击 Commit to feature/xxx           │
+│  5. 点击 Push origin                     │
+├──────────────────────────────────────────┤
+│  绝对不做的事：                           │
+│  ✗ 不在 main 分支上写代码               │
+│  ✗ 不 commit .env 文件                  │
+│  ✗ 不修改别人负责的文件                  │
+└──────────────────────────────────────────┘
 ```
+
+---
+
+---
+
+## 附录：现有 HTML 文件迁移清单
+
+> 由 **Member 4** 在 Phase 0 期间执行。将以下文件**复制**（不是剪切）到 `frontend/pages/` 目录。
+
+| 文件名 | 操作 | 目标路径 |
+|--------|------|---------|
+| `index.html` | ✅ 复制迁入 | `frontend/pages/index.html` |
+| `log-in.html` | ✅ 复制迁入 | `frontend/pages/log-in.html` |
+| `account.html` | ✅ 复制迁入 | `frontend/pages/account.html` |
+| `cat-profile.html` | ✅ 复制迁入 | `frontend/pages/cat-profile.html` |
+| `adoption.html` | ✅ 复制迁入 | `frontend/pages/adoption.html` |
+| `cat-facebook.html` | ✅ 复制迁入 | `frontend/pages/cat-facebook.html` |
+| `notifications.html` | ✅ 复制迁入 | `frontend/pages/notifications.html` |
+| `health.html` | ✅ 复制迁入 | `frontend/pages/health.html` |
+| `clinic-portal.html` | ✅ 复制迁入 | `frontend/pages/clinic-portal.html` |
+| `rescue-dashboard.html` | ✅ 复制迁入 | `frontend/pages/rescue-dashboard.html` |
+| `Backend_Guide_Creator_Profile.html` | ❌ 不迁入，仅作参考文档 | 原地保留 |
+| `CatFace_Progress_Log_Updated.html` | ❌ 不迁入，仅作参考文档 | 原地保留 |
+| `CatFace_Project_Log.html` | ❌ 不迁入，仅作参考文档 | 原地保留 |
+| `Cat_Account_Scheme_Comparison.html` | ❌ 不迁入，仅作参考文档 | 原地保留 |
+| `Database_Field_Dictionary.html` | ❌ 不迁入，仅作参考文档 | 原地保留 |
+
+> **迁入后的注意事项**: 所有 HTML 文件中的内联 `<style>` 暂时保留，等 Member 4 整理完 `style.css` 后再统一清理。所有写死的假数据暂时保留，等到 Phase 3 联调时逐步替换为真实 API。
 
 ---
 
