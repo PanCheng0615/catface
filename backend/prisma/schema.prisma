@@ -27,19 +27,19 @@ model User {
   updated_at   DateTime @updatedAt
 
   // Relations
-  cats                   Cat[]
-  posts                  Post[]
-  post_likes             PostLike[]
-  comments               Comment[]
-  adopter_preferences    AdopterPreference?
-  adoption_applications  AdoptionApplication[]
-  owner_health_records   OwnerHealthRecord[]
+  cats                     Cat[]
+  posts                    Post[]
+  post_likes               PostLike[]
+  comments                 Comment[]
+  adopter_preferences      AdopterPreference?
+  adoption_applications    AdoptionApplication[]
+  owner_health_records     OwnerHealthRecord[]
   health_share_permissions HealthSharePermission[]
-  followers              UserFollow[]           @relation("following")
-  following              UserFollow[]           @relation("follower")
-  conversations_as_user  Conversation[]         @relation("user_conversations")
-  conversations_as_org   Conversation[]         @relation("org_conversations")
-  sent_messages          Message[]
+  followers                UserFollow[]            @relation("following")
+  following                UserFollow[]            @relation("follower")
+  conversations_as_user    Conversation[]          @relation("user_conversations")
+  conversations_as_org     Conversation[]          @relation("org_conversations")
+  sent_messages            Message[]
 
   @@map("users")
 }
@@ -73,20 +73,20 @@ model UserFollow {
 // ─────────────────────────────────────────
 
 model Organization {
-  id           String   @id @default(uuid())
-  name         String
-  type         OrgType
-  email        String   @unique
-  password     String
-  phone        String?
-  address      String?
-  logo_url     String?
-  description  String?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  id          String   @id @default(uuid())
+  name        String
+  type        OrgType
+  email       String   @unique
+  password    String
+  phone       String?
+  address     String?
+  logo_url    String?
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
-  cats                Cat[]
-  clinic_reports      ClinicHealthReport[]
+  cats           Cat[]
+  clinic_reports ClinicHealthReport[]
 
   @@map("organizations")
 }
@@ -101,28 +101,28 @@ enum OrgType {
 // ─────────────────────────────────────────
 
 model Cat {
-  id              String    @id @default(uuid())
-  name            String
-  breed           String?
-  age_months      Int?
-  gender          String?
-  color           String?
-  description     String?
-  photo_url       String?
-  is_available    Boolean   @default(true)
-  owner_id        String?
-  org_id          String?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
+  id           String   @id @default(uuid())
+  name         String
+  breed        String?
+  age_months   Int?
+  gender       String?
+  color        String?
+  description  String?
+  photo_url    String?
+  is_available Boolean  @default(true)
+  owner_id     String?
+  org_id       String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
-  owner               User?                @relation(fields: [owner_id], references: [id])
-  organization        Organization?        @relation(fields: [org_id], references: [id])
-  tags                CatTag[]
-  requirements        CatRequirement[]
-  updates             CatUpdate[]
-  adoption_applications AdoptionApplication[]
-  owner_health_records  OwnerHealthRecord[]
-  clinic_reports        ClinicHealthReport[]
+  owner                    User?                   @relation(fields: [owner_id], references: [id])
+  organization             Organization?           @relation(fields: [org_id], references: [id])
+  tags                     CatTag[]
+  requirements             CatRequirement[]
+  updates                  CatUpdate[]
+  adoption_applications    AdoptionApplication[]
+  owner_health_records     OwnerHealthRecord[]
+  clinic_reports           ClinicHealthReport[]
   health_share_permissions HealthSharePermission[]
 
   @@map("cats")
@@ -163,13 +163,13 @@ model CatUpdate {
 }
 
 model AdopterPreference {
-  id             String   @id @default(uuid())
-  user_id        String   @unique
-  preferred_age  String?
+  id               String   @id @default(uuid())
+  user_id          String   @unique
+  preferred_age    String?
   preferred_gender String?
-  preferred_breed String?
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
+  preferred_breed  String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
