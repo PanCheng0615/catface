@@ -1,0 +1,2493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rescue Organization Platform</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #f6f7fb;
+      color: #222;
+    }
+    h1, h2, h3, h4, p { margin: 0; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; }
+
+    .layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+    }
+    .sidebar {
+      background: #ffffff;
+      border-right: 1px solid #e8ebf0;
+      padding: 22px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .brand {
+      padding: 14px 12px;
+      border-radius: 18px;
+      background: #fff2f5;
+      color: #ff3355;
+      font-weight: 800;
+      line-height: 1.4;
+      font-size: 20px;
+    }
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .menu-btn {
+      width: 100%;
+      border: none;
+      background: #fff;
+      color: #374151;
+      padding: 14px 14px;
+      border-radius: 16px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color .2s ease, color .2s ease;
+    }
+    .menu-btn:hover {
+      background: #f5f7fb;
+    }
+    .menu-btn.active {
+      background: #111827;
+      color: #fff;
+    }
+    .back-home-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      color: #374151;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+    }
+    .back-home-link:hover {
+      background: #eef2ff;
+      color: #1d4ed8;
+      border-color: #c7d2fe;
+    }
+    .sidebar-foot {
+      margin-top: auto;
+      border-top: 1px solid #eff1f4;
+      padding-top: 14px;
+      color: #6b7280;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .main {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .section {
+      display: none;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .section.active {
+      display: flex;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .stat-card,
+    .panel,
+    .chart-card {
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, .05);
+    }
+    .stat-card {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 128px;
+      justify-content: space-between;
+    }
+    .stat-label {
+      color: #667085;
+      font-size: 14px;
+    }
+    .stat-value {
+      font-size: 34px;
+      font-weight: 800;
+      color: #111827;
+    }
+    .stat-note {
+      color: #16a34a;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .chart-card {
+      padding: 20px;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .chart-placeholder {
+      flex: 1;
+      border-radius: 18px;
+      border: 1px dashed #cfd7e3;
+      background:
+        linear-gradient(180deg, rgba(47,111,235,.08), rgba(47,111,235,0)),
+        #f9fbff;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: #667085;
+      padding: 16px;
+      line-height: 1.6;
+    }
+
+    .panel {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .panel-head p {
+      color: #667085;
+      line-height: 1.55;
+      margin-top: 4px;
+    }
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+    th, td {
+      text-align: left;
+      padding: 14px 12px;
+      border-bottom: 1px solid #edf0f4;
+      font-size: 14px;
+      vertical-align: top;
+    }
+    th {
+      color: #667085;
+      font-weight: 700;
+      background: #fafbfc;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .tag.green { background: #ecfdf3; color: #027a48; }
+    .tag.blue { background: #eff6ff; color: #1d4ed8; }
+    .tag.orange { background: #fff7ed; color: #c2410c; }
+    .tag.red { background: #fef2f2; color: #b42318; }
+    .mini-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .mini-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 12px;
+      cursor: pointer;
+      background: #f3f4f6;
+      color: #374151;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 16px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .field.full {
+      grid-column: 1 / -1;
+    }
+    .field label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+    }
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid #d5dce5;
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #fff;
+      color: #111827;
+    }
+    .field textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+    .field-inline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .field-inline input {
+      flex: 1;
+    }
+    .field-note {
+      font-size: 12px;
+      color: #667085;
+      line-height: 1.5;
+    }
+    .photo-upload-card {
+      border: 1px solid #edf0f4;
+      border-radius: 18px;
+      background: #fff;
+      padding: 14px;
+    }
+    .photo-preview-box {
+      width: 100%;
+      min-height: 220px;
+      border-radius: 18px;
+      border: 1px dashed #cfd7e3;
+      background: #f8fafc;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .photo-preview-box img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+    .photo-placeholder {
+      color: #94a3b8;
+      text-align: center;
+      line-height: 1.6;
+      padding: 20px;
+      font-size: 14px;
+    }
+    .photo-upload-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .photo-upload-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid #d5dce5;
+      background: #fff;
+      color: #374151;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .photo-upload-btn input {
+      display: none;
+    }
+    .inline-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .primary-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: #111827;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .secondary-btn {
+      border: 1px solid #d5dce5;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: #fff;
+      color: #374151;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .action-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: #2563eb;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .panel-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .embedded-form-panel {
+      border: 1px solid #edf0f4;
+      background: #fcfdff;
+    }
+    .collapsed-panel {
+      display: none;
+    }
+    .profile-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .42);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 190;
+    }
+    .profile-overlay.open {
+      display: flex;
+    }
+    .profile-modal {
+      width: min(860px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 28px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, .18);
+    }
+    .profile-hero {
+      padding: 24px;
+      background: linear-gradient(135deg, #fff7ed, #eff6ff);
+      border-bottom: 1px solid #eef1f5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .profile-hero-main {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .profile-avatar {
+      width: 76px;
+      height: 76px;
+      border-radius: 24px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fb923c, #f97316);
+      flex-shrink: 0;
+    }
+    .profile-avatar.blue {
+      background: linear-gradient(135deg, #60a5fa, #2563eb);
+    }
+    .profile-avatar.pink {
+      background: linear-gradient(135deg, #f472b6, #ec4899);
+    }
+    .profile-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .profile-body {
+      padding: 24px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .profile-card {
+      border: 1px solid #edf0f4;
+      border-radius: 20px;
+      padding: 18px;
+      background: #fff;
+    }
+    .profile-card.full {
+      grid-column: 1 / -1;
+    }
+    .profile-card h4 {
+      font-size: 17px;
+      margin-bottom: 12px;
+      color: #111827;
+    }
+    .profile-list {
+      display: grid;
+      gap: 10px;
+    }
+    .profile-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .profile-row:last-child {
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .profile-label {
+      color: #667085;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .profile-value {
+      color: #111827;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: right;
+    }
+    .profile-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .profile-tag {
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .profile-text {
+      color: #475467;
+      line-height: 1.65;
+      font-size: 14px;
+    }
+    .profile-photo-card {
+      overflow: hidden;
+      padding: 0;
+    }
+    .profile-photo-card h4 {
+      padding: 18px 18px 0;
+      margin-bottom: 12px;
+    }
+    .profile-photo-wrap {
+      padding: 0 18px 18px;
+    }
+    .profile-photo-wrap img {
+      width: 100%;
+      height: 280px;
+      object-fit: cover;
+      border-radius: 18px;
+      display: block;
+      background: #f8fafc;
+    }
+    .profile-photo-empty {
+      height: 280px;
+      border-radius: 18px;
+      border: 1px dashed #cfd7e3;
+      background: #f8fafc;
+      display: grid;
+      place-items: center;
+      color: #94a3b8;
+      text-align: center;
+      padding: 20px;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    .profile-close {
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 20px;
+      background: rgba(255,255,255,.9);
+      color: #334155;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .recognition-shell {
+      padding: 24px;
+      display: grid;
+      grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+      gap: 20px;
+    }
+    .recognition-preview-card,
+    .recognition-result-card {
+      border: 1px solid #edf0f4;
+      border-radius: 22px;
+      background: #fff;
+      padding: 18px;
+    }
+    .recognition-preview-box {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 20px;
+      border: 1px dashed #cfd7e3;
+      background: #f8fafc;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .recognition-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .recognition-placeholder {
+      color: #94a3b8;
+      text-align: center;
+      padding: 20px;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    .recognition-upload {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 14px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid #d5dce5;
+      background: #fff;
+      color: #374151;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .recognition-upload input {
+      display: none;
+    }
+    .recognition-result-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      justify-content: space-between;
+    }
+    .recognition-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #2563eb;
+      font-weight: 700;
+    }
+    .recognition-generated-id {
+      border-radius: 18px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 18px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #1d4ed8;
+      letter-spacing: .04em;
+      word-break: break-all;
+    }
+    .recognition-steps {
+      display: grid;
+      gap: 10px;
+      color: #475467;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .recognition-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 0 24px 24px;
+    }
+
+    .split-grid {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 16px;
+    }
+    .list-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .record-item {
+      border: 1px solid #ebedf0;
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .record-item p {
+      color: #667085;
+      line-height: 1.55;
+      margin-top: 4px;
+    }
+    .notif-shell {
+      background: #ffffff;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 18px 36px rgba(15, 23, 42, .08);
+      min-height: 700px;
+      display: flex;
+      flex-direction: column;
+    }
+    .notif-top {
+      padding: 22px 20px 14px;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid #eef1f5;
+    }
+    .notif-top h2 {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .notif-top small {
+      color: #667085;
+      font-size: 14px;
+    }
+    .notif-add {
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      border: 1px solid #d8dee8;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 24px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+    }
+    .notif-search-wrap {
+      padding: 0 16px 14px;
+      background: #ffffff;
+    }
+    .notif-search {
+      width: 100%;
+      border: 1px solid #e2e8f0;
+      outline: none;
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #f8fafc;
+      color: #111827;
+    }
+    .notif-search::placeholder {
+      color: #94a3b8;
+    }
+    .notif-list {
+      display: flex;
+      flex-direction: column;
+      background: #ffffff;
+      flex: 1;
+    }
+    .notif-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px;
+      color: #111827;
+      border-bottom: 1px solid #eef1f5;
+      background: #ffffff;
+      transition: background-color .2s ease, box-shadow .2s ease;
+      cursor: pointer;
+    }
+    .notif-item:hover {
+      background: #f8fafc;
+    }
+    .notif-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #34d399, #10b981);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      flex-shrink: 0;
+      font-size: 18px;
+    }
+    .notif-avatar.orange {
+      background: linear-gradient(135deg, #fb923c, #f97316);
+    }
+    .notif-avatar.blue {
+      background: linear-gradient(135deg, #60a5fa, #2563eb);
+    }
+    .notif-avatar.pink {
+      background: linear-gradient(135deg, #f472b6, #ec4899);
+    }
+    .notif-body {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .notif-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .notif-name {
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .notif-time {
+      color: #98a2b3;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .notif-snippet {
+      color: #475467;
+      line-height: 1.55;
+      font-size: 14px;
+    }
+    .notif-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .notif-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #475467;
+      font-size: 12px;
+    }
+    .notif-unread {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+      display: inline-block;
+    }
+    .notif-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .42);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 200;
+    }
+    .notif-overlay.open {
+      display: flex;
+    }
+    .notif-modal {
+      width: min(860px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, .18);
+    }
+    .notif-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid #eef1f5;
+      position: sticky;
+      top: 0;
+      background: #fff;
+    }
+    .notif-modal-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .notif-close {
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 19px;
+      background: #f3f4f6;
+      color: #334155;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .notif-conversation {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: #f8fafc;
+      min-height: 380px;
+    }
+    .msg {
+      max-width: 78%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .msg.org {
+      align-self: flex-start;
+    }
+    .msg.user {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+    .msg-bubble {
+      padding: 12px 14px;
+      border-radius: 18px;
+      line-height: 1.6;
+      font-size: 14px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, .05);
+    }
+    .msg.org .msg-bubble {
+      background: #ffffff;
+      color: #111827;
+      border-bottom-left-radius: 6px;
+    }
+    .msg.user .msg-bubble {
+      background: #e8f0ff;
+      color: #1d4ed8;
+      border-bottom-right-radius: 6px;
+    }
+    .msg-bubble.has-media {
+      padding: 10px;
+    }
+    .msg-text {
+      margin-top: 8px;
+    }
+    .msg-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      min-width: 220px;
+    }
+    .msg-images img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 12px;
+      display: block;
+    }
+    .msg-time {
+      font-size: 12px;
+      color: #98a2b3;
+      padding: 0 4px;
+    }
+    .notif-modal-foot {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+      padding: 16px 20px 20px;
+      border-top: 1px solid #eef1f5;
+      background: #fff;
+    }
+    .notif-compose {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+    }
+    .notif-compose-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .notif-input {
+      min-height: 48px;
+      max-height: 120px;
+      resize: vertical;
+      border: 1px solid #dbe2ea;
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: #f8fafc;
+      color: #111827;
+      font: inherit;
+      line-height: 1.5;
+      outline: none;
+    }
+    .notif-input:focus {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, .16);
+    }
+    .notif-send {
+      border: none;
+      border-radius: 16px;
+      background: #2563eb;
+      color: #fff;
+      padding: 12px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .notif-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .notif-attach {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid #dbe2ea;
+      border-radius: 999px;
+      background: #f8fafc;
+      color: #334155;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .notif-file-input {
+      display: none;
+    }
+    .notif-preview {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(92px, 92px));
+      gap: 10px;
+    }
+    .notif-preview[hidden] {
+      display: none;
+    }
+    .notif-preview-item {
+      position: relative;
+      width: 92px;
+      height: 92px;
+    }
+    .notif-preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 14px;
+      border: 1px solid #dbe2ea;
+      display: block;
+    }
+    .notif-preview-remove {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, .76);
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .notif-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1080px) {
+      .stats-grid,
+      .charts-grid,
+      .split-grid,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 840px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        border-right: none;
+        border-bottom: 1px solid #e8ebf0;
+      }
+      .menu {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">Rescue Organization Platform</div>
+
+      <nav class="menu" aria-label="Rescue management sections">
+        <button class="menu-btn active" type="button" data-target="dashboard">Dashboard</button>
+        <button class="menu-btn" type="button" data-target="cat-list">Cat List</button>
+        <button class="menu-btn" type="button" data-target="application-review">Application Review</button>
+        <button class="menu-btn" type="button" data-target="notifications">Notifications</button>
+      </nav>
+
+      <a href="index.html" class="back-home-link">Back to Main Page</a>
+
+      <div class="sidebar-foot">
+        This portal is for rescue organizations to manage cat accounts, adopter information, communication records, and post-adoption follow-up.
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="section active" id="dashboard">
+        <div class="stats-grid">
+          <article class="stat-card">
+            <div class="stat-label">Total Adoptions</div>
+            <div class="stat-value">128</div>
+            <div class="stat-note">+12 from last month</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">Cats Available for Adoption</div>
+            <div class="stat-value">34</div>
+            <div class="stat-note">6 new cats this week</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">Monthly Adoptions</div>
+            <div class="stat-value">18</div>
+            <div class="stat-note">Target progress 72%</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">Adoption Success Rate</div>
+            <div class="stat-value">67%</div>
+            <div class="stat-note">Stable conversion trend</div>
+          </article>
+        </div>
+
+        <div class="charts-grid">
+          <article class="chart-card">
+            <div class="panel-head">
+              <div>
+                <h2>Adoption Trend</h2>
+                <p>Track monthly adoption performance over time.</p>
+              </div>
+            </div>
+            <div class="chart-placeholder">Adoption Trend Chart Placeholder</div>
+          </article>
+          <article class="chart-card">
+            <div class="panel-head">
+              <div>
+                <h2>Adoption by Breed</h2>
+                <p>See which cat types are most frequently adopted.</p>
+              </div>
+            </div>
+            <div class="chart-placeholder">Adoption by Breed Chart Placeholder</div>
+          </article>
+        </div>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Recent Adoption Records</h2>
+              <p>Quick view of recent applications and completed adoptions.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cat</th>
+                  <th>Adopter</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Orange</td>
+                  <td>Emily Wong</td>
+                  <td><span class="tag green">Completed</span></td>
+                  <td>2026-03-08</td>
+                  <td><button class="mini-btn">View</button></td>
+                </tr>
+                <tr>
+                  <td>Tiger</td>
+                  <td>Jason Lee</td>
+                  <td><span class="tag blue">Under Review</span></td>
+                  <td>2026-03-07</td>
+                  <td><button class="mini-btn">Review</button></td>
+                </tr>
+                <tr>
+                  <td>Whiskers</td>
+                  <td>Grace Ho</td>
+                  <td><span class="tag orange">Interview Needed</span></td>
+                  <td>2026-03-06</td>
+                  <td><button class="mini-btn">Schedule</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="section" id="cat-list">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Cat List</h2>
+              <p>Browse, filter, and update all cat accounts managed by the rescue organization.</p>
+            </div>
+            <div class="inline-actions">
+              <button class="primary-btn" type="button" id="add-cat-toggle-btn">Add New Cat</button>
+            </div>
+          </div>
+          <article class="panel embedded-form-panel collapsed-panel" id="cat-form-panel">
+            <div class="panel-head">
+              <div>
+                <h3 id="cat-form-title">Add New Cat</h3>
+                <p id="cat-form-description">Create a new cat account with rescue information, health summary, and adoption requirements.</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="cat-name">Cat Name</label>
+                <input id="cat-name" type="text" placeholder="Enter cat name">
+              </div>
+              <div class="field">
+                <label for="cat-id">Cat ID</label>
+                <div class="field-inline">
+                  <input id="cat-id" type="text" placeholder="Generate unique ID from cat face">
+                  <button class="secondary-btn" type="button" id="open-face-id-btn">Cat Face ID</button>
+                </div>
+                <div class="field-note">Cat ID can be generated after cat face recognition to keep a unique identity for each rescue cat.</div>
+              </div>
+              <div class="field">
+                <label for="cat-gender">Gender</label>
+                <select id="cat-gender">
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Unknown</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="cat-breed">Breed</label>
+                <input id="cat-breed" type="text" placeholder="Enter breed">
+              </div>
+              <div class="field">
+                <label for="cat-age">Estimated Age</label>
+                <input id="cat-age" type="text" placeholder="Enter age">
+              </div>
+              <div class="field">
+                <label for="cat-status">Adoption Status</label>
+                <select id="cat-status">
+                  <option>Available</option>
+                  <option>Pending</option>
+                  <option>Reserved</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="cat-location">Rescue Location</label>
+                <input id="cat-location" type="text" placeholder="Enter rescue location">
+              </div>
+              <div class="field">
+                <label for="cat-health">Health Summary</label>
+                <input id="cat-health" type="text" placeholder="Vaccinated / neutered / allergy info">
+              </div>
+              <div class="field full">
+                <label for="cat-personality">Personality Tags</label>
+                <input id="cat-personality" type="text" placeholder="Example: calm, playful, good for first-time owners">
+              </div>
+              <div class="field full">
+                <label for="cat-notes">Rescue Notes</label>
+                <textarea id="cat-notes" placeholder="Add background, rescue story, and adoption requirements"></textarea>
+              </div>
+              <div class="field full">
+                <label>Display Photo</label>
+                <div class="photo-upload-card">
+                  <div class="photo-preview-box">
+                    <div class="photo-placeholder" id="cat-photo-placeholder">Upload a photo to display this cat in the management profile.</div>
+                    <img id="cat-photo-preview" src="" alt="Cat display preview" hidden>
+                  </div>
+                  <div class="photo-upload-actions">
+                    <label class="photo-upload-btn" for="cat-photo-input">
+                      Upload Photo
+                      <input id="cat-photo-input" type="file" accept="image/*">
+                    </label>
+                    <div class="field-note">This image will be shown in the cat profile preview.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel-actions">
+              <button class="secondary-btn" type="button" id="cat-form-cancel-btn">Cancel</button>
+              <button class="action-btn" type="button" id="cat-form-save-btn">Save Cat Account</button>
+            </div>
+          </article>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cat ID</th>
+                  <th>Name</th>
+                  <th>Breed</th>
+                  <th>Age</th>
+                  <th>Status</th>
+                  <th>Health</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="cat-list-body">
+                <tr>
+                  <td>CAT-001</td>
+                  <td>Orange</td>
+                  <td>Domestic Shorthair</td>
+                  <td>1 year</td>
+                  <td><span class="tag green">Available</span></td>
+                  <td>Vaccinated</td>
+                  <td class="mini-actions"><button class="mini-btn" type="button" data-cat-profile="CAT-001">View</button><button class="mini-btn" type="button" data-cat-edit="CAT-001">Edit</button></td>
+                </tr>
+                <tr>
+                  <td>CAT-002</td>
+                  <td>Shadow</td>
+                  <td>Tuxedo</td>
+                  <td>3 years</td>
+                  <td><span class="tag blue">Pending</span></td>
+                  <td>Vaccinated</td>
+                  <td class="mini-actions"><button class="mini-btn" type="button" data-cat-profile="CAT-002">View</button><button class="mini-btn" type="button" data-cat-edit="CAT-002">Edit</button></td>
+                </tr>
+                <tr>
+                  <td>CAT-003</td>
+                  <td>Whiskers</td>
+                  <td>Senior Cat</td>
+                  <td>8 years</td>
+                  <td><span class="tag orange">Reserved</span></td>
+                  <td>Senior check needed</td>
+                  <td class="mini-actions"><button class="mini-btn" type="button" data-cat-profile="CAT-003">View</button><button class="mini-btn" type="button" data-cat-edit="CAT-003">Edit</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="section" id="application-review">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Application Review</h2>
+              <p>Review submitted applications, interview notes, and final decisions.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Application ID</th>
+                  <th>Cat</th>
+                  <th>Applicant</th>
+                  <th>Submitted</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>APP-102</td>
+                  <td>Tiger</td>
+                  <td>Jason Lee</td>
+                  <td>2026-03-07</td>
+                  <td class="mini-actions">
+                    <button class="mini-btn" type="button" data-application-detail="APP-102">View Application</button>
+                    <button class="mini-btn">Approve</button>
+                    <button class="mini-btn">Reject</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>APP-103</td>
+                  <td>Whiskers</td>
+                  <td>Grace Ho</td>
+                  <td>2026-03-06</td>
+                  <td class="mini-actions">
+                    <button class="mini-btn" type="button" data-application-detail="APP-103">View Application</button>
+                    <button class="mini-btn">Approve</button>
+                    <button class="mini-btn">Reject</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="section" id="notifications">
+        <div class="notif-shell">
+          <div class="notif-top">
+            <div>
+              <h2>Notifications</h2>
+              <small>12 active threads</small>
+            </div>
+            <button class="notif-add" type="button" aria-label="New notification">+</button>
+          </div>
+          <div class="notif-search-wrap">
+            <input class="notif-search" type="text" placeholder="Search notifications">
+          </div>
+          <div class="notif-list">
+            <div class="notif-item" data-thread="jason">
+              <div class="notif-avatar blue">JL</div>
+              <div class="notif-body">
+                <div class="notif-head">
+                  <div class="notif-name">Jason Lee · Tiger</div>
+                  <div class="notif-time">6:01 PM</div>
+                </div>
+                <div class="notif-snippet">Asked whether Tiger has completed all vaccinations and if a weekend home visit can be arranged.</div>
+                <div class="notif-meta">
+                  <span class="notif-tag">Application Review</span>
+                  <span class="notif-unread" aria-label="Unread"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="notif-item" data-thread="emily">
+              <div class="notif-avatar orange">EW</div>
+              <div class="notif-body">
+                <div class="notif-head">
+                  <div class="notif-name">Emily Wong · Orange</div>
+                  <div class="notif-time">2:50 PM</div>
+                </div>
+                <div class="notif-snippet">Sent updated household photos and asked about post-adoption follow-up requirements.</div>
+                <div class="notif-meta">
+                  <span class="notif-tag">Follow-up</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="notif-item" data-thread="grace">
+              <div class="notif-avatar pink">GH</div>
+              <div class="notif-body">
+                <div class="notif-head">
+                  <div class="notif-name">Grace Ho · Whiskers</div>
+                  <div class="notif-time">Yesterday</div>
+                </div>
+                <div class="notif-snippet">Requested an interview time and asked if Whiskers needs a quieter environment than her current home setup.</div>
+                <div class="notif-meta">
+                  <span class="notif-tag">Interview Needed</span>
+                  <span class="notif-unread" aria-label="Unread"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="notif-item" data-thread="marco">
+              <div class="notif-avatar blue">MC</div>
+              <div class="notif-body">
+                <div class="notif-head">
+                  <div class="notif-name">Marco Chan · Luna</div>
+                  <div class="notif-time">Yesterday</div>
+                </div>
+                <div class="notif-snippet">Shared post-adoption health notes and confirmed Luna's appetite has remained stable for two weeks.</div>
+                <div class="notif-meta">
+                  <span class="notif-tag">Health Update</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="notif-item" data-thread="clinic">
+              <div class="notif-avatar orange">RC</div>
+              <div class="notif-body">
+                <div class="notif-head">
+                  <div class="notif-name">Rescue Clinic</div>
+                  <div class="notif-time">Sat</div>
+                </div>
+                <div class="notif-snippet">Uploaded a new official health report for CAT-2026-002 and marked the vaccination schedule as completed.</div>
+                <div class="notif-meta">
+                  <span class="notif-tag">Clinic Uploaded</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <section class="profile-overlay" id="cat-profile-overlay" aria-hidden="true">
+    <div class="profile-modal" role="dialog" aria-label="Cat profile">
+      <div class="profile-hero">
+        <div class="profile-hero-main">
+          <div class="profile-avatar" id="cat-profile-avatar">O</div>
+          <div>
+            <h3 id="cat-profile-name">Orange</h3>
+            <p id="cat-profile-subtitle" style="color:#667085; margin-top:4px;">CAT-001 · Domestic Shorthair</p>
+          </div>
+        </div>
+        <div class="inline-actions">
+          <span class="profile-status" id="cat-profile-status">Available</span>
+          <button class="profile-close" type="button" id="cat-profile-close-btn">×</button>
+        </div>
+      </div>
+      <div class="profile-body">
+        <article class="profile-card">
+          <h4>Basic Information</h4>
+          <div class="profile-list">
+            <div class="profile-row"><span class="profile-label">Cat ID</span><span class="profile-value" id="cat-profile-id">CAT-001</span></div>
+            <div class="profile-row"><span class="profile-label">Cat Name</span><span class="profile-value" id="cat-profile-name-value">Orange</span></div>
+            <div class="profile-row"><span class="profile-label">Breed</span><span class="profile-value" id="cat-profile-breed">Domestic Shorthair</span></div>
+            <div class="profile-row"><span class="profile-label">Gender</span><span class="profile-value" id="cat-profile-gender">Female</span></div>
+            <div class="profile-row"><span class="profile-label">Age</span><span class="profile-value" id="cat-profile-age">1 year</span></div>
+            <div class="profile-row"><span class="profile-label">Birthday</span><span class="profile-value" id="cat-profile-birthday">2024-02-14</span></div>
+          </div>
+        </article>
+        <article class="profile-card">
+          <h4>Health and Adoption Information</h4>
+          <div class="profile-list">
+            <div class="profile-row"><span class="profile-label">Personality</span><span class="profile-value" id="cat-profile-personality">Friendly and playful</span></div>
+            <div class="profile-row"><span class="profile-label">Spayed / Neutered</span><span class="profile-value" id="cat-profile-spayed">Yes</span></div>
+            <div class="profile-row"><span class="profile-label">Vaccination Status</span><span class="profile-value" id="cat-profile-vaccination-status">Core vaccines completed</span></div>
+            <div class="profile-row"><span class="profile-label">Found Location</span><span class="profile-value" id="cat-profile-found-location">Kowloon City</span></div>
+            <div class="profile-row"><span class="profile-label">Allergy History</span><span class="profile-value" id="cat-profile-allergy-history">No known allergies</span></div>
+            <div class="profile-row"><span class="profile-label">Adoption Status</span><span class="profile-value" id="cat-profile-adoption-status">Available</span></div>
+          </div>
+        </article>
+        <article class="profile-card full">
+          <h4>Personality Tags</h4>
+          <div class="profile-tags" id="cat-profile-tags"></div>
+        </article>
+        <article class="profile-card full">
+          <h4>Display Photo</h4>
+          <div class="profile-photo-wrap">
+            <img id="cat-profile-photo" src="" alt="Cat display photo" hidden>
+            <div class="profile-photo-empty" id="cat-profile-photo-empty">No cat display photo has been uploaded yet.</div>
+          </div>
+        </article>
+        <article class="profile-card full">
+          <h4>Profile Summary</h4>
+          <p class="profile-text" id="cat-profile-summary">Orange is a social rescue cat who adapts well to indoor homes and responds positively to patient adopters.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="profile-overlay" id="application-detail-overlay" aria-hidden="true">
+    <div class="profile-modal" role="dialog" aria-label="Application detail">
+      <div class="profile-hero">
+        <div class="profile-hero-main">
+          <div class="profile-avatar blue" id="application-avatar">A</div>
+          <div>
+            <h3 id="application-title">APP-102</h3>
+            <p id="application-subtitle" style="color:#667085; margin-top:4px;">Jason Lee applying for Tiger</p>
+          </div>
+        </div>
+        <div class="inline-actions">
+          <span class="profile-status" id="application-status">Under Review</span>
+          <button class="profile-close" type="button" id="application-close-btn">×</button>
+        </div>
+      </div>
+      <div class="profile-body">
+        <article class="profile-card">
+          <h4>Applicant Information</h4>
+          <div class="profile-list">
+            <div class="profile-row"><span class="profile-label">Applicant</span><span class="profile-value" id="application-applicant">Jason Lee</span></div>
+            <div class="profile-row"><span class="profile-label">Contact</span><span class="profile-value" id="application-contact">jason@email.com</span></div>
+            <div class="profile-row"><span class="profile-label">Experience</span><span class="profile-value" id="application-experience">Owns another cat</span></div>
+            <div class="profile-row"><span class="profile-label">Submitted</span><span class="profile-value" id="application-submitted">2026-03-07</span></div>
+          </div>
+        </article>
+        <article class="profile-card">
+          <h4>Application Summary</h4>
+          <div class="profile-list">
+            <div class="profile-row"><span class="profile-label">Cat</span><span class="profile-value" id="application-cat">Tiger</span></div>
+            <div class="profile-row"><span class="profile-label">Living Situation</span><span class="profile-value" id="application-home">Apartment with secure windows</span></div>
+            <div class="profile-row"><span class="profile-label">Work Schedule</span><span class="profile-value" id="application-schedule">Hybrid work, home 3 days/week</span></div>
+            <div class="profile-row"><span class="profile-label">Interview Note</span><span class="profile-value" id="application-note">Pending final review</span></div>
+          </div>
+        </article>
+        <article class="profile-card full">
+          <h4>Why This Applicant Wants to Adopt</h4>
+          <p class="profile-text" id="application-reason">Applicant is looking for a playful cat and appears prepared for home adjustment and vaccination follow-up.</p>
+        </article>
+      </div>
+      <div class="recognition-actions">
+        <button class="secondary-btn" type="button" id="application-contact-btn">Contact Applicant</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="profile-overlay" id="face-id-overlay" aria-hidden="true">
+    <div class="profile-modal" role="dialog" aria-label="Cat face recognition">
+      <div class="profile-hero">
+        <div class="profile-hero-main">
+          <div class="profile-avatar blue">ID</div>
+          <div>
+            <h3>Cat Face Recognition</h3>
+            <p style="color:#667085; margin-top:4px;">Upload a cat face image and generate a unique Cat ID for the rescue record.</p>
+          </div>
+        </div>
+        <button class="profile-close" type="button" id="face-id-close-btn">×</button>
+      </div>
+      <div class="recognition-shell">
+        <article class="recognition-preview-card">
+          <h4>Cat Face Input</h4>
+          <div class="recognition-preview-box" id="face-preview-box">
+            <div class="recognition-placeholder" id="face-preview-placeholder">Upload a front-facing cat image to simulate cat face recognition.</div>
+            <img id="face-preview-image" src="" alt="Cat face preview" hidden>
+          </div>
+          <label class="recognition-upload" for="face-id-image-input">
+            Upload Cat Face
+            <input id="face-id-image-input" type="file" accept="image/*">
+          </label>
+        </article>
+        <article class="recognition-result-card">
+          <div>
+            <span class="recognition-kicker">Face Recognition Result</span>
+            <div class="recognition-generated-id" id="generated-face-id">Waiting for image upload</div>
+          </div>
+          <div class="recognition-steps">
+            <div>1. Detect the cat face from the uploaded image.</div>
+            <div>2. Match the face pattern and create a unique rescue identifier.</div>
+            <div>3. Use the generated ID in the cat management form.</div>
+          </div>
+        </article>
+      </div>
+      <div class="recognition-actions">
+        <button class="secondary-btn" type="button" id="face-id-cancel-btn">Cancel</button>
+        <button class="action-btn" type="button" id="use-face-id-btn">Use This ID</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="notif-overlay" id="notif-overlay" aria-hidden="true">
+    <div class="notif-modal" role="dialog" aria-label="Notification conversation">
+      <div class="notif-modal-head">
+        <div class="notif-modal-user">
+          <div class="notif-avatar blue" id="notif-modal-avatar">JL</div>
+          <div>
+            <h3 id="notif-modal-title">Jason Lee · Tiger</h3>
+            <p id="notif-modal-subtitle" style="color:#667085; margin-top:4px;">Application Review</p>
+          </div>
+        </div>
+        <button class="notif-close" type="button" id="notif-close-btn">×</button>
+      </div>
+      <div class="notif-conversation" id="notif-conversation"></div>
+      <div class="notif-modal-foot">
+        <div class="notif-compose">
+          <div class="notif-compose-main">
+            <div class="notif-preview" id="notif-image-preview" hidden></div>
+            <textarea class="notif-input" id="notif-message-input" placeholder="Type a message to continue this conversation..."></textarea>
+            <div class="notif-toolbar">
+              <label class="notif-attach" for="notif-image-input">+ Add image</label>
+              <input class="notif-file-input" id="notif-image-input" type="file" accept="image/*" multiple>
+            </div>
+          </div>
+          <button class="notif-send" type="button" id="notif-send-btn">Send</button>
+        </div>
+        <div class="notif-actions">
+          <button class="mini-btn" type="button">Mark as Read</button>
+          <button class="mini-btn" type="button">Open Application</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      const menuButtons = document.querySelectorAll(".menu-btn");
+      const sections = document.querySelectorAll(".section");
+      const notifItems = document.querySelectorAll(".notif-item");
+      const addCatToggleBtn = document.getElementById("add-cat-toggle-btn");
+      const catListBody = document.getElementById("cat-list-body");
+      const catFormPanel = document.getElementById("cat-form-panel");
+      const catFormTitle = document.getElementById("cat-form-title");
+      const catFormDescription = document.getElementById("cat-form-description");
+      const catFormCancelBtn = document.getElementById("cat-form-cancel-btn");
+      const catFormSaveBtn = document.getElementById("cat-form-save-btn");
+      const catNameInput = document.getElementById("cat-name");
+      const catIdInput = document.getElementById("cat-id");
+      const openFaceIdBtn = document.getElementById("open-face-id-btn");
+      const catGenderInput = document.getElementById("cat-gender");
+      const catBreedInput = document.getElementById("cat-breed");
+      const catAgeInput = document.getElementById("cat-age");
+      const catStatusInput = document.getElementById("cat-status");
+      const catLocationInput = document.getElementById("cat-location");
+      const catHealthInput = document.getElementById("cat-health");
+      const catPersonalityInput = document.getElementById("cat-personality");
+      const catNotesInput = document.getElementById("cat-notes");
+      const catPhotoInput = document.getElementById("cat-photo-input");
+      const catPhotoPreview = document.getElementById("cat-photo-preview");
+      const catPhotoPlaceholder = document.getElementById("cat-photo-placeholder");
+      const faceIdOverlay = document.getElementById("face-id-overlay");
+      const faceIdCloseBtn = document.getElementById("face-id-close-btn");
+      const faceIdCancelBtn = document.getElementById("face-id-cancel-btn");
+      const faceIdImageInput = document.getElementById("face-id-image-input");
+      const facePreviewImage = document.getElementById("face-preview-image");
+      const facePreviewPlaceholder = document.getElementById("face-preview-placeholder");
+      const generatedFaceId = document.getElementById("generated-face-id");
+      const useFaceIdBtn = document.getElementById("use-face-id-btn");
+      const catProfileOverlay = document.getElementById("cat-profile-overlay");
+      const catProfileCloseBtn = document.getElementById("cat-profile-close-btn");
+      const catProfileAvatar = document.getElementById("cat-profile-avatar");
+      const catProfileName = document.getElementById("cat-profile-name");
+      const catProfileSubtitle = document.getElementById("cat-profile-subtitle");
+      const catProfileStatus = document.getElementById("cat-profile-status");
+      const catProfileId = document.getElementById("cat-profile-id");
+      const catProfileNameValue = document.getElementById("cat-profile-name-value");
+      const catProfileBreed = document.getElementById("cat-profile-breed");
+      const catProfileGender = document.getElementById("cat-profile-gender");
+      const catProfileAge = document.getElementById("cat-profile-age");
+      const catProfileBirthday = document.getElementById("cat-profile-birthday");
+      const catProfilePersonality = document.getElementById("cat-profile-personality");
+      const catProfileSpayed = document.getElementById("cat-profile-spayed");
+      const catProfileVaccinationStatus = document.getElementById("cat-profile-vaccination-status");
+      const catProfileFoundLocation = document.getElementById("cat-profile-found-location");
+      const catProfileAllergyHistory = document.getElementById("cat-profile-allergy-history");
+      const catProfileAdoptionStatus = document.getElementById("cat-profile-adoption-status");
+      const catProfileTags = document.getElementById("cat-profile-tags");
+      const catProfileSummary = document.getElementById("cat-profile-summary");
+      const catProfilePhoto = document.getElementById("cat-profile-photo");
+      const catProfilePhotoEmpty = document.getElementById("cat-profile-photo-empty");
+      const applicationDetailButtons = document.querySelectorAll("[data-application-detail]");
+      const applicationDetailOverlay = document.getElementById("application-detail-overlay");
+      const applicationCloseBtn = document.getElementById("application-close-btn");
+      const applicationContactBtn = document.getElementById("application-contact-btn");
+      const applicationAvatar = document.getElementById("application-avatar");
+      const applicationTitle = document.getElementById("application-title");
+      const applicationSubtitle = document.getElementById("application-subtitle");
+      const applicationStatus = document.getElementById("application-status");
+      const applicationApplicant = document.getElementById("application-applicant");
+      const applicationContact = document.getElementById("application-contact");
+      const applicationExperience = document.getElementById("application-experience");
+      const applicationSubmitted = document.getElementById("application-submitted");
+      const applicationCat = document.getElementById("application-cat");
+      const applicationHome = document.getElementById("application-home");
+      const applicationSchedule = document.getElementById("application-schedule");
+      const applicationNote = document.getElementById("application-note");
+      const applicationReason = document.getElementById("application-reason");
+      const notifOverlay = document.getElementById("notif-overlay");
+      const notifCloseBtn = document.getElementById("notif-close-btn");
+      const notifModalAvatar = document.getElementById("notif-modal-avatar");
+      const notifModalTitle = document.getElementById("notif-modal-title");
+      const notifModalSubtitle = document.getElementById("notif-modal-subtitle");
+      const notifConversation = document.getElementById("notif-conversation");
+      const notifMessageInput = document.getElementById("notif-message-input");
+      const notifImageInput = document.getElementById("notif-image-input");
+      const notifImagePreview = document.getElementById("notif-image-preview");
+      const notifSendBtn = document.getElementById("notif-send-btn");
+      const catOrder = ["CAT-001", "CAT-002", "CAT-003"];
+      let editingCatId = null;
+      let activeThreadId = null;
+      let pendingImages = [];
+      let currentGeneratedFaceId = "";
+      let currentCatPhoto = "";
+      let activeApplicationId = null;
+      const catProfiles = {
+        "CAT-001": {
+          id: "CAT-001",
+          avatarText: "O",
+          avatarClass: "",
+          name: "Orange",
+          breed: "Domestic Shorthair",
+          subtitle: "CAT-001 · Domestic Shorthair",
+          status: "Available",
+          gender: "Female",
+          age: "1 year",
+          birthday: "2024-02-14",
+          location: "Kowloon Foster Home",
+          health: "Vaccinated and neutered",
+          personality: "Friendly and playful",
+          spayedNeutered: "Yes",
+          adoptionFee: "HK$800",
+          vaccinationStatus: "Core vaccines completed",
+          foundLocation: "Kowloon City",
+          allergyHistory: "No known allergies",
+          rescueDate: "2025-11-10",
+          stage: "Open for applications",
+          temperament: "Affectionate and playful",
+          followup: "Routine wellness check in 3 months",
+          tags: ["Friendly", "Indoor only", "Playful", "Good with beginners"],
+          summary: "Orange is an energetic young cat who enjoys toys, adapts quickly to home environments, and is a strong match for first-time adopters looking for an interactive companion.",
+          photo: ""
+        },
+        "CAT-002": {
+          avatarText: "S",
+          avatarClass: "blue",
+          id: "CAT-002",
+          name: "Shadow",
+          breed: "Tuxedo",
+          subtitle: "CAT-002 · Tuxedo",
+          status: "Pending",
+          gender: "Male",
+          age: "3 years",
+          birthday: "2022-09-03",
+          location: "Sha Tin Rescue Center",
+          health: "Vaccinated, under observation",
+          personality: "Quiet and observant",
+          spayedNeutered: "Yes",
+          adoptionFee: "HK$800",
+          vaccinationStatus: "Vaccinated, booster pending",
+          foundLocation: "Sha Tin district",
+          allergyHistory: "Mild chicken sensitivity",
+          rescueDate: "2025-08-22",
+          stage: "Application under review",
+          temperament: "Quiet and observant",
+          followup: "Weight monitoring recommended",
+          tags: ["Calm", "Independent", "Indoor trained", "Low-noise home"],
+          summary: "Shadow is a gentle cat with a stable routine who prefers quiet spaces and patient adopters. He is currently in the application review stage and has adjusted well to foster care.",
+          photo: ""
+        },
+        "CAT-003": {
+          avatarText: "W",
+          avatarClass: "pink",
+          id: "CAT-003",
+          name: "Whiskers",
+          breed: "Senior Cat",
+          subtitle: "CAT-003 · Senior Cat",
+          status: "Reserved",
+          gender: "Female",
+          age: "8 years",
+          birthday: "2017-06-11",
+          location: "Tsuen Wan Senior Foster Home",
+          health: "Senior check needed",
+          personality: "Gentle and calm",
+          spayedNeutered: "Yes",
+          adoptionFee: "HK$500",
+          vaccinationStatus: "Senior vaccine review needed",
+          foundLocation: "Tsuen Wan district",
+          allergyHistory: "Sensitive to dust",
+          rescueDate: "2025-05-14",
+          stage: "Reserved for interview-approved adopter",
+          temperament: "Gentle and prefers calm homes",
+          followup: "Senior bloodwork planned next month",
+          tags: ["Senior cat", "Quiet", "Needs stable routine", "Best as only pet"],
+          summary: "Whiskers is a senior rescue cat who thrives in peaceful indoor homes. She has a mild routine-based temperament and benefits from adopters who can provide calm companionship and regular health follow-up.",
+          photo: ""
+        }
+      };
+      const applicationDetails = {
+        "APP-102": {
+          threadId: "jason",
+          avatarText: "JL",
+          title: "APP-102",
+          subtitle: "Jason Lee applying for Tiger",
+          status: "Under Review",
+          applicant: "Jason Lee",
+          contact: "jason@email.com",
+          experience: "Owns another cat",
+          submitted: "2026-03-07",
+          cat: "Tiger",
+          home: "Apartment with secure windows and one existing cat",
+          schedule: "Hybrid work, home 3 days/week",
+          note: "Vaccination questions raised during pre-review",
+          reason: "Jason wants to adopt an active young cat and has already prepared a separate adjustment space, feeding schedule, and weekend availability for the home visit."
+        },
+        "APP-103": {
+          threadId: "grace",
+          avatarText: "GH",
+          title: "APP-103",
+          subtitle: "Grace Ho applying for Whiskers",
+          status: "Interview Needed",
+          applicant: "Grace Ho",
+          contact: "grace@email.com",
+          experience: "Previously cared for a senior rescue cat",
+          submitted: "2026-03-06",
+          cat: "Whiskers",
+          home: "Quiet two-bedroom home with no other pets",
+          schedule: "Mostly remote work",
+          note: "Interview needed to confirm long-term senior care plan",
+          reason: "Grace prefers senior cats and believes Whiskers would fit a calm home environment. She highlighted stable routine, indoor safety, and willingness to support future medical follow-up."
+        }
+      };
+      const threads = {
+        jason: {
+          avatarClass: "blue",
+          avatarText: "JL",
+          title: "Jason Lee · Tiger",
+          subtitle: "Application Review",
+          messages: [
+            { sender: "user", text: "I would like to know whether Tiger has completed all vaccinations.", time: "5:42 PM" },
+            { sender: "org", text: "Tiger has completed the rabies vaccine and the standard rescue vaccination set.", time: "5:48 PM" },
+            { sender: "user", text: "Can a weekend home visit be arranged if the application moves forward?", time: "6:01 PM" }
+          ]
+        },
+        emily: {
+          avatarClass: "orange",
+          avatarText: "EW",
+          title: "Emily Wong · Orange",
+          subtitle: "Follow-up",
+          messages: [
+            { sender: "user", text: "I uploaded the latest household photos for the post-adoption review.", time: "2:35 PM" },
+            { sender: "org", text: "Received. We will review the photos and confirm the follow-up requirements.", time: "2:41 PM" },
+            { sender: "user", text: "Please also let me know the recommended check-in schedule for the first month.", time: "2:50 PM" }
+          ]
+        },
+        grace: {
+          avatarClass: "pink",
+          avatarText: "GH",
+          title: "Grace Ho · Whiskers",
+          subtitle: "Interview Needed",
+          messages: [
+            { sender: "user", text: "I would like to schedule an interview for Whiskers.", time: "Yesterday" },
+            { sender: "user", text: "My home is generally quiet, but I want to confirm whether Whiskers needs a very low-noise environment.", time: "Yesterday" },
+            { sender: "org", text: "A quiet home would be best. We can discuss more details during the interview.", time: "Yesterday" }
+          ]
+        },
+        marco: {
+          avatarClass: "blue",
+          avatarText: "MC",
+          title: "Marco Chan · Luna",
+          subtitle: "Health Update",
+          messages: [
+            { sender: "user", text: "Luna's appetite has been stable for two weeks and there are no unusual signs.", time: "Yesterday" },
+            { sender: "org", text: "Thanks for the update. Please continue to monitor her hydration and keep the routine report next week.", time: "Yesterday" }
+          ]
+        },
+        clinic: {
+          avatarClass: "orange",
+          avatarText: "RC",
+          title: "Rescue Clinic",
+          subtitle: "Clinic Uploaded",
+          messages: [
+            { sender: "org", text: "A new official health report for CAT-2026-002 has been uploaded.", time: "Sat" },
+            { sender: "org", text: "Vaccination schedule has been updated to completed in the official record.", time: "Sat" }
+          ]
+        }
+      };
+
+      function activateSection(targetId) {
+        menuButtons.forEach(function (button) {
+          button.classList.toggle("active", button.getAttribute("data-target") === targetId);
+        });
+
+        sections.forEach(function (section) {
+          section.classList.toggle("active", section.id === targetId);
+        });
+      }
+
+      menuButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          activateSection(button.getAttribute("data-target"));
+        });
+      });
+
+      function getStatusTagClass(status) {
+        if (status === "Available") return "green";
+        if (status === "Pending") return "blue";
+        return "orange";
+      }
+
+      function getAvatarClassFromStatus(status) {
+        if (status === "Pending") return "blue";
+        if (status === "Reserved") return "pink";
+        return "";
+      }
+
+      function getStageFromStatus(status) {
+        if (status === "Pending") return "Application under review";
+        if (status === "Reserved") return "Reserved for interview-approved adopter";
+        return "Open for applications";
+      }
+
+      function renderCatList() {
+        if (!catListBody) return;
+
+        catListBody.innerHTML = catOrder.map(function (catId) {
+          const profile = catProfiles[catId];
+          return [
+            "<tr>",
+            "  <td>" + escapeHtml(profile.id) + "</td>",
+            "  <td>" + escapeHtml(profile.name) + "</td>",
+            "  <td>" + escapeHtml(profile.breed) + "</td>",
+            "  <td>" + escapeHtml(profile.age) + "</td>",
+            "  <td><span class=\"tag " + getStatusTagClass(profile.status) + "\">" + escapeHtml(profile.status) + "</span></td>",
+            "  <td>" + escapeHtml(profile.health) + "</td>",
+            "  <td class=\"mini-actions\"><button class=\"mini-btn\" type=\"button\" data-cat-profile=\"" + escapeHtml(profile.id) + "\">View</button><button class=\"mini-btn\" type=\"button\" data-cat-edit=\"" + escapeHtml(profile.id) + "\">Edit</button></td>",
+            "</tr>"
+          ].join("");
+        }).join("");
+      }
+
+      function resetCatForm() {
+        editingCatId = null;
+        catFormTitle.textContent = "Add New Cat";
+        catFormDescription.textContent = "Create a new cat account with rescue information, health summary, and adoption requirements.";
+        catFormSaveBtn.textContent = "Save Cat Account";
+        catNameInput.value = "";
+        catIdInput.value = "";
+        catIdInput.disabled = false;
+        catGenderInput.value = "Male";
+        catBreedInput.value = "";
+        catAgeInput.value = "";
+        catStatusInput.value = "Available";
+        catLocationInput.value = "";
+        catHealthInput.value = "";
+        catPersonalityInput.value = "";
+        catNotesInput.value = "";
+        currentCatPhoto = "";
+        catPhotoPreview.hidden = true;
+        catPhotoPreview.src = "";
+        catPhotoInput.value = "";
+        catPhotoPlaceholder.hidden = false;
+      }
+
+      function fillCatForm(profile) {
+        editingCatId = profile.id;
+        catFormTitle.textContent = "Edit Cat Information";
+        catFormDescription.textContent = "Update the selected cat account and save the latest rescue details.";
+        catFormSaveBtn.textContent = "Save Changes";
+        catNameInput.value = profile.name;
+        catIdInput.value = profile.id;
+        catIdInput.disabled = true;
+        catGenderInput.value = profile.gender;
+        catBreedInput.value = profile.breed;
+        catAgeInput.value = profile.age;
+        catStatusInput.value = profile.status;
+        catLocationInput.value = profile.location;
+        catHealthInput.value = profile.health;
+        catPersonalityInput.value = profile.tags.join(", ");
+        catNotesInput.value = profile.summary;
+        currentCatPhoto = profile.photo || "";
+        if (currentCatPhoto) {
+          catPhotoPreview.src = currentCatPhoto;
+          catPhotoPreview.hidden = false;
+          catPhotoPlaceholder.hidden = true;
+        } else {
+          catPhotoPreview.hidden = true;
+          catPhotoPreview.src = "";
+          catPhotoPlaceholder.hidden = false;
+        }
+        catPhotoInput.value = "";
+      }
+
+      function setCatFormOpen(isOpen) {
+        if (!catFormPanel || !addCatToggleBtn) return;
+
+        catFormPanel.classList.toggle("collapsed-panel", !isOpen);
+        addCatToggleBtn.textContent = isOpen ? "Hide Form" : "Add New Cat";
+      }
+
+      function openCatFormForAdd() {
+        resetCatForm();
+        setCatFormOpen(true);
+        catFormPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function openCatFormForEdit(catId) {
+        const profile = catProfiles[catId];
+        if (!profile) return;
+
+        fillCatForm(profile);
+        setCatFormOpen(true);
+        catFormPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function generateFaceId() {
+        const timePart = Date.now().toString().slice(-6);
+        const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
+        return "CAT-FR-" + timePart + "-" + randomPart;
+      }
+
+      function resetFaceRecognitionModal() {
+        currentGeneratedFaceId = "";
+        generatedFaceId.textContent = "Waiting for image upload";
+        facePreviewImage.hidden = true;
+        facePreviewImage.src = "";
+        facePreviewPlaceholder.hidden = false;
+        faceIdImageInput.value = "";
+      }
+
+      function openFaceRecognitionModal() {
+        if (!faceIdOverlay) return;
+        resetFaceRecognitionModal();
+        faceIdOverlay.classList.add("open");
+        faceIdOverlay.setAttribute("aria-hidden", "false");
+      }
+
+      function closeFaceRecognitionModal() {
+        if (!faceIdOverlay) return;
+        faceIdOverlay.classList.remove("open");
+        faceIdOverlay.setAttribute("aria-hidden", "true");
+      }
+
+      function saveCatForm() {
+        const name = catNameInput.value.trim();
+        const id = catIdInput.value.trim();
+        const breed = catBreedInput.value.trim();
+        const age = catAgeInput.value.trim();
+        const location = catLocationInput.value.trim();
+        const health = catHealthInput.value.trim();
+        const tags = catPersonalityInput.value.split(",").map(function (tag) {
+          return tag.trim();
+        }).filter(Boolean);
+        const summary = catNotesInput.value.trim();
+
+        if (!name || !id || !breed) {
+          window.alert("Please complete at least cat name, cat ID, and breed.");
+          return;
+        }
+
+        const currentId = editingCatId;
+        const existingProfile = currentId ? catProfiles[currentId] : null;
+        const status = catStatusInput.value;
+        const profile = {
+          id: id,
+          avatarText: (name.charAt(0) || "C").toUpperCase(),
+          avatarClass: existingProfile ? (existingProfile.avatarClass || getAvatarClassFromStatus(status)) : getAvatarClassFromStatus(status),
+          name: name,
+          breed: breed,
+          subtitle: id + " · " + breed,
+          status: status,
+          gender: catGenderInput.value,
+          age: age || "Unknown",
+          birthday: existingProfile ? existingProfile.birthday : "Unknown",
+          location: location || "Not provided",
+          health: health || "Not provided",
+          personality: existingProfile ? existingProfile.personality : (tags[0] || "Not specified"),
+          spayedNeutered: existingProfile ? existingProfile.spayedNeutered : "Not provided",
+          adoptionFee: existingProfile ? existingProfile.adoptionFee : "HK$0",
+          vaccinationStatus: existingProfile ? existingProfile.vaccinationStatus : (health || "Not provided"),
+          foundLocation: existingProfile ? existingProfile.foundLocation : (location || "Not provided"),
+          allergyHistory: existingProfile ? existingProfile.allergyHistory : "No allergy record",
+          rescueDate: existingProfile ? existingProfile.rescueDate : new Date().toISOString().slice(0, 10),
+          stage: getStageFromStatus(status),
+          temperament: tags[0] || (existingProfile ? existingProfile.temperament : "Not specified"),
+          followup: existingProfile ? existingProfile.followup : "Routine check to be scheduled",
+          tags: tags.length ? tags : ["No tags yet"],
+          summary: summary || "Profile summary has not been added yet.",
+          photo: currentCatPhoto || (existingProfile ? existingProfile.photo : "")
+        };
+
+        if (currentId) {
+          catProfiles[currentId] = profile;
+        } else {
+          catProfiles[id] = profile;
+          catOrder.unshift(id);
+        }
+
+        renderCatList();
+
+        if (currentId && catProfileOverlay.classList.contains("open")) {
+          openCatProfile(currentId);
+        }
+
+        setCatFormOpen(false);
+        resetCatForm();
+      }
+
+      function openCatProfile(catId) {
+        const profile = catProfiles[catId];
+        if (!profile || !catProfileOverlay) return;
+
+        catProfileAvatar.className = "profile-avatar" + (profile.avatarClass ? " " + profile.avatarClass : "");
+        catProfileAvatar.textContent = profile.avatarText;
+        catProfileName.textContent = profile.name;
+        catProfileSubtitle.textContent = profile.subtitle;
+        catProfileStatus.textContent = profile.status;
+        catProfileId.textContent = profile.id;
+        catProfileNameValue.textContent = profile.name;
+        catProfileBreed.textContent = profile.breed;
+        catProfileGender.textContent = profile.gender;
+        catProfileAge.textContent = profile.age;
+        catProfileBirthday.textContent = profile.birthday || "Unknown";
+        catProfilePersonality.textContent = profile.personality || profile.temperament || "Not specified";
+        catProfileSpayed.textContent = profile.spayedNeutered || "Not provided";
+        catProfileVaccinationStatus.textContent = profile.vaccinationStatus || profile.health || "Not provided";
+        catProfileFoundLocation.textContent = profile.foundLocation || profile.location || "Not provided";
+        catProfileAllergyHistory.textContent = profile.allergyHistory || "No allergy record";
+        catProfileAdoptionStatus.textContent = profile.status;
+        catProfileTags.innerHTML = profile.tags.map(function (tag) {
+          return '<span class="profile-tag">' + escapeHtml(tag) + '</span>';
+        }).join("");
+        catProfileSummary.textContent = profile.summary;
+        if (profile.photo) {
+          catProfilePhoto.src = profile.photo;
+          catProfilePhoto.hidden = false;
+          catProfilePhotoEmpty.hidden = true;
+        } else {
+          catProfilePhoto.src = "";
+          catProfilePhoto.hidden = true;
+          catProfilePhotoEmpty.hidden = false;
+        }
+        catProfileOverlay.classList.add("open");
+        catProfileOverlay.setAttribute("aria-hidden", "false");
+      }
+
+      function closeCatProfile() {
+        if (!catProfileOverlay) return;
+        catProfileOverlay.classList.remove("open");
+        catProfileOverlay.setAttribute("aria-hidden", "true");
+      }
+
+      function openApplicationDetail(applicationId) {
+        const detail = applicationDetails[applicationId];
+        if (!detail || !applicationDetailOverlay) return;
+
+        activeApplicationId = applicationId;
+        applicationAvatar.textContent = detail.avatarText;
+        applicationTitle.textContent = detail.title;
+        applicationSubtitle.textContent = detail.subtitle;
+        applicationStatus.textContent = detail.status;
+        applicationApplicant.textContent = detail.applicant;
+        applicationContact.textContent = detail.contact;
+        applicationExperience.textContent = detail.experience;
+        applicationSubmitted.textContent = detail.submitted;
+        applicationCat.textContent = detail.cat;
+        applicationHome.textContent = detail.home;
+        applicationSchedule.textContent = detail.schedule;
+        applicationNote.textContent = detail.note;
+        applicationReason.textContent = detail.reason;
+        applicationDetailOverlay.classList.add("open");
+        applicationDetailOverlay.setAttribute("aria-hidden", "false");
+      }
+
+      function closeApplicationDetail() {
+        if (!applicationDetailOverlay) return;
+        activeApplicationId = null;
+        applicationDetailOverlay.classList.remove("open");
+        applicationDetailOverlay.setAttribute("aria-hidden", "true");
+      }
+
+      function contactApplicant(applicationId) {
+        const detail = applicationDetails[applicationId];
+        if (!detail) return;
+        if (applicationDetailOverlay && applicationDetailOverlay.classList.contains("open")) {
+          closeApplicationDetail();
+        }
+        if (detail.threadId) {
+          openThread(detail.threadId);
+        }
+      }
+
+      function getCurrentTimeLabel() {
+        return new Date().toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit"
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderPendingImages() {
+        if (!pendingImages.length) {
+          notifImagePreview.innerHTML = "";
+          notifImagePreview.hidden = true;
+          return;
+        }
+
+        notifImagePreview.hidden = false;
+        notifImagePreview.innerHTML = pendingImages.map(function (image, index) {
+          return [
+            '<div class="notif-preview-item">',
+            '  <img src="' + image.src + '" alt="' + escapeHtml(image.name) + '">',
+            '  <button class="notif-preview-remove" type="button" data-remove-image="' + index + '">×</button>',
+            '</div>'
+          ].join("");
+        }).join("");
+      }
+
+      function renderConversation(thread) {
+        notifConversation.innerHTML = thread.messages.map(function (message) {
+          const imagesMarkup = Array.isArray(message.images) && message.images.length
+            ? '<div class="msg-images">' + message.images.map(function (image) {
+              return '<img src="' + image.src + '" alt="' + escapeHtml(image.name || "Shared image") + '">';
+            }).join("") + '</div>'
+            : "";
+          const textMarkup = message.text
+            ? '<div class="msg-text">' + escapeHtml(message.text) + '</div>'
+            : "";
+          const bubbleClass = imagesMarkup ? "msg-bubble has-media" : "msg-bubble";
+          return [
+            '<div class="msg ' + message.sender + '">',
+            '  <div class="' + bubbleClass + '">' + imagesMarkup + textMarkup + '</div>',
+            '  <div class="msg-time">' + message.time + '</div>',
+            '</div>'
+          ].join("");
+        }).join("");
+        notifConversation.scrollTop = notifConversation.scrollHeight;
+      }
+
+      function openThread(threadId) {
+        const thread = threads[threadId];
+        if (!thread) return;
+
+        activeThreadId = threadId;
+        notifModalAvatar.className = "notif-avatar " + thread.avatarClass;
+        notifModalAvatar.textContent = thread.avatarText;
+        notifModalTitle.textContent = thread.title;
+        notifModalSubtitle.textContent = thread.subtitle;
+        renderConversation(thread);
+        notifMessageInput.value = "";
+        pendingImages = [];
+        notifImageInput.value = "";
+        renderPendingImages();
+        notifOverlay.classList.add("open");
+        notifOverlay.setAttribute("aria-hidden", "false");
+        notifMessageInput.focus();
+      }
+
+      function closeThread() {
+        activeThreadId = null;
+        notifOverlay.classList.remove("open");
+        notifOverlay.setAttribute("aria-hidden", "true");
+      }
+
+      function sendMessage() {
+        if (!activeThreadId) return;
+
+        const text = notifMessageInput.value.trim();
+        if (!text && !pendingImages.length) return;
+
+        const thread = threads[activeThreadId];
+        thread.messages.push({
+          sender: "user",
+          text: text,
+          images: pendingImages.slice(),
+          time: getCurrentTimeLabel()
+        });
+        renderConversation(thread);
+        notifMessageInput.value = "";
+        pendingImages = [];
+        notifImageInput.value = "";
+        renderPendingImages();
+        notifMessageInput.focus();
+      }
+
+      notifItems.forEach(function (item) {
+        item.addEventListener("click", function () {
+          openThread(item.getAttribute("data-thread"));
+        });
+      });
+
+      if (addCatToggleBtn && catFormPanel) {
+        addCatToggleBtn.addEventListener("click", function () {
+          const isCollapsed = catFormPanel.classList.contains("collapsed-panel");
+          if (isCollapsed) {
+            openCatFormForAdd();
+          } else {
+            setCatFormOpen(false);
+            resetCatForm();
+          }
+        });
+      }
+
+      if (catFormCancelBtn) {
+        catFormCancelBtn.addEventListener("click", function () {
+          setCatFormOpen(false);
+          resetCatForm();
+        });
+      }
+
+      if (catFormSaveBtn) {
+        catFormSaveBtn.addEventListener("click", saveCatForm);
+      }
+
+      if (openFaceIdBtn) {
+        openFaceIdBtn.addEventListener("click", openFaceRecognitionModal);
+      }
+
+      if (catPhotoInput) {
+        catPhotoInput.addEventListener("change", function (event) {
+          const file = event.target.files && event.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = function (loadEvent) {
+            currentCatPhoto = loadEvent.target.result;
+            catPhotoPreview.src = currentCatPhoto;
+            catPhotoPreview.hidden = false;
+            catPhotoPlaceholder.hidden = true;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      if (faceIdImageInput) {
+        faceIdImageInput.addEventListener("change", function (event) {
+          const file = event.target.files && event.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = function (loadEvent) {
+            facePreviewImage.src = loadEvent.target.result;
+            facePreviewImage.hidden = false;
+            facePreviewPlaceholder.hidden = true;
+            currentGeneratedFaceId = generateFaceId();
+            generatedFaceId.textContent = currentGeneratedFaceId;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      if (useFaceIdBtn) {
+        useFaceIdBtn.addEventListener("click", function () {
+          if (!currentGeneratedFaceId) return;
+          catIdInput.value = currentGeneratedFaceId;
+          closeFaceRecognitionModal();
+        });
+      }
+
+      if (faceIdCloseBtn) {
+        faceIdCloseBtn.addEventListener("click", closeFaceRecognitionModal);
+      }
+
+      if (faceIdCancelBtn) {
+        faceIdCancelBtn.addEventListener("click", closeFaceRecognitionModal);
+      }
+
+      if (faceIdOverlay) {
+        faceIdOverlay.addEventListener("click", function (event) {
+          if (event.target === faceIdOverlay) {
+            closeFaceRecognitionModal();
+          }
+        });
+      }
+
+      if (catListBody) {
+        catListBody.addEventListener("click", function (event) {
+          const profileButton = event.target.closest("[data-cat-profile]");
+          if (profileButton) {
+            openCatProfile(profileButton.getAttribute("data-cat-profile"));
+            return;
+          }
+
+          const editButton = event.target.closest("[data-cat-edit]");
+          if (editButton) {
+            openCatFormForEdit(editButton.getAttribute("data-cat-edit"));
+          }
+        });
+      }
+
+      if (catProfileCloseBtn) {
+        catProfileCloseBtn.addEventListener("click", closeCatProfile);
+      }
+
+      if (catProfileOverlay) {
+        catProfileOverlay.addEventListener("click", function (event) {
+          if (event.target === catProfileOverlay) {
+            closeCatProfile();
+          }
+        });
+      }
+
+      applicationDetailButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          openApplicationDetail(button.getAttribute("data-application-detail"));
+        });
+      });
+
+      if (applicationCloseBtn) {
+        applicationCloseBtn.addEventListener("click", closeApplicationDetail);
+      }
+
+      if (applicationContactBtn) {
+        applicationContactBtn.addEventListener("click", function () {
+          if (activeApplicationId) {
+            contactApplicant(activeApplicationId);
+          }
+        });
+      }
+
+      if (applicationDetailOverlay) {
+        applicationDetailOverlay.addEventListener("click", function (event) {
+          if (event.target === applicationDetailOverlay) {
+            closeApplicationDetail();
+          }
+        });
+      }
+
+      notifSendBtn.addEventListener("click", sendMessage);
+      notifImageInput.addEventListener("change", function (event) {
+        const files = Array.from(event.target.files || []).slice(0, 6);
+        if (!files.length) return;
+
+        Promise.all(files.map(function (file) {
+          return new Promise(function (resolve) {
+            const reader = new FileReader();
+            reader.onload = function (loadEvent) {
+              resolve({
+                name: file.name,
+                src: loadEvent.target.result
+              });
+            };
+            reader.readAsDataURL(file);
+          });
+        })).then(function (images) {
+          pendingImages = pendingImages.concat(images).slice(0, 6);
+          renderPendingImages();
+          notifImageInput.value = "";
+        });
+      });
+      notifImagePreview.addEventListener("click", function (event) {
+        const removeButton = event.target.closest("[data-remove-image]");
+        if (!removeButton) return;
+
+        const removeIndex = Number(removeButton.getAttribute("data-remove-image"));
+        pendingImages = pendingImages.filter(function (_, index) {
+          return index !== removeIndex;
+        });
+        renderPendingImages();
+      });
+      notifMessageInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendMessage();
+        }
+      });
+      notifCloseBtn.addEventListener("click", closeThread);
+      notifOverlay.addEventListener("click", function (event) {
+        if (event.target === notifOverlay) {
+          closeThread();
+        }
+      });
+
+      renderCatList();
+    })();
+  </script>
+</body>
+</html>

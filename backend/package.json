@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "catface-backend",
   "version": "1.0.0",
   "description": "CatFace 后端 API",
@@ -19,5 +20,10 @@
   "devDependencies": {
     "nodemon": "^3.0.2",
     "prisma": "^5.x"
+=======
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "prisma": "^5.22.0"
+>>>>>>> main
   }
 }
