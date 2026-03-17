@@ -1,43 +1,973 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CatFace — 首页</title>
-  <link rel="stylesheet" href="../css/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cat Platform — Community · Adoption · Health</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: #f5f5f5; color: #333; }
+    a { text-decoration: none; color: inherit; }
+
+    /* 顶部导航 */
+    .header {
+      position: fixed; top: 0; left: 0; right: 0; height: 56px;
+      background: #fff; border-bottom: 1px solid #eee; display: flex; align-items: center; padding: 0 24px; z-index: 100;
+    }
+    .logo {
+      width: 120px; height: 36px; background: #ff2442; color: #fff; display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 18px; border-radius: 4px;
+    }
+
+    /* 左侧边栏 */
+    .sidebar {
+      position: fixed; top: 56px; left: 0; width: 200px; bottom: 0; background: #fff; border-right: 1px solid #eee;
+      padding: 20px 0; z-index: 99; display: flex; flex-direction: column;
+    }
+    .sidebar-nav { list-style: none; margin: 0; padding: 0; }
+    .sidebar-nav li { margin: 0; }
+    .sidebar-nav a {
+      display: flex; align-items: center; gap: 10px; padding: 12px 20px; font-size: 15px; color: #333;
+    }
+    .sidebar-nav a:hover, .sidebar-nav .active { background: #f5f5f5; color: #ff2442; }
+    .sidebar-nav .icon { width: 22px; height: 22px; text-align: center; font-size: 18px; }
+    .sidebar-top {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .login-btn {
+      display: block; width: 160px; margin: 20px auto; height: 44px; line-height: 44px; text-align: center;
+      background: #ff2442; color: #fff; border: none; border-radius: 22px; font-size: 16px; cursor: pointer;
+    }
+    .login-btn:hover { background: #e61e3a; }
+    .login-tip {
+      margin: 0 16px; padding: 16px; background: #f9f9f9; border-radius: 8px; font-size: 13px; color: #666;
+    }
+    .login-tip h4 { margin: 0 0 10px; font-size: 14px; color: #333; }
+    .login-tip ul { margin: 0; padding-left: 18px; line-height: 1.8; }
+    .sidebar-bottom {
+      margin-top: 8px;
+      padding: 12px 20px 0;
+      border-top: 1px solid #f3f3f3;
+    }
+    .rescue-entry {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #555;
+      padding: 10px 0 4px;
+    }
+    .rescue-entry .label {
+      font-weight: 600;
+    }
+    .rescue-entry small {
+      display: block;
+      font-size: 12px;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    /* 主内容区 */
+    .main { margin-left: 200px; margin-top: 56px; padding: 20px 24px 40px; min-height: 100vh; }
+    .tabs {
+      display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px;
+    }
+    .tabs a {
+      flex-shrink: 0; padding: 8px 16px; font-size: 14px; color: #666; border-radius: 16px; white-space: nowrap;
+    }
+    .tabs a:hover { background: #f0f0f0; color: #333; }
+    .tabs .current { background: #333; color: #fff; }
+    .tabs .post-cta {
+      background: #ff2442;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 4px 10px rgba(255,36,66,.4);
+    }
+    .tabs .post-cta:hover {
+      background: #e61e3a;
+      color: #fff;
+    }
+
+    /* 帖子网格 */
+    .feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .post-card {
+      background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .post-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+    .post-card .cover {
+      width: 100%; aspect-ratio: 3/4; background: linear-gradient(135deg, #ffeaa7 0%, #dfe6e9 100%); object-fit: cover;
+    }
+    .post-card .body { padding: 12px; }
+    .post-card .title { font-size: 14px; line-height: 1.4; margin: 0 0 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .post-card .meta { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #999; }
+    .post-card .user { display: flex; align-items: center; gap: 6px; }
+    .post-card .avatar { width: 24px; height: 24px; border-radius: 50%; background: #ddd; }
+    .post-card .likes { display: flex; align-items: center; gap: 4px; }
+
+    /* Recommended 帖子详情弹窗：浏览 + 点赞 + 评论 */
+    .post-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 400;
+    }
+    .post-overlay.is-open { display: flex; }
+    .post-modal {
+      width: min(880px, 100%);
+      max-height: 92vh;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 16px 60px rgba(0,0,0,.3);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
+    }
+    @media (max-width: 900px) {
+      .post-modal {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    .post-modal-image {
+      position: relative;
+      background: #000;
+    }
+    .post-modal-image::before {
+      content: "";
+      display: block;
+      padding-bottom: 120%;
+    }
+    .post-modal-image img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .post-modal-right {
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-left: 1px solid #f3f3f3;
+    }
+    @media (max-width: 900px) {
+      .post-modal-right {
+        border-left: none;
+        border-top: 1px solid #f3f3f3;
+      }
+    }
+    .post-modal-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f3f3f3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .post-modal-title {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .post-modal-close {
+      border: none;
+      background: transparent;
+      width: 32px;
+      height: 32px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      color: #666;
+      cursor: pointer;
+    }
+    .post-modal-close:hover { background: #f5f5f5; }
+    .post-modal-meta {
+      padding: 6px 14px;
+      font-size: 12px;
+      color: #999;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .post-modal-author {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .post-modal-author-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ddd;
+    }
+    .post-modal-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .post-like-btn {
+      border-radius: 999px;
+      padding: 6px 12px;
+      border: none;
+      cursor: pointer;
+      background: #ffeef1;
+      color: #ff2442;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .post-like-btn.is-liked {
+      background: #ff2442;
+      color: #fff;
+    }
+    .post-modal-comments {
+      flex: 1;
+      min-height: 0;
+      padding: 8px 14px 10px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+    .post-comment-item {
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .post-comment-author {
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .post-comment-form {
+      padding: 8px 14px 12px;
+      border-top: 1px solid #f3f3f3;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .post-comment-input {
+      flex: 1;
+      border-radius: 16px;
+      border: 1px solid #eee;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    .post-comment-input:focus { border-color: #ffb6c1; }
+    .post-comment-submit {
+      border-radius: 999px;
+      border: none;
+      padding: 6px 12px;
+      background: #ff2442;
+      color: #fff;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* 登录/注册弹窗浮层（无 JS：用 :target 控制显示） */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 500;
+    }
+    .auth-overlay:target { display: flex; }
+    .auth-modal {
+      width: min(420px, 96vw);
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 16px 60px rgba(0,0,0,.18);
+      position: relative;
+      overflow: hidden;
+      padding-top: 10px;
+      min-height: 360px;
+    }
+    .auth-left {
+      display: none;
+    }
+    .auth-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #3b82f6;
+      font-size: 13px;
+      width: fit-content;
+    }
+    .auth-brand {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: #ff2442;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+    .auth-card {
+      margin-top: 6px;
+      width: 220px;
+      height: 190px;
+      border-radius: 14px;
+      border: 1px solid #f0f0f0;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      color: #ff2442;
+      font-weight: 700;
+      gap: 6px;
+    }
+    .auth-card small { color: #999; font-weight: 500; }
+    .auth-scan {
+      color: #666;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    .auth-right { padding: 26px 26px 22px; }
+    .auth-close {
+      position: absolute;
+      right: 12px;
+      top: 10px;
+      width: 40px;
+      height: 40px;
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      color: #666;
+      background: transparent;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .auth-close:hover { background: #f5f5f5; }
+    .auth-title {
+      margin: 10px 0 18px;
+      font-size: 22px;
+      text-align: center;
+      color: #333;
+    }
+    .auth-field {
+      margin: 14px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #f6f6f6;
+      border: 1px solid #efefef;
+      border-radius: 999px;
+      padding: 10px 14px;
+      height: 56px;
+    }
+    .auth-field:focus-within { border-color: #ffd0d7; background: #fafafa; }
+    .auth-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 16px;
+      color: #333;
+    }
+    .auth-input::placeholder { color: #b7b7b7; }
+    .auth-get-code {
+      border: none;
+      background: transparent;
+      color: #ff2442;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 8px 10px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    .auth-get-code:hover { background: rgba(255,36,66,.08); }
+    .auth-btn {
+      margin-top: 18px;
+      width: 100%;
+      height: 62px;
+      border-radius: 999px;
+      border: none;
+      background: #ff2442;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .auth-btn:hover { background: #e61e3a; }
+    .auth-agree {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 14px;
+      color: #666;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .auth-agree input { margin-top: 3px; width: 18px; height: 18px; }
+    .auth-agree a { color: #2f6feb; }
+    .auth-bottom {
+      margin-top: 10px;
+      text-align: center;
+      color: #999;
+      font-size: 14px;
+    }
+    .auth-bottom a { color: #2f6feb; }
+    @media (max-width: 480px) {
+    }
+  </style>
 </head>
 <body>
+  <!-- 顶部导航 / Top navigation -->
+  <header class="header" role="banner">
+    <a href="index.html" class="logo">cat face</a>
+  </header>
 
-  <!-- 导航栏 -->
-  <nav style="background:#fff; padding:16px 32px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.08);">
-    <h1 style="color:#FF6B6B; font-size:22px;">🐱 CatFace</h1>
-    <div style="display:flex; gap:16px;">
-      <a href="adoption.html">领养</a>
-      <a href="cat-facebook.html">社区</a>
-      <a href="health.html">健康</a>
-      <a href="account.html">我的</a>
-      <a href="log-in.html" id="nav-login">登录</a>
-      <a href="#" id="nav-logout" class="hidden" onclick="logout()">退出</a>
+  <!-- 左侧边栏 / Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <ul class="sidebar-nav">
+        <li><a href="index.html" class="active"><span class="icon">💬</span> Community</a></li>
+        <li><a href="adoption.html"><span class="icon">🐱</span> Adoption</a></li>
+        <li><a href="health.html"><span class="icon">🩺</span> Health</a></li>
+        <li><a href="notifications.html"><span class="icon">🔔</span> Notifications</a></li>
+        <li><a href="account.html"><span class="icon">👤</span> Account</a></li>
+        <li><a href="cat-mall.html"><span class="icon">🛍️</span> Store</a></li>
+      </ul>
+      <a href="log-in.html" class="login-btn">Log in</a>
+      <div class="login-tip">
+        <h4>Log in now to:</h4>
+        <ul>
+          <li>See cat content that understands you better</li>
+          <li>Search adoption, health, and notes</li>
+          <li>View your saved and liked posts</li>
+          <li>Interact and communicate with others better</li>
+        </ul>
+      </div>
     </div>
-  </nav>
+    <div class="sidebar-bottom">
+      <a href="rescue-dashboard.html" class="rescue-entry">
+        <span class="icon">🚑</span>
+        <span>
+          <span class="label">Rescue Dashboard</span>
+          <small>Quick view of stray rescue status</small>
+        </span>
+      </a>
+    </div>
+  </aside>
 
-  <!-- 主体 -->
-  <main style="max-width:800px; margin:60px auto; text-align:center; padding:0 16px;">
-    <h2 style="font-size:36px; margin-bottom:16px;">找到你的缘分猫咪 🐾</h2>
-    <p style="color:#888; font-size:16px; margin-bottom:32px;">浏览、领养、关注，一站式猫咪社交平台</p>
-    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
-      <a href="adoption.html" class="btn btn-primary">开始领养</a>
-      <a href="cat-facebook.html" class="btn btn-secondary">逛社区</a>
-    </div>
+  <!-- 主内容：分类 + 猫猫帖子 / Main content -->
+  <main class="main">
+    <nav class="tabs" aria-label="Content categories">
+      <a href="cat-facebook.html" class="post-cta">Post</a>
+      <a href="#" class="current">Recommended</a>
+    </nav>
+
+    <section class="feed" aria-label="Cat posts">
+      <article class="post-card">
+        <img class="cover" src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="Orange tabby cat">
+        <div class="body">
+          <h3 class="title">Hi! I'm Luna 🐱 My human took me out today and I got to sunbathe! So warm and cozy!</h3>
+          <div class="meta">
+            <span class="user"><span class="avatar"></span> Luna</span>
+            <span class="likes">❤️ 23k</span>
+          </div>
+        </div>
+      </article>
+      <article class="post-card">
+        <img class="cover" src="https://images.unsplash.com/photo-1574158622682-e40e69881006?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="British Shorthair blue cat">
+        <div class="body">
+          <h3 class="title">Meow! I'm Max the British Shorthair 🐾 Everyone keeps asking what I eat - I love my premium kibble!</h3>
+          <div class="meta">
+            <span class="user"><span class="avatar"></span> Max</span>
+            <span class="likes">❤️ 67k</span>
+          </div>
+        </div>
+      </article>
+      <article class="post-card">
+        <img class="cover" src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="Orange tabby cat">
+        <div class="body">
+          <h3 class="title">Hi humans! I'm Ginger 🧡 I'm 1 year old and super friendly! Looking for my forever home!</h3>
+          <div class="meta">
+            <span class="user"><span class="avatar"></span> Ginger</span>
+            <span class="likes">❤️ 11k</span>
+          </div>
+        </div>
+      </article>
+      <article class="post-card">
+        <img class="cover" src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="Cat at vet">
+        <div class="body">
+          <h3 class="title">Just got my checkup! 🏥 My human says I'm super healthy! All my numbers are purrfect!</h3>
+          <div class="meta">
+            <span class="user"><span class="avatar"></span> Whiskers</span>
+            <span class="likes">❤️ 82k</span>
+          </div>
+        </div>
+      </article>
+      <article class="post-card">
+        <img class="cover" src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=400&h=533&fit=crop&q=80" alt="Multiple cats" onerror="this.src='https://picsum.photos/400/533?random=5'">
+        <div class="body">
+          <h3 class="title">My siblings and I love our new litter box! 🚽 So much space for all of us!</h3>
+          <div class="meta">
+            <span class="user"><span class="avatar"></span> Shadow & Friends</span>
+            <span class="likes">❤️ 35k</span>
+          </div>
+        </div>
+      </article>
+      <article class="post-card">
+        <img class="cover" src="https://images.unsplash.com/photo-1511275539165-cc46b1ee89bf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="Cat cuddling">
+        <div class="body">
+          <h3 class="title">Best part of my day: cuddle time with my human! 💕 So warm and safe!</h3>
+          <div class="meta">
+            <span class="user"><span class="avatar"></span> Luna</span>
+            <span class="likes">❤️ 42k</span>
+          </div>
+        </div>
+      </article>
+      <article class="post-card">
+        <img class="cover" src="https://images.unsplash.com/photo-1543852786-1cf6624b9987?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="Cat with collar">
+        <div class="body">
+          <h3 class="title">My smart collar says I ran 5 miles today! 🏃 My heart rate is perfect! Feeling great!</h3>
+          <div class="meta">
+            <span class="user"><span class="avatar"></span> Charlie</span>
+            <span class="likes">❤️ 9k</span>
+          </div>
+        </div>
+      </article>
+      <article class="post-card">
+        <img class="cover" src="https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=400&h=533&fit=crop" alt="Calico cat">
+        <div class="body">
+          <h3 class="title">Hello! I'm Patches the calico! 🎨 I'm 2 years old, fully vaccinated, and ready for love!</h3>
+          <div class="meta">
+            <span class="user"><span class="avatar"></span> Patches</span>
+            <span class="likes">❤️ 56k</span>
+          </div>
+        </div>
+      </article>
+    </section>
   </main>
 
-  <script src="../js/config.js"></script>
+  <!-- 登录弹窗（浮在主界面上） / Login modal -->
+  <section id="login" class="auth-overlay" aria-label="Login dialog">
+    <div class="auth-modal" role="dialog" aria-label="Email login">
+      <a class="auth-close" href="#" aria-label="Close">×</a>
+
+      <div class="auth-left" aria-hidden="true">
+        <div class="auth-pill">After logging in, see cat posts tailored for you</div>
+        <div class="auth-brand">CAT</div>
+        <div class="auth-card">
+          <div>Scan to log in</div>
+          <small>(Placeholder, can be connected later)</small>
+        </div>
+        <div class="auth-scan">Use "Cat Platform App" or WeChat to scan</div>
+      </div>
+
+      <div class="auth-right">
+        <div class="auth-title">Email login</div>
+        <form action="#" method="post" aria-label="Email verification code login form">
+          <label class="sr-only" for="login-email">Email</label>
+          <div class="auth-field" aria-label="Enter email">
+            <input class="auth-input" id="login-email" name="email" type="email" autocomplete="email" placeholder="Enter email" required>
+          </div>
+
+          <label class="sr-only" for="login-code">Verification code</label>
+          <div class="auth-field" aria-label="Enter verification code">
+            <input class="auth-input" id="login-code" name="code" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter verification code" required>
+            <button class="auth-get-code" type="button">Get code</button>
+          </div>
+
+          <button class="auth-btn" type="submit">Log in</button>
+
+          <div class="auth-agree">
+            <input id="login-agree" type="checkbox" name="agree" aria-label="Agree to the terms">
+            <label for="login-agree">
+              I have read and agree to the
+              <a href="#" title="User Agreement">User Agreement</a>,
+              <a href="#" title="Privacy Policy">Privacy Policy</a>,
+              and
+              <a href="#" title="Children/Teen Personal Information Protection Rules">Children/Teen Personal Information Protection Rules</a>.
+            </label>
+          </div>
+
+          <div class="auth-bottom">Don't have an account? <a href="#register">Sign up</a></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- 注册弹窗（浮在主界面上） / Register modal -->
+  <section id="register" class="auth-overlay" aria-label="Sign-up dialog">
+    <div class="auth-modal" role="dialog" aria-label="Sign up">
+      <a class="auth-close" href="#" aria-label="Close">×</a>
+
+      <div class="auth-left" aria-hidden="true">
+        <div class="auth-pill">Sign up to post cat notes and adoption applications</div>
+        <div class="auth-brand">CAT</div>
+        <div class="auth-card">
+          <div>Welcome</div>
+          <small>Let's record cat life together</small>
+        </div>
+        <div class="auth-scan">After signing up, sync health records and join the community</div>
+      </div>
+
+      <div class="auth-right">
+        <div class="auth-title">Sign up</div>
+        <form action="#" method="post" aria-label="Sign-up form">
+          <label class="sr-only" for="reg-name">Nickname</label>
+          <div class="auth-field" aria-label="Enter nickname">
+            <input class="auth-input" id="reg-name" name="name" type="text" autocomplete="nickname" placeholder="Enter nickname" required>
+          </div>
+
+          <label class="sr-only" for="reg-email">Email</label>
+          <div class="auth-field" aria-label="Enter email">
+            <input class="auth-input" id="reg-email" name="email" type="email" autocomplete="email" placeholder="Enter email" required>
+          </div>
+
+          <label class="sr-only" for="reg-password">Password</label>
+          <div class="auth-field" aria-label="Enter password">
+            <input class="auth-input" id="reg-password" name="password" type="password" autocomplete="new-password" placeholder="Set password" required>
+          </div>
+
+          <!-- 新增：注册时填写领养偏好，用于后续 Adoption 匹配 -->
+          <div style="margin-top:10px; font-size:13px; color:#666;">Adoption preference (optional, can be changed later)</div>
+          <div class="auth-field" aria-label="Preferred cat gender">
+            <select class="auth-input" id="pref-gender" name="prefGender">
+              <option value="">Preferred gender (any)</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="no-preference">No preference</option>
+            </select>
+          </div>
+          <div class="auth-field" aria-label="Preferred cat age">
+            <select class="auth-input" id="pref-age" name="prefAge">
+              <option value="">Preferred age (any)</option>
+              <option value="kitten">Kitten (0–1 year)</option>
+              <option value="adult">Adult (1–7 years)</option>
+              <option value="senior">Senior (7+ years)</option>
+            </select>
+          </div>
+          <div class="auth-field" aria-label="Preferred cat breed">
+            <select class="auth-input" id="pref-breed" name="prefBreed">
+              <option value="">Preferred breed (any)</option>
+              <option value="domestic-short-hair">Domestic short hair</option>
+              <option value="british-shorthair">British Shorthair</option>
+              <option value="ragdoll">Ragdoll</option>
+              <option value="persian">Persian</option>
+              <option value="american-shorthair">American Shorthair</option>
+              <option value="mix">Mixed / Rescue cat</option>
+            </select>
+          </div>
+          <div class="auth-field" aria-label="Home environment">
+            <select class="auth-input" id="pref-home" name="prefHome">
+              <option value="">Home environment (optional)</option>
+              <option value="quiet">Quiet (1–2 adults)</option>
+              <option value="family-kids">Family with children</option>
+              <option value="other-pets">Already have other pets</option>
+              <option value="first-time">First-time cat owner</option>
+            </select>
+          </div>
+          <div style="margin:4px 2px 0; font-size:12px; color:#777;">Personality you prefer (multiple choice):</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; font-size:12px; color:#555;">
+            <label><input type="checkbox" id="pref-playful" style="margin-right:4px;">Playful / Active</label>
+            <label><input type="checkbox" id="pref-gentle" style="margin-right:4px;">Gentle / Calm</label>
+            <label><input type="checkbox" id="pref-kid" style="margin-right:4px;">Good with kids</label>
+            <label><input type="checkbox" id="pref-beginner" style="margin-right:4px;">Good for first-time owners</label>
+            <label><input type="checkbox" id="pref-special" style="margin-right:4px;">OK with special needs</label>
+          </div>
+
+          <button class="auth-btn" type="submit">Sign up</button>
+
+          <div class="auth-agree">
+            <input id="reg-agree" type="checkbox" name="agree" aria-label="Agree to the terms">
+            <label for="reg-agree">
+              I have read and agree to the
+              <a href="#" title="User Agreement">User Agreement</a>,
+              <a href="#" title="Privacy Policy">Privacy Policy</a>,
+              and
+              <a href="#" title="Children/Teen Personal Information Protection Rules">Children/Teen Personal Information Protection Rules</a>.
+            </label>
+          </div>
+
+          <div class="auth-bottom">Already have an account? <a href="#login">Log in</a></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recommended 帖子详情弹窗：浏览 + 点赞 + 评论 -->
+  <section class="post-overlay" id="postDetailOverlay" aria-label="Post detail dialog">
+    <div class="post-modal" role="dialog" aria-modal="true">
+      <div class="post-modal-image">
+        <img id="detailImage" src="" alt="">
+      </div>
+      <div class="post-modal-right">
+        <div class="post-modal-header">
+          <div class="post-modal-title" id="detailTitle"></div>
+          <button class="post-modal-close" type="button" id="closePostDetail">×</button>
+        </div>
+        <div class="post-modal-meta">
+          <div class="post-modal-author">
+            <div class="post-modal-author-avatar" id="detailAuthorAvatar"></div>
+            <span id="detailAuthorName"></span>
+          </div>
+          <div class="post-modal-actions">
+            <button class="post-like-btn" type="button" id="detailLikeBtn">
+              <span id="detailLikeIcon">♡</span>
+              <span id="detailLikeLabel">Like</span>
+            </button>
+            <span id="detailLikesText"></span>
+          </div>
+        </div>
+        <div class="post-modal-comments" id="detailComments" aria-label="Comments"></div>
+        <form class="post-comment-form" id="commentForm">
+          <input class="post-comment-input" id="commentInput" type="text" placeholder="Write a comment...">
+          <button class="post-comment-submit" type="submit">Send</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <script>
-    // 根据登录状态显示/隐藏导航按钮
-    if (getToken()) {
-      document.getElementById('nav-login').classList.add('hidden');
-      document.getElementById('nav-logout').classList.remove('hidden');
-    }
+    (function () {
+      // 构建推荐区帖子数据，用于详情弹窗的点赞和评论交互
+      var cards = document.querySelectorAll('.post-card');
+      var overlay = document.getElementById('postDetailOverlay');
+      var detailImage = document.getElementById('detailImage');
+      var detailTitle = document.getElementById('detailTitle');
+      var detailAuthorAvatar = document.getElementById('detailAuthorAvatar');
+      var detailAuthorName = document.getElementById('detailAuthorName');
+      var detailLikeBtn = document.getElementById('detailLikeBtn');
+      var detailLikeIcon = document.getElementById('detailLikeIcon');
+      var detailLikeLabel = document.getElementById('detailLikeLabel');
+      var detailLikesText = document.getElementById('detailLikesText');
+      var detailComments = document.getElementById('detailComments');
+      var commentForm = document.getElementById('commentForm');
+      var commentInput = document.getElementById('commentInput');
+      var closePostDetail = document.getElementById('closePostDetail');
+      var detailAuthorHeader = document.querySelector('.post-modal-author');
+
+      if (!cards.length) return;
+
+      function parseLikes(text) {
+        var match = text.replace(/,/g, '').match(/(\d+)\s*(k)?/i);
+        if (!match) return 0;
+        var num = parseInt(match[1], 10) || 0;
+        if (match[2]) num = num * 1000;
+        return num;
+      }
+      function formatLikes(num) {
+        if (num >= 1000) {
+          return (num / 1000).toFixed(0) + 'k';
+        }
+        return String(num);
+      }
+
+      var posts = [];
+      cards.forEach(function (card, index) {
+        var img = card.querySelector('.cover');
+        var titleEl = card.querySelector('.title');
+        var userEl = card.querySelector('.user');
+        var likesEl = card.querySelector('.likes');
+        var authorText = userEl ? userEl.textContent.trim() : 'User';
+        posts.push({
+          index: index,
+          image: img ? img.src : '',
+          title: titleEl ? titleEl.textContent.trim() : '',
+          author: authorText,
+          likes: likesEl ? parseLikes(likesEl.textContent) : 0,
+          liked: false,
+          comments: []
+        });
+
+        card.dataset.postIndex = String(index);
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', function () {
+          openDetail(index);
+        });
+
+        // 点击作者头像 / 名称进入作者主页
+        if (userEl) {
+          userEl.style.cursor = 'pointer';
+          userEl.addEventListener('click', function (e) {
+            e.stopPropagation();
+            openProfile(authorText);
+          });
+        }
+      });
+
+      var currentIndex = null;
+
+      function updateLikeUI(post) {
+        detailLikeIcon.textContent = post.liked ? '❤' : '♡';
+        detailLikeLabel.textContent = post.liked ? 'Liked' : 'Like';
+        detailLikeBtn.classList.toggle('is-liked', post.liked);
+        detailLikesText.textContent = formatLikes(post.likes) + ' likes';
+        // 同步更新推荐卡片上的点赞数
+        var card = cards[post.index];
+        var likesEl = card && card.querySelector('.likes');
+        if (likesEl) {
+          likesEl.textContent = '❤️ ' + formatLikes(post.likes);
+        }
+      }
+
+      function renderComments(post) {
+        detailComments.innerHTML = '';
+        if (!post.comments.length) {
+          var empty = document.createElement('div');
+          empty.style.color = '#aaa';
+          empty.style.fontSize = '12px';
+          empty.textContent = 'No comments yet. Be the first one!';
+          detailComments.appendChild(empty);
+          return;
+        }
+        post.comments.forEach(function (c) {
+          var item = document.createElement('div');
+          item.className = 'post-comment-item';
+          item.innerHTML =
+            '<span class="post-comment-author">' + (c.author || 'User') + ':</span>' +
+            '<span>' + String(c.text || '').replace(/</g, '&lt;') + '</span>';
+          detailComments.appendChild(item);
+        });
+      }
+
+      function openDetail(index) {
+        var post = posts[index];
+        if (!post) return;
+        currentIndex = index;
+        detailImage.src = post.image || '';
+        detailTitle.textContent = post.title || '';
+        detailAuthorName.textContent = post.author || 'User';
+        detailAuthorAvatar.style.background = '#ddd';
+        updateLikeUI(post);
+        renderComments(post);
+        overlay.classList.add('is-open');
+      }
+
+      function openProfile(author) {
+        if (!author) author = 'Cat Lover';
+        window.location.href = 'cat-profile.html?author=' + encodeURIComponent(author);
+      }
+
+      if (detailAuthorHeader) {
+        detailAuthorHeader.addEventListener('click', function () {
+          var name = detailAuthorName && detailAuthorName.textContent ? detailAuthorName.textContent.trim() : '';
+          openProfile(name);
+        });
+      }
+
+      function closeDetail() {
+        overlay.classList.remove('is-open');
+        currentIndex = null;
+      }
+
+      closePostDetail.addEventListener('click', closeDetail);
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closeDetail();
+      });
+
+      detailLikeBtn.addEventListener('click', function () {
+        if (currentIndex == null) return;
+        var post = posts[currentIndex];
+        if (!post) return;
+        post.liked = !post.liked;
+        post.likes += post.liked ? 1 : -1;
+        if (post.likes < 0) post.likes = 0;
+        updateLikeUI(post);
+      });
+
+      commentForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (currentIndex == null) return;
+        var post = posts[currentIndex];
+        if (!post) return;
+        var text = commentInput.value.trim();
+        if (!text) return;
+        post.comments.push({ author: 'You', text: text });
+        commentInput.value = '';
+        renderComments(post);
+      });
+    })();
+  </script>
+
+  <script>
+    // 简单登录状态管理：使用 localStorage 记录“已登录”用户，并更新侧边栏按钮
+    (function () {
+      var USER_KEY = 'catface_user';
+
+      function loadUser() {
+        try {
+          var raw = window.localStorage.getItem(USER_KEY);
+          if (!raw) return null;
+          return JSON.parse(raw);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function saveUser(user) {
+        try {
+          window.localStorage.setItem(USER_KEY, JSON.stringify(user));
+        } catch (e) {}
+      }
+
+      function clearUser() {
+        try {
+          window.localStorage.removeItem(USER_KEY);
+        } catch (e) {}
+      }
+
+      var loginBtn = document.querySelector('.login-btn');
+      var loginTip = document.querySelector('.login-tip');
+      var searchInput = document.querySelector('.search-wrap input');
+
+      function applyUserState() {
+        var user = loadUser();
+        if (user && loginBtn) {
+          loginBtn.textContent = 'My Account';
+          loginBtn.href = 'account.html';
+          if (loginTip) loginTip.style.display = 'none';
+          if (searchInput && user.email) {
+            searchInput.placeholder = 'Welcome, ' + user.email + ' · Search cats and posts';
+          }
+        } else if (loginBtn) {
+          loginBtn.textContent = 'Log in';
+          loginBtn.href = 'log-in.html';
+          if (loginTip) loginTip.style.display = '';
+          if (searchInput) {
+            searchInput.placeholder = 'Log in to explore more';
+          }
+        }
+      }
+
+      applyUserState();
+
+      // 简单退出功能：在 account.html 中可以根据需要再补充真正的“Log out”按钮
+      window.catfaceLogout = function () {
+        clearUser();
+        applyUserState();
+      };
+    })();
   </script>
 </body>
 </html>

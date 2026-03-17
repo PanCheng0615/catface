@@ -1,17 +1,377 @@
-﻿<!DOCTYPE html>
-<html lang="zh-CN">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CatFace — 诊所门户</title>
-  <link rel="stylesheet" href="../css/style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clinic Portal — CatFace</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #f6f7fb;
+      color: #222;
+      padding: 24px 18px 40px;
+    }
+    a { color: #2f6feb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    h1, h2, h3, p { margin: 0; }
+    button, input, textarea, select { font: inherit; }
+
+    .page {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: #2f6feb;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .panel {
+      background: #fff;
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .muted {
+      color: #666;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    .warn {
+      border-radius: 18px;
+      padding: 14px 16px;
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fed7aa;
+      line-height: 1.6;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      border: 1px solid #dfe3ea;
+      border-radius: 20px;
+      background: #fafbfd;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .card h3 { font-size: 16px; }
+    .kv {
+      display: grid;
+      grid-template-columns: 160px minmax(0, 1fr);
+      gap: 10px 14px;
+      font-size: 14px;
+    }
+    .kv strong { color: #374151; font-size: 13px; }
+    .kv span { color: #111827; }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+    }
+    .input, .textarea {
+      width: 100%;
+      border: 1px solid #cfd6df;
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #fff;
+      color: #111827;
+    }
+    .textarea { min-height: 96px; resize: vertical; }
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn {
+      border: none;
+      border-radius: 16px;
+      padding: 12px 18px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-primary {
+      background: #ff5a76;
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(255,90,118,.22);
+    }
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #333;
+    }
+    .ok {
+      display: none;
+      border-radius: 18px;
+      padding: 14px 16px;
+      background: #ecfdf3;
+      color: #027a48;
+      font-weight: 600;
+      line-height: 1.6;
+    }
+    .ok.show { display: block; }
+  </style>
 </head>
 <body>
-  <main style="max-width:800px; margin:60px auto; padding:0 16px; text-align:center;">
-    <h2>诊所门户</h2>
-    <p style="color:#888; margin-top:12px;">此页面由对应 Member 负责开发</p>
-    <a href="index.html" style="display:inline-block; margin-top:24px;">← 返回首页</a>
-  </main>
-  <script src="../js/config.js"></script>
+  <div class="page">
+    <div class="top">
+      <a href="health.html">← Back to Health</a>
+      <span class="badge">Clinic Portal</span>
+    </div>
+
+    <header class="panel">
+      <div class="panel-head">
+        <div>
+          <h1>Clinic Health Record Upload</h1>
+          <p class="muted">Clinics can view user-shared data for a specific cat ID and upload a verified report. This demo uses localStorage (no backend).</p>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
+            <span>Cat ID</span>
+            <input id="filterCatId" type="text" style="border-radius:12px; border:1px solid #e5e7eb; padding:6px 10px; min-width:160px;" placeholder="e.g. CAT-2026-002">
+          </label>
+          <button class="btn-primary" type="button" id="loadCatBtn">Load shared data</button>
+        </div>
+      </div>
+      <div class="warn" id="shareWarn">
+        No shared data found for this Cat ID and clinic. Ask the user to enable “Share data with clinic” on the Health page.
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Shared user data (read-only)</h2>
+          <p class="muted">This section shows what the user has uploaded and confirmed for sharing.</p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <article class="card">
+          <h3>User health snapshot</h3>
+          <div class="kv">
+            <strong>Cat Name</strong><span id="uName">—</span>
+            <strong>Gender</strong><span id="uGender">—</span>
+            <strong>Birthday</strong><span id="uBirthday">—</span>
+            <strong>Hobbies</strong><span id="uHobbies">—</span>
+            <strong>Neuter</strong><span id="uNeuter">—</span>
+            <strong>Vaccination</strong><span id="uVaccination">—</span>
+            <strong>Allergies</strong><span id="uAllergies">—</span>
+            <strong>Recent check date</strong><span id="uDate">—</span>
+            <strong>Owner notes</strong><span id="uNotes">—</span>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>Upload verified clinic report</h3>
+          <form id="officialForm">
+            <div class="field">
+              <label for="reportDate">Report date</label>
+              <input class="input" id="reportDate" type="date" required>
+            </div>
+            <div class="field">
+              <label for="vaccination">Vaccination</label>
+              <input class="input" id="vaccination" type="text" placeholder="Example: Rabies + FVRCP">
+            </div>
+            <div class="field">
+              <label for="allergies">Allergies</label>
+              <input class="input" id="allergies" type="text" placeholder="Example: Grain allergy">
+            </div>
+            <div class="field">
+              <label for="neuter">Spay/Neuter status</label>
+              <select class="input" id="neuter">
+                <option value="">Not specified</option>
+                <option value="Completed">Completed</option>
+                <option value="Not Yet">Not Yet</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="other">Other health data / summary</label>
+              <textarea class="textarea" id="other" placeholder="Write clinic summary..."></textarea>
+            </div>
+            <div class="field">
+              <label for="reportFile">Report file (PDF/image, stored locally)</label>
+              <input class="input" id="reportFile" type="file" accept="image/*,application/pdf">
+            </div>
+            <div class="actions">
+              <button class="btn btn-secondary" type="button" id="reloadBtn">Reload shared data</button>
+              <button class="btn btn-primary" type="submit">Upload report</button>
+            </div>
+          </form>
+        </article>
+      </div>
+
+      <div class="ok" id="okBanner">Clinic report uploaded. The user can now see the latest official record in `health.html`.</div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const SHARE_KEY = "catface_health_share_enabled";
+      const USER_HEALTH_KEY = "catface_health_user_record";
+      const OFFICIAL_HEALTH_KEY = "catface_health_official_record";
+
+      const shareWarn = document.getElementById("shareWarn");
+      const okBanner = document.getElementById("okBanner");
+
+      const uName = document.getElementById("uName");
+      const uGender = document.getElementById("uGender");
+      const uBirthday = document.getElementById("uBirthday");
+      const uHobbies = document.getElementById("uHobbies");
+      const uNeuter = document.getElementById("uNeuter");
+      const uVaccination = document.getElementById("uVaccination");
+      const uAllergies = document.getElementById("uAllergies");
+      const uDate = document.getElementById("uDate");
+      const uNotes = document.getElementById("uNotes");
+
+      const officialForm = document.getElementById("officialForm");
+      const reloadBtn = document.getElementById("reloadBtn");
+      const filterCatIdInput = document.getElementById("filterCatId");
+      const loadCatBtn = document.getElementById("loadCatBtn");
+
+      const CLINIC_ID = "clinic-a";
+
+      function readBool(key, fallback) {
+        try {
+          const raw = window.localStorage.getItem(key);
+          if (raw == null) return fallback;
+          return raw === "1";
+        } catch (e) { return fallback; }
+      }
+      function readJson(key) {
+        try {
+          const raw = window.localStorage.getItem(key);
+          return raw ? JSON.parse(raw) : null;
+        } catch (e) { return null; }
+      }
+      function writeJson(key, value) {
+        try {
+          window.localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {}
+      }
+
+      function renderShared() {
+        const shared = readBool(SHARE_KEY, false);
+        const requestedCatId = (filterCatIdInput && filterCatIdInput.value.trim()) || "";
+        const user = shared ? readJson(USER_HEALTH_KEY) : null;
+
+        let visible = false;
+        if (shared && user && user.catId && user.clinicId) {
+          if ((!requestedCatId || requestedCatId === user.catId) && user.clinicId === CLINIC_ID) {
+            visible = true;
+          }
+        }
+
+        shareWarn.style.display = visible ? "none" : "";
+
+        uName.textContent = user && user.name ? user.name : "—";
+        uGender.textContent = user && user.gender ? user.gender : "—";
+        uBirthday.textContent = user && user.birthday ? user.birthday : "—";
+        uHobbies.textContent = user && user.hobbies ? user.hobbies : "—";
+        uNeuter.textContent = user && user.neuter ? user.neuter : "—";
+        uVaccination.textContent = user && user.vaccination ? user.vaccination : "—";
+        uAllergies.textContent = user && user.allergies ? user.allergies : "—";
+        uDate.textContent = user && user.reportDate ? user.reportDate : "—";
+        uNotes.textContent = user && user.ownerNotes ? user.ownerNotes : "—";
+      }
+
+      reloadBtn.addEventListener("click", function () {
+        okBanner.classList.remove("show");
+        renderShared();
+      });
+
+      loadCatBtn.addEventListener("click", function () {
+        okBanner.classList.remove("show");
+        renderShared();
+      });
+
+      officialForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        const shared = readBool(SHARE_KEY, false);
+        const user = readJson(USER_HEALTH_KEY) || {};
+
+        if (!shared || !user.catId || user.clinicId !== CLINIC_ID) {
+          alert("No shared data for this clinic and cat. Ask the user to enable sharing on the Health page.");
+          return;
+        }
+
+        const reportDate = document.getElementById("reportDate").value;
+        const vaccination = document.getElementById("vaccination").value.trim();
+        const allergies = document.getElementById("allergies").value.trim();
+        const neuter = document.getElementById("neuter").value;
+        const other = document.getElementById("other").value.trim();
+        const file = document.getElementById("reportFile").files[0];
+
+        function save(reportUrl) {
+          writeJson(OFFICIAL_HEALTH_KEY, {
+            catName: user.name || "Unknown",
+            catId: user.catId || "",
+            reportDate: reportDate,
+            vaccination: vaccination || user.vaccination || "",
+            allergies: allergies || user.allergies || "",
+            neuter: neuter || user.neuter || "",
+            other: other || "Clinic uploaded a verified report.",
+            reportUrl: reportUrl || "#",
+            updatedAt: new Date().toISOString()
+          });
+          okBanner.classList.add("show");
+          alert("Uploaded successfully. Go back to Health page to see the latest official record.");
+        }
+
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function () {
+            save(reader.result);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          save("#");
+        }
+      });
+
+      renderShared();
+    })();
+  </script>
 </body>
 </html>
+
