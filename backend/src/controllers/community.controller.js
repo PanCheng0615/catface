@@ -1,10 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
-const { PrismaPg } = require("@prisma/adapter-pg");
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL
-});
-const prisma = new PrismaClient({ adapter });
+const prisma = new PrismaClient();
 
 function formatRelativeTime(date) {
   const now = new Date();
@@ -247,10 +242,34 @@ async function addComment(req, res) {
   }
 }
 
+async function uploadPlaceholder(req, res) {
+  try {
+    const incoming = req.body && typeof req.body.imageDataUrl === "string"
+      ? req.body.imageDataUrl.trim()
+      : "";
+    const demoUrl =
+      "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=600&h=800&q=80";
+    const finalUrl = incoming ? incoming : demoUrl;
+    return res.status(200).json({
+      success: true,
+      data: { url: finalUrl },
+      message: "上传成功（占位）"
+    });
+  } catch (error) {
+    console.error("uploadPlaceholder error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      message: "服务器错误"
+    });
+  }
+}
+
 module.exports = {
   getPosts,
   createPost,
   toggleLike,
   getComments,
-  addComment
+  addComment,
+  uploadPlaceholder
 };

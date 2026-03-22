@@ -66,6 +66,13 @@
     if (likesEl) likesEl.textContent = "❤️ " + formatLikes(post.likes);
   }
 
+  function requireLogin() {
+    if (typeof getToken === "function" && getToken()) return true;
+    alert("Please log in first.");
+    window.location.href = "/pages/log-in.html";
+    return false;
+  }
+
   function renderComments(post) {
     if (!detailComments) return;
     detailComments.innerHTML = "";
@@ -113,10 +120,25 @@
       if (currentIndex == null) return;
       var post = posts[currentIndex];
       if (!post) return;
-      post.liked = !post.liked;
-      post.likes += post.liked ? 1 : -1;
-      if (post.likes < 0) post.likes = 0;
-      updateLikeUI(post);
+      if (!requireLogin()) return;
+      fetch(API_BASE + "/community/posts/" + post.id + "/like", {
+        method: "POST",
+        headers: getAuth()
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (result) {
+          if (!result.success || !result.data) {
+            alert(result.message || "Like failed");
+            return;
+          }
+          post.liked = !!result.data.liked;
+          post.likes += post.liked ? 1 : -1;
+          if (post.likes < 0) post.likes = 0;
+          updateLikeUI(post);
+        })
+        .catch(function () {
+          alert("Network error, please try again.");
+        });
     });
   }
 
@@ -128,10 +150,29 @@
       if (!post) return;
       var text = commentInput.value.trim();
       if (!text) return;
-      if (!post.comments) post.comments = [];
-      post.comments.push({ author: "You", text: text });
-      commentInput.value = "";
-      renderComments(post);
+      if (!requireLogin()) return;
+      fetch(API_BASE + "/community/posts/" + post.id + "/comments", {
+        method: "POST",
+        headers: getAuth(),
+        body: JSON.stringify({ content: text })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (result) {
+          if (!result.success || !result.data) {
+            alert(result.message || "Comment failed");
+            return;
+          }
+          if (!post.comments) post.comments = [];
+          post.comments.push({
+            author: result.data.author || "You",
+            text: result.data.text || text
+          });
+          commentInput.value = "";
+          renderComments(post);
+        })
+        .catch(function () {
+          alert("Network error, please try again.");
+        });
     });
   }
 

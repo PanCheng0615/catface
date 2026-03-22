@@ -441,21 +441,21 @@
 <body>
   <!-- 顶部导航 / Top navigation -->
   <header class="header" role="banner">
-    <a href="index.html" class="logo">cat face</a>
+    <a href="/pages/index.html" class="logo">cat face</a>
   </header>
 
   <!-- 左侧边栏 / Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-top">
       <ul class="sidebar-nav">
-        <li><a href="index.html" class="active"><span class="icon">💬</span> Community</a></li>
-        <li><a href="adoption.html"><span class="icon">🐱</span> Adoption</a></li>
-        <li><a href="health.html"><span class="icon">🩺</span> Health</a></li>
-        <li><a href="notifications.html"><span class="icon">🔔</span> Notifications</a></li>
-        <li><a href="account.html"><span class="icon">👤</span> Account</a></li>
-        <li><a href="cat-mall.html"><span class="icon">🛍️</span> Store</a></li>
+        <li><a href="/pages/index.html" class="active"><span class="icon">💬</span> Community</a></li>
+        <li><a href="/pages/adoption.html"><span class="icon">🐱</span> Adoption</a></li>
+        <li><a href="/pages/health.html"><span class="icon">🩺</span> Health</a></li>
+        <li><a href="/pages/notifications.html"><span class="icon">🔔</span> Notifications</a></li>
+        <li><a href="/pages/account.html"><span class="icon">👤</span> Account</a></li>
+        <li><a href="#" title="Store coming soon"><span class="icon">🛍️</span> Store</a></li>
       </ul>
-      <a href="log-in.html" class="login-btn">Log in</a>
+      <a href="/pages/log-in.html" class="login-btn">Log in</a>
       <div class="login-tip">
         <h4>Log in now to:</h4>
         <ul>
@@ -467,7 +467,7 @@
       </div>
     </div>
     <div class="sidebar-bottom">
-      <a href="rescue-dashboard.html" class="rescue-entry">
+      <a href="/pages/rescue-dashboard.html" class="rescue-entry">
         <span class="icon">🚑</span>
         <span>
           <span class="label">Rescue Dashboard</span>
@@ -480,7 +480,7 @@
   <!-- 主内容：分类 + 猫猫帖子 / Main content -->
   <main class="main">
     <nav class="tabs" aria-label="Content categories">
-      <a href="cat-facebook.html" class="post-cta">Post</a>
+      <a href="/pages/cat-facebook.html" class="post-cta">Post</a>
       <a href="#" class="current">Recommended</a>
     </nav>
 
@@ -706,14 +706,14 @@
         var user = loadUser();
         if (user && loginBtn) {
           loginBtn.textContent = 'My Account';
-          loginBtn.href = 'account.html';
+          loginBtn.href = '/pages/account.html';
           if (loginTip) loginTip.style.display = 'none';
           if (searchInput && user.email) {
             searchInput.placeholder = 'Welcome, ' + user.email + ' · Search cats and posts';
           }
         } else if (loginBtn) {
           loginBtn.textContent = 'Log in';
-          loginBtn.href = 'log-in.html';
+          loginBtn.href = '/pages/log-in.html';
           if (loginTip) loginTip.style.display = '';
           if (searchInput) {
             searchInput.placeholder = 'Log in to explore more';

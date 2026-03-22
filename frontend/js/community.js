@@ -66,6 +66,26 @@
   let posts = [];
   let currentPostId = null;
 
+  function fileToDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        resolve(ev.target.result);
+      };
+      reader.onerror = function () {
+        reject(new Error("read file failed"));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function requireLogin() {
+    if (typeof getToken === "function" && getToken()) return true;
+    alert("Please log in first.");
+    window.location.href = "/pages/log-in.html";
+    return false;
+  }
+
   function loadPostsFromApi() {
     if (!API_BASE) {
       posts = initialPosts.slice();
@@ -225,12 +245,36 @@
     const file = createImageInput.files[0];
     const text = createTextInput.value.trim();
     if (!file || !text) return;
-    if (API_BASE && typeof getToken === "function" && getToken()) {
-      fetch(API_BASE + "/community/posts", {
-        method: "POST",
-        headers: getAuth(),
-        body: JSON.stringify({ content: text, imageUrl: null })
-      })
+    if (API_BASE) {
+      if (!requireLogin()) return;
+      fileToDataUrl(file)
+        .then(function (localDataUrl) {
+          return fetch(API_BASE + "/community/upload", {
+            method: "POST",
+            headers: getAuth(),
+            body: JSON.stringify({ imageDataUrl: localDataUrl })
+          })
+            .then(function (res) { return res.json(); })
+            .then(function (uploadResult) {
+              var imageUrl = localDataUrl;
+              if (uploadResult.success && uploadResult.data && uploadResult.data.url) {
+                imageUrl = uploadResult.data.url;
+              }
+              return fetch(API_BASE + "/community/posts", {
+                method: "POST",
+                headers: getAuth(),
+                body: JSON.stringify({ content: text, imageUrl: imageUrl })
+              });
+            })
+            .catch(function () {
+              // Upload API failed: keep development flow by using local data URL.
+              return fetch(API_BASE + "/community/posts", {
+                method: "POST",
+                headers: getAuth(),
+                body: JSON.stringify({ content: text, imageUrl: localDataUrl })
+              });
+            });
+        })
         .then(function (res) { return res.json(); })
         .then(function (result) {
           createImageInput.value = "";
@@ -355,11 +399,27 @@
       return p.id === currentPostId;
     });
     if (!post) return;
-    post.liked = !post.liked;
-    post.likes += post.liked ? 1 : -1;
-    if (post.likes < 0) post.likes = 0;
-    updateLikeButton(post);
-    renderFeed();
+    if (!API_BASE) return;
+    if (!requireLogin()) return;
+    fetch(API_BASE + "/community/posts/" + post.id + "/like", {
+      method: "POST",
+      headers: getAuth()
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (result) {
+        if (!result.success || !result.data) {
+          alert(result.message || "点赞失败");
+          return;
+        }
+        post.liked = !!result.data.liked;
+        post.likes += post.liked ? 1 : -1;
+        if (post.likes < 0) post.likes = 0;
+        updateLikeButton(post);
+        renderFeed();
+      })
+      .catch(function () {
+        alert("网络错误，请稍后重试");
+      });
   });
 
   function renderComments(post) {
@@ -396,11 +456,31 @@
       return p.id === currentPostId;
     });
     if (!post) return;
-    post.comments.push({ author: "You", text: text });
-    commentInput.value = "";
-    renderComments(post);
-    updateLikeButton(post);
-    renderFeed();
+    if (!API_BASE) return;
+    if (!requireLogin()) return;
+    fetch(API_BASE + "/community/posts/" + post.id + "/comments", {
+      method: "POST",
+      headers: getAuth(),
+      body: JSON.stringify({ content: text })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (result) {
+        if (!result.success || !result.data) {
+          alert(result.message || "评论失败");
+          return;
+        }
+        post.comments.push({
+          author: result.data.author || "You",
+          text: result.data.text || text
+        });
+        commentInput.value = "";
+        renderComments(post);
+        updateLikeButton(post);
+        renderFeed();
+      })
+      .catch(function () {
+        alert("网络错误，请稍后重试");
+      });
   }
 
   commentSubmit.addEventListener("click", addComment);
