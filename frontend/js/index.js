@@ -61,6 +61,49 @@
     return num >= 1000 ? (num / 1000).toFixed(0) + 'k' : String(num);
   }
 
+  const sampleComments = [
+    [
+      { author: 'CatMom88',   text: 'So adorable!! 😍 Luna looks so happy!' },
+      { author: 'PurrLover',  text: 'My cat does the same thing every Sunday ☀️' },
+      { author: 'WhiskerFan', text: 'That sunny spot looks perfect 🐱' }
+    ],
+    [
+      { author: 'TabbyTales', text: 'Max is gorgeous! What brand of kibble?' },
+      { author: 'CatNerd',    text: 'British Shorthairs are the best breed 💙' },
+      { author: 'Meowzilla',  text: 'He looks so regal haha 👑' }
+    ],
+    [
+      { author: 'AdoptDontShop', text: 'Ginger is so pretty! Has she found a home yet??' },
+      { author: 'OrangeCatClub', text: 'Orange cats are literally the best 🧡' },
+      { author: 'KittyRescue',   text: 'Sharing this to help find her a family!' }
+    ],
+    [
+      { author: 'VetStudent22', text: 'Purrfect numbers indeed! Great vet visit 🏥' },
+      { author: 'CatParent',   text: 'My baby has his checkup next week, hoping for the same!' },
+      { author: 'DrMeow',      text: 'Happy healthy kitty 🐾' }
+    ],
+    [
+      { author: 'MultiCatHome', text: 'Sibling cats are the cutest thing ever 🥰' },
+      { author: 'ShadowFan',   text: 'Shadow & Friends content is always so wholesome!' },
+      { author: 'CatGang',     text: 'The more the merrier 😄' }
+    ],
+    [
+      { author: 'CuddleLover', text: 'This is literally the most heartwarming thing 💕' },
+      { author: 'LunaStan',    text: 'Luna's posts always make my day better 🌸' },
+      { author: 'HappyCats',   text: 'This is why I love cats so much 😭❤️' }
+    ],
+    [
+      { author: 'TechCatDad',  text: '5 miles!! Charlie is fitter than me lol 🏃' },
+      { author: 'SmartCollar', text: 'Which smart collar brand is this? Want one for my cat!' },
+      { author: 'ActivePets',  text: 'Love seeing healthy active cats 💪' }
+    ],
+    [
+      { author: 'AdoptMe2024', text: 'Patches is STUNNING. Is she still available??' },
+      { author: 'CalicoClan',  text: 'Calico cats are so unique, no two look the same 🎨' },
+      { author: 'ForeverHome', text: 'Sharing this everywhere, she deserves love! 🏠' }
+    ]
+  ];
+
   const posts = [];
   let currentIndex = null;
 
@@ -78,7 +121,7 @@
       author:   authorText,
       likes:    likesEl ? parseLikes(likesEl.textContent) : 0,
       liked:    false,
-      comments: []
+      comments: sampleComments[index] ? sampleComments[index].slice() : []
     });
 
     card.dataset.postIndex = String(index);
@@ -108,18 +151,22 @@
   function renderComments(post) {
     detailComments.innerHTML = '';
     if (!post.comments.length) {
-      const empty = document.createElement('div');
-      empty.style.cssText = 'color:#aaa;font-size:12px;';
-      empty.textContent = 'No comments yet. Be the first one!';
-      detailComments.appendChild(empty);
+      detailComments.innerHTML =
+        '<div style="color:#aaa;font-size:13px;padding:12px 0;text-align:center;">No comments yet. Be the first! 💬</div>';
       return;
     }
     post.comments.forEach(function (c) {
       const item = document.createElement('div');
       item.className = 'post-comment-item';
+      const initials = (c.author || 'U').charAt(0).toUpperCase();
       item.innerHTML =
-        '<span class="post-comment-author">' + (c.author || 'User') + ':</span>' +
-        '<span>' + String(c.text || '').replace(/</g, '&lt;') + '</span>';
+        '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;">' +
+          '<div style="width:28px;height:28px;border-radius:50%;background:var(--brand-light);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">' + initials + '</div>' +
+          '<div>' +
+            '<span class="post-comment-author" style="color:var(--text-main);font-size:13px;font-weight:600;">' + (c.author || 'User') + '</span>' +
+            '<div style="color:var(--text-sub);font-size:13px;margin-top:2px;">' + String(c.text || '').replace(/</g, '&lt;') + '</div>' +
+          '</div>' +
+        '</div>';
       detailComments.appendChild(item);
     });
   }

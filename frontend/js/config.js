@@ -17,6 +17,10 @@ function logout() {
   window.location.href = "/pages/log-in.html";
 }
 
+function isLoggedIn() {
+  return !!getToken();
+}
+
 function getAuthHeaders() {
   return {
     "Content-Type": "application/json",
