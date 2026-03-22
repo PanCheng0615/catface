@@ -1,64 +1,49 @@
-/**
- * JWT 验证中间件（Member 1 负责，此处为简化版供 Member 2 联调用）
- * 需要登录的接口使用 protect；需要特定角色使用 authorize('rescue_staff') 等
- */
+// backend/src/middleware/auth.js
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
 
-/**
- * 验证 JWT，把用户信息挂到 req.user
- */
-async function protect(req, res, next) {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        success: false,
-        error: '未提供 Token',
-        message: '请先登录'
-      });
-    }
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'catface-secret-change-in-production');
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id }
+// 需要登录才能访问的接口，用这个中间件
+function protect(req, res, next) {
+  let token;
+
+  // 从请求头里找 Authorization: Bearer xxx
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer ')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      error: 'No token',
+      message: '未提供登录凭证，请先登录'
     });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: '用户不存在',
-        message: '请重新登录'
-      });
-    }
-    req.user = user;
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // 把解析后的用户信息挂到 req 上，后面的接口可以用
+    req.user = decoded;
     next();
-  } catch (err) {
-    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        success: false,
-        error: 'Token 无效或已过期',
-        message: '请重新登录'
-      });
-    }
-    console.error('auth middleware error:', err);
-    return res.status(500).json({ success: false, error: '服务器错误', message: '验证失败' });
+  } catch (error) {
+    console.error('auth middleware error:', error);
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid token',
+      message: '登录凭证无效或已过期，请重新登录'
+    });
   }
 }
 
-/**
- * 限制角色：protect 之后使用，如 authorize('rescue_staff', 'admin')
- */
+// 角色限制：只有指定角色才能访问
 function authorize(...roles) {
   return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ success: false, error: '未登录', message: '请先登录' });
-    }
-    if (!roles.includes(req.user.role)) {
+    if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        error: '权限不足',
-        message: '您没有权限执行此操作'
+        error: 'Forbidden',
+        message: '权限不足'
       });
     }
     next();

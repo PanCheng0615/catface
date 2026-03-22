@@ -27,37 +27,20 @@ model User {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
-<<<<<<< HEAD
+  // Relations
   cats                     Cat[]
   posts                    Post[]
   post_likes               PostLike[]
   comments                 Comment[]
   adopter_preferences      AdopterPreference?
   adoption_applications    AdoptionApplication[]
-  cat_likes                 CatLike[]
   owner_health_records     OwnerHealthRecord[]
   health_share_permissions HealthSharePermission[]
   followers                UserFollow[]            @relation("following")
-  following                UserFollow[]             @relation("follower")
-  conversations_as_user    Conversation[]           @relation("user_conversations")
-  conversations_as_org     Conversation[]           @relation("org_conversations")
+  following                UserFollow[]            @relation("follower")
+  conversations_as_user    Conversation[]          @relation("user_conversations")
+  conversations_as_org     Conversation[]          @relation("org_conversations")
   sent_messages            Message[]
-=======
-  // Relations
-  cats                   Cat[]
-  posts                  Post[]
-  post_likes             PostLike[]
-  comments               Comment[]
-  adopter_preferences    AdopterPreference?
-  adoption_applications  AdoptionApplication[]
-  owner_health_records   OwnerHealthRecord[]
-  health_share_permissions HealthSharePermission[]
-  followers              UserFollow[]           @relation("following")
-  following              UserFollow[]           @relation("follower")
-  conversations_as_user  Conversation[]         @relation("user_conversations")
-  conversations_as_org   Conversation[]         @relation("org_conversations")
-  sent_messages          Message[]
->>>>>>> main
 
   @@map("users")
 }
@@ -91,7 +74,6 @@ model UserFollow {
 // ─────────────────────────────────────────
 
 model Organization {
-<<<<<<< HEAD
   id          String   @id @default(uuid())
   name        String
   type        OrgType
@@ -106,22 +88,6 @@ model Organization {
 
   cats           Cat[]
   clinic_reports ClinicHealthReport[]
-=======
-  id           String   @id @default(uuid())
-  name         String
-  type         OrgType
-  email        String   @unique
-  password     String
-  phone        String?
-  address      String?
-  logo_url     String?
-  description  String?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-
-  cats                Cat[]
-  clinic_reports      ClinicHealthReport[]
->>>>>>> main
 
   @@map("organizations")
 }
@@ -136,7 +102,6 @@ enum OrgType {
 // ─────────────────────────────────────────
 
 model Cat {
-<<<<<<< HEAD
   id           String   @id @default(uuid())
   name         String
   breed        String?
@@ -156,56 +121,14 @@ model Cat {
   tags                     CatTag[]
   requirements             CatRequirement[]
   updates                  CatUpdate[]
-  cat_likes                 CatLike[]
   adoption_applications    AdoptionApplication[]
   owner_health_records     OwnerHealthRecord[]
   clinic_reports           ClinicHealthReport[]
-=======
-  id              String    @id @default(uuid())
-  name            String
-  breed           String?
-  age_months      Int?
-  gender          String?
-  color           String?
-  description     String?
-  photo_url       String?
-  is_available    Boolean   @default(true)
-  owner_id        String?
-  org_id          String?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-
-  owner               User?                @relation(fields: [owner_id], references: [id])
-  organization        Organization?        @relation(fields: [org_id], references: [id])
-  tags                CatTag[]
-  requirements        CatRequirement[]
-  updates             CatUpdate[]
-  adoption_applications AdoptionApplication[]
-  owner_health_records  OwnerHealthRecord[]
-  clinic_reports        ClinicHealthReport[]
->>>>>>> main
   health_share_permissions HealthSharePermission[]
 
   @@map("cats")
 }
 
-<<<<<<< HEAD
-// 领养页滑动「喜欢」记录（Member 2）
-model CatLike {
-  id         String   @id @default(uuid())
-  user_id    String
-  cat_id     String
-  created_at DateTime @default(now())
-
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
-
-  @@unique([user_id, cat_id])
-  @@map("cat_likes")
-}
-
-=======
->>>>>>> main
 model CatTag {
   id         String   @id @default(uuid())
   cat_id     String
@@ -241,7 +164,6 @@ model CatUpdate {
 }
 
 model AdopterPreference {
-<<<<<<< HEAD
   id               String   @id @default(uuid())
   user_id          String   @unique
   preferred_age    String?
@@ -249,15 +171,6 @@ model AdopterPreference {
   preferred_breed  String?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
-=======
-  id             String   @id @default(uuid())
-  user_id        String   @unique
-  preferred_age  String?
-  preferred_gender String?
-  preferred_breed String?
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
->>>>>>> main
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
