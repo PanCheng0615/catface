@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clinic Portal — CatFace</title>
+  <title>Clinic Portal �?CatFace</title>
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: #f6f7fb;
+      background: #F4F9FD;
       color: #222;
       padding: 24px 18px 40px;
     }
@@ -132,9 +132,9 @@
       font-weight: 600;
     }
     .btn-primary {
-      background: #ff5a76;
+      background: #A7C7E7;
       color: #fff;
-      box-shadow: 0 10px 24px rgba(255,90,118,.22);
+      box-shadow: 0 10px 24px rgba(196,131,106,.22);
     }
     .btn-secondary {
       background: #f3f4f6;
@@ -155,7 +155,7 @@
 <body>
   <div class="page">
     <div class="top">
-      <a href="health.html">← Back to Health</a>
+      <a href="health.html">�?Back to Health</a>
       <span class="badge">Clinic Portal</span>
     </div>
 
@@ -174,7 +174,7 @@
         </div>
       </div>
       <div class="warn" id="shareWarn">
-        No shared data found for this Cat ID and clinic. Ask the user to enable “Share data with clinic” on the Health page.
+        No shared data found for this Cat ID and clinic. Ask the user to enable “Share data with clinic�?on the Health page.
       </div>
     </header>
 
@@ -190,15 +190,15 @@
         <article class="card">
           <h3>User health snapshot</h3>
           <div class="kv">
-            <strong>Cat Name</strong><span id="uName">—</span>
-            <strong>Gender</strong><span id="uGender">—</span>
-            <strong>Birthday</strong><span id="uBirthday">—</span>
-            <strong>Hobbies</strong><span id="uHobbies">—</span>
-            <strong>Neuter</strong><span id="uNeuter">—</span>
-            <strong>Vaccination</strong><span id="uVaccination">—</span>
-            <strong>Allergies</strong><span id="uAllergies">—</span>
-            <strong>Recent check date</strong><span id="uDate">—</span>
-            <strong>Owner notes</strong><span id="uNotes">—</span>
+            <strong>Cat Name</strong><span id="uName">�?/span>
+            <strong>Gender</strong><span id="uGender">�?/span>
+            <strong>Birthday</strong><span id="uBirthday">�?/span>
+            <strong>Hobbies</strong><span id="uHobbies">�?/span>
+            <strong>Neuter</strong><span id="uNeuter">�?/span>
+            <strong>Vaccination</strong><span id="uVaccination">�?/span>
+            <strong>Allergies</strong><span id="uAllergies">�?/span>
+            <strong>Recent check date</strong><span id="uDate">�?/span>
+            <strong>Owner notes</strong><span id="uNotes">�?/span>
           </div>
         </article>
 
@@ -304,15 +304,15 @@
 
         shareWarn.style.display = visible ? "none" : "";
 
-        uName.textContent = user && user.name ? user.name : "—";
-        uGender.textContent = user && user.gender ? user.gender : "—";
-        uBirthday.textContent = user && user.birthday ? user.birthday : "—";
-        uHobbies.textContent = user && user.hobbies ? user.hobbies : "—";
-        uNeuter.textContent = user && user.neuter ? user.neuter : "—";
-        uVaccination.textContent = user && user.vaccination ? user.vaccination : "—";
-        uAllergies.textContent = user && user.allergies ? user.allergies : "—";
-        uDate.textContent = user && user.reportDate ? user.reportDate : "—";
-        uNotes.textContent = user && user.ownerNotes ? user.ownerNotes : "—";
+        uName.textContent = user && user.name ? user.name : "�?;
+        uGender.textContent = user && user.gender ? user.gender : "�?;
+        uBirthday.textContent = user && user.birthday ? user.birthday : "�?;
+        uHobbies.textContent = user && user.hobbies ? user.hobbies : "�?;
+        uNeuter.textContent = user && user.neuter ? user.neuter : "�?;
+        uVaccination.textContent = user && user.vaccination ? user.vaccination : "�?;
+        uAllergies.textContent = user && user.allergies ? user.allergies : "�?;
+        uDate.textContent = user && user.reportDate ? user.reportDate : "�?;
+        uNotes.textContent = user && user.ownerNotes ? user.ownerNotes : "�?;
       }
 
       reloadBtn.addEventListener("click", function () {

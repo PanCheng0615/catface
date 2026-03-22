@@ -4,17 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Account · CatFace</title>
+  <link rel="stylesheet" href="../css/style.css">
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      min-height: 100vh;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: radial-gradient(circle at top left, #ffe6eb 0%, #fafafa 40%, #f3f4ff 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
+      background: #F4F9FD;
       color: #222;
     }
     a { color: #2f6feb; text-decoration: none; }
@@ -36,7 +32,7 @@
     }
     .left { padding: 26px 26px 22px; }
     .right {
-      background: radial-gradient(circle at top, #ff2442 0%, #ff7a66 45%, #ffc1a6 100%);
+      background: linear-gradient(180deg, #A7C7E7 0%, #C8DFF2 100%);
       color: #fff;
       padding: 26px 24px 22px;
       display: flex;
@@ -59,20 +55,20 @@
       align-items: center;
       gap: 4px;
     }
-    .logo {
+    .acct-logo {
       display: inline-flex;
       align-items: center;
       gap: 6px;
       font-weight: 800;
-      color: #ff2442;
+      color: #A7C7E7;
       font-size: 18px;
       margin-top: 8px;
     }
-    .logo-mark {
+    .acct-logo-mark {
       width: 32px;
       height: 32px;
       border-radius: 10px;
-      background: #ff2442;
+      background: #A7C7E7;
       color: #fff;
       display: grid;
       place-items: center;
@@ -110,7 +106,7 @@
     .pill {
       padding: 6px 10px;
       border-radius: 999px;
-      background: #f5f5f5;
+      background: #F4F9FD;
       font-size: 12px;
       color: #666;
     }
@@ -139,7 +135,7 @@
       border: 1px solid #e5e7eb;
       border-radius: 14px;
       padding: 10px 12px;
-      background: #fafafa;
+      background: #F4F9FD;
       outline: none;
       color: #111827;
       font-size: 14px;
@@ -177,13 +173,13 @@
       font-weight: 700;
     }
     .btn-primary {
-      background: #ff2442;
+      background: #A7C7E7;
       color: #fff;
-      box-shadow: 0 10px 24px rgba(255,36,66,.22);
+      box-shadow: 0 10px 24px rgba(196,131,106,.22);
     }
-    .btn-primary:hover { background: #e61e3a; }
+    .btn-primary:hover { background: #7EB8DC; }
     .btn-secondary {
-      background: #f5f5f5;
+      background: #F4F9FD;
       color: #444;
     }
     .btn-danger {
@@ -219,15 +215,52 @@
   </style>
 </head>
 <body>
+  <header class="header" role="banner">
+    <a href="index.html" class="logo">cat face</a>
+  </header>
+
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <ul class="sidebar-nav">
+        <li><a href="index.html"><span class="icon">💬</span> Community</a></li>
+        <li><a href="adoption.html"><span class="icon">🐱</span> Adoption</a></li>
+        <li><a href="health.html"><span class="icon">🩺</span> Health</a></li>
+        <li><a href="notifications.html"><span class="icon">🔔</span> Notifications</a></li>
+        <li><a href="account.html" class="active"><span class="icon">👤</span> Account</a></li>
+        <li><a href="#"><span class="icon">🛍️</span> Store <small style="font-size:10px;color:#bbb;">(soon)</small></a></li>
+      </ul>
+      <a href="log-in.html" class="login-btn">Log in</a>
+      <div class="login-tip">
+        <h4>Log in now to:</h4>
+        <ul>
+          <li>See cat content that understands you better</li>
+          <li>Search adoption, health, and notes</li>
+          <li>View your saved and liked posts</li>
+          <li>Interact and communicate with others better</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <a href="rescue-dashboard.html" class="rescue-entry">
+        <span class="icon">🚑</span>
+        <span>
+          <span class="label">Rescue Dashboard</span>
+          <small>Quick view of stray rescue status</small>
+        </span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="main">
   <div class="shell">
     <section class="left">
       <div class="top-row">
-        <a href="index.html" class="back-link">← Back to Home</a>
+        <a href="index.html" class="back-link">�?Back to Home</a>
         <a href="log-in.html" class="back-link">Log in / Sign up</a>
       </div>
 
-      <div class="logo">
-        <span class="logo-mark">🐱</span>
+      <div class="acct-logo">
+        <span class="acct-logo-mark">&#x1F431;</span>
         <span>CatFace</span>
       </div>
 
@@ -270,8 +303,8 @@
             <div class="label">Preferred age</div>
             <select class="select" id="prefAge">
               <option value="">Any</option>
-              <option value="kitten">Kitten (0–1 year)</option>
-              <option value="adult">Adult (1–7 years)</option>
+              <option value="kitten">Kitten (0�? year)</option>
+              <option value="adult">Adult (1�? years)</option>
               <option value="senior">Senior (7+ years)</option>
             </select>
           </div>
@@ -291,7 +324,7 @@
             <div class="label">Home environment</div>
             <select class="select" id="prefHome">
               <option value="">Optional</option>
-              <option value="quiet">Quiet (1–2 adults)</option>
+              <option value="quiet">Quiet (1�? adults)</option>
               <option value="family-kids">Family with children</option>
               <option value="other-pets">Already have other pets</option>
               <option value="first-time">First-time cat owner</option>
@@ -560,5 +593,6 @@
       loadToUI();
     })();
   </script>
+  </main>
 </body>
 </html>

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adoption Recommendations — Cat Platform</title>
+  <title>Adoption Recommendations �?Cat Platform</title>
+  <link rel="stylesheet" href="../css/style.css">
   <style>
     * { box-sizing: border-box; }
     body {
@@ -12,11 +13,6 @@
       background: linear-gradient(180deg, #fff7f8 0%, #f5f5f5 220px);
       color: #333;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px 16px 40px;
-      gap: 16px;
     }
     h1, h2, h3, h4, p { margin: 0; }
     button, input, textarea { font: inherit; }
@@ -62,9 +58,9 @@
       box-shadow: 0 4px 14px rgba(0,0,0,.08);
     }
     .solid-btn {
-      background: #ff5a76;
+      background: #A7C7E7;
       color: #fff;
-      box-shadow: 0 8px 20px rgba(255,90,118,.25);
+      box-shadow: 0 8px 20px rgba(196,131,106,.25);
     }
     .action-link {
       background: transparent;
@@ -76,7 +72,7 @@
       transform: translateY(-1px);
     }
 
-    header {
+    .adoption-hero {
       background: #fff;
       border-radius: 24px;
       padding: 24px;
@@ -105,7 +101,7 @@
       font-size: 13px;
       font-weight: 700;
     }
-    header h1 { font-size: 28px; }
+    .adoption-hero h1 { font-size: 28px; }
     .header-copy p {
       color: #666;
       line-height: 1.6;
@@ -317,11 +313,11 @@
       background: #fff;
     }
     .swipe-btn.nope {
-      color: #ff2442;
+      color: #A7C7E7;
       transition: background-color 0.2s ease, color 0.2s ease;
     }
     .swipe-btn.nope.is-active {
-      background: #ff2442;
+      background: #A7C7E7;
       color: #fff;
     }
     .swipe-btn.like {
@@ -386,7 +382,7 @@
       border: 1px solid #ececec;
       border-radius: 18px;
       padding: 14px;
-      background: #fafafa;
+      background: #F4F9FD;
     }
     .liked-item {
       display: flex;
@@ -586,7 +582,7 @@
       border: 1px solid #ececec;
       border-radius: 18px;
       padding: 16px;
-      background: #fafafa;
+      background: #F4F9FD;
     }
     .info-card h4 {
       margin-bottom: 10px;
@@ -721,7 +717,7 @@
       gap: 14px;
     }
     .liked-full-list .empty-state {
-      background: #fafafa;
+      background: #F4F9FD;
     }
     .chat-shell {
       padding: 24px;
@@ -808,7 +804,7 @@
       box-shadow: 0 6px 18px rgba(17, 24, 39, .05);
     }
     .chat-message.user .chat-bubble {
-      background: #ff5a76;
+      background: #A7C7E7;
       color: #fff;
       border-bottom-right-radius: 6px;
     }
@@ -936,11 +932,11 @@
     .chat-send-btn {
       border: none;
       border-radius: 999px;
-      background: #ff5a76;
+      background: #A7C7E7;
       color: #fff;
       padding: 10px 18px;
       cursor: pointer;
-      box-shadow: 0 8px 20px rgba(255,90,118,.24);
+      box-shadow: 0 8px 20px rgba(196,131,106,.24);
     }
     .chat-secondary-btn {
       border: none;
@@ -993,15 +989,51 @@
   </style>
 </head>
 <body>
+  <header class="header" role="banner">
+    <a href="index.html" class="logo">cat face</a>
+  </header>
+
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <ul class="sidebar-nav">
+        <li><a href="index.html"><span class="icon">💬</span> Community</a></li>
+        <li><a href="adoption.html" class="active"><span class="icon">🐱</span> Adoption</a></li>
+        <li><a href="health.html"><span class="icon">🩺</span> Health</a></li>
+        <li><a href="notifications.html"><span class="icon">🔔</span> Notifications</a></li>
+        <li><a href="account.html"><span class="icon">👤</span> Account</a></li>
+        <li><a href="#"><span class="icon">🛍️</span> Store <small style="font-size:10px;color:#bbb;">(soon)</small></a></li>
+      </ul>
+      <a href="log-in.html" class="login-btn">Log in</a>
+      <div class="login-tip">
+        <h4>Log in now to:</h4>
+        <ul>
+          <li>See cat content that understands you better</li>
+          <li>Search adoption, health, and notes</li>
+          <li>View your saved and liked posts</li>
+          <li>Interact and communicate with others better</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <a href="rescue-dashboard.html" class="rescue-entry">
+        <span class="icon">🚑</span>
+        <span>
+          <span class="label">Rescue Dashboard</span>
+          <small>Quick view of stray rescue status</small>
+        </span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="main">
   <div class="page-shell">
     <div class="page-topbar">
-      <a class="back-link" href="index.html">← Back to Home</a>
       <div class="topbar-actions">
         <button class="ghost-btn" type="button" id="open-liked-panel">Liked Cats (<span id="liked-count-top">0</span>)</button>
       </div>
     </div>
 
-    <header>
+    <section class="adoption-hero">
       <div class="header-copy">
         <div class="eyebrow">Adoption + Cat Account Flow</div>
         <h1>Adoption Recommendations</h1>
@@ -1020,7 +1052,7 @@
           <li>Submit application for review</li>
         </ol>
       </aside>
-    </header>
+    </section>
 
     <main>
       <section class="adoption-stage" aria-label="Adoption cards and actions">
@@ -1179,10 +1211,10 @@
           </div>
 
           <div class="swipe-actions">
-            <button class="swipe-btn nope" type="button" aria-label="Dislike (swipe left)">✕</button>
-            <button class="swipe-btn like" type="button" aria-label="Like (swipe right)">❤</button>
+            <button class="swipe-btn nope" type="button" aria-label="Dislike (swipe left)">�?/button>
+            <button class="swipe-btn like" type="button" aria-label="Like (swipe right)">�?/button>
           </div>
-          <div class="hint">Click ✕ for dislike and ❤ for like.</div>
+          <div class="hint">Click �?for dislike and �?for like.</div>
         </section>
       </section>
 
@@ -1198,7 +1230,7 @@
           <div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>
         </div>
         <div class="liked-panel-footer">
-          <button class="liked-panel-link" type="button" id="open-liked-list-link" hidden>Open liked cats list →</button>
+          <button class="liked-panel-link" type="button" id="open-liked-list-link" hidden>Open liked cats list �?/button>
         </div>
       </aside>
     </main>
@@ -1325,7 +1357,7 @@
           <div class="chat-composer-row">
             <div class="chat-left-actions">
               <label class="attach-btn" for="chat-image-input">
-                <span>＋ Add image</span>
+                <span>�?Add image</span>
                 <input id="chat-image-input" type="file" accept="image/*" multiple>
               </label>
             </div>
@@ -2172,5 +2204,6 @@
       }
     })();
   </script>
+  </main>
 </body>
 </html>

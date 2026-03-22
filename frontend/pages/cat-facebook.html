@@ -3,19 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Community — Cat Platform</title>
+  <title>Community �?Cat Platform</title>
+  <link rel="stylesheet" href="../css/style.css">
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: #fafafa;
+      background: #F4F9FD;
       color: #222;
     }
     a { color: inherit; text-decoration: none; }
 
-    /* 顶部导航，回到首页 + 发帖按钮 */
+    /* 原顶部导航栏隐藏，改为全局侧边�?*/
     .top-bar {
+      display: none;
+    }
+    .top-bar-hidden {
       position: sticky;
       top: 0;
       z-index: 50;
@@ -45,7 +49,7 @@
       color: #666;
       padding: 4px 8px;
       border-radius: 999px;
-      background: #f5f5f5;
+      background: #F4F9FD;
     }
     .community-title {
       font-size: 18px;
@@ -59,7 +63,7 @@
     .chip {
       padding: 6px 12px;
       border-radius: 999px;
-      background: #f5f5f5;
+      background: #F4F9FD;
       font-size: 12px;
       color: #666;
     }
@@ -67,7 +71,7 @@
       border: none;
       border-radius: 999px;
       padding: 8px 16px;
-      background: #ff2442;
+      background: #A7C7E7;
       color: #fff;
       font-size: 14px;
       font-weight: 600;
@@ -75,11 +79,11 @@
       align-items: center;
       gap: 6px;
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(255,36,66,.4);
+      box-shadow: 0 6px 18px rgba(196,131,106,.4);
     }
-    .create-post-btn:hover { background: #e61e3a; }
+    .create-post-btn:hover { background: #7EB8DC; }
 
-    /* 页面布局：左侧个人/发帖卡 + 右侧瀑布流 */
+    /* 页面布局：左侧个�?发帖�?+ 右侧瀑布�?*/
     .page {
       max-width: 1200px;
       margin: 0 auto;
@@ -139,7 +143,7 @@
       margin-top: 10px;
       padding: 10px 12px;
       border-radius: 999px;
-      background: #fafafa;
+      background: #F4F9FD;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -288,7 +292,7 @@
       color: #666;
       cursor: pointer;
     }
-    .modal-close:hover { background: #f5f5f5; }
+    .modal-close:hover { background: #F4F9FD; }
 
     /* 发帖弹窗内容 */
     .create-modal-body {
@@ -363,11 +367,11 @@
       cursor: pointer;
     }
     .btn-secondary {
-      background: #f5f5f5;
+      background: #F4F9FD;
       color: #555;
     }
     .btn-primary {
-      background: #ff2442;
+      background: #A7C7E7;
       color: #fff;
       font-weight: 600;
     }
@@ -431,16 +435,16 @@
     .follow-btn {
       border-radius: 999px;
       padding: 4px 10px;
-      border: 1px solid #ff2442;
+      border: 1px solid #A7C7E7;
       background: #fff7f8;
-      color: #ff2442;
+      color: #A7C7E7;
       font-size: 12px;
       cursor: pointer;
       font-weight: 500;
     }
     .follow-btn.is-following {
       border-color: #ddd;
-      background: #f5f5f5;
+      background: #F4F9FD;
       color: #666;
     }
     .post-modal-content {
@@ -465,11 +469,11 @@
       padding: 6px 12px;
       border: none;
       cursor: pointer;
-      background: #ffeef1;
-      color: #ff2442;
+      background: #E8F4FD;
+      color: #A7C7E7;
     }
     .like-btn.is-liked {
-      background: #ff2442;
+      background: #A7C7E7;
       color: #fff;
     }
     .post-modal-meta {
@@ -514,7 +518,7 @@
       border-radius: 999px;
       border: none;
       padding: 6px 12px;
-      background: #ff2442;
+      background: #A7C7E7;
       color: #fff;
       font-size: 12px;
       cursor: pointer;
@@ -522,18 +526,55 @@
   </style>
 </head>
 <body>
+  <header class="header" role="banner">
+    <a href="index.html" class="logo">cat face</a>
+  </header>
+
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <ul class="sidebar-nav">
+        <li><a href="index.html" class="active"><span class="icon">💬</span> Community</a></li>
+        <li><a href="adoption.html"><span class="icon">🐱</span> Adoption</a></li>
+        <li><a href="health.html"><span class="icon">🩺</span> Health</a></li>
+        <li><a href="notifications.html"><span class="icon">🔔</span> Notifications</a></li>
+        <li><a href="account.html"><span class="icon">👤</span> Account</a></li>
+        <li><a href="#"><span class="icon">🛍️</span> Store <small style="font-size:10px;color:#bbb;">(soon)</small></a></li>
+      </ul>
+      <a href="log-in.html" class="login-btn">Log in</a>
+      <div class="login-tip">
+        <h4>Log in now to:</h4>
+        <ul>
+          <li>See cat content that understands you better</li>
+          <li>Search adoption, health, and notes</li>
+          <li>View your saved and liked posts</li>
+          <li>Interact and communicate with others better</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <a href="rescue-dashboard.html" class="rescue-entry">
+        <span class="icon">🚑</span>
+        <span>
+          <span class="label">Rescue Dashboard</span>
+          <small>Quick view of stray rescue status</small>
+        </span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="main">
   <header class="top-bar" role="banner">
     <div class="top-bar-inner">
       <div class="top-left">
         <a href="index.html" class="back-link" aria-label="Back to Home">
-          ← Home
+          �?Home
         </a>
         <div class="community-title">Community · Cat Moments</div>
       </div>
       <div class="top-actions">
         <div class="chip">Browse posts · Like · Comment · Follow</div>
         <button class="create-post-btn" type="button" id="openCreateFromTop">
-          ＋ Post
+          �?Post
         </button>
       </div>
     </div>
@@ -558,7 +599,7 @@
         <div class="field-label">Tips</div>
         <ul class="hint-list">
           <li>Cute and clear cat photos get more likes 🐾</li>
-          <li>Description within 1–2 sentences feels more natural</li>
+          <li>Description within 1�? sentences feels more natural</li>
           <li>Remember to interact in comments and follow your favorite cats</li>
         </ul>
       </div>
@@ -569,7 +610,7 @@
     </section>
   </main>
 
-  <!-- 发帖弹窗：图片 + 文本 -->
+  <!-- 发帖弹窗：图�?+ 文本 -->
   <section class="overlay" id="createOverlay" aria-label="Create post dialog">
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-header">
@@ -598,7 +639,7 @@
     </div>
   </section>
 
-  <!-- 帖子详情弹窗：浏览、评论、喜欢、关注作者 -->
+  <!-- 帖子详情弹窗：浏览、评论、喜欢、关注作�?-->
   <section class="overlay" id="postOverlay" aria-label="Post detail dialog">
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-header">
@@ -628,7 +669,7 @@
           </div>
           <div class="post-modal-footer">
             <button class="like-btn" type="button" id="detailLikeBtn">
-              <span id="detailLikeIcon">♡</span>
+              <span id="detailLikeIcon">�?/span>
               <span id="detailLikeText">Like</span>
             </button>
             <div class="post-modal-meta">
@@ -643,7 +684,7 @@
 
   <script>
     (function () {
-      // 模拟后端数据：初始帖子
+      // 模拟后端数据：初始帖�?
       const initialPosts = [
         {
           id: 1,
@@ -656,7 +697,7 @@
           liked: false,
           comments: [
             { author: "Max", text: "Luna is so cute!" },
-            { author: "Ginger", text: "Sunbathing queen ☀️" }
+            { author: "Ginger", text: "Sunbathing queen ☀�? }
           ],
           time: "2h ago"
         },
@@ -749,7 +790,7 @@
                   '<span>' + post.author + "</span>" +
                 "</div>" +
                 '<div class="post-stats">' +
-                  '<div class="post-stat"><span>♡</span><span>' + formatLikes(post.likes) + "</span></div>" +
+                  '<div class="post-stat"><span>�?/span><span>' + formatLikes(post.likes) + "</span></div>" +
                   '<div class="post-stat"><span>💬</span><span>' + post.comments.length + "</span></div>" +
                 "</div>" +
               "</div>" +
@@ -873,7 +914,7 @@
       });
 
       function updateLikeButton(post) {
-        detailLikeIcon.textContent = post.liked ? "❤" : "♡";
+        detailLikeIcon.textContent = post.liked ? "�? : "�?;
         detailLikeText.textContent = post.liked ? "Liked" : "Like";
         detailLikeBtn.classList.toggle("is-liked", post.liked);
         detailLikesCount.textContent = post.likes + " likes";
@@ -940,7 +981,7 @@
         window.location.href = "cat-profile.html?author=" + encodeURIComponent(author);
       }
 
-      // 帖子卡片上的作者头像 / 名字进入主页
+      // 帖子卡片上的作者头�?/ 名字进入主页
       function attachAuthorClick(card, post) {
         const authorEl = card.querySelector(".post-author");
         if (!authorEl) return;
@@ -951,7 +992,7 @@
         });
       }
 
-      // 重新包装 renderFeed 以添加作者点击事件
+      // 重新包装 renderFeed 以添加作者点击事�?
       const originalRenderFeed = renderFeed;
       function enhancedRenderFeed() {
         feedEl.innerHTML = "";
@@ -971,7 +1012,7 @@
                   '<span>' + post.author + "</span>" +
                 "</div>" +
                 '<div class="post-stats">' +
-                  '<div class="post-stat"><span>♡</span><span>' + formatLikes(post.likes) + "</span></div>" +
+                  '<div class="post-stat"><span>�?/span><span>' + formatLikes(post.likes) + "</span></div>" +
                   '<div class="post-stat"><span>💬</span><span>' + post.comments.length + "</span></div>" +
                 "</div>" +
               "</div>" +
@@ -988,5 +1029,6 @@
       renderFeed();
     })();
   </script>
+  </main>
 </body>
 </html>

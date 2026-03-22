@@ -1,11 +1,10 @@
 /* =============================================================
-   CatFace — 全局公共样式
-   负责人: Member 4
-   说明: 所有页面共用的基础样式，每个 HTML 页面都应引入此文件
-   引入方式: <link rel="stylesheet" href="../css/style.css">
+   CatFace - Global Shared Styles
+   Owner: Member 4
+   Usage: <link rel="stylesheet" href="../css/style.css">
    ============================================================= */
 
-/* ----- 基础重置 ----- */
+/* ----- Reset ----- */
 * {
   box-sizing: border-box;
 }
@@ -14,8 +13,8 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  background: #f5f5f5;
-  color: #333;
+  background: #F4F9FD;
+  color: #1E3A4A;
 }
 
 a {
@@ -30,22 +29,23 @@ textarea {
   font: inherit;
 }
 
-/* ----- 品牌色变量 ----- */
+/* ----- Color Variables ----- */
 :root {
-  --brand: #ff2442;
-  --brand-hover: #e61e3a;
-  --brand-light: #ffeef1;
-  --text-main: #333;
-  --text-sub: #666;
-  --text-muted: #999;
-  --border: #eee;
-  --bg-page: #f5f5f5;
-  --bg-card: #fff;
+  --brand: #A7C7E7;
+  --brand-hover: #7EB8DC;
+  --brand-light: #E8F4FD;
+  --brand-gradient: linear-gradient(180deg, #A7C7E7 0%, #C8DFF2 100%);
+  --text-main: #1E3A4A;
+  --text-sub: #4A6478;
+  --text-muted: #8AAAB8;
+  --border: #D4E8F5;
+  --bg-page: #F4F9FD;
+  --bg-card: #ffffff;
   --header-h: 56px;
   --sidebar-w: 200px;
 }
 
-/* ----- 顶部导航栏 ----- */
+/* ----- Header ----- */
 .header {
   position: fixed;
   top: 0;
@@ -73,7 +73,7 @@ textarea {
   border-radius: 4px;
 }
 
-/* ----- 左侧边栏 ----- */
+/* ----- Sidebar ----- */
 .sidebar {
   position: fixed;
   top: var(--header-h);
@@ -110,12 +110,12 @@ textarea {
   gap: 10px;
   padding: 12px 20px;
   font-size: 15px;
-  color: #333;
+  color: #1E3A4A;
 }
 
 .sidebar-nav a:hover,
 .sidebar-nav .active {
-  background: #f5f5f5;
+  background: var(--brand-light);
   color: var(--brand);
 }
 
@@ -148,7 +148,7 @@ textarea {
 .login-tip {
   margin: 0 16px;
   padding: 16px;
-  background: #f9f9f9;
+  background: var(--brand-light);
   border-radius: 8px;
   font-size: 13px;
   color: var(--text-sub);
@@ -157,7 +157,7 @@ textarea {
 .login-tip h4 {
   margin: 0 0 10px;
   font-size: 14px;
-  color: #333;
+  color: var(--text-main);
 }
 
 .login-tip ul {
@@ -169,7 +169,7 @@ textarea {
 .sidebar-bottom {
   margin-top: 8px;
   padding: 12px 20px 0;
-  border-top: 1px solid #f3f3f3;
+  border-top: 1px solid var(--border);
 }
 
 .rescue-entry {
@@ -177,7 +177,7 @@ textarea {
   align-items: center;
   gap: 10px;
   font-size: 14px;
-  color: #555;
+  color: var(--text-sub);
   padding: 10px 0 4px;
 }
 
@@ -192,7 +192,7 @@ textarea {
   margin-top: 2px;
 }
 
-/* ----- 主内容区（侧边栏布局页面通用） ----- */
+/* ----- Main Content Area ----- */
 .main {
   margin-left: var(--sidebar-w);
   margin-top: var(--header-h);
@@ -200,11 +200,11 @@ textarea {
   min-height: 100vh;
 }
 
-/* ----- 通用弹窗遮罩 ----- */
+/* ----- Generic Overlay ----- */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.4);
   display: none;
   align-items: center;
   justify-content: center;
@@ -216,11 +216,11 @@ textarea {
   display: flex;
 }
 
-/* ----- 登录/注册弹窗（auth modal） ----- */
+/* ----- Auth Modal ----- */
 .auth-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.4);
   display: none;
   align-items: center;
   justify-content: center;
@@ -240,7 +240,7 @@ textarea {
   width: min(420px, 96vw);
   background: #fff;
   border-radius: 18px;
-  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
   padding-top: 10px;
@@ -256,7 +256,7 @@ textarea {
   border-radius: 20px;
   display: grid;
   place-items: center;
-  color: #666;
+  color: var(--text-sub);
   background: transparent;
   border: none;
   font-size: 22px;
@@ -264,7 +264,7 @@ textarea {
 }
 
 .auth-close:hover {
-  background: #f5f5f5;
+  background: var(--brand-light);
 }
 
 .auth-right {
@@ -275,7 +275,7 @@ textarea {
   margin: 10px 0 18px;
   font-size: 22px;
   text-align: center;
-  color: #333;
+  color: var(--text-main);
 }
 
 .auth-field {
@@ -283,16 +283,16 @@ textarea {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #f6f6f6;
-  border: 1px solid #efefef;
+  background: #f9f3f1;
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 10px 14px;
   height: 56px;
 }
 
 .auth-field:focus-within {
-  border-color: #ffd0d7;
-  background: #fafafa;
+  border-color: var(--brand);
+  background: #fff;
 }
 
 .auth-input {
@@ -301,11 +301,11 @@ textarea {
   outline: none;
   background: transparent;
   font-size: 16px;
-  color: #333;
+  color: var(--text-main);
 }
 
 .auth-input::placeholder {
-  color: #b7b7b7;
+  color: var(--text-muted);
 }
 
 .auth-btn {
@@ -314,7 +314,7 @@ textarea {
   height: 56px;
   border-radius: 999px;
   border: none;
-  background: var(--brand);
+  background: var(--brand-gradient);
   color: #fff;
   font-size: 18px;
   font-weight: 800;
@@ -335,7 +335,7 @@ textarea {
   align-items: flex-start;
   gap: 10px;
   margin-top: 14px;
-  color: #666;
+  color: var(--text-sub);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -347,7 +347,7 @@ textarea {
 }
 
 .auth-agree a {
-  color: #2f6feb;
+  color: #7a9cc4;
 }
 
 .auth-bottom {
@@ -358,10 +358,10 @@ textarea {
 }
 
 .auth-bottom a {
-  color: #2f6feb;
+  color: #7a9cc4;
 }
 
-/* 屏幕阅读器专用隐藏 */
+/* ----- Utility ----- */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -374,7 +374,6 @@ textarea {
   border: 0;
 }
 
-/* ----- 通用错误/提示信息 ----- */
 .form-error {
   color: var(--brand);
   font-size: 13px;
@@ -383,7 +382,7 @@ textarea {
 }
 
 .form-success {
-  color: #27ae60;
+  color: #7aaa7a;
   font-size: 13px;
   margin-top: 6px;
   padding: 0 4px;
