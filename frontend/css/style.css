@@ -40,7 +40,6 @@ textarea {
   --text-muted: #8AAAB8;
   --border: #D4E8F5;
   --bg-page: #F4F9FD;
-  --bg-card: #ffffff;
   --header-h: 56px;
   --sidebar-w: 200px;
 }
@@ -110,7 +109,7 @@ textarea {
   gap: 10px;
   padding: 12px 20px;
   font-size: 15px;
-  color: #1E3A4A;
+  color: var(--text-main);
 }
 
 .sidebar-nav a:hover,
@@ -381,9 +380,3 @@ textarea {
   padding: 0 4px;
 }
 
-.form-success {
-  color: #7aaa7a;
-  font-size: 13px;
-  margin-top: 6px;
-  padding: 0 4px;
-}

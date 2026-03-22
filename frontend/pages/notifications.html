@@ -3,132 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../css/style.css">
   <title>Notifications - Cat Platform</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: #F4F9FD;
-      color: #333;
-    }
-    a { text-decoration: none; color: inherit; }
-    button, input { font: inherit; }
-
-    .header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 56px;
-      background: #fff;
-      border-bottom: 1px solid #eee;
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      z-index: 100;
-    }
-
-    .sidebar {
-      position: fixed;
-      top: 56px;
-      left: 0;
-      width: 200px;
-      bottom: 0;
-      background: #fff;
-      border-right: 1px solid #eee;
-      padding: 20px 0;
-      z-index: 99;
-      display: flex;
-      flex-direction: column;
-    }
-    .sidebar-top {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    .sidebar-nav {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-    .sidebar-nav a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 20px;
-      font-size: 15px;
-      color: #333;
-    }
-    .sidebar-nav a:hover,
-    .sidebar-nav .active {
-      background: #F4F9FD;
-      color: #A7C7E7;
-    }
-    .sidebar-nav .icon {
-      width: 22px;
-      text-align: center;
-      font-size: 18px;
-    }
-    .login-btn {
-      display: block;
-      width: 160px;
-      margin: 20px auto;
-      height: 44px;
-      line-height: 44px;
-      text-align: center;
-      background: #A7C7E7;
-      color: #fff;
-      border-radius: 22px;
-      font-size: 16px;
-    }
-    .login-tip {
-      margin: 0 16px;
-      padding: 16px;
-      background: #f9f9f9;
-      border-radius: 8px;
-      font-size: 13px;
-      color: #666;
-    }
-    .login-tip h4 {
-      margin: 0 0 10px;
-      font-size: 14px;
-      color: #333;
-    }
-    .login-tip ul {
-      margin: 0;
-      padding-left: 18px;
-      line-height: 1.8;
-    }
-    .sidebar-bottom {
-      margin-top: 8px;
-      padding: 12px 20px 0;
-      border-top: 1px solid #f3f3f3;
-    }
-    .rescue-entry {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 14px;
-      color: #555;
-      padding: 10px 0 4px;
-    }
-    .rescue-entry .label {
-      font-weight: 600;
-    }
-    .rescue-entry small {
-      display: block;
-      font-size: 12px;
-      color: #999;
-      margin-top: 2px;
-    }
-
-    .main {
-      margin-left: 200px;
-      margin-top: 56px;
-      padding: 24px;
-      min-height: 100vh;
-    }
     .page-shell {
       max-width: 1100px;
       display: flex;
@@ -398,7 +275,7 @@
         <li><a href="health.html"><span class="icon">🩺</span> Health</a></li>
         <li><a href="notifications.html" class="active"><span class="icon">🔔</span> Notifications</a></li>
         <li><a href="account.html"><span class="icon">👤</span> Account</a></li>
-        <li><a href="cat-mall.html"><span class="icon">🛍️</span> Store</a></li>
+        <li><a href="#"><span class="icon">&#x1F6CD;&#xFE0F;</span> Store <small style="font-size:10px;color:#bbb;">(soon)</small></a></li>
       </ul>
       <a href="log-in.html" class="login-btn">Log in</a>
       <div class="login-tip">

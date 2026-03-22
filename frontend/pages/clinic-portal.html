@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clinic Portal �?CatFace</title>
+  <title>Clinic Portal | CatFace</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -173,7 +173,7 @@
         </div>
       </div>
       <div class="warn" id="shareWarn">
-        No shared data found for this Cat ID and clinic. Ask the user to enable “Share data with clinic�?on the Health page.
+        No shared data found for this Cat ID and clinic. Ask the user to enable "Share data with clinic" on the Health page.
       </div>
     </header>
 
@@ -189,15 +189,15 @@
         <article class="card">
           <h3>User health snapshot</h3>
           <div class="kv">
-            <strong>Cat Name</strong><span id="uName">�?/span>
-            <strong>Gender</strong><span id="uGender">�?/span>
-            <strong>Birthday</strong><span id="uBirthday">�?/span>
-            <strong>Hobbies</strong><span id="uHobbies">�?/span>
-            <strong>Neuter</strong><span id="uNeuter">�?/span>
-            <strong>Vaccination</strong><span id="uVaccination">�?/span>
-            <strong>Allergies</strong><span id="uAllergies">�?/span>
-            <strong>Recent check date</strong><span id="uDate">�?/span>
-            <strong>Owner notes</strong><span id="uNotes">�?/span>
+            <strong>Cat Name</strong><span id="uName"></span>
+            <strong>Gender</strong><span id="uGender"></span>
+            <strong>Birthday</strong><span id="uBirthday"></span>
+            <strong>Hobbies</strong><span id="uHobbies"></span>
+            <strong>Neuter</strong><span id="uNeuter"></span>
+            <strong>Vaccination</strong><span id="uVaccination"></span>
+            <strong>Allergies</strong><span id="uAllergies"></span>
+            <strong>Recent check date</strong><span id="uDate"></span>
+            <strong>Owner notes</strong><span id="uNotes"></span>
           </div>
         </article>
 
@@ -303,15 +303,15 @@
 
         shareWarn.style.display = visible ? "none" : "";
 
-        uName.textContent = user && user.name ? user.name : "�?;
-        uGender.textContent = user && user.gender ? user.gender : "�?;
-        uBirthday.textContent = user && user.birthday ? user.birthday : "�?;
-        uHobbies.textContent = user && user.hobbies ? user.hobbies : "�?;
-        uNeuter.textContent = user && user.neuter ? user.neuter : "�?;
-        uVaccination.textContent = user && user.vaccination ? user.vaccination : "�?;
-        uAllergies.textContent = user && user.allergies ? user.allergies : "�?;
-        uDate.textContent = user && user.reportDate ? user.reportDate : "�?;
-        uNotes.textContent = user && user.ownerNotes ? user.ownerNotes : "�?;
+        uName.textContent = user && user.name ? user.name : "&mdash;";
+        uGender.textContent = user && user.gender ? user.gender : "&mdash;";
+        uBirthday.textContent = user && user.birthday ? user.birthday : "&mdash;";
+        uHobbies.textContent = user && user.hobbies ? user.hobbies : "&mdash;";
+        uNeuter.textContent = user && user.neuter ? user.neuter : "&mdash;";
+        uVaccination.textContent = user && user.vaccination ? user.vaccination : "&mdash;";
+        uAllergies.textContent = user && user.allergies ? user.allergies : "&mdash;";
+        uDate.textContent = user && user.reportDate ? user.reportDate : "&mdash;";
+        uNotes.textContent = user && user.ownerNotes ? user.ownerNotes : "&mdash;";
       }
 
       reloadBtn.addEventListener("click", function () {

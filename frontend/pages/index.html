@@ -3,69 +3,207 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cat Platform |Community · Adoption · Health</title>
+  <title>CatFace | Community</title>
   <link rel="stylesheet" href="../css/style.css">
   <style>
-    /* index.html 页面专属样式 */
+    /* ── Feed tabs ── */
     .tabs {
-      display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px;
+      display: flex; gap: 8px; margin-bottom: 20px;
     }
     .tabs a {
-      flex-shrink: 0; padding: 8px 16px; font-size: 14px; color: #666; border-radius: 16px; white-space: nowrap;
+      padding: 7px 18px; font-size: 14px; color: #666;
+      border-radius: 20px; border: 1px solid #e8e8e8;
+      white-space: nowrap; transition: all .15s;
     }
-    .tabs a:hover { background: #f0f0f0; color: #333; }
-    .tabs .current { background: #333; color: #fff; }
-    .tabs .post-cta {
-      background: #A7C7E7; color: #fff; font-weight: 600; box-shadow: 0 4px 10px rgba(196,131,106,.4);
+    .tabs a:hover { background: var(--brand-light); color: var(--brand); border-color: var(--brand); }
+    .tabs .current { background: #333; color: #fff; border-color: #333; }
+    .tabs .post-cta { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 600; }
+    .tabs .post-cta:hover { background: var(--brand-hover); border-color: var(--brand-hover); }
+
+    /* ── Post grid ── */
+    .feed {
+      columns: 3 220px; column-gap: 14px;
     }
-    .tabs .post-cta:hover { background: #7EB8DC; color: #fff; }
+    .post-card {
+      break-inside: avoid; margin-bottom: 14px;
+      background: #fff; border-radius: 14px;
+      overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      cursor: pointer; transition: transform .15s, box-shadow .15s;
+    }
+    .post-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,.12);
+    }
+    .post-card .cover {
+      width: 100%; display: block;
+      object-fit: cover; background: #f0f0f0;
+    }
+    .post-card .body { padding: 10px 12px 12px; }
+    .post-card .title {
+      font-size: 13px; line-height: 1.5; margin: 0 0 8px;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+      color: var(--text-main);
+    }
+    .post-card .meta {
+      display: flex; align-items: center;
+      justify-content: space-between; font-size: 12px; color: #999;
+    }
+    .post-card .user {
+      display: flex; align-items: center; gap: 6px; font-weight: 500;
+    }
+    .post-card .avatar-sm {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--brand-light); color: var(--brand);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; flex-shrink: 0;
+    }
+    .post-card .likes { display: flex; align-items: center; gap: 3px; }
 
-    .feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-    .post-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-    .post-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.1); }
-    .post-card .cover { width: 100%; aspect-ratio: 3/4; background: linear-gradient(135deg,#ffeaa7 0%,#dfe6e9 100%); object-fit: cover; }
-    .post-card .body { padding: 12px; }
-    .post-card .title { font-size: 14px; line-height: 1.4; margin: 0 0 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .post-card .meta { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #999; }
-    .post-card .user { display: flex; align-items: center; gap: 6px; }
-    .post-card .avatar { width: 24px; height: 24px; border-radius: 50%; background: #ddd; }
-    .post-card .likes { display: flex; align-items: center; gap: 4px; }
+    /* ── Post detail overlay ── */
+    .post-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      display: none; align-items: center; justify-content: center;
+      padding: 24px; z-index: 500;
+    }
+    .post-overlay.open { display: flex; }
 
-    .post-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 400; }
-    .post-overlay.is-open { display: flex; }
-    .post-modal { width: min(880px,100%); max-height: 92vh; background: #fff; border-radius: 18px; box-shadow: 0 16px 60px rgba(0,0,0,.3); overflow: hidden; display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1.1fr); }
-    @media (max-width: 900px) { .post-modal { grid-template-columns: minmax(0,1fr); } }
-    .post-modal-image { position: relative; background: #000; }
-    .post-modal-image::before { content: ""; display: block; padding-bottom: 120%; }
-    .post-modal-image img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-    .post-modal-right { display: flex; flex-direction: column; background: #fff; border-left: 1px solid #f3f3f3; }
-    @media (max-width: 900px) { .post-modal-right { border-left: none; border-top: 1px solid #f3f3f3; } }
-    .post-modal-header { padding: 10px 14px; border-bottom: 1px solid #f3f3f3; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .post-modal-title { font-size: 14px; font-weight: 600; line-height: 1.4; }
-    .post-modal-close { border: none; background: transparent; width: 32px; height: 32px; border-radius: 16px; display: grid; place-items: center; font-size: 18px; color: #666; cursor: pointer; }
-    .post-modal-close:hover { background: #F4F9FD; }
-    .post-modal-meta { padding: 6px 14px; font-size: 12px; color: #999; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .post-modal-author { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    .post-modal-author-avatar { width: 22px; height: 22px; border-radius: 50%; background: #ddd; }
-    .post-modal-actions { display: flex; align-items: center; gap: 10px; }
-    .post-like-btn { border-radius: 999px; padding: 6px 12px; border: none; cursor: pointer; background: #E8F4FD; color: #A7C7E7; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
-    .post-like-btn.is-liked { background: #A7C7E7; color: #fff; }
-    .post-modal-comments { flex: 1; min-height: 0; padding: 8px 14px 10px; overflow-y: auto; font-size: 13px; }
-    .post-comment-item { margin-bottom: 8px; line-height: 1.4; }
-    .post-comment-author { font-weight: 600; margin-right: 4px; }
-    .post-comment-form { padding: 8px 14px 12px; border-top: 1px solid #f3f3f3; display: flex; align-items: center; gap: 8px; }
-    .post-comment-input { flex: 1; border-radius: 16px; border: 1px solid #eee; padding: 6px 10px; font-size: 13px; outline: none; }
-    .post-comment-input:focus { border-color: #ffb6c1; }
-    .post-comment-submit { border-radius: 999px; border: none; padding: 6px 12px; background: #A7C7E7; color: #fff; font-size: 12px; cursor: pointer; }
+    /* ── Modal shell ── */
+    .post-modal {
+      width: min(960px, 100%);
+      max-height: 90vh;
+      background: #fff;
+      border-radius: 18px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      box-shadow: 0 24px 80px rgba(0,0,0,.25);
+    }
+    @media (max-width: 700px) {
+      .post-modal { grid-template-columns: 1fr; }
+      .post-modal-img { max-height: 260px; }
+    }
+
+    /* ── Left: image ── */
+    .post-modal-img {
+      background: #111;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .post-modal-img img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+
+    /* ── Right: content ── */
+    .post-modal-content {
+      display: flex; flex-direction: column;
+      max-height: 90vh; overflow: hidden;
+      border-left: 1px solid #f0f0f0;
+    }
+
+    /* header bar */
+    .pmc-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #f3f3f3;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .pmc-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--brand-light); color: var(--brand);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; flex-shrink: 0;
+    }
+    .pmc-author { font-size: 14px; font-weight: 600; color: var(--text-main); }
+    .pmc-time   { font-size: 12px; color: #bbb; }
+    .pmc-close  {
+      margin-left: auto; width: 32px; height: 32px; border-radius: 50%;
+      border: none; background: transparent; font-size: 20px;
+      color: #999; cursor: pointer; display: grid; place-items: center;
+      flex-shrink: 0;
+    }
+    .pmc-close:hover { background: var(--brand-light); color: var(--brand); }
+
+    /* post body text */
+    .pmc-body {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f3f3f3;
+    }
+    .pmc-text {
+      font-size: 14px; line-height: 1.65;
+      color: var(--text-main); margin: 0;
+    }
+
+    /* action bar: like + comment count */
+    .pmc-actions {
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 20px;
+      border-bottom: 1px solid #f3f3f3;
+      font-size: 13px; color: #999;
+    }
+    .pmc-like-btn {
+      display: flex; align-items: center; gap: 6px;
+      border: none; background: none; cursor: pointer;
+      font-size: 13px; color: #999; padding: 0;
+    }
+    .pmc-like-btn .heart { font-size: 18px; transition: transform .15s; }
+    .pmc-like-btn:hover .heart { transform: scale(1.2); }
+    .pmc-like-btn.liked { color: #e05b73; }
+    .pmc-comment-count { display: flex; align-items: center; gap: 6px; }
+
+    /* comments scroll area */
+    .pmc-comments {
+      flex: 1; min-height: 0;
+      overflow-y: auto;
+      padding: 12px 16px;
+    }
+    .comment-item {
+      display: flex; gap: 9px;
+      margin-bottom: 14px; align-items: flex-start;
+    }
+    .comment-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--brand-light); color: var(--brand);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .comment-body { flex: 1; }
+    .comment-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+    .comment-text { font-size: 13px; color: var(--text-sub); line-height: 1.5; margin-top: 2px; }
+    .comment-empty { font-size: 13px; color: #bbb; text-align: center; padding: 20px 0; }
+
+    /* comment input bar */
+    .pmc-input-bar {
+      padding: 10px 14px 14px;
+      border-top: 1px solid #f0f0f0;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .pmc-input {
+      flex: 1; border: 1px solid #e8e8e8; border-radius: 20px;
+      padding: 8px 14px; font-size: 13px; outline: none;
+      background: #fafafa; color: var(--text-main);
+    }
+    .pmc-input:focus { border-color: var(--brand); background: #fff; }
+    .pmc-input::placeholder { color: #bbb; }
+    .pmc-send-btn {
+      padding: 8px 16px; border-radius: 20px; border: none;
+      background: var(--brand); color: #fff;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      white-space: nowrap;
+    }
+    .pmc-send-btn:hover { background: var(--brand-hover); }
+    .pmc-send-btn:disabled { background: #ccc; cursor: not-allowed; }
   </style>
 </head>
 <body>
-  <!-- 顶部导航 / Top navigation -->
+
+  <!-- Header -->
   <header class="header" role="banner">
     <a href="index.html" class="logo">cat face</a>
   </header>
 
-  <!-- 左侧边栏 / Sidebar -->
+  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-top">
       <ul class="sidebar-nav">
@@ -76,8 +214,8 @@
         <li><a href="account.html"><span class="icon">👤</span> Account</a></li>
         <li><a href="#"><span class="icon">🛍️</span> Store <small style="font-size:10px;color:#bbb;">(soon)</small></a></li>
       </ul>
-      <a href="log-in.html" class="login-btn">Log in</a>
-      <div class="login-tip">
+      <a href="log-in.html" class="login-btn" id="sidebarLoginBtn">Log in</a>
+      <div class="login-tip" id="loginTip">
         <h4>Log in now to:</h4>
         <ul>
           <li>See cat content that understands you better</li>
@@ -98,187 +236,67 @@
     </div>
   </aside>
 
-  <!-- 主内容：分类 + 猫猫帖子 / Main content -->
+  <!-- Main feed -->
   <main class="main">
     <nav class="tabs" aria-label="Content categories">
-      <a href="cat-facebook.html" class="post-cta">Post</a>
+      <a href="cat-facebook.html" class="post-cta">+ Post</a>
       <a href="#" class="current">Recommended</a>
     </nav>
 
-    <section class="feed" aria-label="Cat posts">
-      <article class="post-card">
-        <img class="cover" src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="Orange tabby cat">
-        <div class="body">
-          <h3 class="title">Hi! I'm Luna 🐱 My human took me out today and I got to sunbathe! So warm and cozy!</h3>
-          <div class="meta">
-            <span class="user"><span class="avatar"></span> Luna</span>
-            <span class="likes">❤️ 23k</span>
-          </div>
-        </div>
-      </article>
-      <article class="post-card">
-        <img class="cover" src="https://images.unsplash.com/photo-1574158622682-e40e69881006?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="British Shorthair blue cat">
-        <div class="body">
-          <h3 class="title">Meow! I'm Max the British Shorthair 🐾 Everyone keeps asking what I eat - I love my premium kibble!</h3>
-          <div class="meta">
-            <span class="user"><span class="avatar"></span> Max</span>
-            <span class="likes">❤️ 67k</span>
-          </div>
-        </div>
-      </article>
-      <article class="post-card">
-        <img class="cover" src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="Orange tabby cat">
-        <div class="body">
-          <h3 class="title">Hi humans! I'm Ginger 🧡 I'm 1 year old and super friendly! Looking for my forever home!</h3>
-          <div class="meta">
-            <span class="user"><span class="avatar"></span> Ginger</span>
-            <span class="likes">❤️ 11k</span>
-          </div>
-        </div>
-      </article>
-      <article class="post-card">
-        <img class="cover" src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="Cat at vet">
-        <div class="body">
-          <h3 class="title">Just got my checkup! 🏥 My human says I'm super healthy! All my numbers are purrfect!</h3>
-          <div class="meta">
-            <span class="user"><span class="avatar"></span> Whiskers</span>
-            <span class="likes">❤️ 82k</span>
-          </div>
-        </div>
-      </article>
-      <article class="post-card">
-        <img class="cover" src="https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=400&h=533&fit=crop&q=80" alt="Multiple cats" onerror="this.src='https://picsum.photos/400/533?random=5'">
-        <div class="body">
-          <h3 class="title">My siblings and I love our new litter box! 🚽 So much space for all of us!</h3>
-          <div class="meta">
-            <span class="user"><span class="avatar"></span> Shadow & Friends</span>
-            <span class="likes">❤️ 35k</span>
-          </div>
-        </div>
-      </article>
-      <article class="post-card">
-        <img class="cover" src="https://images.unsplash.com/photo-1511275539165-cc46b1ee89bf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="Cat cuddling">
-        <div class="body">
-          <h3 class="title">Best part of my day: cuddle time with my human! 💕 So warm and safe!</h3>
-          <div class="meta">
-            <span class="user"><span class="avatar"></span> Luna</span>
-            <span class="likes">❤️ 42k</span>
-          </div>
-        </div>
-      </article>
-      <article class="post-card">
-        <img class="cover" src="https://images.unsplash.com/photo-1543852786-1cf6624b9987?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&h=533" alt="Cat with collar">
-        <div class="body">
-          <h3 class="title">My smart collar says I ran 5 miles today! 🏃 My heart rate is perfect! Feeling great!</h3>
-          <div class="meta">
-            <span class="user"><span class="avatar"></span> Charlie</span>
-            <span class="likes">❤️ 9k</span>
-          </div>
-        </div>
-      </article>
-      <article class="post-card">
-        <img class="cover" src="https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=400&h=533&fit=crop" alt="Calico cat">
-        <div class="body">
-          <h3 class="title">Hello! I'm Patches the calico! 🎨 I'm 2 years old, fully vaccinated, and ready for love!</h3>
-          <div class="meta">
-            <span class="user"><span class="avatar"></span> Patches</span>
-            <span class="likes">❤️ 56k</span>
-          </div>
-        </div>
-      </article>
-    </section>
+    <section class="feed" id="postFeed" aria-label="Cat posts"></section>
   </main>
 
-  <!-- 登录弹窗 / Login modal -->
-  <section id="login" class="auth-overlay" aria-label="Login dialog">
-    <div class="auth-modal" role="dialog" aria-label="Email login">
-      <a class="auth-close" href="#" aria-label="Close">×</a>
-      <div class="auth-right">
-        <div class="auth-title">Log in</div>
-        <form id="loginForm" aria-label="Login form">
-          <label class="sr-only" for="login-email">Email</label>
-          <div class="auth-field">
-            <input class="auth-input" id="login-email" name="email" type="email" autocomplete="email" placeholder="Enter email" required>
-          </div>
-          <label class="sr-only" for="login-password">Password</label>
-          <div class="auth-field">
-            <input class="auth-input" id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter password" required>
-          </div>
-          <div id="loginError" class="form-error" style="display:none;"></div>
-          <button class="auth-btn" id="loginSubmitBtn" data-label="Log in" type="submit">Log in</button>
-          <div class="auth-agree">
-            <input id="login-agree" type="checkbox" name="agree">
-            <label for="login-agree">I agree to the <a href="#">User Agreement</a> and <a href="#">Privacy Policy</a>.</label>
-          </div>
-          <div class="auth-bottom">Don't have an account? <a href="#register">Sign up</a></div>
-        </form>
-      </div>
-    </div>
-  </section>
+  <!-- Post detail overlay -->
+  <div class="post-overlay" id="postOverlay" role="dialog" aria-modal="true" aria-label="Post detail">
+    <div class="post-modal" id="postModal">
 
-  <!-- 注册弹窗 / Register modal -->
-  <section id="register" class="auth-overlay" aria-label="Sign-up dialog">
-    <div class="auth-modal" role="dialog" aria-label="Sign up">
-      <a class="auth-close" href="#" aria-label="Close">×</a>
-      <div class="auth-right">
-        <div class="auth-title">Sign up</div>
-        <form id="registerForm" aria-label="Sign-up form">
-          <label class="sr-only" for="reg-name">Nickname</label>
-          <div class="auth-field">
-            <input class="auth-input" id="reg-name" name="name" type="text" autocomplete="nickname" placeholder="Enter nickname" required>
-          </div>
-          <label class="sr-only" for="reg-email">Email</label>
-          <div class="auth-field">
-            <input class="auth-input" id="reg-email" name="email" type="email" autocomplete="email" placeholder="Enter email" required>
-          </div>
-          <label class="sr-only" for="reg-password">Password</label>
-          <div class="auth-field">
-            <input class="auth-input" id="reg-password" name="password" type="password" autocomplete="new-password" placeholder="Set password (min. 6 chars)" required>
-          </div>
-          <div id="registerError" class="form-error" style="display:none;"></div>
-          <button class="auth-btn" id="registerSubmitBtn" data-label="Sign up" type="submit">Sign up</button>
-          <div class="auth-agree">
-            <input id="reg-agree" type="checkbox" name="agree">
-            <label for="reg-agree">I agree to the <a href="#">User Agreement</a> and <a href="#">Privacy Policy</a>.</label>
-          </div>
-          <div class="auth-bottom">Already have an account? <a href="#login">Log in</a></div>
-        </form>
+      <!-- Left: image -->
+      <div class="post-modal-img">
+        <img id="pmImg" src="" alt="">
       </div>
-    </div>
-  </section>
 
-  <!-- 帖子详情弹窗 / Post detail modal -->
-  <section class="post-overlay" id="postDetailOverlay" aria-label="Post detail dialog">
-    <div class="post-modal" role="dialog" aria-modal="true">
-      <div class="post-modal-image">
-        <img id="detailImage" src="" alt="">
-      </div>
-      <div class="post-modal-right">
-        <div class="post-modal-header">
-          <div class="post-modal-title" id="detailTitle"></div>
-          <button class="post-modal-close" type="button" id="closePostDetail">×</button>
-        </div>
-        <div class="post-modal-meta">
-          <div class="post-modal-author">
-            <div class="post-modal-author-avatar" id="detailAuthorAvatar"></div>
-            <span id="detailAuthorName"></span>
+      <!-- Right: detail -->
+      <div class="post-modal-content">
+        <!-- Author header -->
+        <div class="pmc-header">
+          <div class="pmc-avatar" id="pmAvatar"></div>
+          <div>
+            <div class="pmc-author" id="pmAuthor"></div>
+            <div class="pmc-time"   id="pmTime"></div>
           </div>
-          <div class="post-modal-actions">
-            <button class="post-like-btn" type="button" id="detailLikeBtn">
-              <span id="detailLikeIcon">&#x2661;</span>
-              <span id="detailLikeLabel">Like</span>
-            </button>
-            <span id="detailLikesText"></span>
-          </div>
+          <button class="pmc-close" id="pmClose" aria-label="Close">&#x2715;</button>
         </div>
-        <div class="post-modal-comments" id="detailComments" aria-label="Comments"></div>
-        <form class="post-comment-form" id="commentForm">
-          <input class="post-comment-input" id="commentInput" type="text" placeholder="Write a comment...">
-          <button class="post-comment-submit" type="submit">Send</button>
+
+        <!-- Post text -->
+        <div class="pmc-body">
+          <p class="pmc-text" id="pmText"></p>
+        </div>
+
+        <!-- Actions: like + comment count -->
+        <div class="pmc-actions">
+          <button class="pmc-like-btn" id="pmLikeBtn" type="button">
+            <span class="heart" id="pmHeart">&#x2661;</span>
+            <span id="pmLikeCount">0</span>
+          </button>
+          <span class="pmc-comment-count">
+            <span>&#x1F4AC;</span>
+            <span id="pmCommentCount">0</span> comments
+          </span>
+        </div>
+
+        <!-- Comments list -->
+        <div class="pmc-comments" id="pmComments"></div>
+
+        <!-- Comment input -->
+        <form class="pmc-input-bar" id="pmCommentForm">
+          <input class="pmc-input" id="pmCommentInput" type="text"
+                 placeholder="Write a comment..." maxlength="200" autocomplete="off">
+          <button class="pmc-send-btn" type="submit" id="pmSendBtn">Send</button>
         </form>
       </div>
+
     </div>
-  </section>
+  </div>
 
   <script src="../js/config.js"></script>
   <script src="../js/index.js"></script>

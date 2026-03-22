@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Community �?Cat Platform</title>
+  <title>Community | CatFace</title>
   <link rel="stylesheet" href="../css/style.css">
   <style>
     * { box-sizing: border-box; }
@@ -15,7 +15,7 @@
     }
     a { color: inherit; text-decoration: none; }
 
-    /* 原顶部导航栏隐藏，改为全局侧边�?*/
+    /* page-specific styles */
     .top-bar {
       display: none;
     }
@@ -83,7 +83,7 @@
     }
     .create-post-btn:hover { background: #7EB8DC; }
 
-    /* 页面布局：左侧个�?发帖�?+ 右侧瀑布�?*/
+    /* page-specific styles */
     .page {
       max-width: 1200px;
       margin: 0 auto;
@@ -567,14 +567,14 @@
     <div class="top-bar-inner">
       <div class="top-left">
         <a href="index.html" class="back-link" aria-label="Back to Home">
-          �?Home
+          &#x2190; Home
         </a>
         <div class="community-title">Community · Cat Moments</div>
       </div>
       <div class="top-actions">
         <div class="chip">Browse posts · Like · Comment · Follow</div>
         <button class="create-post-btn" type="button" id="openCreateFromTop">
-          �?Post
+          &#x270F; Post
         </button>
       </div>
     </div>
@@ -599,7 +599,7 @@
         <div class="field-label">Tips</div>
         <ul class="hint-list">
           <li>Cute and clear cat photos get more likes 🐾</li>
-          <li>Description within 1�? sentences feels more natural</li>
+          <li>Description within 1-2 sentences feels more natural</li>
           <li>Remember to interact in comments and follow your favorite cats</li>
         </ul>
       </div>
@@ -610,7 +610,7 @@
     </section>
   </main>
 
-  <!-- 发帖弹窗：图�?+ 文本 -->
+  <!-- Create post form: image + text -->
   <section class="overlay" id="createOverlay" aria-label="Create post dialog">
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-header">
@@ -639,7 +639,7 @@
     </div>
   </section>
 
-  <!-- 帖子详情弹窗：浏览、评论、喜欢、关注作�?-->
+  <!-- Detail overlay: comments, likes, replies -->
   <section class="overlay" id="postOverlay" aria-label="Post detail dialog">
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-header">
@@ -669,7 +669,7 @@
           </div>
           <div class="post-modal-footer">
             <button class="like-btn" type="button" id="detailLikeBtn">
-              <span id="detailLikeIcon">�?/span>
+              <span id="detailLikeIcon">&#x2661;</span>
               <span id="detailLikeText">Like</span>
             </button>
             <div class="post-modal-meta">
@@ -684,7 +684,7 @@
 
   <script>
     (function () {
-      // 模拟后端数据：初始帖�?
+      // ...
       const initialPosts = [
         {
           id: 1,
@@ -697,7 +697,7 @@
           liked: false,
           comments: [
             { author: "Max", text: "Luna is so cute!" },
-            { author: "Ginger", text: "Sunbathing queen ☀�? }
+            { author: "Ginger", text: "Sunbathing queen ☀️" }
           ],
           time: "2h ago"
         },
@@ -790,7 +790,7 @@
                   '<span>' + post.author + "</span>" +
                 "</div>" +
                 '<div class="post-stats">' +
-                  '<div class="post-stat"><span>�?/span><span>' + formatLikes(post.likes) + "</span></div>" +
+                  '<div class="post-stat"><span>&#x2665;</span><span>' + formatLikes(post.likes) + "</span></div>" +
                   '<div class="post-stat"><span>💬</span><span>' + post.comments.length + "</span></div>" +
                 "</div>" +
               "</div>" +
@@ -914,7 +914,7 @@
       });
 
       function updateLikeButton(post) {
-        detailLikeIcon.textContent = post.liked ? "�? : "�?;
+        detailLikeIcon.textContent = post.liked ? "\u2665" : "\u2661";
         detailLikeText.textContent = post.liked ? "Liked" : "Like";
         detailLikeBtn.classList.toggle("is-liked", post.liked);
         detailLikesCount.textContent = post.likes + " likes";
@@ -981,7 +981,7 @@
         window.location.href = "cat-profile.html?author=" + encodeURIComponent(author);
       }
 
-      // 帖子卡片上的作者头�?/ 名字进入主页
+      // ...
       function attachAuthorClick(card, post) {
         const authorEl = card.querySelector(".post-author");
         if (!authorEl) return;
@@ -992,7 +992,7 @@
         });
       }
 
-      // 重新包装 renderFeed 以添加作者点击事�?
+      // ...
       const originalRenderFeed = renderFeed;
       function enhancedRenderFeed() {
         feedEl.innerHTML = "";
@@ -1012,7 +1012,7 @@
                   '<span>' + post.author + "</span>" +
                 "</div>" +
                 '<div class="post-stats">' +
-                  '<div class="post-stat"><span>�?/span><span>' + formatLikes(post.likes) + "</span></div>" +
+                  '<div class="post-stat"><span>&#x2665;</span><span>' + formatLikes(post.likes) + "</span></div>" +
                   '<div class="post-stat"><span>💬</span><span>' + post.comments.length + "</span></div>" +
                 "</div>" +
               "</div>" +
