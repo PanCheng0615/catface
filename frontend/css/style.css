@@ -1,0 +1,389 @@
+/* =============================================================
+   CatFace - Global Shared Styles
+   Owner: Member 4
+   Usage: <link rel="stylesheet" href="../css/style.css">
+   ============================================================= */
+
+/* ----- Reset ----- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: #F4F9FD;
+  color: #1E3A4A;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+/* ----- Color Variables ----- */
+:root {
+  --brand: #A7C7E7;
+  --brand-hover: #7EB8DC;
+  --brand-light: #E8F4FD;
+  --brand-gradient: linear-gradient(180deg, #A7C7E7 0%, #C8DFF2 100%);
+  --text-main: #1E3A4A;
+  --text-sub: #4A6478;
+  --text-muted: #8AAAB8;
+  --border: #D4E8F5;
+  --bg-page: #F4F9FD;
+  --bg-card: #ffffff;
+  --header-h: 56px;
+  --sidebar-w: 200px;
+}
+
+/* ----- Header ----- */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  z-index: 100;
+}
+
+.logo {
+  width: 120px;
+  height: 36px;
+  background: var(--brand);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+  border-radius: 4px;
+}
+
+/* ----- Sidebar ----- */
+.sidebar {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  width: var(--sidebar-w);
+  bottom: 0;
+  background: #fff;
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  z-index: 99;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-top {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-nav li {
+  margin: 0;
+}
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  font-size: 15px;
+  color: #1E3A4A;
+}
+
+.sidebar-nav a:hover,
+.sidebar-nav .active {
+  background: var(--brand-light);
+  color: var(--brand);
+}
+
+.sidebar-nav .icon {
+  width: 22px;
+  height: 22px;
+  text-align: center;
+  font-size: 18px;
+}
+
+.login-btn {
+  display: block;
+  width: 160px;
+  margin: 20px auto;
+  height: 44px;
+  line-height: 44px;
+  text-align: center;
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: 22px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.login-btn:hover {
+  background: var(--brand-hover);
+}
+
+.login-tip {
+  margin: 0 16px;
+  padding: 16px;
+  background: var(--brand-light);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.login-tip h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.login-tip ul {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.8;
+}
+
+.sidebar-bottom {
+  margin-top: 8px;
+  padding: 12px 20px 0;
+  border-top: 1px solid var(--border);
+}
+
+.rescue-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-sub);
+  padding: 10px 0 4px;
+}
+
+.rescue-entry .label {
+  font-weight: 600;
+}
+
+.rescue-entry small {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ----- Main Content Area ----- */
+.main {
+  margin-left: var(--sidebar-w);
+  margin-top: var(--header-h);
+  padding: 20px 24px 40px;
+  min-height: 100vh;
+}
+
+/* ----- Generic Overlay ----- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 400;
+}
+
+.overlay.is-open {
+  display: flex;
+}
+
+/* ----- Auth Modal ----- */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 500;
+}
+
+.auth-overlay:target {
+  display: flex;
+}
+
+.auth-overlay.is-open {
+  display: flex;
+}
+
+.auth-modal {
+  width: min(420px, 96vw);
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+  padding-top: 10px;
+  min-height: 360px;
+}
+
+.auth-close {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  color: var(--text-sub);
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.auth-close:hover {
+  background: var(--brand-light);
+}
+
+.auth-right {
+  padding: 26px 26px 22px;
+}
+
+.auth-title {
+  margin: 10px 0 18px;
+  font-size: 22px;
+  text-align: center;
+  color: var(--text-main);
+}
+
+.auth-field {
+  margin: 14px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f9f3f1;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 10px 14px;
+  height: 56px;
+}
+
+.auth-field:focus-within {
+  border-color: var(--brand);
+  background: #fff;
+}
+
+.auth-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  color: var(--text-main);
+}
+
+.auth-input::placeholder {
+  color: var(--text-muted);
+}
+
+.auth-btn {
+  margin-top: 18px;
+  width: 100%;
+  height: 56px;
+  border-radius: 999px;
+  border: none;
+  background: var(--brand-gradient);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.auth-btn:hover {
+  background: var(--brand-hover);
+}
+
+.auth-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.auth-agree {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  color: var(--text-sub);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.auth-agree input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+}
+
+.auth-agree a {
+  color: #7a9cc4;
+}
+
+.auth-bottom {
+  margin-top: 10px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.auth-bottom a {
+  color: #7a9cc4;
+}
+
+/* ----- Utility ----- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.form-error {
+  color: var(--brand);
+  font-size: 13px;
+  margin-top: 6px;
+  padding: 0 4px;
+}
+
+.form-success {
+  color: #7aaa7a;
+  font-size: 13px;
+  margin-top: 6px;
+  padding: 0 4px;
+}

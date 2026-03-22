@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Health Management — Cat Platform</title>
+  <title>Health Management �?Cat Platform</title>
+  <link rel="stylesheet" href="../css/style.css">
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: #f6f7fb;
+      background: #F4F9FD;
       color: #222;
-      padding: 24px 18px 40px;
     }
     a { color: #2f6feb; text-decoration: none; }
     a:hover { text-decoration: underline; }
@@ -198,9 +198,9 @@
     }
     .upload-btn,
     .save-btn {
-      background: #ff5a76;
+      background: #A7C7E7;
       color: #fff;
-      box-shadow: 0 10px 24px rgba(255,90,118,.22);
+      box-shadow: 0 10px 24px rgba(196,131,106,.22);
     }
     .cancel-btn {
       background: #f3f4f6;
@@ -244,9 +244,9 @@
       padding: 10px 14px;
       cursor: pointer;
       font-weight: 600;
-      background: #ff5a76;
+      background: #A7C7E7;
       color: #fff;
-      box-shadow: 0 10px 24px rgba(255,90,118,.18);
+      box-shadow: 0 10px 24px rgba(196,131,106,.18);
     }
     .mini-btn.secondary {
       background: #fff;
@@ -407,9 +407,45 @@
   </style>
 </head>
 <body>
+  <header class="header" role="banner">
+    <a href="index.html" class="logo">cat face</a>
+  </header>
+
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <ul class="sidebar-nav">
+        <li><a href="index.html"><span class="icon">💬</span> Community</a></li>
+        <li><a href="adoption.html"><span class="icon">🐱</span> Adoption</a></li>
+        <li><a href="health.html" class="active"><span class="icon">🩺</span> Health</a></li>
+        <li><a href="notifications.html"><span class="icon">🔔</span> Notifications</a></li>
+        <li><a href="account.html"><span class="icon">👤</span> Account</a></li>
+        <li><a href="#"><span class="icon">🛍️</span> Store <small style="font-size:10px;color:#bbb;">(soon)</small></a></li>
+      </ul>
+      <a href="log-in.html" class="login-btn">Log in</a>
+      <div class="login-tip">
+        <h4>Log in now to:</h4>
+        <ul>
+          <li>See cat content that understands you better</li>
+          <li>Search adoption, health, and notes</li>
+          <li>View your saved and liked posts</li>
+          <li>Interact and communicate with others better</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <a href="rescue-dashboard.html" class="rescue-entry">
+        <span class="icon">🚑</span>
+        <span>
+          <span class="label">Rescue Dashboard</span>
+          <small>Quick view of stray rescue status</small>
+        </span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="main">
   <div class="page">
     <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="index.html">← Back to Main</a>
     </nav>
 
     <header class="hero">
@@ -938,5 +974,6 @@
       renderOfficialFromStorage();
     })();
   </script>
+  </main>
 </body>
 </html>
