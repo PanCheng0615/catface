@@ -9,6 +9,7 @@ const {
   getLiked,
   setPreferences,
   createApplication,
+  cancelApplication,
   getMyApplications,
   getScoringConfig,
   putScoringConfig
@@ -20,6 +21,7 @@ router.get('/swipes', protect, getSwipes);
 router.get('/liked', protect, getLiked);
 router.post('/preferences', protect, setPreferences);
 router.post('/applications', protect, createApplication);
+router.delete('/applications/:id', protect, cancelApplication);
 router.get('/applications/me', protect, getMyApplications);
 
 router.get('/scoring-config', protect, authorize('admin', 'rescue_staff'), getScoringConfig);

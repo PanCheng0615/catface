@@ -340,6 +340,67 @@ async function getMyApplications(req, res) {
   }
 }
 
+// DELETE /api/adoption/applications/:id
+async function cancelApplication(req, res) {
+  try {
+    const appId = req.params.id;
+
+    const application = await prisma.adoptionApplication.findUnique({
+      where: { id: appId },
+      include: { cat: { include: { organization: true } } }
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        error: 'NotFound',
+        message: 'Application not found'
+      });
+    }
+
+    if (application.user_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: 'You can only cancel your own applications'
+      });
+    }
+
+    if (application.status !== 'pending') {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'Only pending applications can be cancelled'
+      });
+    }
+
+    await prisma.adoptionApplication.delete({ where: { id: appId } });
+
+    const catName = application.cat ? application.cat.name : 'Unknown';
+    const orgName = application.cat && application.cat.organization
+      ? application.cat.organization.name
+      : null;
+
+    return res.json({
+      success: true,
+      data: {
+        id: appId,
+        cat_name: catName,
+        org_name: orgName,
+        cancelled_at: new Date().toISOString()
+      },
+      message: 'Application cancelled successfully'
+    });
+  } catch (error) {
+    console.error('cancelApplication error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: 'Server error'
+    });
+  }
+}
+
 // GET /api/adoption/scoring-config
 async function getScoringConfig(req, res) {
   try {
@@ -392,6 +453,7 @@ module.exports = {
   getLiked,
   setPreferences,
   createApplication,
+  cancelApplication,
   getMyApplications,
   getScoringConfig,
   putScoringConfig
