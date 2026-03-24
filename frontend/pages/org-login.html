@@ -3,52 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<<<<<<< Updated upstream
-  <title>Organization Log in · CatFace</title>
-=======
   <title>Organization Log In · CatFace</title>
->>>>>>> Stashed changes
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-<<<<<<< Updated upstream
-      background: linear-gradient(180deg, #fff7f8 0%, #f6f7fb 100%);
-      color: #1f2937;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-    }
-    .card {
-      width: min(860px, 100%);
-      background: #fff;
-      border-radius: 28px;
-      overflow: hidden;
-      box-shadow: 0 24px 60px rgba(17, 24, 39, .14);
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
-    }
-    .main {
-      padding: 32px;
-    }
-    .side {
-      background: linear-gradient(135deg, #111827, #374151);
-      color: #fff;
-      padding: 32px 28px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 24px;
-    }
-    .back-link, .text-link {
-      color: #2563eb;
-      text-decoration: none;
-    }
-    .back-link:hover, .text-link:hover {
-      text-decoration: underline;
-=======
       background: radial-gradient(circle at top left, #eef2ff 0%, #ffffff 45%, #f8fafc 100%);
       display: flex;
       align-items: center;
@@ -56,8 +17,13 @@
       padding: 24px;
       color: #1f2937;
     }
-    a { color: #2563eb; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
     .shell {
       width: min(980px, 100%);
       background: #fff;
@@ -66,9 +32,6 @@
       box-shadow: 0 24px 60px rgba(15, 23, 42, .14);
       display: grid;
       grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
-    }
-    @media (max-width: 860px) {
-      .shell { grid-template-columns: 1fr; }
     }
     .main {
       padding: 30px 28px;
@@ -90,21 +53,14 @@
       gap: 6px;
       font-size: 13px;
       color: #64748b;
->>>>>>> Stashed changes
     }
     .brand {
       display: inline-flex;
       align-items: center;
       gap: 10px;
-<<<<<<< Updated upstream
-      font-weight: 800;
-      font-size: 20px;
-      margin-top: 12px;
-=======
       font-size: 20px;
       font-weight: 800;
       color: #1d4ed8;
->>>>>>> Stashed changes
     }
     .brand-mark {
       width: 40px;
@@ -112,25 +68,10 @@
       border-radius: 14px;
       display: grid;
       place-items: center;
-<<<<<<< Updated upstream
-      background: #ff2442;
-      color: #fff;
-      font-size: 18px;
-    }
-    h1 {
-      margin: 20px 0 8px;
-      font-size: 28px;
-    }
-    p {
-      margin: 0;
-      line-height: 1.6;
-    }
-    .sub {
-      color: #6b7280;
-      margin-bottom: 24px;
-=======
       color: #fff;
       background: linear-gradient(135deg, #2563eb, #60a5fa);
+      font-size: 15px;
+      font-weight: 800;
     }
     .heading h1 {
       margin: 0;
@@ -141,68 +82,11 @@
       margin: 8px 0 0;
       color: #64748b;
       line-height: 1.6;
->>>>>>> Stashed changes
     }
     .field {
       display: flex;
       flex-direction: column;
       gap: 8px;
-<<<<<<< Updated upstream
-      margin: 14px 0;
-    }
-    .field label {
-      font-size: 14px;
-      font-weight: 600;
-      color: #374151;
-    }
-    .field input {
-      width: 100%;
-      border: 1px solid #d8dce3;
-      border-radius: 16px;
-      padding: 14px 16px;
-      font: inherit;
-      color: #111827;
-      background: #fff;
-    }
-    .field input:focus {
-      outline: none;
-      border-color: #93c5fd;
-      box-shadow: 0 0 0 4px rgba(147, 197, 253, .18);
-    }
-    .note {
-      margin-top: 10px;
-      min-height: 52px;
-      padding: 14px 16px;
-      border-radius: 18px;
-      background: #ffffff;
-      color: #475467;
-      font-size: 13px;
-    }
-    .status {
-      display: none;
-      margin-top: 14px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      line-height: 1.6;
-      font-size: 14px;
-    }
-    .status.show { display: block; }
-    .status.error {
-      background: #fef2f2;
-      color: #b42318;
-    }
-    .status.success {
-      background: #ecfdf3;
-      color: #027a48;
-    }
-    .btn-primary {
-      width: 100%;
-      margin-top: 10px;
-      border: none;
-      border-radius: 999px;
-      padding: 14px 18px;
-      background: #111827;
-=======
     }
     .field label {
       font-size: 14px;
@@ -230,63 +114,19 @@
       font-size: 14px;
       color: #2563eb;
     }
-    .status.error { color: #dc2626; }
+    .status.error {
+      color: #dc2626;
+    }
     .btn-primary {
       width: 100%;
       height: 52px;
       border: none;
       border-radius: 16px;
       background: linear-gradient(135deg, #2563eb, #3b82f6);
->>>>>>> Stashed changes
       color: #fff;
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
-<<<<<<< Updated upstream
-    }
-    .btn-primary:hover {
-      background: #1f2937;
-    }
-    .cred-card {
-      margin-top: auto;
-      border-radius: 22px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-      padding: 18px;
-      line-height: 1.7;
-      font-size: 14px;
-    }
-    .cred-card code {
-      background: rgba(255,255,255,.12);
-      padding: 2px 6px;
-      border-radius: 8px;
-      color: #fff;
-    }
-    .side ul {
-      margin: 0;
-      padding-left: 18px;
-      line-height: 1.8;
-      font-size: 14px;
-      color: rgba(255,255,255,.88);
-    }
-    @media (max-width: 860px) {
-      .card {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <section class="main">
-      <a class="back-link" href="index.html">← Back to Main Page</a>
-      <div class="brand">
-        <span class="brand-mark">🏥</span>
-        <span>CatFace Organization Portal</span>
-      </div>
-      <h1>Organization Log in</h1>
-      <p class="sub">Use your rescue organization email and password to enter the rescue dashboard.</p>
-=======
       box-shadow: 0 12px 24px rgba(37, 99, 235, .22);
     }
     .btn-primary:disabled {
@@ -306,13 +146,13 @@
     .side p {
       margin: 0;
       line-height: 1.7;
-      color: rgba(255,255,255,.92);
+      color: rgba(255, 255, 255, .92);
     }
     .cred-card {
       margin-top: auto;
       border-radius: 20px;
-      background: rgba(255,255,255,.14);
-      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(255, 255, 255, .14);
+      border: 1px solid rgba(255, 255, 255, .22);
       padding: 18px;
       backdrop-filter: blur(8px);
     }
@@ -322,6 +162,11 @@
     }
     .cred-card p {
       font-size: 14px;
+    }
+    @media (max-width: 860px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -337,43 +182,23 @@
         <h1>Organization Log In</h1>
         <p>Use your rescue organization account to enter the dashboard, manage cats, and run cat-face identification.</p>
       </div>
->>>>>>> Stashed changes
 
       <form id="org-login-form">
         <div class="field">
           <label for="org-email">Organization Email</label>
-<<<<<<< Updated upstream
-          <input id="org-email" type="email" placeholder="Enter organization email" required>
-        </div>
-        <div class="field">
-          <label for="org-password">Password</label>
-          <input id="org-password" type="password" placeholder="Enter password" required>
-        </div>
-
-        <div class="note" aria-hidden="true"></div>
-
-        <div class="status" id="org-login-status"></div>
-        <button class="btn-primary" type="submit">Log in to Rescue Dashboard</button>
-      </form>
-    </section>
-
-    <aside class="side">
-      <div class="cred-card">
-        <div style="font-weight:700; margin-bottom:8px;">Default development account</div>
-        <div>Email: <code>rescue@catface.local</code></div>
-        <div>Password: <code>Rescue123!</code></div>
-=======
           <input id="org-email" type="email" autocomplete="email" placeholder="Enter organization email" required>
         </div>
+
         <div class="field">
           <label for="org-password">Password</label>
           <input id="org-password" type="password" autocomplete="current-password" placeholder="Enter password" required>
         </div>
+
         <div class="status" id="org-login-status"></div>
         <button class="btn-primary" type="submit" id="org-login-submit">Log in to Rescue Dashboard</button>
       </form>
 
-      <p class="meta-note">After login, the page will store an organization token in your browser and redirect you to `rescue-dashboard.html`.</p>
+      <p class="meta-note">After login, this page stores the organization session in your browser and redirects to `rescue-dashboard.html`.</p>
     </section>
 
     <aside class="side">
@@ -381,18 +206,15 @@
         <h2>Rescue Workspace</h2>
         <p>Review applications, update cat records, and run Cat Face ID from the rescue dashboard with an organization session.</p>
       </div>
+
       <div class="cred-card">
         <h3>Existing organization account</h3>
         <p>Email: <strong>rescue@catface.local</strong></p>
-        <p>If you do not remember the password, tell me and I can help you reset it.</p>
->>>>>>> Stashed changes
+        <p>Password: <strong>1234</strong></p>
       </div>
     </aside>
   </div>
 
-<<<<<<< Updated upstream
-  <script src="../js/org-login.js"></script>
-=======
   <script>
     (function () {
       const form = document.getElementById("org-login-form");
@@ -408,6 +230,7 @@
 
       form.addEventListener("submit", async function (event) {
         event.preventDefault();
+
         const email = emailInput.value.trim();
         const password = passwordInput.value;
 
@@ -450,6 +273,5 @@
       });
     })();
   </script>
->>>>>>> Stashed changes
 </body>
 </html>

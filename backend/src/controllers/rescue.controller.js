@@ -5,10 +5,7 @@ const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
-<<<<<<< Updated upstream
-=======
 const { runKamFaceInference, findCatFaceMatches } = require('../services/cat-face.service');
->>>>>>> Stashed changes
 
 const prisma = new PrismaClient();
 const execFileAsync = promisify(execFile);
@@ -16,8 +13,6 @@ const FACE_ID_PYTHON_BIN = fsSync.existsSync(path.join(__dirname, '../../.venv-c
   ? path.join(__dirname, '../../.venv-catface-id/bin/python')
   : 'python3';
 
-<<<<<<< Updated upstream
-=======
 function getThreshold() {
   const threshold = Number(process.env.KAM_FACE_THRESHOLD || '0.85');
   return Number.isFinite(threshold) ? threshold : 0.85;
@@ -174,19 +169,22 @@ async function registerCatFaceEmbedding(req, res) {
     });
   }
 }
-
->>>>>>> Stashed changes
 function mapCat(cat) {
   return {
     id: cat.id,
+    face_code: cat.face_code,
     name: cat.name,
     breed: cat.breed,
     age_months: cat.age_months,
     gender: cat.gender,
     color: cat.color,
+    found_location: cat.found_location,
     description: cat.description,
     photo_url: cat.photo_url,
-    is_available: cat.is_available,
+    status: cat.status,
+    is_neutered: cat.is_neutered,
+    is_vaccinated: cat.is_vaccinated,
+    is_dewormed: cat.is_dewormed,
     owner_id: cat.owner_id,
     org_id: cat.org_id,
     created_at: cat.created_at,
@@ -199,6 +197,28 @@ function mapCat(cat) {
         }))
       : []
   };
+}
+
+function normalizeCatStatusInput(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (!normalized) return 'available';
+  if (normalized === 'available') return 'available';
+  if (normalized === 'adopted' || normalized === 'approved') return 'adopted';
+  if (normalized === 'fostered' || normalized === 'reserved' || normalized === 'pending') return 'fostered';
+  if (normalized === 'deceased') return 'deceased';
+
+  return 'available';
+}
+
+function normalizeCatGenderInput(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (!normalized) return null;
+  if (normalized === 'male') return 'male';
+  if (normalized === 'female') return 'female';
+
+  return 'unknown';
 }
 
 function parseAgeMonthsInput(value) {
@@ -292,9 +312,10 @@ function mapApplication(application) {
     cat: application.cat
       ? {
           id: application.cat.id,
+          face_code: application.cat.face_code,
           name: application.cat.name,
           breed: application.cat.breed,
-          is_available: application.cat.is_available
+          status: application.cat.status
         }
       : null
   };
@@ -398,13 +419,13 @@ async function createCat(req, res) {
     }
 
     const tagValues = normalizeTagValues(tags, personality);
-    const requestedId = typeof display_id === 'string' && display_id.trim()
+    const requestedFaceCode = typeof display_id === 'string' && display_id.trim()
       ? display_id.trim()
       : null;
 
-    if (requestedId) {
-      const existingCat = await prisma.cat.findUnique({
-        where: { id: requestedId },
+    if (requestedFaceCode) {
+      const existingCat = await prisma.cat.findFirst({
+        where: { face_code: requestedFaceCode },
         select: { id: true }
       });
 
@@ -419,19 +440,19 @@ async function createCat(req, res) {
 
     const createdCat = await prisma.cat.create({
       data: {
-        id: requestedId || undefined,
         name: String(name).trim(),
+        face_code: requestedFaceCode,
         breed: typeof breed === 'string' && breed.trim() ? breed.trim() : null,
         age_months: parseAgeMonthsInput(age),
-        gender: typeof gender === 'string' && gender.trim() ? gender.trim() : null,
-        color: typeof location === 'string' && location.trim() ? location.trim() : null,
+        gender: normalizeCatGenderInput(gender),
+        found_location: typeof location === 'string' && location.trim() ? location.trim() : null,
         description: buildCatDescription({
           notes: typeof notes === 'string' ? notes.trim() : '',
           health: typeof health === 'string' ? health.trim() : '',
           personality: typeof personality === 'string' ? personality.trim() : ''
         }),
         photo_url: typeof photo_url === 'string' && photo_url.trim() ? photo_url.trim() : null,
-        is_available: status === 'Available',
+        status: normalizeCatStatusInput(status),
         org_id: scope.isAdmin
           ? (typeof req.body.org_id === 'string' && req.body.org_id.trim() ? req.body.org_id.trim() : null)
           : scope.organizationId,
@@ -585,17 +606,20 @@ async function updateCat(req, res) {
       where: { id: req.params.id },
       data: {
         name: typeof name === 'string' && name.trim() ? name.trim() : existingCat.name,
+        face_code: typeof req.body.display_id === 'string' && req.body.display_id.trim()
+          ? req.body.display_id.trim()
+          : existingCat.face_code,
         breed: typeof breed === 'string' ? breed.trim() || null : existingCat.breed,
         age_months: age !== undefined ? parseAgeMonthsInput(age) : existingCat.age_months,
-        gender: typeof gender === 'string' ? gender.trim() || null : existingCat.gender,
-        color: typeof location === 'string' ? location.trim() || null : existingCat.color,
+        gender: gender !== undefined ? normalizeCatGenderInput(gender) : existingCat.gender,
+        found_location: typeof location === 'string' ? location.trim() || null : existingCat.found_location,
         description: buildCatDescription({
           notes: typeof notes === 'string' ? notes.trim() : '',
           health: typeof health === 'string' ? health.trim() : '',
           personality: typeof personality === 'string' ? personality.trim() : ''
         }),
         photo_url: typeof photo_url === 'string' ? photo_url.trim() || null : existingCat.photo_url,
-        is_available: status ? status === 'Available' : existingCat.is_available,
+        status: status ? normalizeCatStatusInput(status) : existingCat.status,
         tags: {
           deleteMany: {},
           create: tagValues.map((tag) => ({ tag }))
@@ -659,9 +683,10 @@ async function getApplications(req, res) {
         cat: {
           select: {
             id: true,
+            face_code: true,
             name: true,
             breed: true,
-            is_available: true
+            status: true
           }
         }
       },
@@ -734,6 +759,11 @@ async function reviewApplication(req, res) {
       where: { id: req.params.id },
       data: {
         status,
+        reviewed_by: req.user.id,
+        reviewed_at: new Date(),
+        reject_note: status === 'rejected'
+          ? (typeof message === 'string' && message.trim() ? message.trim() : existingApplication.reject_note)
+          : null,
         message:
           typeof message === 'string' && message.trim()
             ? message.trim()
@@ -751,13 +781,21 @@ async function reviewApplication(req, res) {
         cat: {
           select: {
             id: true,
+            face_code: true,
             name: true,
             breed: true,
-            is_available: true
+            status: true
           }
         }
       }
     });
+
+    if (status === 'approved') {
+      await prisma.cat.update({
+        where: { id: updatedApplication.cat_id },
+        data: { status: 'adopted' }
+      });
+    }
 
     return res.json({
       success: true,
@@ -803,7 +841,7 @@ async function getAnalytics(req, res) {
         select: {
           id: true,
           breed: true,
-          is_available: true,
+          status: true,
           created_at: true
         }
       }),
@@ -822,9 +860,10 @@ async function getAnalytics(req, res) {
           cat: {
             select: {
               id: true,
+              face_code: true,
               name: true,
               breed: true,
-              is_available: true
+              status: true
             }
           }
         }
@@ -861,7 +900,7 @@ async function getAnalytics(req, res) {
     const pendingApplications = applications.filter((item) => item.status === 'pending').length;
     const approvedApplications = applications.filter((item) => item.status === 'approved').length;
     const rejectedApplications = applications.filter((item) => item.status === 'rejected').length;
-    const availableCats = cats.filter((item) => item.is_available).length;
+    const availableCats = cats.filter((item) => item.status === 'available').length;
     const activeConversations = conversations.length;
     const monthlyApprovedApplications = applications.filter((item) => {
       return item.status === 'approved' && item.updated_at >= monthStart;
@@ -1022,11 +1061,8 @@ async function getAnalytics(req, res) {
 }
 
 module.exports = {
-<<<<<<< Updated upstream
-=======
   identifyCatFace,
   registerCatFaceEmbedding,
->>>>>>> Stashed changes
   getCats,
   createCat,
   updateCat,

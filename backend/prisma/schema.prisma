@@ -27,22 +27,6 @@ model User {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
-<<<<<<< Updated upstream
-  // Relations
-  cats                     Cat[]
-  posts                    Post[]
-  post_likes               PostLike[]
-  comments                 Comment[]
-  adopter_preferences      AdopterPreference?
-  adoption_applications    AdoptionApplication[]
-  owner_health_records     OwnerHealthRecord[]
-  health_share_permissions HealthSharePermission[]
-  followers                UserFollow[]            @relation("following")
-  following                UserFollow[]            @relation("follower")
-  conversations_as_user    Conversation[]          @relation("user_conversations")
-  conversations_as_org     Conversation[]          @relation("org_conversations")
-  sent_messages            Message[]
-=======
   // 关联关系
   cats                     Cat[] // 该用户名下的猫咪档案
   posts                    Post[] // 该用户发布的社区帖子
@@ -58,7 +42,6 @@ model User {
   conversations_as_org     Conversation[]          @relation("org_conversations") // 以机构账号身份参与的对话
   sent_messages            Message[] // 该用户发送的消息
   reviewed_applications    AdoptionApplication[]   @relation("reviewer") // 该用户（机构工作人员）审核过的申请
->>>>>>> Stashed changes
 
   @@map("users")
 }
@@ -104,14 +87,9 @@ model Organization {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-<<<<<<< Updated upstream
-  cats           Cat[]
-  clinic_reports ClinicHealthReport[]
-=======
   cats            Cat[] // 该机构登记的猫咪档案
   clinic_reports  ClinicHealthReport[] // 该机构上传的诊所健康报告
   adoption_events AdoptionEvent[] // 该机构举办的领养活动
->>>>>>> Stashed changes
 
   @@map("organizations")
 }
@@ -122,8 +100,6 @@ enum OrgType {
 }
 
 // ─────────────────────────────────────────
-<<<<<<< Updated upstream
-=======
 // Member 5 — 领养活动（对应 Excel 中的"届"）
 // ─────────────────────────────────────────
 
@@ -154,36 +130,10 @@ model AdoptionEvent {
 }
 
 // ─────────────────────────────────────────
->>>>>>> Stashed changes
 // Member 2 — 猫咪档案 + 领养模块
 // ─────────────────────────────────────────
 
 model Cat {
-<<<<<<< Updated upstream
-  id           String   @id @default(uuid())
-  name         String
-  breed        String?
-  age_months   Int?
-  gender       String?
-  color        String?
-  description  String?
-  photo_url    String?
-  is_available Boolean  @default(true)
-  owner_id     String?
-  org_id       String?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-
-  owner                    User?                   @relation(fields: [owner_id], references: [id])
-  organization             Organization?           @relation(fields: [org_id], references: [id])
-  tags                     CatTag[]
-  requirements             CatRequirement[]
-  updates                  CatUpdate[]
-  adoption_applications    AdoptionApplication[]
-  owner_health_records     OwnerHealthRecord[]
-  clinic_reports           ClinicHealthReport[]
-  health_share_permissions HealthSharePermission[]
-=======
   id             String     @id @default(uuid())
   // 猫咪名字，必填
   name           String
@@ -233,13 +183,10 @@ model Cat {
   owner_health_records     OwnerHealthRecord[] // 猫主人记录的健康档案
   clinic_reports           ClinicHealthReport[] // 诊所上传的官方健康报告
   health_share_permissions HealthSharePermission[] // 健康数据共享授权记录
->>>>>>> Stashed changes
 
   @@map("cats")
 }
 
-<<<<<<< Updated upstream
-=======
 // 猫咪性别枚举
 enum CatGender {
   male // 公猫
@@ -278,8 +225,6 @@ model CatFaceEmbedding {
   @@index([cat_id])
   @@map("cat_face_embeddings")
 }
-
->>>>>>> Stashed changes
 model CatTag {
   id         String   @id @default(uuid())
   cat_id     String
@@ -329,16 +274,22 @@ model AdopterPreference {
 }
 
 model AdoptionApplication {
-  id         String            @id @default(uuid())
-  user_id    String
-  cat_id     String
-  status     ApplicationStatus @default(pending)
-  message    String?
-  created_at DateTime          @default(now())
-  updated_at DateTime          @updatedAt
+  id          String            @id @default(uuid())
+  user_id     String
+  cat_id      String
+  event_id    String?
+  status      ApplicationStatus @default(pending)
+  message     String?
+  reviewed_by String?
+  reviewed_at DateTime?
+  reject_note String?
+  created_at  DateTime          @default(now())
+  updated_at  DateTime          @updatedAt
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cat      Cat            @relation(fields: [cat_id], references: [id], onDelete: Cascade)
+  event    AdoptionEvent? @relation(fields: [event_id], references: [id])
+  reviewer User?          @relation("reviewer", fields: [reviewed_by], references: [id])
 
   @@map("adoption_applications")
 }

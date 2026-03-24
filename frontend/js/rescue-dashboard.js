@@ -1,3 +1,1295 @@
+(function () {
+  window.__CATFACE_EXTERNAL_RESCUE__ = true;
+
+  const API_BASE = "http://localhost:3000/api";
+
+  const menuButtons = document.querySelectorAll(".menu-btn");
+  const sections = document.querySelectorAll(".section");
+  const statCards = document.querySelectorAll(".stat-card");
+  const catListBody = document.getElementById("cat-list-body");
+  const applicationListBody = document.getElementById("application-list-body");
+  const notifList = document.getElementById("notif-list");
+  const notifCountLabel = document.getElementById("notif-count-label");
+  const notifSearchInput = document.getElementById("notif-search-input");
+  const addCatToggleBtn = document.getElementById("add-cat-toggle-btn");
+  const catFormPanel = document.getElementById("cat-form-panel");
+  const catFormTitle = document.getElementById("cat-form-title");
+  const catFormDescription = document.getElementById("cat-form-description");
+  const catFormCancelBtn = document.getElementById("cat-form-cancel-btn");
+  const catFormSaveBtn = document.getElementById("cat-form-save-btn");
+  const catNameInput = document.getElementById("cat-name");
+  const catIdInput = document.getElementById("cat-id");
+  const catGenderInput = document.getElementById("cat-gender");
+  const catBreedInput = document.getElementById("cat-breed");
+  const catAgeInput = document.getElementById("cat-age");
+  const catStatusInput = document.getElementById("cat-status");
+  const catLocationInput = document.getElementById("cat-location");
+  const catHealthInput = document.getElementById("cat-health");
+  const catPersonalityInput = document.getElementById("cat-personality");
+  const catNotesInput = document.getElementById("cat-notes");
+  const catPhotoInput = document.getElementById("cat-photo-input");
+  const catPhotoPreview = document.getElementById("cat-photo-preview");
+  const catPhotoPlaceholder = document.getElementById("cat-photo-placeholder");
+  const openFaceIdBtn = document.getElementById("open-face-id-btn");
+  const faceIdOverlay = document.getElementById("face-id-overlay");
+  const faceIdCloseBtn = document.getElementById("face-id-close-btn");
+  const faceIdCancelBtn = document.getElementById("face-id-cancel-btn");
+  const faceIdImageInput = document.getElementById("face-id-image-input");
+  const facePreviewImage = document.getElementById("face-preview-image");
+  const facePreviewPlaceholder = document.getElementById("face-preview-placeholder");
+  const generatedFaceId = document.getElementById("generated-face-id");
+  const useFaceIdBtn = document.getElementById("use-face-id-btn");
+  const catProfileOverlay = document.getElementById("cat-profile-overlay");
+  const catProfileCloseBtn = document.getElementById("cat-profile-close-btn");
+  const catProfileAvatar = document.getElementById("cat-profile-avatar");
+  const catProfileName = document.getElementById("cat-profile-name");
+  const catProfileSubtitle = document.getElementById("cat-profile-subtitle");
+  const catProfileStatus = document.getElementById("cat-profile-status");
+  const catProfileId = document.getElementById("cat-profile-id");
+  const catProfileNameValue = document.getElementById("cat-profile-name-value");
+  const catProfileBreed = document.getElementById("cat-profile-breed");
+  const catProfileGender = document.getElementById("cat-profile-gender");
+  const catProfileAge = document.getElementById("cat-profile-age");
+  const catProfileBirthday = document.getElementById("cat-profile-birthday");
+  const catProfilePersonality = document.getElementById("cat-profile-personality");
+  const catProfileSpayed = document.getElementById("cat-profile-spayed");
+  const catProfileVaccinationStatus = document.getElementById("cat-profile-vaccination-status");
+  const catProfileFoundLocation = document.getElementById("cat-profile-found-location");
+  const catProfileAllergyHistory = document.getElementById("cat-profile-allergy-history");
+  const catProfileAdoptionStatus = document.getElementById("cat-profile-adoption-status");
+  const catProfileTags = document.getElementById("cat-profile-tags");
+  const catProfileSummary = document.getElementById("cat-profile-summary");
+  const catProfilePhoto = document.getElementById("cat-profile-photo");
+  const catProfilePhotoEmpty = document.getElementById("cat-profile-photo-empty");
+  const applicationDetailOverlay = document.getElementById("application-detail-overlay");
+  const applicationCloseBtn = document.getElementById("application-close-btn");
+  const applicationContactBtn = document.getElementById("application-contact-btn");
+  const applicationAvatar = document.getElementById("application-avatar");
+  const applicationTitle = document.getElementById("application-title");
+  const applicationSubtitle = document.getElementById("application-subtitle");
+  const applicationStatus = document.getElementById("application-status");
+  const applicationApplicant = document.getElementById("application-applicant");
+  const applicationContact = document.getElementById("application-contact");
+  const applicationExperience = document.getElementById("application-experience");
+  const applicationSubmitted = document.getElementById("application-submitted");
+  const applicationCat = document.getElementById("application-cat");
+  const applicationHome = document.getElementById("application-home");
+  const applicationSchedule = document.getElementById("application-schedule");
+  const applicationNote = document.getElementById("application-note");
+  const applicationReason = document.getElementById("application-reason");
+  const notifOverlay = document.getElementById("notif-overlay");
+  const notifCloseBtn = document.getElementById("notif-close-btn");
+  const notifModalAvatar = document.getElementById("notif-modal-avatar");
+  const notifModalTitle = document.getElementById("notif-modal-title");
+  const notifModalSubtitle = document.getElementById("notif-modal-subtitle");
+  const notifConversation = document.getElementById("notif-conversation");
+  const notifMessageInput = document.getElementById("notif-message-input");
+  const notifImageInput = document.getElementById("notif-image-input");
+  const notifImagePreview = document.getElementById("notif-image-preview");
+  const notifSendBtn = document.getElementById("notif-send-btn");
+  const notifActionButtons = document.querySelectorAll(".notif-actions .mini-btn");
+  const dashboardFunnel = document.getElementById("dashboard-funnel");
+  const dashboardTrend = document.getElementById("dashboard-trend");
+  const dashboardStatusBreakdown = document.getElementById("dashboard-status-breakdown");
+  const dashboardBreedPreference = document.getElementById("dashboard-breed-preference");
+  const dashboardRecentRecords = document.getElementById("dashboard-recent-records");
+  const dashboardAttentionList = document.getElementById("dashboard-attention-list");
+  const orgLogoutBtn = document.getElementById("org-logout-btn");
+
+  if (!catListBody || !applicationListBody || !notifList) {
+    return;
+  }
+
+  const state = {
+    cats: [],
+    catsById: {},
+    applications: [],
+    applicationsById: {},
+    threads: [],
+    activeThreadId: null,
+    activeThreadUserId: null,
+    activeApplicationId: null,
+    editingCatId: null,
+    pendingImages: [],
+    currentGeneratedFaceId: "",
+    currentGeneratedEmbedding: null,
+    currentCatPhoto: ""
+  };
+
+  function getAuthToken() {
+    return localStorage.getItem("catface_org_token") || localStorage.getItem("catface_token") || "";
+  }
+
+  function decodeToken(token) {
+    try {
+      const payload = token.split(".")[1];
+      const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+      return JSON.parse(atob(normalized));
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function getCurrentUserId() {
+    return decodeToken(getAuthToken()).id || "";
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatDate(value) {
+    if (!value) return "Unknown";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleDateString();
+  }
+
+  function formatDateTime(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toLocaleString();
+  }
+
+  function formatShortTime(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime())
+      ? ""
+      : date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+
+  function formatAgeMonths(value) {
+    if (value == null || Number.isNaN(Number(value))) return "Unknown";
+    const months = Number(value);
+    if (months < 12) return months + " month" + (months === 1 ? "" : "s");
+    const years = Math.floor(months / 12);
+    const remainingMonths = months % 12;
+    if (!remainingMonths) return years + " year" + (years === 1 ? "" : "s");
+    return years + " year" + (years === 1 ? "" : "s") + " " + remainingMonths + " month" + (remainingMonths === 1 ? "" : "s");
+  }
+
+  function humanizeCatStatus(status) {
+    if (status === "adopted") return "Adopted";
+    if (status === "fostered") return "Fostered";
+    if (status === "deceased") return "Deceased";
+    return "Available";
+  }
+
+  function catStatusTagClass(status) {
+    if (status === "available") return "green";
+    if (status === "fostered") return "blue";
+    return "orange";
+  }
+
+  function humanizeApplicationStatus(status) {
+    if (status === "approved") return "Approved";
+    if (status === "rejected") return "Rejected";
+    return "Pending";
+  }
+
+  function applicationStatusTagClass(status) {
+    if (status === "approved") return "green";
+    if (status === "rejected") return "orange";
+    return "blue";
+  }
+
+  function avatarClassFromStatus(status) {
+    if (status === "fostered") return "blue";
+    if (status === "adopted" || status === "deceased") return "pink";
+    return "";
+  }
+
+  function splitDescription(description) {
+    const result = {
+      personality: "",
+      health: "",
+      notes: "",
+      summary: description || ""
+    };
+
+    String(description || "")
+      .split("\n")
+      .map(function (line) {
+        return line.trim();
+      })
+      .filter(Boolean)
+      .forEach(function (line) {
+        if (line.indexOf("性格:") === 0) result.personality = line.replace("性格:", "").trim();
+        if (line.indexOf("健康:") === 0) result.health = line.replace("健康:", "").trim();
+        if (line.indexOf("備註:") === 0) result.notes = line.replace("備註:", "").trim();
+      });
+
+    return result;
+  }
+
+  function api(path, options) {
+    const token = getAuthToken();
+    if (!token) {
+      window.location.href = "org-login.html";
+      return Promise.reject(new Error("Please log in with an organization account first."));
+    }
+
+    return fetch(API_BASE + path, Object.assign({
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      }
+    }, options || {})).then(async function (response) {
+      const payload = await response.json().catch(function () {
+        return {};
+      });
+
+      if (!response.ok || payload.success === false) {
+        throw new Error(payload.message || "Request failed.");
+      }
+
+      return payload.data;
+    });
+  }
+
+  function activateSection(targetId) {
+    menuButtons.forEach(function (button) {
+      button.classList.toggle("active", button.getAttribute("data-target") === targetId);
+    });
+
+    sections.forEach(function (section) {
+      section.classList.toggle("active", section.id === targetId);
+    });
+  }
+
+  function setCatFormOpen(isOpen) {
+    catFormPanel.classList.toggle("collapsed-panel", !isOpen);
+    addCatToggleBtn.textContent = isOpen ? "Hide Form" : "Add New Cat";
+  }
+
+  function resetCatForm() {
+    state.editingCatId = null;
+    state.currentGeneratedEmbedding = null;
+    state.currentGeneratedFaceId = "";
+    catFormTitle.textContent = "Add New Cat";
+    catFormDescription.textContent = "Create a new cat account with rescue information, health summary, and adoption requirements.";
+    catFormSaveBtn.textContent = "Save Cat Account";
+    catNameInput.value = "";
+    catIdInput.value = "";
+    catIdInput.disabled = false;
+    catGenderInput.value = "male";
+    catBreedInput.value = "";
+    catAgeInput.value = "";
+    catStatusInput.value = "available";
+    catLocationInput.value = "";
+    catHealthInput.value = "";
+    catPersonalityInput.value = "";
+    catNotesInput.value = "";
+    state.currentCatPhoto = "";
+    catPhotoInput.value = "";
+    catPhotoPreview.src = "";
+    catPhotoPreview.hidden = true;
+    catPhotoPlaceholder.hidden = false;
+  }
+
+  function openFaceRecognitionModal() {
+    resetFaceRecognitionModal();
+    faceIdOverlay.classList.add("open");
+    faceIdOverlay.setAttribute("aria-hidden", "false");
+  }
+
+  function closeFaceRecognitionModal() {
+    faceIdOverlay.classList.remove("open");
+    faceIdOverlay.setAttribute("aria-hidden", "true");
+  }
+
+  function resetFaceRecognitionModal() {
+    state.currentGeneratedFaceId = "";
+    state.currentGeneratedEmbedding = null;
+    generatedFaceId.textContent = "Waiting for image upload";
+    generatedFaceId.title = "";
+    faceIdImageInput.value = "";
+    facePreviewImage.src = "";
+    facePreviewImage.hidden = true;
+    facePreviewPlaceholder.hidden = false;
+    useFaceIdBtn.disabled = true;
+  }
+
+  function setPhotoPreview(photoUrl) {
+    state.currentCatPhoto = photoUrl || "";
+    if (state.currentCatPhoto) {
+      catPhotoPreview.src = state.currentCatPhoto;
+      catPhotoPreview.hidden = false;
+      catPhotoPlaceholder.hidden = true;
+    } else {
+      catPhotoPreview.src = "";
+      catPhotoPreview.hidden = true;
+      catPhotoPlaceholder.hidden = false;
+    }
+  }
+
+  function catToViewModel(cat) {
+    const description = splitDescription(cat.description);
+    return {
+      dbId: cat.id,
+      displayId: cat.face_code || cat.id,
+      name: cat.name || "Unnamed",
+      breed: cat.breed || "Unknown",
+      gender: cat.gender || "unknown",
+      age: formatAgeMonths(cat.age_months),
+      age_months: cat.age_months,
+      status: cat.status || "available",
+      statusLabel: humanizeCatStatus(cat.status),
+      avatarText: (cat.name || "C").charAt(0).toUpperCase(),
+      avatarClass: avatarClassFromStatus(cat.status),
+      health: description.health || (cat.is_vaccinated ? "Vaccinated" : "Not provided"),
+      personality: description.personality || "Not specified",
+      notes: description.notes || "",
+      summary: description.summary || "No summary yet.",
+      tags: Array.isArray(cat.tags) ? cat.tags.map(function (tag) { return tag.tag; }) : [],
+      photo: cat.photo_url || "",
+      found_location: cat.found_location || "Not provided",
+      spayed: cat.is_neutered == null ? "Unknown" : (cat.is_neutered ? "Yes" : "No"),
+      vaccinated: cat.is_vaccinated == null ? "Unknown" : (cat.is_vaccinated ? "Yes" : "No"),
+      dewormed: cat.is_dewormed == null ? "Unknown" : (cat.is_dewormed ? "Yes" : "No"),
+      intake_date: cat.intake_date,
+      created_at: cat.created_at
+    };
+  }
+
+  function renderCatList() {
+    if (!state.cats.length) {
+      catListBody.innerHTML = "<tr><td colspan=\"7\">No cats found for this organization.</td></tr>";
+      return;
+    }
+
+    catListBody.innerHTML = state.cats.map(function (cat) {
+      const view = catToViewModel(cat);
+      return [
+        "<tr>",
+        "  <td>" + escapeHtml(view.displayId) + "</td>",
+        "  <td>" + escapeHtml(view.name) + "</td>",
+        "  <td>" + escapeHtml(view.breed) + "</td>",
+        "  <td>" + escapeHtml(view.age) + "</td>",
+        "  <td><span class=\"tag " + catStatusTagClass(view.status) + "\">" + escapeHtml(view.statusLabel) + "</span></td>",
+        "  <td>" + escapeHtml(view.health) + "</td>",
+        "  <td class=\"mini-actions\"><button class=\"mini-btn\" type=\"button\" data-cat-profile=\"" + escapeHtml(view.dbId) + "\">View</button><button class=\"mini-btn\" type=\"button\" data-cat-edit=\"" + escapeHtml(view.dbId) + "\">Edit</button></td>",
+        "</tr>"
+      ].join("");
+    }).join("");
+  }
+
+  function fillCatForm(catId) {
+    const cat = state.catsById[catId];
+    if (!cat) return;
+
+    const view = catToViewModel(cat);
+    state.editingCatId = catId;
+    catFormTitle.textContent = "Edit Cat Information";
+    catFormDescription.textContent = "Update the selected cat account and save the latest rescue details.";
+    catFormSaveBtn.textContent = "Save Changes";
+    catNameInput.value = view.name;
+    catIdInput.value = cat.face_code || "";
+    catIdInput.disabled = true;
+    catGenderInput.value = view.gender;
+    catBreedInput.value = cat.breed || "";
+    catAgeInput.value = cat.age_months == null ? "" : String(cat.age_months);
+    catStatusInput.value = cat.status || "available";
+    catLocationInput.value = cat.found_location || "";
+    catHealthInput.value = splitDescription(cat.description).health || "";
+    catPersonalityInput.value = view.tags.join(", ");
+    catNotesInput.value = splitDescription(cat.description).notes || "";
+    state.currentGeneratedEmbedding = null;
+    setPhotoPreview(cat.photo_url || "");
+    setCatFormOpen(true);
+    catFormPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function openCatProfile(catId) {
+    const cat = state.catsById[catId];
+    if (!cat) return;
+
+    const view = catToViewModel(cat);
+    catProfileAvatar.className = "profile-avatar" + (view.avatarClass ? " " + view.avatarClass : "");
+    catProfileAvatar.textContent = view.avatarText;
+    catProfileName.textContent = view.name;
+    catProfileSubtitle.textContent = view.displayId + " · " + view.breed;
+    catProfileStatus.textContent = view.statusLabel;
+    catProfileId.textContent = view.displayId;
+    catProfileNameValue.textContent = view.name;
+    catProfileBreed.textContent = view.breed;
+    catProfileGender.textContent = view.gender;
+    catProfileAge.textContent = view.age;
+    catProfileBirthday.textContent = view.intake_date ? formatDate(view.intake_date) : "Unknown";
+    catProfilePersonality.textContent = view.personality;
+    catProfileSpayed.textContent = view.spayed;
+    catProfileVaccinationStatus.textContent = view.vaccinated;
+    catProfileFoundLocation.textContent = view.found_location;
+    catProfileAllergyHistory.textContent = view.notes || "No allergy record";
+    catProfileAdoptionStatus.textContent = view.statusLabel;
+    catProfileTags.innerHTML = view.tags.length
+      ? view.tags.map(function (tag) {
+          return "<span class=\"profile-tag\">" + escapeHtml(tag) + "</span>";
+        }).join("")
+      : "<span class=\"profile-tag\">No tags</span>";
+    catProfileSummary.textContent = view.summary;
+
+    if (view.photo) {
+      catProfilePhoto.src = view.photo;
+      catProfilePhoto.hidden = false;
+      catProfilePhotoEmpty.hidden = true;
+    } else {
+      catProfilePhoto.src = "";
+      catProfilePhoto.hidden = true;
+      catProfilePhotoEmpty.hidden = false;
+    }
+
+    catProfileOverlay.classList.add("open");
+    catProfileOverlay.setAttribute("aria-hidden", "false");
+  }
+
+  function closeCatProfile() {
+    catProfileOverlay.classList.remove("open");
+    catProfileOverlay.setAttribute("aria-hidden", "true");
+  }
+
+  function applicationToViewModel(application) {
+    return {
+      id: application.id,
+      title: application.id,
+      applicant: application.user && (application.user.display_name || application.user.username) || "Unknown adopter",
+      contact: application.user && application.user.email || "Not provided",
+      cat: application.cat && application.cat.name || "Unknown cat",
+      cat_id: application.cat && application.cat.id || "",
+      user_id: application.user && application.user.id || "",
+      submitted: formatDate(application.created_at),
+      status: application.status,
+      statusLabel: humanizeApplicationStatus(application.status),
+      note: application.reject_note || application.message || "No note provided.",
+      reason: application.message || "No adoption statement provided."
+    };
+  }
+
+  function renderApplications() {
+    if (!state.applications.length) {
+      applicationListBody.innerHTML = "<tr><td colspan=\"6\">No adoption applications found.</td></tr>";
+      return;
+    }
+
+    applicationListBody.innerHTML = state.applications.map(function (application) {
+      const view = applicationToViewModel(application);
+      const locked = application.status !== "pending";
+      return [
+        "<tr>",
+        "  <td>" + escapeHtml(view.id) + "</td>",
+        "  <td>" + escapeHtml(view.cat) + "</td>",
+        "  <td>" + escapeHtml(view.applicant) + "</td>",
+        "  <td><span class=\"tag " + applicationStatusTagClass(view.status) + "\">" + escapeHtml(view.statusLabel) + "</span></td>",
+        "  <td>" + escapeHtml(view.submitted) + "</td>",
+        "  <td class=\"mini-actions\">",
+        "    <button class=\"mini-btn\" type=\"button\" data-application-detail=\"" + escapeHtml(view.id) + "\">View</button>",
+        "    <button class=\"mini-btn\" type=\"button\" data-application-review=\"" + escapeHtml(view.id) + "\" data-review-status=\"approved\"" + (locked ? " disabled" : "") + ">Approve</button>",
+        "    <button class=\"mini-btn\" type=\"button\" data-application-review=\"" + escapeHtml(view.id) + "\" data-review-status=\"rejected\"" + (locked ? " disabled" : "") + ">Reject</button>",
+        "  </td>",
+        "</tr>"
+      ].join("");
+    }).join("");
+  }
+
+  function openApplicationDetail(applicationId) {
+    const application = state.applicationsById[applicationId];
+    if (!application) return;
+
+    const view = applicationToViewModel(application);
+    state.activeApplicationId = applicationId;
+    applicationAvatar.textContent = view.applicant.charAt(0).toUpperCase();
+    applicationTitle.textContent = view.title;
+    applicationSubtitle.textContent = view.applicant + " applying for " + view.cat;
+    applicationStatus.textContent = view.statusLabel;
+    applicationApplicant.textContent = view.applicant;
+    applicationContact.textContent = view.contact;
+    applicationExperience.textContent = "No structured experience record";
+    applicationSubmitted.textContent = view.submitted;
+    applicationCat.textContent = view.cat;
+    applicationHome.textContent = "Not provided";
+    applicationSchedule.textContent = "Not provided";
+    applicationNote.textContent = view.note;
+    applicationReason.textContent = view.reason;
+    applicationDetailOverlay.classList.add("open");
+    applicationDetailOverlay.setAttribute("aria-hidden", "false");
+  }
+
+  function closeApplicationDetail() {
+    state.activeApplicationId = null;
+    applicationDetailOverlay.classList.remove("open");
+    applicationDetailOverlay.setAttribute("aria-hidden", "true");
+  }
+
+  function renderPendingImages() {
+    if (!state.pendingImages.length) {
+      notifImagePreview.innerHTML = "";
+      notifImagePreview.hidden = true;
+      return;
+    }
+
+    notifImagePreview.hidden = false;
+    notifImagePreview.innerHTML = state.pendingImages.map(function (image, index) {
+      return [
+        "<div class=\"notif-preview-item\">",
+        "  <img src=\"" + image.src + "\" alt=\"" + escapeHtml(image.name) + "\">",
+        "  <button class=\"notif-preview-remove\" type=\"button\" data-remove-image=\"" + index + "\">×</button>",
+        "</div>"
+      ].join("");
+    }).join("");
+  }
+
+  function renderConversation(messages) {
+    if (!messages.length) {
+      notifConversation.innerHTML = "<div class=\"empty-state\">No messages yet.</div>";
+      return;
+    }
+
+    notifConversation.innerHTML = messages.map(function (message) {
+      const imagesMarkup = Array.isArray(message.attachments) && message.attachments.length
+        ? "<div class=\"msg-images\">" + message.attachments.map(function (attachment) {
+            return "<img src=\"" + attachment.file_url + "\" alt=\"Shared image\">";
+          }).join("") + "</div>"
+        : "";
+      const textMarkup = message.content
+        ? "<div class=\"msg-text\">" + escapeHtml(message.content === "[attachment]" ? "" : message.content) + "</div>"
+        : "";
+      const bubbleClass = imagesMarkup ? "msg-bubble has-media" : "msg-bubble";
+      const senderClass = message.is_mine ? "org" : "user";
+      return [
+        "<div class=\"msg " + senderClass + "\">",
+        "  <div class=\"" + bubbleClass + "\">" + imagesMarkup + textMarkup + "</div>",
+        "  <div class=\"msg-time\">" + escapeHtml(formatShortTime(message.created_at)) + "</div>",
+        "</div>"
+      ].join("");
+    }).join("");
+    notifConversation.scrollTop = notifConversation.scrollHeight;
+  }
+
+  function renderThreadList() {
+    const query = String(notifSearchInput.value || "").trim().toLowerCase();
+    const threads = state.threads.filter(function (thread) {
+      if (!query) return true;
+      return [thread.title, thread.subtitle, thread.snippet].join(" ").toLowerCase().indexOf(query) >= 0;
+    });
+
+    notifCountLabel.textContent = threads.length + " active thread" + (threads.length === 1 ? "" : "s");
+
+    if (!threads.length) {
+      notifList.innerHTML = "<div class=\"empty-state\">No conversations found.</div>";
+      return;
+    }
+
+    notifList.innerHTML = threads.map(function (thread) {
+      return [
+        "<div class=\"notif-item\" data-thread-id=\"" + escapeHtml(thread.id) + "\">",
+        "  <div class=\"notif-avatar " + escapeHtml(thread.avatarClass) + "\">" + escapeHtml(thread.avatarText) + "</div>",
+        "  <div class=\"notif-body\">",
+        "    <div class=\"notif-head\">",
+        "      <div class=\"notif-name\">" + escapeHtml(thread.title) + "</div>",
+        "      <div class=\"notif-time\">" + escapeHtml(thread.timeLabel) + "</div>",
+        "    </div>",
+        "    <div class=\"notif-snippet\">" + escapeHtml(thread.snippet || "No message yet") + "</div>",
+        "    <div class=\"notif-meta\">",
+        "      <span class=\"notif-tag\">" + escapeHtml(thread.subtitle) + "</span>",
+        thread.unread ? "      <span class=\"notif-unread\" aria-label=\"Unread\"></span>" : "",
+        "    </div>",
+        "  </div>",
+        "</div>"
+      ].join("");
+    }).join("");
+  }
+
+  function openThread(threadId) {
+    const thread = state.threads.find(function (item) {
+      return item.id === threadId;
+    });
+    if (!thread) return;
+
+    state.activeThreadId = thread.id;
+    state.activeThreadUserId = thread.user_id;
+    notifModalAvatar.className = "notif-avatar " + thread.avatarClass;
+    notifModalAvatar.textContent = thread.avatarText;
+    notifModalTitle.textContent = thread.title;
+    notifModalSubtitle.textContent = thread.subtitle;
+    notifMessageInput.value = "";
+    state.pendingImages = [];
+    notifImageInput.value = "";
+    renderPendingImages();
+
+    api("/chat/conversations/" + encodeURIComponent(thread.id) + "/messages").then(function (data) {
+      renderConversation(data.messages || []);
+      notifOverlay.classList.add("open");
+      notifOverlay.setAttribute("aria-hidden", "false");
+      notifMessageInput.focus();
+    }).catch(function (error) {
+      window.alert(error.message || "Unable to open conversation.");
+    });
+  }
+
+  function closeThread() {
+    state.activeThreadId = null;
+    state.activeThreadUserId = null;
+    notifOverlay.classList.remove("open");
+    notifOverlay.setAttribute("aria-hidden", "true");
+  }
+
+  function getStatusTagClass(status) {
+    if (status === "approved" || status === "available") return "green";
+    if (status === "pending" || status === "fostered") return "blue";
+    return "orange";
+  }
+
+  function renderStats(overview) {
+    statCards.forEach(function (card) {
+      const statKey = card.getAttribute("data-stat");
+      const valueNode = card.querySelector(".stat-value");
+      if (!valueNode) return;
+
+      const value = overview[statKey];
+      if (statKey === "approval_rate") {
+        valueNode.textContent = (value || 0) + "%";
+      } else if (statKey === "avg_review_hours") {
+        valueNode.textContent = (value || 0) + "h";
+      } else {
+        valueNode.textContent = value || 0;
+      }
+    });
+  }
+
+  function renderFunnelChart(funnel) {
+    if (!dashboardFunnel) return;
+
+    const submitted = Math.max(funnel.submitted || 0, 1);
+    const stages = [
+      { label: "Submitted", value: funnel.submitted || 0 },
+      { label: "Pending", value: funnel.pending || 0 },
+      { label: "Approved", value: funnel.approved || 0 },
+      { label: "Rejected", value: funnel.rejected || 0 }
+    ];
+
+    dashboardFunnel.innerHTML = stages.map(function (stage) {
+      const percentage = Math.round((stage.value / submitted) * 100);
+      return [
+        '<div class="funnel-stage">',
+        '  <div class="funnel-head">',
+        '    <div class="funnel-title">' + escapeHtml(stage.label) + '</div>',
+        '    <div class="funnel-value">' + escapeHtml(String(stage.value)) + ' <span class="metric-meta">(' + escapeHtml(String(percentage)) + '%)</span></div>',
+        "  </div>",
+        '  <div class="funnel-track"><div class="funnel-fill" style="width:' + percentage + '%;"></div></div>',
+        "</div>"
+      ].join("");
+    }).join("");
+  }
+
+  function renderTrendChart(points) {
+    if (!dashboardTrend) return;
+    if (!Array.isArray(points) || !points.length) {
+      dashboardTrend.innerHTML = '<div class="empty-state">No monthly trend data yet.</div>';
+      return;
+    }
+
+    const maxValue = points.reduce(function (max, point) {
+      return Math.max(max, point.applications || 0, point.approved || 0);
+    }, 1);
+
+    dashboardTrend.innerHTML = points.map(function (point) {
+      const applicationHeight = Math.max(Math.round(((point.applications || 0) / maxValue) * 120), point.applications ? 12 : 6);
+      const approvedHeight = Math.max(Math.round(((point.approved || 0) / maxValue) * 120), point.approved ? 12 : 6);
+      return [
+        '<div class="trend-col">',
+        '  <div class="trend-bars">',
+        '    <div class="trend-bar applications" style="height:' + applicationHeight + 'px;" title="Applications: ' + escapeHtml(String(point.applications || 0)) + '"></div>',
+        '    <div class="trend-bar approved" style="height:' + approvedHeight + 'px;" title="Approved: ' + escapeHtml(String(point.approved || 0)) + '"></div>',
+        "  </div>",
+        '  <div class="trend-label">' + escapeHtml(point.month || "") + "</div>",
+        '  <div class="trend-meta">App ' + escapeHtml(String(point.applications || 0)) + ' / Approved ' + escapeHtml(String(point.approved || 0)) + "</div>",
+        "</div>"
+      ].join("");
+    }).join("");
+  }
+
+  function renderMetricRows(container, items, options) {
+    if (!container) return;
+    if (!Array.isArray(items) || !items.length) {
+      container.innerHTML = '<div class="empty-state">No analytics data yet.</div>';
+      return;
+    }
+
+    const maxValue = items.reduce(function (max, item) {
+      return Math.max(max, item.count || 0);
+    }, 1);
+
+    container.innerHTML = items.map(function (item) {
+      const width = Math.round(((item.count || 0) / maxValue) * 100);
+      return [
+        '<div class="metric-row">',
+        '  <div class="metric-head">',
+        '    <div class="metric-title">' + escapeHtml(options.getTitle(item)) + '</div>',
+        '    <div class="metric-value">' + escapeHtml(String(item.count || 0)) + "</div>",
+        "  </div>",
+        '  <div class="metric-track"><div class="metric-fill" style="width:' + width + '%;"></div></div>',
+        options.getMeta ? '  <div class="metric-meta">' + escapeHtml(options.getMeta(item)) + "</div>" : "",
+        "</div>"
+      ].join("");
+    }).join("");
+  }
+
+  function renderStatusBreakdown(items) {
+    renderMetricRows(dashboardStatusBreakdown, items, {
+      getTitle: function (item) {
+        return item.label || item.status || "Unknown";
+      },
+      getMeta: function (item) {
+        return !item.count ? "No applications in this state." : "Current workflow count in " + (item.label || item.status) + ".";
+      }
+    });
+  }
+
+  function renderBreedPreference(items) {
+    renderMetricRows(dashboardBreedPreference, items, {
+      getTitle: function (item) {
+        return item.breed || "Unknown";
+      },
+      getMeta: function (item) {
+        return (item.count || 0) + " applications mapped to this breed profile.";
+      }
+    });
+  }
+
+  function renderRecentRecords(records) {
+    if (!dashboardRecentRecords) return;
+    if (!Array.isArray(records) || !records.length) {
+      dashboardRecentRecords.innerHTML = '<tr><td colspan="5">No workflow records yet.</td></tr>';
+      return;
+    }
+
+    dashboardRecentRecords.innerHTML = records.map(function (record) {
+      const catName = record.cat && record.cat.name ? record.cat.name : "Unknown";
+      const userName = record.user && (record.user.display_name || record.user.username)
+        ? (record.user.display_name || record.user.username)
+        : "Unknown";
+      const status = record.status || "pending";
+      return [
+        "<tr>",
+        "  <td>" + escapeHtml(catName) + "</td>",
+        "  <td>" + escapeHtml(userName) + "</td>",
+        '  <td><span class="tag ' + getStatusTagClass(status) + '">' + escapeHtml(humanizeApplicationStatus(status)) + "</span></td>",
+        "  <td>" + escapeHtml(formatDate(record.updated_at || record.created_at)) + "</td>",
+        '  <td><button class="mini-btn" type="button" data-application-detail="' + escapeHtml(record.id) + '">' + escapeHtml(status === "pending" ? "Review" : "View") + "</button></td>",
+        "</tr>"
+      ].join("");
+    }).join("");
+  }
+
+  function renderAttentionItems(items) {
+    if (!dashboardAttentionList) return;
+    if (!Array.isArray(items) || !items.length) {
+      dashboardAttentionList.innerHTML = '<div class="empty-state">No urgent items right now.</div>';
+      return;
+    }
+
+    dashboardAttentionList.innerHTML = items.map(function (item) {
+      const tagClass = item.type === "conversation" ? "orange" : getStatusTagClass(item.status || "pending");
+      const actionMarkup = item.type === "conversation"
+        ? '<button class="mini-btn" type="button" data-thread-id="' + escapeHtml(item.conversation_id || item.id) + '">Open Chat</button>'
+        : '<button class="mini-btn" type="button" data-application-detail="' + escapeHtml(item.application_id || item.id) + '">Review</button>';
+
+      return [
+        '<div class="attention-item">',
+        '  <div class="attention-head">',
+        '    <div class="attention-title">' + escapeHtml(item.title || "Untitled") + "</div>",
+        '    <span class="tag ' + escapeHtml(tagClass) + '">' + escapeHtml(item.label || "Attention") + "</span>",
+        "  </div>",
+        '  <div class="attention-subtitle">' + escapeHtml(item.subtitle || "") + "</div>",
+        '  <div class="attention-meta">',
+        '    <span>' + escapeHtml(formatDate(item.updated_at || "")) + "</span>",
+             actionMarkup,
+        "  </div>",
+        "</div>"
+      ].join("");
+    }).join("");
+  }
+
+  function renderDashboard(analytics) {
+    renderStats(analytics.overview || {});
+    renderFunnelChart(analytics.funnel || {});
+    renderTrendChart(analytics.monthly_trend || []);
+    renderStatusBreakdown(analytics.status_breakdown || []);
+    renderBreedPreference(analytics.breed_preferences || []);
+    renderRecentRecords(analytics.recent_applications || []);
+    renderAttentionItems(analytics.attention_items || []);
+  }
+
+  function buildThreads(conversations) {
+    const currentUserId = getCurrentUserId();
+    state.threads = conversations.map(function (conversation) {
+      const latestMessage = conversation.latest_message || {};
+      const title = conversation.user && (conversation.user.display_name || conversation.user.username) || "Unknown adopter";
+      return {
+        id: conversation.id,
+        user_id: conversation.user_id,
+        avatarText: title.charAt(0).toUpperCase(),
+        avatarClass: latestMessage.is_mine ? "orange" : "blue",
+        title: title,
+        subtitle: latestMessage.is_mine ? "Awaiting adopter reply" : "Reply needed",
+        snippet: latestMessage.content || "No message yet",
+        timeLabel: formatShortTime(latestMessage.created_at) || formatDate(conversation.created_at),
+        unread: latestMessage.sender_id && latestMessage.sender_id !== currentUserId
+      };
+    });
+  }
+
+  function loadCats() {
+    return api("/rescue/cats").then(function (data) {
+      state.cats = Array.isArray(data) ? data : [];
+      state.catsById = {};
+      state.cats.forEach(function (cat) {
+        state.catsById[cat.id] = cat;
+      });
+      renderCatList();
+    });
+  }
+
+  function loadApplications() {
+    return api("/rescue/applications").then(function (data) {
+      state.applications = Array.isArray(data) ? data : [];
+      state.applicationsById = {};
+      state.applications.forEach(function (application) {
+        state.applicationsById[application.id] = application;
+      });
+      renderApplications();
+    });
+  }
+
+  function loadAnalytics() {
+    return api("/rescue/analytics").then(renderDashboard);
+  }
+
+  function loadThreads() {
+    return api("/chat/conversations").then(function (data) {
+      buildThreads(Array.isArray(data) ? data : []);
+      renderThreadList();
+    });
+  }
+
+  function refreshAll() {
+    return Promise.all([
+      loadCats(),
+      loadApplications(),
+      loadAnalytics(),
+      loadThreads()
+    ]);
+  }
+
+  function requestCatFaceId(imageDataUrl) {
+    return api("/rescue/cat-face/identify", {
+      method: "POST",
+      body: JSON.stringify({
+        image_data_url: imageDataUrl
+      })
+    });
+  }
+
+  function maybeRegisterEmbedding(cat) {
+    if (!state.currentGeneratedEmbedding || !cat) {
+      return Promise.resolve();
+    }
+
+    return api("/rescue/cat-face/register", {
+      method: "POST",
+      body: JSON.stringify({
+        cat_id: cat.id,
+        embedding: state.currentGeneratedEmbedding,
+        face_code: cat.face_code || state.currentGeneratedFaceId,
+        source_photo_url: state.currentCatPhoto || null
+      })
+    }).catch(function () {
+      return null;
+    }).finally(function () {
+      state.currentGeneratedEmbedding = null;
+    });
+  }
+
+  function saveCatForm() {
+    const payload = {
+      name: catNameInput.value.trim(),
+      display_id: catIdInput.value.trim() || undefined,
+      gender: catGenderInput.value,
+      breed: catBreedInput.value.trim(),
+      age: catAgeInput.value.trim(),
+      status: catStatusInput.value,
+      location: catLocationInput.value.trim(),
+      health: catHealthInput.value.trim(),
+      personality: catPersonalityInput.value.trim(),
+      notes: catNotesInput.value.trim(),
+      photo_url: state.currentCatPhoto || undefined,
+      tags: catPersonalityInput.value.split(",").map(function (tag) {
+        return tag.trim();
+      }).filter(Boolean)
+    };
+
+    if (!payload.name) {
+      window.alert("Please enter the cat name.");
+      return;
+    }
+
+    catFormSaveBtn.disabled = true;
+
+    const request = state.editingCatId
+      ? api("/rescue/cats/" + encodeURIComponent(state.editingCatId), {
+          method: "PUT",
+          body: JSON.stringify(payload)
+        })
+      : api("/rescue/cats", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+    request
+      .then(function (cat) {
+        return maybeRegisterEmbedding(cat).then(function () {
+          return refreshAll();
+        });
+      })
+      .then(function () {
+        setCatFormOpen(false);
+        resetCatForm();
+      })
+      .catch(function (error) {
+        window.alert(error.message || "Unable to save cat.");
+      })
+      .finally(function () {
+        catFormSaveBtn.disabled = false;
+      });
+  }
+
+  function reviewApplication(applicationId, status) {
+    const note = status === "rejected"
+      ? window.prompt("Optional reject note:", "") || ""
+      : "";
+
+    api("/rescue/applications/" + encodeURIComponent(applicationId) + "/review", {
+      method: "PUT",
+      body: JSON.stringify({
+        status: status,
+        message: note
+      })
+    }).then(function () {
+      if (state.activeApplicationId === applicationId) {
+        closeApplicationDetail();
+      }
+      return refreshAll();
+    }).catch(function (error) {
+      window.alert(error.message || "Unable to update application.");
+    });
+  }
+
+  function ensureConversationForApplication(application) {
+    return api("/chat/conversations", {
+      method: "POST",
+      body: JSON.stringify({
+        user_id: application.user_id
+      })
+    });
+  }
+
+  function contactApplicant(applicationId) {
+    const application = applicationToViewModel(state.applicationsById[applicationId] || {});
+    if (!application.user_id) return;
+
+    ensureConversationForApplication(application)
+      .then(function (conversation) {
+        return loadThreads().then(function () {
+          closeApplicationDetail();
+          activateSection("notifications");
+          openThread(conversation.id);
+        });
+      })
+      .catch(function (error) {
+        window.alert(error.message || "Unable to create conversation.");
+      });
+  }
+
+  function sendMessage() {
+    if (!state.activeThreadId) return;
+
+    const content = notifMessageInput.value.trim();
+    if (!content && !state.pendingImages.length) return;
+
+    notifSendBtn.disabled = true;
+    api("/chat/conversations/" + encodeURIComponent(state.activeThreadId) + "/messages", {
+      method: "POST",
+      body: JSON.stringify({
+        content: content,
+        attachments: state.pendingImages.map(function (image) {
+          return {
+            file_url: image.src,
+            file_type: "image/*"
+          };
+        })
+      })
+    }).then(function () {
+      notifMessageInput.value = "";
+      state.pendingImages = [];
+      notifImageInput.value = "";
+      renderPendingImages();
+      return loadThreads().then(function () {
+        openThread(state.activeThreadId);
+      });
+    }).catch(function (error) {
+      window.alert(error.message || "Unable to send message.");
+    }).finally(function () {
+      notifSendBtn.disabled = false;
+    });
+  }
+
+  menuButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      activateSection(button.getAttribute("data-target"));
+    });
+  });
+
+  addCatToggleBtn.addEventListener("click", function () {
+    const isCollapsed = catFormPanel.classList.contains("collapsed-panel");
+    if (isCollapsed) {
+      resetCatForm();
+      setCatFormOpen(true);
+      catFormPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    setCatFormOpen(false);
+    resetCatForm();
+  });
+
+  catFormCancelBtn.addEventListener("click", function () {
+    setCatFormOpen(false);
+    resetCatForm();
+  });
+
+  catFormSaveBtn.addEventListener("click", saveCatForm);
+  openFaceIdBtn.addEventListener("click", openFaceRecognitionModal);
+  faceIdCloseBtn.addEventListener("click", closeFaceRecognitionModal);
+  faceIdCancelBtn.addEventListener("click", closeFaceRecognitionModal);
+  faceIdOverlay.addEventListener("click", function (event) {
+    if (event.target === faceIdOverlay) closeFaceRecognitionModal();
+  });
+
+  catPhotoInput.addEventListener("change", function (event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (loadEvent) {
+      setPhotoPreview(loadEvent.target.result);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  faceIdImageInput.addEventListener("change", function (event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (loadEvent) {
+      const imageDataUrl = loadEvent.target.result;
+      facePreviewImage.src = imageDataUrl;
+      facePreviewImage.hidden = false;
+      facePreviewPlaceholder.hidden = true;
+      generatedFaceId.textContent = "Analyzing cat face...";
+      generatedFaceId.title = "";
+      useFaceIdBtn.disabled = true;
+
+      requestCatFaceId(imageDataUrl).then(function (result) {
+        const matchedFaceCode = result.best_match && result.best_match.cat && result.best_match.cat.face_code || "";
+        state.currentGeneratedFaceId = matchedFaceCode || result.suggested_face_code || "";
+        state.currentGeneratedEmbedding = Array.isArray(result.embedding) ? result.embedding : null;
+
+        if (result.matched && matchedFaceCode) {
+          generatedFaceId.textContent = "Matched existing cat: " + matchedFaceCode;
+        } else if (state.currentGeneratedFaceId) {
+          generatedFaceId.textContent = state.currentGeneratedFaceId;
+        } else {
+          generatedFaceId.textContent = "No cat face detected";
+        }
+
+        generatedFaceId.title = result.note || "";
+        useFaceIdBtn.disabled = !state.currentGeneratedFaceId;
+      }).catch(function (error) {
+        state.currentGeneratedFaceId = "";
+        state.currentGeneratedEmbedding = null;
+        generatedFaceId.textContent = error.message || "Cat face recognition failed";
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  useFaceIdBtn.addEventListener("click", function () {
+    if (!state.currentGeneratedFaceId) return;
+    catIdInput.value = state.currentGeneratedFaceId;
+    closeFaceRecognitionModal();
+  });
+
+  catListBody.addEventListener("click", function (event) {
+    const profileButton = event.target.closest("[data-cat-profile]");
+    if (profileButton) {
+      openCatProfile(profileButton.getAttribute("data-cat-profile"));
+      return;
+    }
+
+    const editButton = event.target.closest("[data-cat-edit]");
+    if (editButton) {
+      fillCatForm(editButton.getAttribute("data-cat-edit"));
+    }
+  });
+
+  catProfileCloseBtn.addEventListener("click", closeCatProfile);
+  catProfileOverlay.addEventListener("click", function (event) {
+    if (event.target === catProfileOverlay) closeCatProfile();
+  });
+
+  applicationListBody.addEventListener("click", function (event) {
+    const detailButton = event.target.closest("[data-application-detail]");
+    if (detailButton) {
+      openApplicationDetail(detailButton.getAttribute("data-application-detail"));
+      return;
+    }
+
+    const reviewButton = event.target.closest("[data-application-review]");
+    if (reviewButton) {
+      reviewApplication(
+        reviewButton.getAttribute("data-application-review"),
+        reviewButton.getAttribute("data-review-status")
+      );
+    }
+  });
+
+  dashboardRecentRecords.addEventListener("click", function (event) {
+    const detailButton = event.target.closest("[data-application-detail]");
+    if (detailButton) {
+      activateSection("application-review");
+      openApplicationDetail(detailButton.getAttribute("data-application-detail"));
+    }
+  });
+
+  dashboardAttentionList.addEventListener("click", function (event) {
+    const threadButton = event.target.closest("[data-thread-id]");
+    if (threadButton) {
+      activateSection("notifications");
+      openThread(threadButton.getAttribute("data-thread-id"));
+      return;
+    }
+
+    const applicationButton = event.target.closest("[data-application-detail]");
+    if (applicationButton) {
+      activateSection("application-review");
+      openApplicationDetail(applicationButton.getAttribute("data-application-detail"));
+    }
+  });
+
+  applicationCloseBtn.addEventListener("click", closeApplicationDetail);
+  applicationDetailOverlay.addEventListener("click", function (event) {
+    if (event.target === applicationDetailOverlay) closeApplicationDetail();
+  });
+  applicationContactBtn.addEventListener("click", function () {
+    if (state.activeApplicationId) {
+      contactApplicant(state.activeApplicationId);
+    }
+  });
+
+  notifSearchInput.addEventListener("input", renderThreadList);
+  notifList.addEventListener("click", function (event) {
+    const item = event.target.closest("[data-thread-id]");
+    if (item) {
+      openThread(item.getAttribute("data-thread-id"));
+    }
+  });
+  notifSendBtn.addEventListener("click", sendMessage);
+  notifMessageInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      sendMessage();
+    }
+  });
+  notifImageInput.addEventListener("change", function (event) {
+    const files = Array.from(event.target.files || []).slice(0, 6);
+    if (!files.length) return;
+
+    Promise.all(files.map(function (file) {
+      return new Promise(function (resolve) {
+        const reader = new FileReader();
+        reader.onload = function (loadEvent) {
+          resolve({
+            name: file.name,
+            src: loadEvent.target.result
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    })).then(function (images) {
+      state.pendingImages = state.pendingImages.concat(images).slice(0, 6);
+      renderPendingImages();
+      notifImageInput.value = "";
+    });
+  });
+  notifImagePreview.addEventListener("click", function (event) {
+    const removeButton = event.target.closest("[data-remove-image]");
+    if (!removeButton) return;
+
+    const removeIndex = Number(removeButton.getAttribute("data-remove-image"));
+    state.pendingImages = state.pendingImages.filter(function (_, index) {
+      return index !== removeIndex;
+    });
+    renderPendingImages();
+  });
+  notifCloseBtn.addEventListener("click", closeThread);
+  notifOverlay.addEventListener("click", function (event) {
+    if (event.target === notifOverlay) closeThread();
+  });
+
+  if (notifActionButtons[0]) {
+    notifActionButtons[0].addEventListener("click", function () {
+      const activeThread = state.threads.find(function (thread) {
+        return thread.id === state.activeThreadId;
+      });
+      if (activeThread) {
+        activeThread.unread = false;
+        renderThreadList();
+      }
+    });
+  }
+
+  if (notifActionButtons[1]) {
+    notifActionButtons[1].addEventListener("click", function () {
+      const targetApplication = state.applications.find(function (application) {
+        return application.user && application.user.id === state.activeThreadUserId;
+      });
+      if (!targetApplication) return;
+      closeThread();
+      activateSection("application-review");
+      openApplicationDetail(targetApplication.id);
+    });
+  }
+
+  if (orgLogoutBtn) {
+    orgLogoutBtn.addEventListener("click", function () {
+      localStorage.removeItem("catface_org_token");
+      localStorage.removeItem("catface_token");
+      localStorage.removeItem("catface_org_profile");
+      window.location.href = "org-login.html";
+    });
+  }
+
+  refreshAll().catch(function (error) {
+    window.alert(error.message || "Unable to load rescue dashboard data.");
+  });
+})();
+if (false) {
 window.__CATFACE_EXTERNAL_RESCUE__ = true;
 
 (function () {
@@ -1555,3 +2847,4 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
   updateOrganizationSessionUI();
   loadDashboardData();
 })();
+}

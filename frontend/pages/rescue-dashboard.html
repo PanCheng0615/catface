@@ -1229,7 +1229,6 @@
       </nav>
 
       <a href="index.html" class="back-home-link">Back to Main Page</a>
-      <a href="org-login.html" class="back-home-link" id="org-login-link">Organization Login</a>
       <button type="button" class="back-home-link" id="org-logout-btn" style="border:none; cursor:pointer;">Organization Logout</button>
 
     </aside>
@@ -1384,9 +1383,9 @@
               <div class="field">
                 <label for="cat-gender">Gender</label>
                 <select id="cat-gender">
-                  <option>Male</option>
-                  <option>Female</option>
-                  <option>Unknown</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="unknown">Unknown</option>
                 </select>
               </div>
               <div class="field">
@@ -1400,9 +1399,10 @@
               <div class="field">
                 <label for="cat-status">Adoption Status</label>
                 <select id="cat-status">
-                  <option>Available</option>
-                  <option>Pending</option>
-                  <option>Reserved</option>
+                  <option value="available">Available</option>
+                  <option value="fostered">Fostered</option>
+                  <option value="adopted">Adopted</option>
+                  <option value="deceased">Deceased</option>
                 </select>
               </div>
               <div class="field">
@@ -1510,28 +1510,9 @@
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="application-list-body">
                 <tr>
-                  <td>APP-102</td>
-                  <td>Tiger</td>
-                  <td>Jason Lee</td>
-                  <td>2026-03-07</td>
-                  <td class="mini-actions">
-                    <button class="mini-btn" type="button" data-application-detail="APP-102">View Application</button>
-                    <button class="mini-btn">Approve</button>
-                    <button class="mini-btn">Reject</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>APP-103</td>
-                  <td>Whiskers</td>
-                  <td>Grace Ho</td>
-                  <td>2026-03-06</td>
-                  <td class="mini-actions">
-                    <button class="mini-btn" type="button" data-application-detail="APP-103">View Application</button>
-                    <button class="mini-btn">Approve</button>
-                    <button class="mini-btn">Reject</button>
-                  </td>
+                  <td colspan="6">Loading applications...</td>
                 </tr>
               </tbody>
             </table>
@@ -1549,9 +1530,9 @@
             <button class="notif-add" type="button" aria-label="New notification">+</button>
           </div>
           <div class="notif-search-wrap">
-            <input class="notif-search" type="text" placeholder="Search notifications">
+            <input class="notif-search" id="notif-search-input" type="text" placeholder="Search notifications">
           </div>
-          <div class="notif-list">
+          <div class="notif-list" id="notif-list">
             <div class="notif-item" data-thread="jason">
               <div class="notif-avatar blue">JL</div>
               <div class="notif-body">

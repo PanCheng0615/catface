@@ -1,19 +1,17 @@
 const express = require('express');
-const router = express.Router();
-
+const { protect, authorize } = require('../middleware/auth');
 const {
   createConversation,
   getConversations,
   getMessages,
-  sendMessage,
-  uploadConversationImages
+  sendMessage
 } = require('../controllers/chat.controller');
-const { protect } = require('../middleware/auth');
 
-router.post('/conversations', protect, createConversation);
-router.get('/conversations', protect, getConversations);
-router.get('/conversations/:id/messages', protect, getMessages);
-router.post('/conversations/:id/messages', protect, sendMessage);
-router.post('/conversations/:id/upload', protect, uploadConversationImages);
+const router = express.Router();
+
+router.post('/conversations', protect, authorize('rescue_staff', 'clinic_staff', 'admin', 'user'), createConversation);
+router.get('/conversations', protect, authorize('rescue_staff', 'clinic_staff', 'admin', 'user'), getConversations);
+router.get('/conversations/:id/messages', protect, authorize('rescue_staff', 'clinic_staff', 'admin', 'user'), getMessages);
+router.post('/conversations/:id/messages', protect, authorize('rescue_staff', 'clinic_staff', 'admin', 'user'), sendMessage);
 
 module.exports = router;

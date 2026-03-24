@@ -32,12 +32,13 @@ async function buildUniqueUsername(baseName) {
 }
 
 async function ensureRescueStaffUserForOrganization(organization) {
+  const targetRole = organization.type === 'clinic' ? 'clinic_staff' : 'rescue_staff';
   const existingUser = await prisma.user.findUnique({
     where: { email: organization.email }
   });
 
-  if (existingUser && existingUser.role !== 'rescue_staff') {
-    throw new Error('该机构邮箱已被普通用户占用，无法映射为 rescue_staff 账号');
+  if (existingUser && existingUser.role !== targetRole) {
+    throw new Error(`该机构邮箱已被其他账号占用，无法映射为 ${targetRole} 账号`);
   }
 
   if (existingUser) {
@@ -47,7 +48,7 @@ async function ensureRescueStaffUserForOrganization(organization) {
         data: {
           display_name: organization.name,
           password: organization.password,
-          role: 'rescue_staff'
+          role: targetRole
         }
       });
     }
@@ -63,7 +64,7 @@ async function ensureRescueStaffUserForOrganization(organization) {
       password: organization.password,
       username,
       display_name: organization.name,
-      role: 'rescue_staff'
+      role: targetRole
     }
   });
 }
@@ -204,11 +205,7 @@ async function orgLogin(req, res) {
       return res.status(422).json({
         success: false,
         error: 'ValidationError',
-<<<<<<< Updated upstream
         message: '机构邮箱和密码是必填的'
-=======
-        message: '邮箱和密码是必填的'
->>>>>>> Stashed changes
       });
     }
 
@@ -225,10 +222,6 @@ async function orgLogin(req, res) {
     }
 
     const isMatch = await bcrypt.compare(password, organization.password);
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -237,7 +230,6 @@ async function orgLogin(req, res) {
       });
     }
 
-<<<<<<< Updated upstream
     const rescueStaffUser = await ensureRescueStaffUserForOrganization(organization);
 
     const token = generateToken({
@@ -247,15 +239,6 @@ async function orgLogin(req, res) {
       organization_id: organization.id,
       organization_type: organization.type,
       organization_name: organization.name
-=======
-    const role = organization.type === 'clinic' ? 'clinic_staff' : 'rescue_staff';
-    const token = generateToken({
-      id: organization.id,
-      role,
-      organization_id: organization.id,
-      organization_name: organization.name,
-      organization_type: organization.type
->>>>>>> Stashed changes
     });
 
     return res.json({
@@ -265,7 +248,6 @@ async function orgLogin(req, res) {
         organization: {
           id: organization.id,
           name: organization.name,
-<<<<<<< Updated upstream
           type: organization.type,
           email: organization.email,
           phone: organization.phone,
@@ -278,11 +260,6 @@ async function orgLogin(req, res) {
           username: rescueStaffUser.username,
           display_name: rescueStaffUser.display_name,
           role: rescueStaffUser.role
-=======
-          email: organization.email,
-          type: organization.type,
-          is_verified: organization.is_verified
->>>>>>> Stashed changes
         }
       },
       message: '机构登录成功'
@@ -292,17 +269,9 @@ async function orgLogin(req, res) {
     return res.status(500).json({
       success: false,
       error: 'ServerError',
-<<<<<<< Updated upstream
       message: error.message || '服务器错误'
-=======
-      message: '服务器错误'
->>>>>>> Stashed changes
     });
   }
 }
 
-<<<<<<< Updated upstream
 module.exports = { register, login, orgLogin, ensureRescueStaffUserForOrganization };
-=======
-module.exports = { register, login, orgLogin };
->>>>>>> Stashed changes
