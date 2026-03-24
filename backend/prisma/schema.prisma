@@ -171,6 +171,7 @@ model AdopterPreference {
   preferred_age    String?
   preferred_gender String?
   preferred_breed  String?
+  preferred_color  String?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 

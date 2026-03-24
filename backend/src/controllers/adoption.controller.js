@@ -216,7 +216,7 @@ async function getLiked(req, res) {
 // POST /api/adoption/preferences
 async function setPreferences(req, res) {
   try {
-    const { preferred_age, preferred_gender, preferred_breed } = req.body;
+    const { preferred_age, preferred_gender, preferred_breed, preferred_color } = req.body;
 
     const pref = await prisma.adopterPreference.upsert({
       where: { user_id: req.user.id },
@@ -224,12 +224,14 @@ async function setPreferences(req, res) {
         user_id: req.user.id,
         preferred_age: preferred_age ?? null,
         preferred_gender: preferred_gender ?? null,
-        preferred_breed: preferred_breed ?? null
+        preferred_breed: preferred_breed ?? null,
+        preferred_color: preferred_color ?? null
       },
       update: {
         preferred_age: preferred_age ?? undefined,
         preferred_gender: preferred_gender ?? undefined,
-        preferred_breed: preferred_breed ?? undefined
+        preferred_breed: preferred_breed ?? undefined,
+        preferred_color: preferred_color ?? undefined
       }
     });
 
