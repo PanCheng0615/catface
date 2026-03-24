@@ -2,30 +2,76 @@
  * Adoption recommendation scoring (rule-based engine)
  * All field names match schema.prisma
  *
+ * Weights are loaded from config/scoringConfig.json and can be
+ * updated at runtime via PUT /api/adoption/scoring-config.
+ *
+ * Scoring dimensions (Cat model fields):
+ *   breed, gender, age_months, color        — matched against AdopterPreference
+ *   CatTag.tag                              — learned from right-swipe history
+ *
  * Frontend slider options (English only):
  *
  * preferred_gender : "female" | "male" | "no preference"
  * preferred_age    : "kitten" | "adult" | "senior"
  * preferred_breed  : "domestic short hair" | "british shorthair" | "ragdoll"
  *                    | "persian" | "american shorthair" | "mixed / rescue cat"
- *
- * CatTag.tag on cats may contain personality tags such as:
- *   "playful / active", "gentle / calm", "good with kids",
- *   "good for first-time owners", "ok with special needs"
  */
 
-const WEIGHT_PREF_BREED = 25;
-const WEIGHT_PREF_GENDER = 15;
-const WEIGHT_PREF_AGE = 15;
-const WEIGHT_LIKED_BREED = 20;
-const WEIGHT_LIKED_TAG = 8;
+const fs = require('fs');
+const path = require('path');
+
+// ── Dynamic config ──────────────────────────────────────
+
+const CONFIG_PATH = path.join(__dirname, '..', 'config', 'scoringConfig.json');
+
+const DEFAULT_WEIGHTS = {
+  preferred_breed: 25,
+  preferred_gender: 15,
+  preferred_age: 15,
+  preferred_color: 10,
+  liked_breed: 20,
+  liked_tag: 8
+};
+
+let _weights = { ...DEFAULT_WEIGHTS };
+
+function loadWeights() {
+  try {
+    const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
+    const parsed = JSON.parse(raw);
+    _weights = { ...DEFAULT_WEIGHTS, ...parsed };
+  } catch {
+    _weights = { ...DEFAULT_WEIGHTS };
+  }
+  return _weights;
+}
+
+loadWeights();
+
+function getWeights() {
+  return { ..._weights };
+}
+
+function updateWeights(patch) {
+  const updated = { ..._weights };
+  for (const [key, val] of Object.entries(patch)) {
+    if (key in DEFAULT_WEIGHTS && typeof val === 'number' && val >= 0) {
+      updated[key] = val;
+    }
+  }
+  _weights = updated;
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(_weights, null, 2) + '\n', 'utf-8');
+  return { ..._weights };
+}
+
+// ── Helpers ─────────────────────────────────────────────
 
 function normalizeText(s) {
   if (s == null) return '';
   return String(s).trim().toLowerCase();
 }
 
-// ── Age ──────────────────────────────────────────────────
+// ── Age ─────────────────────────────────────────────────
 
 const AGE_RANGES = {
   kitten: { min: 0, max: 12 },
@@ -55,7 +101,7 @@ function parsePreferredAgeRangeMonths(preferred_age) {
   return null;
 }
 
-// ── Breed ────────────────────────────────────────────────
+// ── Breed ───────────────────────────────────────────────
 
 const MIXED_KEYWORDS = ['mixed', 'rescue', 'unknown'];
 
@@ -73,7 +119,7 @@ function preferenceBreedMatches(preferred_breed, cat_breed) {
   return c.includes(p) || p.includes(c);
 }
 
-// ── Gender ───────────────────────────────────────────────
+// ── Gender ──────────────────────────────────────────────
 
 function preferenceGenderMatches(preferred_gender, cat_gender) {
   if (!preferred_gender || !cat_gender) return false;
@@ -82,7 +128,7 @@ function preferenceGenderMatches(preferred_gender, cat_gender) {
   return p === normalizeText(cat_gender);
 }
 
-// ── Age match ────────────────────────────────────────────
+// ── Age match ───────────────────────────────────────────
 
 function preferenceAgeMatches(preferred_age, age_months) {
   if (preferred_age == null || age_months == null || Number.isNaN(Number(age_months))) {
@@ -94,7 +140,17 @@ function preferenceAgeMatches(preferred_age, age_months) {
   return n >= range.min && n <= range.max;
 }
 
-// ── Scoring ──────────────────────────────────────────────
+// ── Color match ─────────────────────────────────────────
+
+function preferenceColorMatches(preferred_color, cat_color) {
+  if (!preferred_color || !cat_color) return false;
+  const p = normalizeText(preferred_color);
+  const c = normalizeText(cat_color);
+  if (!p || !c) return false;
+  return c.includes(p) || p.includes(c);
+}
+
+// ── Scoring ─────────────────────────────────────────────
 
 /**
  * @param {object}      cat           - Prisma Cat row (includes tags[])
@@ -103,42 +159,50 @@ function preferenceAgeMatches(preferred_age, age_months) {
  * @param {Set<string>} likedTagSet   - tags  from cats the user liked
  */
 function scoreCatForUser(cat, pref, likedBreedSet, likedTagSet) {
+  const w = _weights;
   let score = 0;
   const breakdown = {
     preferred_breed: 0,
     preferred_gender: 0,
     preferred_age: 0,
+    preferred_color: 0,
     liked_breed: 0,
     liked_tags: 0
   };
 
   if (pref) {
-    if (preferenceBreedMatches(pref.preferred_breed, cat.breed)) {
-      breakdown.preferred_breed = WEIGHT_PREF_BREED;
-      score += WEIGHT_PREF_BREED;
+    if (w.preferred_breed > 0 && preferenceBreedMatches(pref.preferred_breed, cat.breed)) {
+      breakdown.preferred_breed = w.preferred_breed;
+      score += w.preferred_breed;
     }
-    if (preferenceGenderMatches(pref.preferred_gender, cat.gender)) {
-      breakdown.preferred_gender = WEIGHT_PREF_GENDER;
-      score += WEIGHT_PREF_GENDER;
+    if (w.preferred_gender > 0 && preferenceGenderMatches(pref.preferred_gender, cat.gender)) {
+      breakdown.preferred_gender = w.preferred_gender;
+      score += w.preferred_gender;
     }
-    if (preferenceAgeMatches(pref.preferred_age, cat.age_months)) {
-      breakdown.preferred_age = WEIGHT_PREF_AGE;
-      score += WEIGHT_PREF_AGE;
+    if (w.preferred_age > 0 && preferenceAgeMatches(pref.preferred_age, cat.age_months)) {
+      breakdown.preferred_age = w.preferred_age;
+      score += w.preferred_age;
+    }
+    if (w.preferred_color > 0 && preferenceColorMatches(pref.preferred_color, cat.color)) {
+      breakdown.preferred_color = w.preferred_color;
+      score += w.preferred_color;
     }
   }
 
-  const catBreedNorm = normalizeText(cat.breed);
-  if (catBreedNorm && likedBreedSet.has(catBreedNorm)) {
-    breakdown.liked_breed = WEIGHT_LIKED_BREED;
-    score += WEIGHT_LIKED_BREED;
+  if (w.liked_breed > 0) {
+    const catBreedNorm = normalizeText(cat.breed);
+    if (catBreedNorm && likedBreedSet.has(catBreedNorm)) {
+      breakdown.liked_breed = w.liked_breed;
+      score += w.liked_breed;
+    }
   }
 
-  if (Array.isArray(cat.tags)) {
+  if (w.liked_tag > 0 && Array.isArray(cat.tags)) {
     for (const row of cat.tags) {
       const t = normalizeText(row.tag);
       if (t && likedTagSet.has(t)) {
-        breakdown.liked_tags += WEIGHT_LIKED_TAG;
-        score += WEIGHT_LIKED_TAG;
+        breakdown.liked_tags += w.liked_tag;
+        score += w.liked_tag;
       }
     }
   }
@@ -153,9 +217,8 @@ function scoreCatForUser(cat, pref, likedBreedSet, likedTagSet) {
 module.exports = {
   scoreCatForUser,
   normalizeText,
-  WEIGHT_PREF_BREED,
-  WEIGHT_PREF_GENDER,
-  WEIGHT_PREF_AGE,
-  WEIGHT_LIKED_BREED,
-  WEIGHT_LIKED_TAG
+  getWeights,
+  updateWeights,
+  loadWeights,
+  DEFAULT_WEIGHTS
 };

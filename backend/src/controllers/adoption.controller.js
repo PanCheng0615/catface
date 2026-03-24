@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { scoreCatForUser, normalizeText } = require('../utils/adoptionRecommendScore');
+const { scoreCatForUser, normalizeText, getWeights, updateWeights } = require('../utils/adoptionRecommendScore');
 
 const prisma = new PrismaClient();
 
@@ -340,6 +340,51 @@ async function getMyApplications(req, res) {
   }
 }
 
+// GET /api/adoption/scoring-config
+async function getScoringConfig(req, res) {
+  try {
+    return res.json({
+      success: true,
+      data: getWeights(),
+      message: 'Current scoring weights'
+    });
+  } catch (error) {
+    console.error('getScoringConfig error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: 'Server error'
+    });
+  }
+}
+
+// PUT /api/adoption/scoring-config
+async function putScoringConfig(req, res) {
+  try {
+    const patch = req.body;
+    if (!patch || typeof patch !== 'object') {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'Request body must be a JSON object with weight keys'
+      });
+    }
+    const updated = updateWeights(patch);
+    return res.json({
+      success: true,
+      data: updated,
+      message: 'Scoring weights updated'
+    });
+  } catch (error) {
+    console.error('putScoringConfig error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: 'Server error'
+    });
+  }
+}
+
 module.exports = {
   recordSwipe,
   getFeed,
@@ -347,5 +392,7 @@ module.exports = {
   getLiked,
   setPreferences,
   createApplication,
-  getMyApplications
+  getMyApplications,
+  getScoringConfig,
+  putScoringConfig
 };
