@@ -9,12 +9,18 @@ function formatRelativeTime(date) {
   if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
   if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
   if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
-  return date.toLocaleDateString();
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${d} ${hh}:${mm}`;
 }
 
 function mapPostToFeed(post, currentUserId, followingSet) {
   const author = post.user;
   const authorName = author.display_name || author.username || 'User';
+  const createdAt = new Date(post.created_at);
   const isSelf = !!(currentUserId && author.id === currentUserId);
   const followed =
     !currentUserId || isSelf
@@ -37,7 +43,8 @@ function mapPostToFeed(post, currentUserId, followingSet) {
       author: c.user.display_name || c.user.username || 'User',
       text: c.content
     })),
-    time: formatRelativeTime(new Date(post.created_at))
+    created_at: createdAt.toISOString(),
+    time: formatRelativeTime(createdAt)
   };
 }
 

@@ -4,6 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 
 dotenv.config(); // 读取 .env（如果有）
+process.env.TZ = process.env.TZ || 'Asia/Shanghai';
 
 const app = express();
 const PORT = process.env.PORT || 3000;

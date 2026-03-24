@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Prisma } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
@@ -9,7 +9,35 @@ function formatTime(date) {
   if (diff < 60) return 'Just now';
   if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
   if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-  return d.toLocaleDateString();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${day} ${hh}:${mm}`;
+}
+
+async function ensureNotificationReadTable() {
+  await prisma.$executeRawUnsafe(
+    'CREATE TABLE IF NOT EXISTS notification_reads (' +
+      'user_id TEXT NOT NULL,' +
+      'notification_id TEXT NOT NULL,' +
+      'read_at TIMESTAMP NOT NULL DEFAULT NOW(),' +
+      'PRIMARY KEY (user_id, notification_id)' +
+    ')'
+  );
+}
+
+async function loadReadSet(userId, notificationIds) {
+  await ensureNotificationReadTable();
+  if (!notificationIds.length) return new Set();
+  const rows = await prisma.$queryRaw`
+    SELECT notification_id
+    FROM notification_reads
+    WHERE user_id = ${String(userId)}
+      AND notification_id IN (${Prisma.join(notificationIds)})
+  `;
+  return new Set(rows.map((x) => x.notification_id));
 }
 
 async function getNotifications(req, res) {
@@ -122,9 +150,22 @@ async function getNotifications(req, res) {
       list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
 
+    const readSet = await loadReadSet(
+      userId,
+      list.map((x) => x.id)
+    );
+    const data = list.map((item) => {
+      const isRead = readSet.has(item.id);
+      return {
+        ...item,
+        is_read: isRead,
+        unread_count: isRead ? 0 : 1
+      };
+    });
+
     return res.json({
       success: true,
-      data: list,
+      data,
       message: '操作成功'
     });
   } catch (error) {
@@ -137,4 +178,50 @@ async function getNotifications(req, res) {
   }
 }
 
-module.exports = { getNotifications };
+async function markNotificationsRead(req, res) {
+  try {
+    const userId = req.user && req.user.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: '请先登录'
+      });
+    }
+
+    const ids = Array.isArray(req.body && req.body.ids) ? req.body.ids : [];
+    const normalized = [...new Set(ids.map((x) => String(x || '').trim()).filter(Boolean))];
+    if (!normalized.length) {
+      return res.json({
+        success: true,
+        data: { count: 0 },
+        message: '没有需要标记的通知'
+      });
+    }
+
+    await ensureNotificationReadTable();
+    const inserts = normalized.map((id) =>
+      prisma.$executeRaw`
+        INSERT INTO notification_reads (user_id, notification_id)
+        VALUES (${String(userId)}, ${id})
+        ON CONFLICT (user_id, notification_id) DO NOTHING
+      `
+    );
+    if (inserts.length) await prisma.$transaction(inserts);
+
+    return res.json({
+      success: true,
+      data: { count: normalized.length },
+      message: '已标记为已读'
+    });
+  } catch (error) {
+    console.error('markNotificationsRead error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
+module.exports = { getNotifications, markNotificationsRead };

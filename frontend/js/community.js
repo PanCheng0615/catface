@@ -77,6 +77,23 @@
     return String(num);
   }
 
+  function formatPostTime(createdAtIso, fallbackText) {
+    if (!createdAtIso) return fallbackText || "Just now";
+    const d = new Date(createdAtIso);
+    if (Number.isNaN(d.getTime())) return fallbackText || "Just now";
+    const now = new Date();
+    const diffSec = Math.floor((now - d) / 1000);
+    if (diffSec < 60) return "Just now";
+    if (diffSec < 3600) return Math.floor(diffSec / 60) + "m ago";
+    if (diffSec < 86400) return Math.floor(diffSec / 3600) + "h ago";
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return y + "-" + m + "-" + day + " " + hh + ":" + mm;
+  }
+
   function openCreate() {
     createOverlay.classList.add("is-open");
     setComposeInUrl(true);
@@ -249,6 +266,7 @@
       return;
     }
     if (!requireLogin()) return;
+    detailFollowBtn.disabled = true;
     fetch(API_BASE_URL + "/users/" + encodeURIComponent(post.authorId) + "/follow", {
       method: "POST",
       headers: getAuthHeaders()
@@ -261,7 +279,10 @@
         return res.json();
       })
       .then(function (result) {
-        if (!result || !result.success || !result.data) return;
+        if (!result || !result.success || !result.data) {
+          alert((result && result.message) || "Follow failed");
+          return;
+        }
         const on = !!result.data.following;
         posts.forEach(function (p) {
           if (p.authorId === post.authorId) p.followed = on;
@@ -271,6 +292,9 @@
       })
       .catch(function () {
         alert("Network error, please try again.");
+      })
+      .finally(function () {
+        detailFollowBtn.disabled = false;
       });
   });
 
@@ -492,6 +516,7 @@
           return;
         }
         let mappedPosts = result.data.map(function (p) {
+          const createdAt = p.created_at || null;
           return {
             id: p.id,
             author: p.author || "User",
@@ -504,7 +529,8 @@
             likes: typeof p.likes === "number" ? p.likes : 0,
             liked: !!p.liked,
             comments: Array.isArray(p.comments) ? p.comments : [],
-            time: p.time || "Just now"
+            created_at: createdAt,
+            time: formatPostTime(createdAt, p.time || "Just now")
           };
         });
 

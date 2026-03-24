@@ -283,8 +283,16 @@ async function updateMyProfile(req, res) {
 // POST /api/users/:id/follow
 async function toggleFollow(req, res) {
   try {
-    const targetUserId = req.params.id;
+    const targetUserId = String(req.params.id || '').trim();
     const currentUserId = req.user.id;
+
+    if (!targetUserId) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '目标用户ID不能为空'
+      });
+    }
 
     if (targetUserId === currentUserId) {
       return res.status(422).json({
@@ -306,25 +314,43 @@ async function toggleFollow(req, res) {
       });
     }
 
-    const existing = await prisma.userFollow.findFirst({
+    const existing = await prisma.userFollow.findUnique({
       where: {
-        follower_id: currentUserId,
-        following_id: targetUserId
+        follower_id_following_id: {
+          follower_id: currentUserId,
+          following_id: targetUserId
+        }
       }
     });
 
     let following = false;
     if (existing) {
-      await prisma.userFollow.delete({ where: { id: existing.id } });
-      following = false;
-    } else {
-      await prisma.userFollow.create({
-        data: {
-          follower_id: currentUserId,
-          following_id: targetUserId
+      await prisma.userFollow.delete({
+        where: {
+          follower_id_following_id: {
+            follower_id: currentUserId,
+            following_id: targetUserId
+          }
         }
       });
-      following = true;
+      following = false;
+    } else {
+      try {
+        await prisma.userFollow.create({
+          data: {
+            follower_id: currentUserId,
+            following_id: targetUserId
+          }
+        });
+        following = true;
+      } catch (createErr) {
+        // Handle fast repeated clicks that can race on unique constraint.
+        if (createErr && createErr.code === 'P2002') {
+          following = true;
+        } else {
+          throw createErr;
+        }
+      }
     }
 
     const followersCount = await prisma.userFollow.count({
@@ -357,8 +383,16 @@ async function toggleFollow(req, res) {
 // GET /api/users/:id/follow-status
 async function getFollowStatus(req, res) {
   try {
-    const targetUserId = req.params.id;
+    const targetUserId = String(req.params.id || '').trim();
     const currentUserId = req.user.id;
+
+    if (!targetUserId) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '目标用户ID不能为空'
+      });
+    }
 
     const targetUser = await prisma.user.findUnique({
       where: { id: targetUserId },
@@ -372,10 +406,12 @@ async function getFollowStatus(req, res) {
       });
     }
 
-    const existing = await prisma.userFollow.findFirst({
+    const existing = await prisma.userFollow.findUnique({
       where: {
-        follower_id: currentUserId,
-        following_id: targetUserId
+        follower_id_following_id: {
+          follower_id: currentUserId,
+          following_id: targetUserId
+        }
       }
     });
     const followersCount = await prisma.userFollow.count({

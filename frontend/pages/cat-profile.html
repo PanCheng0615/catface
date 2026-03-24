@@ -277,7 +277,12 @@
       function formatTime(input) {
         const d = new Date(input);
         if (Number.isNaN(d.getTime())) return "";
-        return d.toLocaleDateString();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        return y + "-" + m + "-" + day + " " + hh + ":" + mm;
       }
 
       function renderCats(cats, hasCat) {
@@ -386,6 +391,7 @@
         }
         if (!targetUserId) return;
 
+        followBtn.disabled = true;
         fetch(API_BASE + "/" + encodeURIComponent(targetUserId) + "/follow", {
           method: "POST",
           headers: {
@@ -401,13 +407,21 @@
             return res.json();
           })
           .then(function (result) {
-            if (!result || !result.success || !result.data) return;
+            if (!result || !result.success || !result.data) {
+              alert((result && result.message) || "Follow failed");
+              return;
+            }
             isFollowing = !!result.data.following;
             followers = Number(result.data.followersCount || 0);
             following = Number(result.data.followingCount || 0);
             render();
           })
-          .catch(function () {});
+          .catch(function () {
+            alert("Network error, please try again.");
+          })
+          .finally(function () {
+            followBtn.disabled = false;
+          });
       });
 
       if (catPhotoInput) {

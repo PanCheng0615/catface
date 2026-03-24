@@ -8,7 +8,6 @@
   const detailTitle = document.getElementById("detail-title");
   const detailMeta = document.getElementById("detail-meta");
   const detailBodyText = document.getElementById("detail-body-text");
-  const READ_KEY = "catface_notifications_read_ids";
   const TYPES = ["likes", "follows", "comments"];
 
   let activeType = "likes";
@@ -68,56 +67,16 @@
       .replace(/>/g, "&gt;");
   }
 
-  function loadReadMap() {
-    try {
-      const raw = window.localStorage.getItem(READ_KEY);
-      if (!raw) return {};
-      const parsed = JSON.parse(raw);
-      return parsed && typeof parsed === "object" ? parsed : {};
-    } catch (e) {
-      return {};
-    }
-  }
-
-  function saveReadMap(map) {
-    try {
-      window.localStorage.setItem(READ_KEY, JSON.stringify(map || {}));
-    } catch (e) {}
-  }
-
-  function markAsRead(id) {
-    const key = String(id || "");
-    if (!key) return;
-    const map = loadReadMap();
-    map[key] = 1;
-    saveReadMap(map);
-  }
-
-  function isReadByMap(id, map) {
-    const key = String(id || "");
-    if (!key) return false;
-    return !!(map && map[key]);
-  }
-
-  function withReadState(items) {
-    const map = loadReadMap();
-    return (Array.isArray(items) ? items : []).map(function (item) {
-      const cloned = Object.assign({}, item);
-      if (isReadByMap(cloned.id, map)) cloned.unread_count = 0;
-      return cloned;
-    });
-  }
-
-  function markItemsAsRead(items) {
-    const map = loadReadMap();
-    let changed = false;
-    (Array.isArray(items) ? items : []).forEach(function (item) {
-      const id = String(item && item.id ? item.id : "");
-      if (!id || map[id]) return;
-      map[id] = 1;
-      changed = true;
-    });
-    if (changed) saveReadMap(map);
+  function markReadOnServer(ids) {
+    const normalized = (Array.isArray(ids) ? ids : [])
+      .map(function (id) { return String(id || "").trim(); })
+      .filter(Boolean);
+    if (!normalized.length || !getToken()) return Promise.resolve();
+    return fetch(API_BASE_URL + "/notifications/read", {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ ids: normalized })
+    }).then(function () {}).catch(function () {});
   }
 
   function openDetail(item) {
@@ -148,6 +107,7 @@
 
     list.innerHTML = listData
       .map(function (n) {
+        const unread = Number(n.unread_count || 0);
         return (
           '<article class="message-item" data-id="' +
           escapeHtml(n.id) +
@@ -171,8 +131,8 @@
           escapeHtml(n.snippet || n.detail || "") +
           "</div>" +
           "</div>" +
-          (n.unread_count
-            ? '<span class="message-unread">' + Number(n.unread_count) + "</span>"
+          (unread > 0
+            ? '<span class="message-unread">' + unread + "</span>"
             : "") +
           "</article>"
         );
@@ -188,7 +148,7 @@
       el.addEventListener("click", function () {
         const data = mapById[el.getAttribute("data-id")];
         if (!data) return;
-        markAsRead(data.id);
+        markReadOnServer([data.id]);
         currentItems = currentItems.map(function (x) {
           if (x.id !== data.id) return x;
           return Object.assign({}, x, { unread_count: 0 });
@@ -250,12 +210,11 @@
       return;
     }
     Promise.all(TYPES.map(fetchTypeItems)).then(function (rows) {
-      const readMap = loadReadMap();
       TYPES.forEach(function (type, idx) {
         const arr = Array.isArray(rows[idx]) ? rows[idx] : [];
         const unread = arr.reduce(function (acc, item) {
-          if (!item || !item.id) return acc;
-          return isReadByMap(item.id, readMap) ? acc : acc + 1;
+          const n = Number(item && item.unread_count);
+          return acc + (Number.isFinite(n) && n > 0 ? 1 : 0);
         }, 0);
         setBadgeCount(type, unread);
       });
@@ -296,8 +255,13 @@
         const typedItems = result.data.filter(function (item) {
           return item && item.type === activeType;
         });
-        markItemsAsRead(typedItems);
-        currentItems = withReadState(typedItems);
+        const unreadIds = typedItems
+          .filter(function (item) { return Number(item.unread_count || 0) > 0; })
+          .map(function (item) { return item.id; });
+        markReadOnServer(unreadIds);
+        currentItems = typedItems.map(function (item) {
+          return Object.assign({}, item, { unread_count: 0 });
+        });
         applySearchFilter();
         refreshCategoryBadges();
       })
