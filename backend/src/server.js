@@ -13,9 +13,13 @@ app.use(express.json());
 
 const authRouter = require('./routes/auth.routes');
 const usersRouter = require('./routes/users.routes');
+const chatRouter = require('./routes/chat.routes');
+const rescueRouter = require('./routes/rescue.routes');
 // 这里挂载路由
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/chat', chatRouter);
+app.use('/api/rescue', rescueRouter);
 
 // 测试接口：确认服务器能跑
 app.get('/api/healthcheck', (req, res) => {
