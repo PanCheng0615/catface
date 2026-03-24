@@ -6,6 +6,7 @@
   <title>Adoption Recommendations — Cat Platform</title>
   <style>
     * { box-sizing: border-box; }
+    html { overscroll-behavior-x: none; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
@@ -173,6 +174,8 @@
       position: relative;
       width: min(420px, 100%);
       height: 100%;
+      overscroll-behavior-x: none;
+      touch-action: pan-y;
     }
     .cat-card {
       position: absolute;
@@ -1118,6 +1121,58 @@
       min-height: 100px;
       max-height: none;
     }
+
+    /* History Cats modal — fixed header, internal scroll */
+    #history-overlay .modal {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #history-overlay .form-shell {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    #history-overlay .history-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    /* Liked Cats modal — fixed header, internal scroll */
+    #liked-overlay .modal {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #liked-overlay .form-shell {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    #liked-overlay .liked-full-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    /* Profile modal — internal scroll per column */
+    #profile-overlay .modal {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #profile-overlay .profile-layout {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    #profile-overlay .profile-cover {
+      overflow-y: auto;
+    }
+    #profile-overlay .profile-main {
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
@@ -1941,11 +1996,11 @@
           return;
         }
 
-        likedList.innerHTML = likedCats.slice(0, likedPreviewLimit).map(function (catId) {
+        likedList.innerHTML = likedCats.slice(0, likedPreviewLimit).filter(function (catId) { return cats[catId]; }).map(function (catId) {
           return renderLikedItem(cats[catId]);
         }).join("");
 
-        likedFullList.innerHTML = likedCats.map(function (catId) {
+        likedFullList.innerHTML = likedCats.filter(function (catId) { return cats[catId]; }).map(function (catId) {
           return renderLikedItem(cats[catId]);
         }).join("");
 
@@ -2366,8 +2421,8 @@
         var locked = false;
         var unlockTimer = null;
         stack.addEventListener("wheel", function (event) {
+          if (Math.abs(event.deltaX) > 0) event.preventDefault();
           if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
-          event.preventDefault();
           if (locked || isAnimating) {
             if (unlockTimer) clearTimeout(unlockTimer);
             unlockTimer = setTimeout(function () { locked = false; acc = 0; }, 400);
@@ -2391,10 +2446,13 @@
         }, { passive: false });
       })();
 
-      // ── Persistence (localStorage + backend API sync) ──
+      // ── Persistence (database-first + localStorage cache) ──
       var STORAGE_KEY_LIKED = 'catface_liked_cats';
       var STORAGE_KEY_HISTORY = 'catface_swipe_history';
       var swipeHistory = {};
+
+      var catDbIds = {};
+      var dbIdToLocal = {};
 
       function saveAdoptionState() {
         try {
@@ -2410,7 +2468,7 @@
             var arr = JSON.parse(savedLiked);
             if (Array.isArray(arr)) {
               arr.forEach(function (id) {
-                if (cats[id] && likedCats.indexOf(id) === -1) {
+                if (likedCats.indexOf(id) === -1) {
                   likedCats.push(id);
                 }
               });
@@ -2421,32 +2479,116 @@
             var obj = JSON.parse(savedHistory);
             if (obj && typeof obj === 'object') {
               Object.keys(obj).forEach(function (id) {
-                if (cats[id]) swipeHistory[id] = obj[id];
+                swipeHistory[id] = obj[id];
               });
             }
           }
         } catch (e) {}
       }
 
-      function getApiToken() {
-        return (typeof getToken === 'function') ? getToken() : null;
-      }
-
       function getApiBase() {
         return (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:3000/api';
+      }
+
+      function getApiToken() {
+        try { return localStorage.getItem('catface_token') || null; } catch (e) { return null; }
+      }
+
+      function autoAuth() {
+        return new Promise(function (resolve) {
+          if (getApiToken()) { resolve(true); return; }
+          var userRaw;
+          try { userRaw = JSON.parse(localStorage.getItem('catface_user')); } catch (e) {}
+          if (!userRaw || !userRaw.email) { resolve(false); return; }
+
+          var email = userRaw.email;
+          var password = 'CatfaceP@ss_' + email;
+          var username = email.replace(/[^a-zA-Z0-9]/g, '_');
+          var displayName = userRaw.name || username;
+          var base = getApiBase();
+
+          fetch(base + '/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: password, username: username, display_name: displayName })
+          })
+          .then(function (r) { return r.json(); })
+          .then(function (res) {
+            if (res.success && res.data && res.data.token) {
+              localStorage.setItem('catface_token', res.data.token);
+              resolve(true);
+              return;
+            }
+            return fetch(base + '/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: email, password: password })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (loginRes) {
+              if (loginRes.success && loginRes.data && loginRes.data.token) {
+                localStorage.setItem('catface_token', loginRes.data.token);
+                resolve(true);
+              } else {
+                resolve(false);
+              }
+            });
+          })
+          .catch(function () { resolve(false); });
+        });
       }
 
       function syncSwipeToBackend(catId, liked) {
         var token = getApiToken();
         if (!token) return;
+        var dbId = catDbIds[catId] || catId;
         fetch(getApiBase() + '/adoption/swipe', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
           },
-          body: JSON.stringify({ cat_id: catId, liked: liked })
+          body: JSON.stringify({ cat_id: dbId, liked: liked })
         }).catch(function () {});
+      }
+
+      function loadFromBackend() {
+        var token = getApiToken();
+        if (!token) return Promise.resolve();
+        return fetch(getApiBase() + '/adoption/swipes', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (!result.success || !result.data) return;
+          var changed = false;
+          result.data.forEach(function (row) {
+            var catId = row.cat_id;
+            if (row.cat && !cats[catId]) {
+              cats[catId] = dbCatToLocal(row.cat);
+            }
+            catDbIds[catId] = catId;
+            dbIdToLocal[catId] = catId;
+            if (swipeHistory[catId] === undefined || swipeHistory[catId] !== row.liked) {
+              swipeHistory[catId] = row.liked;
+              changed = true;
+            }
+            if (row.liked && likedCats.indexOf(catId) === -1) {
+              likedCats.push(catId);
+              changed = true;
+            }
+            if (!row.liked && likedCats.indexOf(catId) !== -1) {
+              likedCats.splice(likedCats.indexOf(catId), 1);
+              changed = true;
+            }
+          });
+          if (changed) saveAdoptionState();
+          updateLikedUI();
+        })
+        .catch(function () {});
       }
 
       var _origUpdateLikedUI = updateLikedUI;
@@ -2468,44 +2610,182 @@
         return result;
       };
 
+      // ── DB ↔ Local Cat Conversion ──
+      function formatCatAge(months) {
+        if (months == null) return 'Unknown age';
+        if (months >= 12) {
+          var y = Math.floor(months / 12);
+          return y + ' year' + (y > 1 ? 's' : '');
+        }
+        return months + ' month' + (months !== 1 ? 's' : '');
+      }
+
+      function dbCatToLocal(dbCat) {
+        var tags = (dbCat.tags || []).map(function (t) { return t.tag || t.name || (typeof t === 'string' ? t : ''); }).filter(Boolean);
+        var org = dbCat.organization || {};
+        var ageStr = formatCatAge(dbCat.age_months);
+        return {
+          id: dbCat.id,
+          catId: dbCat.id,
+          name: dbCat.name || 'Unknown',
+          title: dbCat.breed || '',
+          age: ageStr,
+          gender: dbCat.gender || 'Unknown',
+          breed: dbCat.breed || 'Unknown',
+          birthday: '',
+          personalityProfile: dbCat.description || '',
+          spayedNeutered: '',
+          vaccinationStatus: '',
+          foundLocation: '',
+          allergyHistory: '',
+          temperament: dbCat.description || '',
+          status: dbCat.is_available ? 'Available' : 'Adopted',
+          image: dbCat.photo_url || '',
+          summary: dbCat.description || '',
+          health: '',
+          rescueOrg: org.name || 'Unknown Organization',
+          rescueNotes: '',
+          accountNote: '',
+          tags: tags,
+          requirements: (dbCat.requirements || []).map(function (r) { return r.description || r; }),
+          basic: [dbCat.gender, ageStr, dbCat.breed].filter(Boolean).join(' \u00b7 '),
+          updates: (dbCat.updates || []).map(function (u) { return u.content || u; })
+        };
+      }
+
+      // ── Dynamic Card Creation ──
+      function createCardElement(catData) {
+        var article = document.createElement('article');
+        article.className = 'cat-card';
+        article.setAttribute('data-cat-id', catData.id);
+        var tagsHtml = catData.tags.map(function (tag) {
+          return '<span class="cat-tag">' + escapeHtml(tag) + '</span>';
+        }).join('');
+        article.innerHTML =
+          '<div class="card-inner">' +
+          '<div class="card-face card-front">' +
+          '<div class="cat-bg"><img src="' + escapeHtml(catData.image) + '" alt="' + escapeHtml(catData.name) + '"></div>' +
+          '<div class="cat-info">' +
+          '<div class="cat-name">' + escapeHtml(catData.name) + (catData.title ? ' \u00b7 ' + escapeHtml(catData.title) : '') + '</div>' +
+          '<div class="cat-meta">' + escapeHtml(catData.basic) + '</div>' +
+          '<div class="cat-tags">' + tagsHtml + '</div>' +
+          '</div></div>' +
+          '<div class="card-face card-back"><div>' +
+          '<h3>' + escapeHtml(catData.name) + (catData.title ? ' \u00b7 ' + escapeHtml(catData.title) : '') + '</h3>' +
+          '<p><strong>Gender:</strong> ' + escapeHtml(catData.gender) + '</p>' +
+          '<p><strong>Age:</strong> ' + escapeHtml(catData.age) + '</p>' +
+          '<p><strong>Breed:</strong> ' + escapeHtml(catData.breed) + '</p>' +
+          (catData.summary ? '<p style="margin-top:8px;color:#666;">' + escapeHtml(catData.summary) + '</p>' : '') +
+          '</div>' +
+          '<div class="card-back-actions"><button type="button" class="open-profile-btn">View Full Profile</button></div>' +
+          '</div></div>';
+        return article;
+      }
+
+      function attachCardInteractions(card) {
+        var profileButton = card.querySelector('.open-profile-btn');
+        var cardId = getCardId(card);
+        if (profileButton) {
+          profileButton.addEventListener('click', function (e) {
+            e.stopPropagation();
+            openProfile(cardId);
+          });
+        }
+        card.addEventListener('click', function () {
+          if (isAnimating) return;
+          card.classList.toggle('flipped');
+        });
+        var startX = null, currentX = null, dragging = false;
+        function onPointerDown(event) {
+          if (isAnimating) return;
+          if (event.target.closest('.open-profile-btn')) return;
+          var e = event.touches ? event.touches[0] : event;
+          startX = e.clientX; currentX = startX; dragging = true;
+          card.style.transition = '';
+        }
+        function onPointerMove(event) {
+          if (!dragging || isAnimating) return;
+          var e = event.touches ? event.touches[0] : event;
+          currentX = e.clientX;
+          var deltaX = currentX - startX;
+          if (getCurrentCard() !== card) return;
+          card.style.transform = 'translateX(' + deltaX + 'px) rotate(' + (deltaX / 15) + 'deg)';
+          card.style.boxShadow = '0 16px 40px rgba(0,0,0,.25)';
+          if (event.cancelable) event.preventDefault();
+        }
+        function onPointerUp() {
+          if (!dragging || isAnimating) return;
+          dragging = false;
+          if (getCurrentCard() !== card) { card.style.transform = ''; card.style.boxShadow = ''; return; }
+          var deltaX = currentX - startX;
+          if (Math.abs(deltaX) > 80) {
+            var direction = deltaX > 0 ? 'right' : 'left';
+            card.style.transform = ''; card.style.boxShadow = '';
+            activeCatId = cardId;
+            swipe(direction);
+          } else {
+            card.style.transition = 'transform 0.25s ease, box-shadow 0.25s ease';
+            card.style.transform = 'translateX(0) rotate(0deg)';
+            card.style.boxShadow = '';
+            card.addEventListener('transitionend', function handle() {
+              card.removeEventListener('transitionend', handle);
+              card.style.transition = '';
+            });
+          }
+        }
+        card.addEventListener('mousedown', function (event) {
+          if (event.button !== 0) return;
+          onPointerDown(event);
+          window.addEventListener('mousemove', onPointerMove);
+          window.addEventListener('mouseup', function handleUp(upEvent) {
+            window.removeEventListener('mousemove', onPointerMove);
+            window.removeEventListener('mouseup', handleUp);
+            onPointerUp(upEvent);
+          });
+        });
+        card.addEventListener('touchstart', onPointerDown, { passive: false });
+        card.addEventListener('touchmove', onPointerMove, { passive: false });
+        card.addEventListener('touchend', onPointerUp);
+        card.addEventListener('touchcancel', onPointerUp);
+      }
+
+      // ── Load Cats from Database ──
+      function loadCatsFromDB() {
+        var token = getApiToken();
+        if (!token) return Promise.resolve();
+        return fetch(getApiBase() + '/adoption/feed', {
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (!result.success || !result.data || !result.data.length) return;
+          stack.innerHTML = '';
+          result.data.forEach(function (dbCat) {
+            var localCat = dbCatToLocal(dbCat);
+            cats[dbCat.id] = localCat;
+            catDbIds[dbCat.id] = dbCat.id;
+            dbIdToLocal[dbCat.id] = dbCat.id;
+            var cardEl = createCardElement(localCat);
+            stack.appendChild(cardEl);
+            attachCardInteractions(cardEl);
+          });
+          var first = getCurrentCard();
+          if (first) activeCatId = getCardId(first);
+        })
+        .catch(function (err) { console.error('loadCatsFromDB:', err); });
+      }
+
       loadAdoptionState();
       updateLikedUI();
 
-      function tryLoadFromBackend() {
-        var token = getApiToken();
-        if (!token) return;
-        fetch(getApiBase() + '/adoption/swipes', {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          }
-        })
-        .then(function (res) { return res.json(); })
-        .then(function (result) {
-          if (!result.success || !result.data) return;
-          var changed = false;
-          result.data.forEach(function (row) {
-            var catId = row.cat_id;
-            if (!cats[catId]) return;
-            if (swipeHistory[catId] === undefined) {
-              swipeHistory[catId] = row.liked;
-              changed = true;
-            }
-            if (row.liked && likedCats.indexOf(catId) === -1) {
-              likedCats.push(catId);
-              changed = true;
-            }
-          });
-          if (changed) {
-            updateLikedUI();
-          }
-        })
-        .catch(function () {});
-      }
+      autoAuth().then(function (ok) {
+        if (!ok) return;
+        loadCatsFromDB().then(function () {
+          return loadFromBackend();
+        });
+      });
 
-      tryLoadFromBackend();
-
-      // ── History Cats Modal ──
+      // ── History Cats Modal (database-first) ──
       var historyOverlay = document.getElementById('history-overlay');
       var historyListEl = document.getElementById('history-list');
       var openHistoryBtn = document.getElementById('open-history-btn');
@@ -2513,7 +2793,7 @@
       if (openHistoryBtn) {
         openHistoryBtn.addEventListener('click', function () {
           openModal(historyOverlay);
-          renderLocalHistory();
+          loadHistory();
         });
       }
 
@@ -2525,35 +2805,70 @@
         });
       }
 
+      function loadHistory() {
+        var token = getApiToken();
+        if (!token) {
+          renderLocalHistory();
+          return;
+        }
+        historyListEl.innerHTML = '<div class="history-loading">Loading history...</div>';
+        fetch(getApiBase() + '/adoption/swipes', {
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (!result.success || !result.data || !result.data.length) {
+            renderLocalHistory();
+            return;
+          }
+          renderDbHistory(result.data);
+        })
+        .catch(function () { renderLocalHistory(); });
+      }
+
       function renderLocalHistory() {
         var catIds = Object.keys(swipeHistory);
         if (!catIds.length) {
           historyListEl.innerHTML = '<div class="empty-state">No swipe history yet. Start swiping to build your history.</div>';
           return;
         }
-
         historyListEl.innerHTML = catIds.map(function (catId) {
           var cat = cats[catId];
           if (!cat) return '';
           var isLiked = swipeHistory[catId];
-
-          return [
-            '<div class="history-item" data-history-cat-id="' + catId + '">',
-            '  <img class="history-item-photo" src="' + cat.image + '" alt="' + escapeHtml(cat.name) + '">',
-            '  <div class="history-item-info">',
-            '    <h3>' + escapeHtml(cat.name + ' · ' + cat.title) + '</h3>',
-            '    <small>' + escapeHtml(cat.age + ' · ' + cat.gender + ' · ' + cat.temperament) + '</small>',
-            '  </div>',
-            '  <div class="history-item-right">',
-            '    <span class="history-status ' + (isLiked ? 'liked' : 'disliked') + '">' + (isLiked ? '❤ Liked' : '✕ Passed') + '</span>',
-            '    <div class="history-toggle-actions">',
-            '      <button class="history-toggle-btn' + (isLiked ? ' active-like' : '') + '" type="button" data-action="like">❤ Like</button>',
-            '      <button class="history-toggle-btn' + (!isLiked ? ' active-dislike' : '') + '" type="button" data-action="dislike">✕ Dislike</button>',
-            '    </div>',
-            '  </div>',
-            '</div>'
-          ].join('');
+          return buildHistoryItem(catId, cat.name + ' · ' + cat.title, cat.age + ' · ' + cat.gender + ' · ' + cat.temperament, cat.image, isLiked, false);
         }).join('');
+      }
+
+      function renderDbHistory(swipes) {
+        historyListEl.innerHTML = swipes.map(function (row) {
+          var cat = row.cat || {};
+          var catName = cat.name || 'Unknown';
+          var parts = [cat.breed || '', cat.age_months != null ? cat.age_months + ' months' : '', cat.gender || ''].filter(Boolean);
+          var meta = parts.length ? parts.join(' · ') : (cat.description || '');
+          return buildHistoryItem(row.cat_id, catName, meta, cat.photo_url || '', row.liked, true);
+        }).join('');
+      }
+
+      function buildHistoryItem(catId, name, meta, photoUrl, isLiked, isDb) {
+        return [
+          '<div class="history-item" data-history-cat-id="' + catId + '" data-src="' + (isDb ? 'db' : 'local') + '">',
+          photoUrl
+            ? '  <img class="history-item-photo" src="' + photoUrl + '" alt="' + escapeHtml(name) + '" onerror="this.style.background=\'#eee\'">'
+            : '  <div class="history-item-photo" style="display:flex;align-items:center;justify-content:center;font-size:24px;">🐱</div>',
+          '  <div class="history-item-info">',
+          '    <h3>' + escapeHtml(name) + '</h3>',
+          '    <small>' + escapeHtml(meta) + '</small>',
+          '  </div>',
+          '  <div class="history-item-right">',
+          '    <span class="history-status ' + (isLiked ? 'liked' : 'disliked') + '">' + (isLiked ? '❤ Liked' : '✕ Passed') + '</span>',
+          '    <div class="history-toggle-actions">',
+          '      <button class="history-toggle-btn' + (isLiked ? ' active-like' : '') + '" type="button" data-action="like">❤ Like</button>',
+          '      <button class="history-toggle-btn' + (!isLiked ? ' active-dislike' : '') + '" type="button" data-action="dislike">✕ Dislike</button>',
+          '    </div>',
+          '  </div>',
+          '</div>'
+        ].join('');
       }
 
       historyListEl.addEventListener('click', function (event) {
@@ -2564,6 +2879,7 @@
         if (!item) return;
 
         var catId = item.getAttribute('data-history-cat-id');
+        var src = item.getAttribute('data-src');
         var action = btn.getAttribute('data-action');
         var newLiked = (action === 'like');
 
@@ -2571,28 +2887,42 @@
         var isCurrentlyLiked = statusEl && statusEl.classList.contains('liked');
         if ((newLiked && isCurrentlyLiked) || (!newLiked && !isCurrentlyLiked)) return;
 
-        swipeHistory[catId] = newLiked;
-
-        if (newLiked) {
-          ensureLiked(catId);
-        } else {
-          var idx = likedCats.indexOf(catId);
-          if (idx !== -1) {
-            likedCats.splice(idx, 1);
-            updateLikedUI();
-          }
-        }
-
         statusEl.className = 'history-status ' + (newLiked ? 'liked' : 'disliked');
         statusEl.textContent = newLiked ? '❤ Liked' : '✕ Passed';
-
         var likeBtn = item.querySelector('[data-action="like"]');
         var dislikeBtn = item.querySelector('[data-action="dislike"]');
         likeBtn.className = 'history-toggle-btn' + (newLiked ? ' active-like' : '');
         dislikeBtn.className = 'history-toggle-btn' + (!newLiked ? ' active-dislike' : '');
 
-        saveAdoptionState();
-        syncSwipeToBackend(catId, newLiked);
+        if (src === 'db') {
+          var token = getApiToken();
+          if (token) {
+            fetch(getApiBase() + '/adoption/swipe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+              body: JSON.stringify({ cat_id: catId, liked: newLiked })
+            }).catch(function () {});
+          }
+          var localId = dbIdToLocal[catId];
+          if (localId && cats[localId]) {
+            swipeHistory[localId] = newLiked;
+            if (newLiked) { ensureLiked(localId); }
+            else {
+              var idx = likedCats.indexOf(localId);
+              if (idx !== -1) { likedCats.splice(idx, 1); updateLikedUI(); }
+            }
+            saveAdoptionState();
+          }
+        } else {
+          swipeHistory[catId] = newLiked;
+          if (newLiked) { ensureLiked(catId); }
+          else {
+            var idx = likedCats.indexOf(catId);
+            if (idx !== -1) { likedCats.splice(idx, 1); updateLikedUI(); }
+          }
+          saveAdoptionState();
+          syncSwipeToBackend(catId, newLiked);
+        }
       });
 
     })();
