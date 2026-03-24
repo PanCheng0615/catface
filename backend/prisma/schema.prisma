@@ -27,6 +27,7 @@ model User {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
+<<<<<<< Updated upstream
   // Relations
   cats                     Cat[]
   posts                    Post[]
@@ -41,6 +42,23 @@ model User {
   conversations_as_user    Conversation[]          @relation("user_conversations")
   conversations_as_org     Conversation[]          @relation("org_conversations")
   sent_messages            Message[]
+=======
+  // 关联关系
+  cats                     Cat[] // 该用户名下的猫咪档案
+  posts                    Post[] // 该用户发布的社区帖子
+  post_likes               PostLike[] // 该用户对帖子的点赞记录
+  comments                 Comment[] // 该用户发表的评论
+  adopter_preferences      AdopterPreference? // 该用户的领养偏好（一对一）
+  adoption_applications    AdoptionApplication[] // 该用户提交的领养申请
+  owner_health_records     OwnerHealthRecord[] // 该用户记录的猫咪健康档案
+  health_share_permissions HealthSharePermission[] // 该用户授权给诊所的健康数据权限
+  followers                UserFollow[]            @relation("following") // 关注该用户的人
+  following                UserFollow[]            @relation("follower") // 该用户关注的人
+  conversations_as_user    Conversation[]          @relation("user_conversations") // 以普通用户身份参与的对话
+  conversations_as_org     Conversation[]          @relation("org_conversations") // 以机构账号身份参与的对话
+  sent_messages            Message[] // 该用户发送的消息
+  reviewed_applications    AdoptionApplication[]   @relation("reviewer") // 该用户（机构工作人员）审核过的申请
+>>>>>>> Stashed changes
 
   @@map("users")
 }
@@ -86,8 +104,14 @@ model Organization {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
+<<<<<<< Updated upstream
   cats           Cat[]
   clinic_reports ClinicHealthReport[]
+=======
+  cats            Cat[] // 该机构登记的猫咪档案
+  clinic_reports  ClinicHealthReport[] // 该机构上传的诊所健康报告
+  adoption_events AdoptionEvent[] // 该机构举办的领养活动
+>>>>>>> Stashed changes
 
   @@map("organizations")
 }
@@ -98,10 +122,44 @@ enum OrgType {
 }
 
 // ─────────────────────────────────────────
+<<<<<<< Updated upstream
+=======
+// Member 5 — 领养活动（对应 Excel 中的"届"）
+// ─────────────────────────────────────────
+
+model AdoptionEvent {
+  id          String    @id @default(uuid())
+  // 活动名称，例如"第2届领养会"
+  name        String
+  // 活动届次编号，例如 2、3、4，允许为空
+  edition     Int?
+  // 活动开始日期
+  start_date  DateTime
+  // 活动结束日期，允许为空（单日活动可不填）
+  end_date    DateTime?
+  // 活动地点，允许为空
+  location    String?
+  // 活动说明，允许为空
+  description String?
+  // 举办该活动的机构 ID，允许为空（独立活动可不绑定机构）
+  org_id      String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  organization Organization?         @relation(fields: [org_id], references: [id])
+  cats         Cat[] // 参与本次活动的猫咪
+  applications AdoptionApplication[] // 通过本次活动发起的领养申请
+
+  @@map("adoption_events")
+}
+
+// ─────────────────────────────────────────
+>>>>>>> Stashed changes
 // Member 2 — 猫咪档案 + 领养模块
 // ─────────────────────────────────────────
 
 model Cat {
+<<<<<<< Updated upstream
   id           String   @id @default(uuid())
   name         String
   breed        String?
@@ -125,10 +183,103 @@ model Cat {
   owner_health_records     OwnerHealthRecord[]
   clinic_reports           ClinicHealthReport[]
   health_share_permissions HealthSharePermission[]
+=======
+  id             String     @id @default(uuid())
+  // 猫咪名字，必填
+  name           String
+  // 猫脸识别生成的人类可读编号，允许为空；用于跨页面展示和人工核对
+  face_code      String?    @unique
+  // 品种，例如"奶橘"、"狸花"、"安哥拉"，允许为空
+  breed          String?
+  // 年龄（以月计），例如 6 表示 6 个月，允许为空
+  age_months     Int?
+  // 性别枚举：male 公 / female 母 / unknown 未知
+  gender         CatGender?
+  // 毛色描述，例如"橘白"、"黑白"，允许为空
+  color          String?
+  // 猫咪简介，性格、习惯等，允许为空
+  description    String?
+  // 主图的云端 URL，允许为空
+  photo_url      String?
+  // 猫咪当前状态，控制是否在领养列表展示
+  status         CatStatus  @default(available)
+  // 是否已完成绝育/结扎，null 表示未知
+  is_neutered    Boolean?
+  // 是否已接种核心疫苗，null 表示未知
+  is_vaccinated  Boolean?
+  // 是否已驱虫（体内外），null 表示未知
+  is_dewormed    Boolean?
+  // 猫咪进入系统的日期，例如救助日期或录入日期，允许为空
+  intake_date    DateTime?
+  // 发现/救助地点，流浪猫被发现的地址描述，例如「台北市大安区和平东路」，允许为空
+  found_location String?
+  // 猫主人的用户 ID，个人猫咪档案关联，允许为空
+  owner_id       String?
+  // 来源机构的 ID，救助机构登记的流浪猫关联，允许为空
+  org_id         String?
+  // 当前参与的领养活动 ID，允许为空
+  event_id       String?
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @updatedAt
+
+  owner                    User?                   @relation(fields: [owner_id], references: [id])
+  organization             Organization?           @relation(fields: [org_id], references: [id])
+  event                    AdoptionEvent?          @relation(fields: [event_id], references: [id])
+  tags                     CatTag[] // 猫咪性格/特点标签
+  requirements             CatRequirement[] // 领养要求
+  updates                  CatUpdate[] // 猫咪动态更新
+  face_embeddings          CatFaceEmbedding[] // 猫脸识别提取出的历史特征向量
+  adoption_applications    AdoptionApplication[] // 针对该猫咪的领养申请
+  owner_health_records     OwnerHealthRecord[] // 猫主人记录的健康档案
+  clinic_reports           ClinicHealthReport[] // 诊所上传的官方健康报告
+  health_share_permissions HealthSharePermission[] // 健康数据共享授权记录
+>>>>>>> Stashed changes
 
   @@map("cats")
 }
 
+<<<<<<< Updated upstream
+=======
+// 猫咪性别枚举
+enum CatGender {
+  male // 公猫
+  female // 母猫
+  unknown // 性别未知（幼猫或未确认）
+}
+
+// 猫咪状态枚举
+// available: 可领养，展示在领养列表中
+// adopted: 已领养，不再展示但保留档案
+// fostered: 寄养中，暂时不对外开放领养
+// deceased: 已离世，仅作历史记录保留
+enum CatStatus {
+  available
+  adopted
+  fostered
+  deceased
+}
+
+model CatFaceEmbedding {
+  id                   String   @id @default(uuid())
+  // 归属猫咪 ID；同一只猫可保存多次识别向量，便于后续增量补充样本
+  cat_id               String
+  // 模型输出的特征向量，第一版先以 JSON 数组形式保存
+  embedding_json       Json
+  // 生成该特征时所用的原始图片 URL，允许为空
+  source_photo_url     String?
+  // 特征提供方，例如 "kam_face_pipeline"
+  provider             String
+  // 识别时使用的相似度阈值，允许为空
+  similarity_threshold Float?
+  created_at           DateTime @default(now())
+
+  cat Cat @relation(fields: [cat_id], references: [id], onDelete: Cascade)
+
+  @@index([cat_id])
+  @@map("cat_face_embeddings")
+}
+
+>>>>>>> Stashed changes
 model CatTag {
   id         String   @id @default(uuid())
   cat_id     String

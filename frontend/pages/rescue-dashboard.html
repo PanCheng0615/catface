@@ -2200,19 +2200,49 @@
         catFormPanel.scrollIntoView({ behavior: "smooth", block: "start" });
       }
 
-      function generateFaceId() {
-        const timePart = Date.now().toString().slice(-6);
-        const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
-        return "CAT-FR-" + timePart + "-" + randomPart;
+      function getAuthToken() {
+        return localStorage.getItem("catface_org_token")
+          || localStorage.getItem("catface_token")
+          || "";
+      }
+
+      async function requestCatFaceId(imageDataUrl) {
+        const token = getAuthToken();
+        if (!token) {
+          throw new Error("Please log in with a rescue organization account first.");
+        }
+
+        const response = await fetch("http://localhost:3000/api/rescue/cat-face/identify", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
+          },
+          body: JSON.stringify({
+            image_data_url: imageDataUrl
+          })
+        });
+
+        const payload = await response.json().catch(function () {
+          return {};
+        });
+
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || "Cat face recognition failed.");
+        }
+
+        return payload.data || {};
       }
 
       function resetFaceRecognitionModal() {
         currentGeneratedFaceId = "";
         generatedFaceId.textContent = "Waiting for image upload";
+        generatedFaceId.title = "";
         facePreviewImage.hidden = true;
         facePreviewImage.src = "";
         facePreviewPlaceholder.hidden = false;
         faceIdImageInput.value = "";
+        useFaceIdBtn.disabled = true;
       }
 
       function openFaceRecognitionModal() {
@@ -2533,12 +2563,48 @@
           if (!file) return;
 
           const reader = new FileReader();
-          reader.onload = function (loadEvent) {
+          reader.onload = async function (loadEvent) {
             facePreviewImage.src = loadEvent.target.result;
             facePreviewImage.hidden = false;
             facePreviewPlaceholder.hidden = true;
-            currentGeneratedFaceId = generateFaceId();
-            generatedFaceId.textContent = currentGeneratedFaceId;
+            currentGeneratedFaceId = "";
+            generatedFaceId.textContent = "Analyzing cat face...";
+            generatedFaceId.title = "";
+            useFaceIdBtn.disabled = true;
+
+            try {
+              const result = await requestCatFaceId(loadEvent.target.result);
+              const matchedFaceCode = result.best_match
+                && result.best_match.cat
+                && result.best_match.cat.face_code
+                ? result.best_match.cat.face_code
+                : "";
+
+              currentGeneratedFaceId = matchedFaceCode || result.suggested_face_code || "";
+
+              if (result.matched && result.best_match && result.best_match.cat) {
+                generatedFaceId.textContent = currentGeneratedFaceId
+                  ? "Matched existing cat: " + currentGeneratedFaceId
+                  : "Matched an existing cat record";
+              } else if (currentGeneratedFaceId) {
+                generatedFaceId.textContent = currentGeneratedFaceId;
+              } else if (result.face_detected === false) {
+                generatedFaceId.textContent = "No cat face detected";
+              } else {
+                generatedFaceId.textContent = "Cat Face ID unavailable";
+              }
+
+              if (result.note) {
+                generatedFaceId.title = result.note;
+              }
+
+              useFaceIdBtn.disabled = !currentGeneratedFaceId;
+            } catch (error) {
+              currentGeneratedFaceId = "";
+              generatedFaceId.textContent = error.message || "Cat face recognition failed";
+              generatedFaceId.title = "";
+              useFaceIdBtn.disabled = true;
+            }
           };
           reader.readAsDataURL(file);
         });

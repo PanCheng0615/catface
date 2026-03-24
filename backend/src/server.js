@@ -9,16 +9,22 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '15mb' }));
 
 const authRouter = require('./routes/auth.routes');
 const usersRouter = require('./routes/users.routes');
+<<<<<<< Updated upstream
 const chatRouter = require('./routes/chat.routes');
+=======
+>>>>>>> Stashed changes
 const rescueRouter = require('./routes/rescue.routes');
 // 这里挂载路由
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
+<<<<<<< Updated upstream
 app.use('/api/chat', chatRouter);
+=======
+>>>>>>> Stashed changes
 app.use('/api/rescue', rescueRouter);
 
 // 测试接口：确认服务器能跑

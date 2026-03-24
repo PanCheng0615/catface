@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 #!/Users/chenxiaohe/Documents/GitHub/catface/backend/.venv-catface-id/bin/python
+=======
+#!/Users/chenxiaohe/Documents/GitHub/catface/backend/.venv-catface-id/bin/python3.12
+>>>>>>> Stashed changes
 # -*- coding: utf-8 -*-
 import re
 import sys

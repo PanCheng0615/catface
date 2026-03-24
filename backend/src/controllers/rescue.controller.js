@@ -5,6 +5,10 @@ const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
+<<<<<<< Updated upstream
+=======
+const { runKamFaceInference, findCatFaceMatches } = require('../services/cat-face.service');
+>>>>>>> Stashed changes
 
 const prisma = new PrismaClient();
 const execFileAsync = promisify(execFile);
@@ -12,6 +16,166 @@ const FACE_ID_PYTHON_BIN = fsSync.existsSync(path.join(__dirname, '../../.venv-c
   ? path.join(__dirname, '../../.venv-catface-id/bin/python')
   : 'python3';
 
+<<<<<<< Updated upstream
+=======
+function getThreshold() {
+  const threshold = Number(process.env.KAM_FACE_THRESHOLD || '0.85');
+  return Number.isFinite(threshold) ? threshold : 0.85;
+}
+
+function mapInferenceErrorToStatus(errorCode) {
+  if (errorCode === 'RuntimeMissing' || errorCode === 'PipelineInitFailed') {
+    return 503;
+  }
+
+  if (errorCode === 'InvalidImageData' || errorCode === 'InputImageMissing') {
+    return 422;
+  }
+
+  return 500;
+}
+
+async function identifyCatFace(req, res) {
+  try {
+    const { image_data_url } = req.body;
+
+    if (!image_data_url) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'image_data_url is required'
+      });
+    }
+
+    const inference = await runKamFaceInference(image_data_url);
+    if (!inference.success) {
+      return res.status(mapInferenceErrorToStatus(inference.error_code)).json({
+        success: false,
+        error: inference.error_code || 'FaceInferenceFailed',
+        message: inference.message || 'Cat face inference failed',
+        data: inference
+      });
+    }
+
+    if (!inference.face_detected) {
+      return res.json({
+        success: true,
+        data: {
+          matched: false,
+          provider: inference.provider,
+          face_detected: false,
+          suggested_face_code: null,
+          threshold: getThreshold(),
+          top_matches: []
+        },
+        message: inference.message || 'No cat face detected'
+      });
+    }
+
+    const threshold = getThreshold();
+    const matchResult = await findCatFaceMatches(prisma, inference.embedding, threshold);
+
+    return res.json({
+      success: true,
+      data: {
+        matched: Boolean(matchResult.bestMatch),
+        provider: inference.provider,
+        device: inference.device,
+        face_detected: true,
+        suggested_face_code: inference.suggested_face_code,
+        embedding: inference.embedding,
+        embedding_dim: inference.embedding_dim,
+        threshold,
+        best_match: matchResult.bestMatch,
+        top_matches: matchResult.topMatches,
+        note: matchResult.note || inference.warning || null
+      },
+      message: matchResult.bestMatch ? 'Matched existing cat face' : 'No existing cat match found'
+    });
+  } catch (error) {
+    console.error('identifyCatFace error:', error);
+
+    return res.status(mapInferenceErrorToStatus(error.code)).json({
+      success: false,
+      error: error.code || 'ServerError',
+      message: error.message || 'Cat face identification failed'
+    });
+  }
+}
+
+async function registerCatFaceEmbedding(req, res) {
+  try {
+    const {
+      cat_id,
+      embedding,
+      face_code,
+      source_photo_url,
+      provider,
+      similarity_threshold
+    } = req.body;
+
+    if (!cat_id || !Array.isArray(embedding) || !embedding.length) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'cat_id and embedding are required'
+      });
+    }
+
+    const cat = await prisma.cat.findUnique({
+      where: { id: cat_id }
+    });
+
+    if (!cat) {
+      return res.status(404).json({
+        success: false,
+        error: 'CatNotFound',
+        message: 'Cat not found'
+      });
+    }
+
+    const created = await prisma.catFaceEmbedding.create({
+      data: {
+        cat_id,
+        embedding_json: embedding,
+        source_photo_url: source_photo_url || null,
+        provider: provider || 'kam_face_pipeline',
+        similarity_threshold: typeof similarity_threshold === 'number' ? similarity_threshold : getThreshold()
+      }
+    });
+
+    let updatedCat = cat;
+    if (face_code && !cat.face_code) {
+      updatedCat = await prisma.cat.update({
+        where: { id: cat_id },
+        data: { face_code }
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        embedding_record: created,
+        cat: {
+          id: updatedCat.id,
+          name: updatedCat.name,
+          face_code: updatedCat.face_code
+        }
+      },
+      message: 'Cat face embedding saved'
+    });
+  } catch (error) {
+    console.error('registerCatFaceEmbedding error:', error);
+
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: error.message || 'Unable to save cat face embedding'
+    });
+  }
+}
+
+>>>>>>> Stashed changes
 function mapCat(cat) {
   return {
     id: cat.id,
@@ -858,6 +1022,11 @@ async function getAnalytics(req, res) {
 }
 
 module.exports = {
+<<<<<<< Updated upstream
+=======
+  identifyCatFace,
+  registerCatFaceEmbedding,
+>>>>>>> Stashed changes
   getCats,
   createCat,
   updateCat,
