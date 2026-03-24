@@ -2144,27 +2144,35 @@
       }
 
       function updateLikedUI() {
-        likedCountTop.textContent = likedCats.length;
-        likedCountSide.textContent = likedCats.length;
+        if (!getApiToken()) {
+          for (var pi = likedCats.length - 1; pi >= 0; pi--) {
+            if (!cats[likedCats[pi]]) likedCats.splice(pi, 1);
+          }
+        }
+        var visibleIds = likedCats.filter(function (catId) {
+          return cats[catId];
+        });
+        likedCountTop.textContent = visibleIds.length;
+        likedCountSide.textContent = visibleIds.length;
 
-        if (!likedCats.length) {
+        if (!visibleIds.length) {
           likedList.innerHTML = '<div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>';
           likedFullList.innerHTML = '<div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>';
           openLikedListLink.hidden = true;
           return;
         }
 
-        likedList.innerHTML = likedCats.slice(0, likedPreviewLimit).filter(function (catId) { return cats[catId]; }).map(function (catId) {
+        likedList.innerHTML = visibleIds.slice(0, likedPreviewLimit).map(function (catId) {
           return renderLikedItem(cats[catId]);
         }).join("");
 
-        likedFullList.innerHTML = likedCats.filter(function (catId) { return cats[catId]; }).map(function (catId) {
+        likedFullList.innerHTML = visibleIds.map(function (catId) {
           return renderLikedItem(cats[catId]);
         }).join("");
 
-        if (likedCats.length > likedPreviewLimit) {
+        if (visibleIds.length > likedPreviewLimit) {
           openLikedListLink.hidden = false;
-          openLikedListLink.textContent = "View all Liked Cats (" + likedCats.length + ")";
+          openLikedListLink.textContent = "View all Liked Cats (" + visibleIds.length + ")";
         } else {
           openLikedListLink.hidden = true;
         }
@@ -2963,8 +2971,10 @@
 
       autoAuth().then(function (ok) {
         if (!ok) return;
-        loadCatsFromDB().then(function () {
+        return loadCatsFromDB().then(function () {
           return loadFromBackend();
+        }).then(function () {
+          return loadLikedFromBackend();
         });
       });
 
@@ -3242,22 +3252,23 @@
 
       function loadLikedFromBackend() {
         var token = getApiToken();
-        if (!token) return;
-        fetch(getApiBase() + '/adoption/liked', {
+        if (!token) return Promise.resolve();
+        return fetch(getApiBase() + '/adoption/liked', {
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
         })
         .then(function (r) { return r.json(); })
         .then(function (result) {
-          if (!result.success || !result.data) return;
-          result.data.forEach(function (dbCat) {
+          if (!result.success) return;
+          var rows = Array.isArray(result.data) ? result.data : [];
+          likedCats.length = 0;
+          rows.forEach(function (dbCat) {
             var localCat = dbCatToLocal(dbCat);
             cats[dbCat.id] = localCat;
             catDbIds[dbCat.id] = dbCat.id;
             dbIdToLocal[dbCat.id] = dbCat.id;
-            if (likedCats.indexOf(dbCat.id) === -1) {
-              likedCats.push(dbCat.id);
-            }
+            likedCats.push(dbCat.id);
           });
+          saveAdoptionState();
           updateLikedUI();
         })
         .catch(function (err) { console.error('loadLikedFromBackend:', err); });
@@ -3434,11 +3445,6 @@
             closeModal(overlay);
           });
         });
-      });
-
-      // Also call loadLikedFromBackend on initial auth
-      autoAuth().then(function (ok) {
-        if (ok) loadLikedFromBackend();
       });
 
     })();
