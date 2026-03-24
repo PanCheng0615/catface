@@ -1,377 +1,621 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clinic Portal — CatFace</title>
+  <title>診所門戶 — CatFace</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: #f6f7fb;
-      color: #222;
-      padding: 24px 18px 40px;
+    :root {
+      --bg:         #faf6ef;
+      --surface:    #ffffff;
+      --border:     #ede5d8;
+      --border-light: #f5efe4;
+      --text:       #1a1208;
+      --muted:      #8b7355;
+      --primary:    #c8821a;
+      --primary-lt: #fef3e2;
+      --primary-dk: #a86915;
+      --green:      #2e9e6b;
+      --green-lt:   #e9faf2;
+      --red:        #e05252;
+      --red-lt:     #fef2f2;
+      --orange:     #e07b20;
+      --orange-lt:  #fff7ed;
+      --purple:     #7c5cbf;
+      --purple-lt:  #f5f2ff;
+      --blue:       #3b7dd8;
+      --blue-lt:    #eff5ff;
+      --teal:       #0e8a8a;
+      --teal-lt:    #e6fafa;
+      --shadow:     0 2px 12px rgba(100,60,0,.09);
+      --shadow-lg:  0 8px 32px rgba(100,60,0,.12);
+      --r-xl: 20px;
+      --r-lg: 16px;
+      --r-md: 12px;
+      --r-sm: 8px;
+      --sidebar-w: 220px;
+      --header-h: 60px;
     }
-    a { color: #2f6feb; text-decoration: none; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                   "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    a { color: var(--primary); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    h1, h2, h3, p { margin: 0; }
     button, input, textarea, select { font: inherit; }
 
-    .page {
-      max-width: 1080px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-    .top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    /* ── 顶部栏 ── */
+    .top-bar {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; padding: 0 20px;
+      z-index: 200;
       gap: 12px;
-      flex-wrap: wrap;
     }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 12px;
+    .logo {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 20px; font-weight: 800; color: var(--primary);
+      text-decoration: none; white-space: nowrap;
+    }
+    .logo span { font-size: 22px; }
+    .top-bar-right {
+      margin-left: auto; display: flex; align-items: center; gap: 10px;
+    }
+    .page-badge {
+      background: var(--primary-lt);
+      color: var(--primary);
+      padding: 5px 14px;
       border-radius: 999px;
-      background: #eef4ff;
-      color: #2f6feb;
       font-size: 13px;
       font-weight: 700;
+      border: 1px solid rgba(200,130,26,.2);
     }
-    .panel {
-      background: #fff;
-      border-radius: 24px;
-      padding: 22px;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+
+    /* ── 侧边栏 ── */
+    .sidebar {
+      position: fixed; top: var(--header-h); left: 0; bottom: 0;
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border-light);
+      display: flex; flex-direction: column;
+      padding: 16px 0;
+      z-index: 150; overflow-y: auto;
     }
-    .panel-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      flex-wrap: wrap;
+    .sidebar-nav { list-style: none; flex: 1; }
+    .sidebar-nav a {
+      display: flex; align-items: center; gap: 11px;
+      padding: 11px 20px;
+      color: #5c4520; font-size: 14px; font-weight: 500;
+      border-radius: 0; transition: background .15s, color .15s;
+      text-decoration: none;
     }
-    .muted {
-      color: #666;
-      line-height: 1.6;
-      font-size: 14px;
+    .sidebar-nav a:hover { background: var(--primary-lt); color: var(--primary); text-decoration: none; }
+    .sidebar-nav a.active { background: var(--primary-lt); color: var(--primary); font-weight: 700; }
+    .sidebar-nav .nav-icon { font-size: 18px; width: 22px; text-align: center; }
+    .sidebar-divider { height: 1px; background: var(--border-light); margin: 10px 16px; }
+    .sidebar-bottom { padding: 12px 16px; }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: var(--r-lg);
+      background: var(--bg); border: 1px solid var(--border);
     }
-    .warn {
-      border-radius: 18px;
-      padding: 14px 16px;
-      background: #fff7ed;
-      color: #9a3412;
-      border: 1px solid #fed7aa;
-      line-height: 1.6;
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary-lt); display: flex; align-items: center;
+      justify-content: center; font-size: 18px; flex-shrink: 0;
+      border: 2px solid var(--border);
     }
-    .grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 14px;
+    .user-info .user-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .user-info .user-role { font-size: 11px; color: var(--muted); }
+
+    /* ── 主内容 ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      margin-top: var(--header-h);
+      padding: 24px 28px 60px;
+      min-height: 100vh;
     }
-    @media (max-width: 860px) {
-      .grid { grid-template-columns: 1fr; }
-    }
-    .card {
-      border: 1px solid #dfe3ea;
-      border-radius: 20px;
-      background: #fafbfd;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .card h3 { font-size: 16px; }
-    .kv {
-      display: grid;
-      grid-template-columns: 160px minmax(0, 1fr);
-      gap: 10px 14px;
-      font-size: 14px;
-    }
-    .kv strong { color: #374151; font-size: 13px; }
-    .kv span { color: #111827; }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .field label {
+
+    /* ── 状态消息 ── */
+    #status-msg {
+      display: none;
+      position: fixed;
+      top: calc(var(--header-h) + 16px);
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: var(--r-lg);
       font-size: 13px;
-      font-weight: 600;
-      color: #374151;
+      font-weight: 700;
+      z-index: 999;
+      box-shadow: var(--shadow-lg);
+      transition: opacity .3s;
     }
+
+    /* ── 开发测试面板 ── */
+    .dev-panel {
+      background: #fffcf0;
+      border: 1px dashed #e8c84a;
+      border-radius: var(--r-xl);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+    }
+    .dev-panel-title {
+      font-size: 12px; font-weight: 800; color: #8a6a00;
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px;
+    }
+    .dev-row {
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+    }
+    .dev-field { display: flex; flex-direction: column; gap: 4px; }
+    .dev-field label { font-size: 11px; font-weight: 700; color: #7a5c00; }
+    .dev-field input {
+      border: 1px solid #e8c84a;
+      border-radius: var(--r-sm);
+      padding: 7px 10px;
+      min-width: 280px; font-size: 13px;
+      background: #fff;
+    }
+    .dev-note { font-size: 11px; color: #997700; margin-top: 8px; }
+
+    /* ── 诊所 Header 卡 ── */
+    .clinic-header {
+      background: linear-gradient(135deg, #5c3608 0%, #a86915 50%, #c8821a 100%);
+      border-radius: var(--r-xl);
+      padding: 28px 32px;
+      color: #fff;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .clinic-header::before {
+      content: ''; position: absolute; top: -50px; right: -50px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,.07); border-radius: 50%;
+    }
+    .clinic-header::after {
+      content: ''; position: absolute; bottom: -70px; right: 120px;
+      width: 160px; height: 160px;
+      background: rgba(255,255,255,.04); border-radius: 50%;
+    }
+    .clinic-header-inner { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; position: relative; z-index: 1; }
+    .clinic-header-left { display: flex; align-items: center; gap: 16px; }
+    .clinic-icon {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: rgba(255,255,255,.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      border: 2px solid rgba(255,255,255,.25);
+      flex-shrink: 0;
+    }
+    .clinic-info h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    .clinic-info .clinic-id-label { font-size: 12px; opacity: .7; }
+    .clinic-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+    .clinic-stat {
+      background: rgba(255,255,255,.13);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 14px;
+      padding: 10px 18px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+    .clinic-stat .cs-num { font-size: 22px; font-weight: 800; }
+    .clinic-stat .cs-label { font-size: 11px; opacity: .8; }
+
+    /* ── 双栏布局 ── */
+    .workspace {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .workspace { grid-template-columns: 1fr; } }
+
+    /* ── 卡片 ── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--r-xl);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-title {
+      font-size: 15px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-body { padding: 16px 20px; }
+
+    /* ── 病患列表 ── */
+    .patient-list { display: flex; flex-direction: column; gap: 0; }
+    .cat-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 20px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-light);
+      transition: background .15s;
+    }
+    .cat-item:last-child { border-bottom: none; }
+    .cat-item:hover { background: var(--primary-lt); }
+    .cat-item.selected {
+      background: var(--primary-lt);
+      border-left: 3px solid var(--primary);
+    }
+    .cat-avatar {
+      width: 46px; height: 46px; border-radius: 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; flex-shrink: 0;
+    }
+    .cat-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .cat-meta { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .cat-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+
+    /* ── 右侧详情区 ── */
+    .detail-stack { display: flex; flex-direction: column; gap: 20px; }
+
+    /* 空状态 */
+    .empty-state {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 20px; text-align: center; color: var(--muted);
+    }
+    .ei { font-size: 40px; margin-bottom: 10px; opacity: .6; }
+    .empty-state p { font-size: 14px; line-height: 1.7; }
+
+    /* 病患标签 */
+    .patient-tags-row {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+
+    /* 记录卡 */
+    .rec-card {
+      display: flex; overflow: hidden;
+      border-radius: var(--r-lg);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      margin-bottom: 10px;
+    }
+    .rec-card:last-child { margin-bottom: 0; }
+    .rec-bar { width: 5px; flex-shrink: 0; }
+    .rec-body { flex: 1; padding: 14px 16px; min-width: 0; }
+    .rec-head {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 6px; margin-bottom: 8px;
+    }
+    .rec-desc {
+      font-size: 13px; color: var(--muted); margin-bottom: 8px;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .rec-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+    .rec-actions { margin-top: 8px; display: flex; gap: 8px; }
+
+    /* 认证徽章 */
+    .clinic-cert-badge {
+      background: #d1fae5; color: #065f46;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      border: 1px solid #a7f3d0;
+    }
+
+    /* 芯片 */
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .chip-blue   { background: var(--blue-lt);   color: var(--blue);   }
+    .chip-green  { background: var(--green-lt);  color: var(--green);  }
+    .chip-red    { background: var(--red-lt);    color: var(--red);    }
+    .chip-gray   { background: #f5efe4;          color: #7a5c2e;       }
+    .chip-orange { background: var(--orange-lt); color: var(--orange); }
+    .chip-purple { background: var(--purple-lt); color: var(--purple); }
+    .chip-teal   { background: var(--teal-lt);   color: var(--teal);   }
+    .chip-warm   { background: var(--primary-lt); color: var(--primary); }
+
+    /* 按钮 */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: none; border-radius: var(--r-md);
+      padding: 9px 16px; cursor: pointer;
+      font-size: 13px; font-weight: 700;
+      transition: filter .15s, transform .1s;
+    }
+    .btn:hover { filter: brightness(.94); }
+    .btn:active { transform: scale(.97); }
+    .btn-primary {
+      background: var(--primary); color: #fff;
+      box-shadow: 0 4px 16px rgba(200,130,26,.3);
+    }
+    .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: var(--red-lt); color: var(--red); border: 1px solid #fecaca; }
+    .btn-blue   { background: var(--blue-lt); color: var(--blue); border: 1px solid #bfdbfe; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: var(--r-sm); }
+    .btn-full { width: 100%; justify-content: center; }
+
+    /* 表单 */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .field-full { grid-column: 1 / -1; }
     .input, .textarea {
       width: 100%;
-      border: 1px solid #cfd6df;
-      border-radius: 14px;
-      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 10px 14px;
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .input:focus, .textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(200,130,26,.12);
       background: #fff;
-      color: #111827;
     }
-    .textarea { min-height: 96px; resize: vertical; }
-    .actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
+    .textarea { min-height: 90px; resize: vertical; }
+    select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b7355' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+
+    /* 分割线 */
+    .divider-label {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .05em;
+      margin: 16px 0 12px;
     }
-    .btn {
-      border: none;
-      border-radius: 16px;
-      padding: 12px 18px;
-      cursor: pointer;
-      font-weight: 600;
+    .divider-label::before, .divider-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* 主人记录区 */
+    .owner-records-section { padding: 16px 20px; }
+    .reports-section { padding: 16px 20px; border-top: 1px solid var(--border-light); }
+    .upload-section { padding: 16px 20px; border-top: 1px solid var(--border-light); }
+
+    /* 数量徽章 */
+    .count-badge {
+      background: var(--primary-lt);
+      color: var(--primary);
+      font-size: 11px; font-weight: 800;
+      padding: 2px 8px; border-radius: 999px;
     }
-    .btn-primary {
-      background: #ff5a76;
-      color: #fff;
-      box-shadow: 0 10px 24px rgba(255,90,118,.22);
-    }
-    .btn-secondary {
-      background: #f3f4f6;
-      color: #333;
-    }
-    .ok {
-      display: none;
-      border-radius: 18px;
-      padding: 14px 16px;
-      background: #ecfdf3;
-      color: #027a48;
-      font-weight: 600;
-      line-height: 1.6;
-    }
-    .ok.show { display: block; }
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="top">
-      <a href="health.html">← Back to Health</a>
-      <span class="badge">Clinic Portal</span>
+
+  <!-- ── 顶部栏 ── -->
+  <header class="top-bar">
+    <a href="index.html" class="logo">
+      <span>🐱</span> CatFace
+    </a>
+    <div class="top-bar-right">
+      <span class="page-badge">🏥 診所門戶</span>
+    </div>
+  </header>
+
+  <!-- ── 侧边栏 ── -->
+  <nav class="sidebar">
+    <ul class="sidebar-nav">
+      <li><a href="index.html">
+        <span class="nav-icon">💬</span> Community
+      </a></li>
+      <li><a href="adoption.html">
+        <span class="nav-icon">🐱</span> Adoption
+      </a></li>
+      <li><a href="index.html">
+        <span class="nav-icon">🔔</span> Notifications
+      </a></li>
+      <li><a href="account.html">
+        <span class="nav-icon">👤</span> Account
+      </a></li>
+    </ul>
+    <div class="sidebar-divider"></div>
+    <ul class="sidebar-nav">
+      <li><a href="health.html" class="active">
+        <span class="nav-icon">🩺</span> Health Records
+      </a></li>
+      <li><a href="clinic-portal.html" class="active">
+        <span class="nav-icon">🏥</span> Clinic Portal
+      </a></li>
+      <li><a href="rescue-dashboard.html">
+        <span class="nav-icon">🚑</span> Rescue Dashboard
+      </a></li>
+    </ul>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <div class="user-avatar">🏥</div>
+        <div class="user-info">
+          <div class="user-name" id="clinic-name-display">診所帳號</div>
+          <div class="user-role" id="clinic-id-display">未登入</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── 主内容 ── -->
+  <main class="main">
+
+    <!-- 状态消息 -->
+    <div id="status-msg"></div>
+
+    <!-- 开发测试面板 -->
+    <div class="dev-panel">
+      <div class="dev-panel-title">🛠 開發測試面板</div>
+      <div class="dev-row">
+        <div class="dev-field">
+          <label>診所 Organization ID</label>
+          <input id="test-org-id-input" type="text"
+            placeholder="e.g. 4fddae50-31b3-4df3-bd62-07c2ff2c962d">
+        </div>
+        <button class="btn btn-primary" id="test-apply-btn">載入診所資料</button>
+      </div>
+      <p class="dev-note">目前設定的 ID：<code id="current-org-id">—</code></p>
     </div>
 
-    <header class="panel">
-      <div class="panel-head">
-        <div>
-          <h1>Clinic Health Record Upload</h1>
-          <p class="muted">Clinics can view user-shared data for a specific cat ID and upload a verified report. This demo uses localStorage (no backend).</p>
-        </div>
-        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
-          <label style="display:flex; align-items:center; gap:6px; font-size:13px;">
-            <span>Cat ID</span>
-            <input id="filterCatId" type="text" style="border-radius:12px; border:1px solid #e5e7eb; padding:6px 10px; min-width:160px;" placeholder="e.g. CAT-2026-002">
-          </label>
-          <button class="btn-primary" type="button" id="loadCatBtn">Load shared data</button>
-        </div>
-      </div>
-      <div class="warn" id="shareWarn">
-        No shared data found for this Cat ID and clinic. Ask the user to enable “Share data with clinic” on the Health page.
-      </div>
-    </header>
-
-    <section class="panel">
-      <div class="panel-head">
-        <div>
-          <h2>Shared user data (read-only)</h2>
-          <p class="muted">This section shows what the user has uploaded and confirmed for sharing.</p>
-        </div>
-      </div>
-
-      <div class="grid">
-        <article class="card">
-          <h3>User health snapshot</h3>
-          <div class="kv">
-            <strong>Cat Name</strong><span id="uName">—</span>
-            <strong>Gender</strong><span id="uGender">—</span>
-            <strong>Birthday</strong><span id="uBirthday">—</span>
-            <strong>Hobbies</strong><span id="uHobbies">—</span>
-            <strong>Neuter</strong><span id="uNeuter">—</span>
-            <strong>Vaccination</strong><span id="uVaccination">—</span>
-            <strong>Allergies</strong><span id="uAllergies">—</span>
-            <strong>Recent check date</strong><span id="uDate">—</span>
-            <strong>Owner notes</strong><span id="uNotes">—</span>
+    <!-- 诊所 Header 卡 -->
+    <div class="clinic-header">
+      <div class="clinic-header-inner">
+        <div class="clinic-header-left">
+          <div class="clinic-icon">🏥</div>
+          <div class="clinic-info">
+            <h1 id="clinic-name-header">CatFace 合作診所</h1>
+            <div class="clinic-id-label">已認證醫療合作夥伴 · 官方報告上傳權限</div>
           </div>
-        </article>
+        </div>
+        <div class="clinic-stats">
+          <div class="clinic-stat">
+            <div class="cs-num" id="stat-cats">0</div>
+            <div class="cs-label">已授權病患</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <article class="card">
-          <h3>Upload verified clinic report</h3>
-          <form id="officialForm">
-            <div class="field">
-              <label for="reportDate">Report date</label>
-              <input class="input" id="reportDate" type="date" required>
-            </div>
-            <div class="field">
-              <label for="vaccination">Vaccination</label>
-              <input class="input" id="vaccination" type="text" placeholder="Example: Rabies + FVRCP">
-            </div>
-            <div class="field">
-              <label for="allergies">Allergies</label>
-              <input class="input" id="allergies" type="text" placeholder="Example: Grain allergy">
-            </div>
-            <div class="field">
-              <label for="neuter">Spay/Neuter status</label>
-              <select class="input" id="neuter">
-                <option value="">Not specified</option>
-                <option value="Completed">Completed</option>
-                <option value="Not Yet">Not Yet</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="other">Other health data / summary</label>
-              <textarea class="textarea" id="other" placeholder="Write clinic summary..."></textarea>
-            </div>
-            <div class="field">
-              <label for="reportFile">Report file (PDF/image, stored locally)</label>
-              <input class="input" id="reportFile" type="file" accept="image/*,application/pdf">
-            </div>
-            <div class="actions">
-              <button class="btn btn-secondary" type="button" id="reloadBtn">Reload shared data</button>
-              <button class="btn btn-primary" type="submit">Upload report</button>
-            </div>
-          </form>
-        </article>
+    <!-- 工作区：双栏 -->
+    <div class="workspace">
+
+      <!-- 左侧：病患列表 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🐾 已授權病患</div>
+        </div>
+        <div id="authorized-cat-list" class="patient-list">
+          <div class="empty-state">
+            <div class="ei">🏥</div>
+            <p>請在上方輸入診所 ID<br>載入授權病患列表</p>
+          </div>
+        </div>
       </div>
 
-      <div class="ok" id="okBanner">Clinic report uploaded. The user can now see the latest official record in `health.html`.</div>
-    </section>
-  </div>
+      <!-- 右侧：详情 + 上传 -->
+      <div>
+        <!-- 未选择时的提示 -->
+        <div id="no-selection" class="card">
+          <div class="empty-state" style="padding:60px 20px;">
+            <div class="ei">👈</div>
+            <p>從左側選擇一位病患<br>查看健康資料並上傳認證報告</p>
+          </div>
+        </div>
 
+        <!-- 选中后的详情区 -->
+        <div id="cat-detail-section" style="display:none;" class="detail-stack">
+
+          <!-- 病患信息卡 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <span>🐱</span>
+                <span id="detail-cat-name">—</span>
+              </div>
+            </div>
+
+            <!-- 健康状态标签 -->
+            <div id="patient-health-tags" class="patient-tags-row">
+              <span class="chip chip-gray" style="font-size:12px;">載入中…</span>
+            </div>
+
+            <!-- 主人健康记录（只读） -->
+            <div class="owner-records-section">
+              <div class="divider-label">📋 主人健康記錄（唯讀）</div>
+              <div id="detail-owner-records">
+                <div class="empty-state" style="padding:24px;">
+                  <div class="ei">📋</div>
+                  <p>主人尚無填寫健康記錄</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 本诊所已上传的报告 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📄 本診所已上傳報告</div>
+              <span class="count-badge" id="reports-count">0 份</span>
+            </div>
+            <div class="reports-section">
+              <div id="existing-reports">
+                <div class="empty-state" style="padding:24px;">
+                  <div class="ei">📄</div>
+                  <p>本診所尚無已上傳報告</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 上传新报告 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">⬆️ 上傳認證報告</div>
+              <span class="chip chip-warm">✅ 官方認證</span>
+            </div>
+            <div class="upload-section">
+              <form id="upload-report-form">
+                <div class="form-grid">
+                  <div class="field">
+                    <label>報告類型</label>
+                    <select id="rpt-type" class="input" required>
+                      <option value="">請選擇類型</option>
+                      <option value="vaccination">💉 疫苗接種證明</option>
+                      <option value="deworming">🐛 驅蟲證明</option>
+                      <option value="checkup">🩺 健康檢查報告</option>
+                      <option value="blood_test">🔬 血液報告</option>
+                      <option value="treatment">💊 疾病治療記錄</option>
+                      <option value="surgery">✂️ 手術/絕育證明</option>
+                      <option value="other">📋 其他醫療文件</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>診療日期</label>
+                    <input id="rpt-date" class="input" type="date" required>
+                  </div>
+                  <div class="field">
+                    <label>主治獸醫師</label>
+                    <input id="rpt-vet" class="input" type="text" placeholder="醫師姓名（選填）">
+                  </div>
+                  <div class="field">
+                    <label>文件編號</label>
+                    <input id="rpt-ref" class="input" type="text" placeholder="院內編號（選填）">
+                  </div>
+                  <div class="field field-full">
+                    <label>報告摘要</label>
+                    <textarea id="rpt-desc" class="textarea" placeholder="填寫診療摘要、注意事項或建議…" required></textarea>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button type="reset" class="btn btn-secondary">清空</button>
+                  <button type="submit" class="btn btn-primary">✅ 提交認證報告</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </div><!-- end cat-detail-section -->
+      </div>
+    </div><!-- end workspace -->
+  </main>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/clinic-portal.js"></script>
   <script>
-    (function () {
-      const SHARE_KEY = "catface_health_share_enabled";
-      const USER_HEALTH_KEY = "catface_health_user_record";
-      const OFFICIAL_HEALTH_KEY = "catface_health_official_record";
-
-      const shareWarn = document.getElementById("shareWarn");
-      const okBanner = document.getElementById("okBanner");
-
-      const uName = document.getElementById("uName");
-      const uGender = document.getElementById("uGender");
-      const uBirthday = document.getElementById("uBirthday");
-      const uHobbies = document.getElementById("uHobbies");
-      const uNeuter = document.getElementById("uNeuter");
-      const uVaccination = document.getElementById("uVaccination");
-      const uAllergies = document.getElementById("uAllergies");
-      const uDate = document.getElementById("uDate");
-      const uNotes = document.getElementById("uNotes");
-
-      const officialForm = document.getElementById("officialForm");
-      const reloadBtn = document.getElementById("reloadBtn");
-      const filterCatIdInput = document.getElementById("filterCatId");
-      const loadCatBtn = document.getElementById("loadCatBtn");
-
-      const CLINIC_ID = "clinic-a";
-
-      function readBool(key, fallback) {
-        try {
-          const raw = window.localStorage.getItem(key);
-          if (raw == null) return fallback;
-          return raw === "1";
-        } catch (e) { return fallback; }
-      }
-      function readJson(key) {
-        try {
-          const raw = window.localStorage.getItem(key);
-          return raw ? JSON.parse(raw) : null;
-        } catch (e) { return null; }
-      }
-      function writeJson(key, value) {
-        try {
-          window.localStorage.setItem(key, JSON.stringify(value));
-        } catch (e) {}
-      }
-
-      function renderShared() {
-        const shared = readBool(SHARE_KEY, false);
-        const requestedCatId = (filterCatIdInput && filterCatIdInput.value.trim()) || "";
-        const user = shared ? readJson(USER_HEALTH_KEY) : null;
-
-        let visible = false;
-        if (shared && user && user.catId && user.clinicId) {
-          if ((!requestedCatId || requestedCatId === user.catId) && user.clinicId === CLINIC_ID) {
-            visible = true;
-          }
-        }
-
-        shareWarn.style.display = visible ? "none" : "";
-
-        uName.textContent = user && user.name ? user.name : "—";
-        uGender.textContent = user && user.gender ? user.gender : "—";
-        uBirthday.textContent = user && user.birthday ? user.birthday : "—";
-        uHobbies.textContent = user && user.hobbies ? user.hobbies : "—";
-        uNeuter.textContent = user && user.neuter ? user.neuter : "—";
-        uVaccination.textContent = user && user.vaccination ? user.vaccination : "—";
-        uAllergies.textContent = user && user.allergies ? user.allergies : "—";
-        uDate.textContent = user && user.reportDate ? user.reportDate : "—";
-        uNotes.textContent = user && user.ownerNotes ? user.ownerNotes : "—";
-      }
-
-      reloadBtn.addEventListener("click", function () {
-        okBanner.classList.remove("show");
-        renderShared();
-      });
-
-      loadCatBtn.addEventListener("click", function () {
-        okBanner.classList.remove("show");
-        renderShared();
-      });
-
-      officialForm.addEventListener("submit", function (e) {
-        e.preventDefault();
-        const shared = readBool(SHARE_KEY, false);
-        const user = readJson(USER_HEALTH_KEY) || {};
-
-        if (!shared || !user.catId || user.clinicId !== CLINIC_ID) {
-          alert("No shared data for this clinic and cat. Ask the user to enable sharing on the Health page.");
-          return;
-        }
-
-        const reportDate = document.getElementById("reportDate").value;
-        const vaccination = document.getElementById("vaccination").value.trim();
-        const allergies = document.getElementById("allergies").value.trim();
-        const neuter = document.getElementById("neuter").value;
-        const other = document.getElementById("other").value.trim();
-        const file = document.getElementById("reportFile").files[0];
-
-        function save(reportUrl) {
-          writeJson(OFFICIAL_HEALTH_KEY, {
-            catName: user.name || "Unknown",
-            catId: user.catId || "",
-            reportDate: reportDate,
-            vaccination: vaccination || user.vaccination || "",
-            allergies: allergies || user.allergies || "",
-            neuter: neuter || user.neuter || "",
-            other: other || "Clinic uploaded a verified report.",
-            reportUrl: reportUrl || "#",
-            updatedAt: new Date().toISOString()
-          });
-          okBanner.classList.add("show");
-          alert("Uploaded successfully. Go back to Health page to see the latest official record.");
-        }
-
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function () {
-            save(reader.result);
-          };
-          reader.readAsDataURL(file);
-        } else {
-          save("#");
-        }
-      });
-
-      renderShared();
-    })();
+    // 同步 header 中的诊所名称
+    const headerName = document.getElementById('clinic-name-header');
+    const obs = new MutationObserver(() => {
+      const n = document.getElementById('clinic-name-display').textContent;
+      if (n && n !== '診所帳號') headerName.textContent = n;
+    });
+    obs.observe(document.getElementById('clinic-name-display'), { childList: true, characterData: true, subtree: true });
   </script>
 </body>
 </html>
-

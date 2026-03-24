@@ -413,6 +413,8 @@ model OwnerHealthRecord {
   vet_name      String?
   // 就诊诊所名称，允许为空
   clinic_name   String?
+  // 附件 URL（图片或 PDF），允许为空；由上传接口返回后填入
+  file_url      String?
   created_at    DateTime         @default(now())
   updated_at    DateTime         @updatedAt
 

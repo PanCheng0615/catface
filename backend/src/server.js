@@ -1,14 +1,18 @@
 const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
+const cors    = require('cors');
+const dotenv  = require('dotenv');
+const path    = require('path');
 
 dotenv.config();
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// 静态文件服务：上传的图片/PDF 可通过 /uploads/<filename> 访问
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Member 1 — 用户系统
 const authRouter  = require('./routes/auth.routes');

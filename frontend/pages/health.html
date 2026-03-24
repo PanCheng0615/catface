@@ -1,1011 +1,639 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Health Management — Cat Platform</title>
+  <title>貓咪健康檔案 — CatFace</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: #f6f7fb;
-      color: #222;
-      padding: 24px 18px 40px;
+    :root {
+      --bg:         #faf6ef;
+      --surface:    #ffffff;
+      --border:     #ede5d8;
+      --border-lt:  #f5efe4;
+      --text:       #1a1208;
+      --muted:      #8b7355;
+      --primary:    #c8821a;
+      --primary-lt: #fef3e2;
+      --primary-dk: #a86915;
+      --green:      #2e9e6b;
+      --green-lt:   #e9faf2;
+      --red:        #e05252;
+      --red-lt:     #fef2f2;
+      --orange:     #e07b20;
+      --orange-lt:  #fff7ed;
+      --purple:     #7c5cbf;
+      --purple-lt:  #f5f2ff;
+      --blue:       #3b7dd8;
+      --blue-lt:    #eff5ff;
+      --teal:       #0e8a8a;
+      --teal-lt:    #e6fafa;
+      --shadow:     0 2px 12px rgba(100,60,0,.09);
+      --shadow-lg:  0 8px 32px rgba(100,60,0,.12);
+      --r-xl: 20px;
+      --r-lg: 16px;
+      --r-md: 12px;
+      --r-sm: 8px;
+      --sidebar-w: 220px;
+      --header-h: 60px;
     }
-    a { color: #2f6feb; text-decoration: none; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                   "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    a { color: var(--primary); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    h1, h2, h3, h4, p { margin: 0; }
     button, input, textarea, select { font: inherit; }
 
-    .page {
-      max-width: 1180px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+    /* ── 顶部栏 ── */
+    .top-bar {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-lt);
+      display: flex; align-items: center; padding: 0 20px;
+      z-index: 200; gap: 12px;
     }
-    .breadcrumb {
-      font-size: 14px;
-      color: #555;
+    .logo {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 20px; font-weight: 800; color: var(--primary);
+      text-decoration: none; white-space: nowrap;
     }
-    .hero {
-      background: #fff;
-      border-radius: 24px;
-      padding: 28px;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
-    }
-    .hero-copy {
-      max-width: 760px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .eyebrow {
-      display: inline-flex;
-      width: fit-content;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: #eef4ff;
-      color: #2f6feb;
-      font-size: 13px;
-      font-weight: 700;
-    }
-    .hero h1 { font-size: 30px; }
-    .hero-copy p {
-      color: #666;
-      line-height: 1.65;
-    }
-    .section {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+    .logo span { font-size: 22px; }
+    .top-bar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .page-badge {
+      background: var(--primary-lt); color: var(--primary);
+      padding: 5px 14px; border-radius: 999px;
+      font-size: 13px; font-weight: 700;
+      border: 1px solid rgba(200,130,26,.2);
     }
 
-    .content {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+    /* ── 侧边栏 ── */
+    .sidebar {
+      position: fixed; top: var(--header-h); left: 0; bottom: 0;
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border-lt);
+      display: flex; flex-direction: column;
+      padding: 16px 0; z-index: 150; overflow-y: auto;
     }
-    .panel {
-      background: #fff;
-      border-radius: 24px;
-      padding: 22px;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+    .sidebar-nav { list-style: none; }
+    .sidebar-nav a {
+      display: flex; align-items: center; gap: 11px;
+      padding: 11px 20px; color: #5c4520;
+      font-size: 14px; font-weight: 500;
+      transition: background .15s, color .15s; text-decoration: none;
     }
-    .panel-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      flex-wrap: wrap;
+    .sidebar-nav a:hover { background: var(--primary-lt); color: var(--primary); text-decoration: none; }
+    .sidebar-nav a.active { background: var(--primary-lt); color: var(--primary); font-weight: 700; }
+    .nav-icon { font-size: 18px; width: 22px; text-align: center; }
+    .sidebar-divider { height: 1px; background: var(--border-lt); margin: 10px 16px; }
+    .sidebar-bottom { padding: 12px 16px; margin-top: auto; }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: var(--r-lg);
+      background: var(--bg); border: 1px solid var(--border);
     }
-    .panel-head p {
-      color: #666;
-      line-height: 1.6;
-      max-width: 720px;
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary-lt); display: flex; align-items: center;
+      justify-content: center; font-size: 18px; flex-shrink: 0;
+      border: 2px solid var(--border);
     }
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 7px 12px;
-      border-radius: 999px;
-      background: #ecfdf3;
-      color: #027a48;
-      font-size: 12px;
-      font-weight: 700;
+    .user-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .user-role { font-size: 11px; color: var(--muted); }
+
+    /* ── 主内容 ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      margin-top: var(--header-h);
+      padding: 24px 28px 60px;
+      min-height: 100vh;
     }
 
-    .record-grid {
-      display: grid;
-      grid-template-columns: 220px minmax(0, 1fr);
-      border: 1px solid #dfe3ea;
-      border-radius: 20px;
+    /* ── 状态消息 ── */
+    #status-msg {
+      display: none;
+      position: fixed;
+      top: calc(var(--header-h) + 16px);
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: var(--r-lg);
+      font-size: 13px; font-weight: 700;
+      z-index: 999;
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* ── 开发测试面板 ── */
+    .dev-panel {
+      background: #fffcf0;
+      border: 1px dashed #e8c84a;
+      border-radius: var(--r-xl);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+    }
+    .dev-panel-title {
+      font-size: 12px; font-weight: 800; color: #8a6a00;
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px;
+    }
+    .dev-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+    .dev-field { display: flex; flex-direction: column; gap: 4px; }
+    .dev-field label { font-size: 11px; font-weight: 700; color: #7a5c00; }
+    .dev-field input {
+      border: 1px solid #e8c84a; border-radius: var(--r-sm);
+      padding: 7px 10px; min-width: 240px; font-size: 13px; background: #fff;
+    }
+    .dev-note { font-size: 11px; color: #997700; margin-top: 8px; }
+
+    /* ── 顶部导航行 ── */
+    .page-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
+    }
+    .page-title { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+
+    /* ── 标签页 ── */
+    .tabs {
+      display: flex; gap: 3px;
+      background: var(--border-lt);
+      padding: 4px; border-radius: var(--r-md);
+    }
+    .tab-btn {
+      padding: 8px 18px; border-radius: var(--r-sm);
+      border: none; font-size: 13px; font-weight: 600;
+      cursor: pointer; background: transparent; color: var(--muted);
+      transition: all .15s; white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: var(--surface); color: var(--primary);
+      box-shadow: 0 2px 8px rgba(100,60,0,.1);
+      font-weight: 700;
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: flex; flex-direction: column; gap: 14px; }
+
+    /* ── 健康护照 ── */
+    .passport {
+      background: linear-gradient(135deg, #5c3608 0%, #a86915 50%, #c8821a 100%);
+      border-radius: var(--r-xl);
+      padding: 28px 28px 24px;
+      color: #fff;
+      position: relative; overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .passport::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,.07); border-radius: 50%;
+    }
+    .passport::after {
+      content: ''; position: absolute; bottom: -60px; right: 80px;
+      width: 140px; height: 140px;
+      background: rgba(255,255,255,.04); border-radius: 50%;
+    }
+    .passport-top {
+      display: flex; align-items: flex-start; gap: 20px;
+      margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .passport-avatar {
+      width: 68px; height: 68px; border-radius: 50%;
+      background: rgba(255,255,255,.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 34px; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,.3);
+    }
+    .passport-info h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    .passport-info .meta { font-size: 13px; opacity: .75; }
+    .passport-badges { display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+    .pbadge {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 10px 14px; border-radius: 14px;
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+      min-width: 80px; gap: 2px; backdrop-filter: blur(6px);
+    }
+    .pbadge .pb-icon  { font-size: 20px; }
+    .pbadge .pb-label { font-size: 11px; font-weight: 700; opacity: .85; }
+    .pbadge .pb-date  { font-size: 11px; opacity: .65; }
+    .pbadge.ok   { border-color: rgba(52,211,153,.5);  background: rgba(52,211,153,.15); }
+    .pbadge.warn { border-color: rgba(251,191,36,.5);  background: rgba(251,191,36,.12); }
+    .pbadge.none { border-color: rgba(255,255,255,.1); background: rgba(0,0,0,.1); }
+
+    /* ── 卡片 ── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--r-xl);
+      box-shadow: var(--shadow);
       overflow: hidden;
     }
-    .record-title {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 14px 16px;
-      font-size: 22px;
-      font-weight: 700;
-      border-bottom: 1px solid #dfe3ea;
-      background: #fafbfd;
+    .card-body { padding: 20px 22px; }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px; padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border-lt);
     }
-    .record-label,
-    .record-value {
-      min-height: 72px;
-      padding: 14px 16px;
-      border-bottom: 1px solid #dfe3ea;
+    .section-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+    /* ── chip ── */
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .chip-blue   { background: var(--blue-lt);   color: var(--blue);   }
+    .chip-green  { background: var(--green-lt);  color: var(--green);  }
+    .chip-red    { background: var(--red-lt);    color: var(--red);    }
+    .chip-gray   { background: #f5efe4;          color: #7a5c2e;       }
+    .chip-orange { background: var(--orange-lt); color: var(--orange); }
+    .chip-purple { background: var(--purple-lt); color: var(--purple); }
+    .chip-teal   { background: var(--teal-lt);   color: var(--teal);   }
+    .chip-warm   { background: var(--primary-lt); color: var(--primary); }
+
+    /* ── 按钮 ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: none; border-radius: var(--r-md);
+      padding: 9px 16px; cursor: pointer;
+      font-size: 13px; font-weight: 700;
+      transition: filter .15s, transform .1s; text-decoration: none;
     }
-    .record-label {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      font-weight: 600;
-      background: #fff;
+    .btn:hover { filter: brightness(.93); text-decoration: none; }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 16px rgba(200,130,26,.28); }
+    .btn-ghost   { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger  { background: var(--red-lt); color: var(--red); border: 1px solid #fecaca; }
+    .btn-blue    { background: var(--blue-lt); color: var(--blue); border: 1px solid #bfdbfe; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: var(--r-sm); }
+
+    /* ── 证书记录卡 ── */
+    .rec-card {
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      background: var(--surface);
+      margin-bottom: 10px;
+      transition: box-shadow .15s;
     }
-    .record-value {
-      background: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
+    .rec-card:last-child { margin-bottom: 0; }
+    .rec-card:hover { box-shadow: var(--shadow); }
+    .rec-card-bar  { height: 4px; }
+    .rec-card-body { padding: 15px 18px; }
+    .rec-card-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 8px; flex-wrap: wrap; margin-bottom: 8px;
     }
-    .record-grid > :nth-last-child(-n + 2) {
-      border-bottom: none;
+    .rec-type-row  { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .rec-date      { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .rec-desc      { font-size: 13px; color: #5c4520; line-height: 1.6; margin-bottom: 8px; white-space: pre-wrap; word-break: break-word; }
+    .rec-meta      { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rec-actions   { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-lt); }
+    .reminder-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 8px;
+      font-size: 12px; font-weight: 600;
+      background: var(--orange-lt); color: #92400e; border: 1px solid #fde68a;
     }
-    .inline-options {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
-    .inline-options label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .text-input,
-    .date-input,
-    .text-area {
-      width: 100%;
-      border: 1px solid #cfd6df;
-      border-radius: 14px;
-      padding: 12px 14px;
-      background: #fff;
-      color: #111827;
-    }
-    .text-area {
-      min-height: 94px;
-      resize: vertical;
-    }
-    .report-row {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
-      width: 100%;
-    }
-    .report-link {
-      font-weight: 600;
-    }
-    .file-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 38px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #eef4ff;
-      color: #2f6feb;
-      font-size: 13px;
-    }
-    .upload-btn,
-    .save-btn,
-    .cancel-btn {
-      border: none;
-      border-radius: 16px;
-      padding: 12px 20px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .upload-btn,
-    .save-btn {
-      background: #ff5a76;
-      color: #fff;
-      box-shadow: 0 10px 24px rgba(255,90,118,.22);
-    }
-    .cancel-btn {
-      background: #f3f4f6;
-      color: #333;
-    }
-    .panel-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .share-banner {
-      border-radius: 18px;
-      padding: 14px 16px;
-      background: #fff7ed;
-      color: #9a3412;
-      line-height: 1.6;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      border: 1px solid #fed7aa;
-    }
-    .share-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .share-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: #7c2d12;
-    }
-    .mini-btn {
-      border: none;
-      border-radius: 999px;
-      padding: 10px 14px;
-      cursor: pointer;
-      font-weight: 600;
-      background: #ff5a76;
-      color: #fff;
-      box-shadow: 0 10px 24px rgba(255,90,118,.18);
-    }
-    .mini-btn.secondary {
-      background: #fff;
-      color: #9a3412;
-      border: 1px solid #fed7aa;
-      box-shadow: none;
-    }
-    .muted {
-      color: #666;
-      line-height: 1.6;
-    }
-    .hidden-input {
-      display: none;
-    }
-    .info-banner {
-      border-radius: 18px;
-      padding: 14px 16px;
-      background: #eff6ff;
-      color: #1d4ed8;
-      line-height: 1.6;
-      display: none;
-    }
-    .info-banner.show {
-      display: block;
-    }
-    .summary-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px 18px;
-      padding: 2px 4px 0;
-    }
-    .summary-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .summary-item strong {
-      font-size: 13px;
-      color: #374151;
-    }
-    .summary-item span,
-    .summary-item a {
-      color: #1f2937;
-      line-height: 1.5;
-      word-break: break-word;
-    }
-    .editor-layout {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .editor-card {
-      border: 1px solid #dfe3ea;
-      border-radius: 20px;
-      background: #fff;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .editor-card.full {
-      grid-column: 1 / -1;
-    }
-    .editor-card h3 {
-      font-size: 18px;
-    }
-    .editor-card p {
-      color: #666;
-      line-height: 1.55;
-      font-size: 14px;
-    }
-    .field-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .field-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .field-row label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #374151;
-    }
-    .choice-pills {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .choice-pills label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border: 1px solid #d8dee7;
-      border-radius: 999px;
-      background: #fafbfc;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    .subtle-note {
-      font-size: 13px;
-      color: #6b7280;
-      line-height: 1.55;
-    }
-    .hidden-section {
-      display: none;
-    }
-    .hidden-section.show {
-      display: block;
-    }
-    .editor-layout.hidden-section.show {
-      display: grid;
-    }
-    .display-card {
-      border: 1px solid #dfe3ea;
-      border-radius: 20px;
-      background: #fafbfd;
-      padding: 18px;
-    }
-    .display-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .display-card h3 {
-      margin-bottom: 12px;
-      font-size: 18px;
-    }
-    .display-card p {
-      color: #666;
-      line-height: 1.55;
-      font-size: 14px;
-      margin-bottom: 14px;
-    }
-    footer {
-      padding-left: 12px;
-      font-size: 14px;
+    .clinic-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 8px;
+      font-size: 12px; font-weight: 700;
+      background: var(--green-lt); color: #065f46; border: 1px solid #a7f3d0;
     }
 
-    @media (max-width: 960px) {
-      .record-grid {
-        grid-template-columns: 1fr;
-      }
-      .record-title {
-        font-size: 18px;
-      }
-      .record-label {
-        justify-content: flex-start;
-        text-align: left;
-      }
-      .summary-list {
-        grid-template-columns: 1fr;
-      }
+    /* ── 表单 ── */
+    .form-card {
+      background: #fffaf4;
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 20px;
+      margin-bottom: 4px;
+    }
+    .form-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+    .form-grid.wide { grid-template-columns: 1fr; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .field input, .field select, .field textarea {
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      padding: 10px 13px; background: var(--surface);
+      color: var(--text); font-size: 13px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(200,130,26,.12);
+    }
+    .field textarea { min-height: 88px; resize: vertical; }
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b7355' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+
+    /* ── 授权项 ── */
+    .perm-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border: 1px solid var(--border);
+      border-radius: var(--r-md); background: var(--surface);
+      gap: 10px; flex-wrap: wrap;
+    }
+    .perm-avatar {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: var(--primary-lt); display: flex; align-items: center;
+      justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+
+    /* ── 空态 ── */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty-icon  { font-size: 40px; margin-bottom: 10px; opacity: .6; }
+    .empty-state p { font-size: 13px; line-height: 1.7; }
+
+    /* ── 信息提示条 ── */
+    .info-bar {
+      font-size: 13px; color: var(--muted);
+      padding: 10px 14px; border-radius: var(--r-md);
+      border-left: 3px solid var(--primary);
+      background: var(--primary-lt);
+      margin-bottom: 16px;
+    }
+    .info-bar-green {
+      border-left-color: var(--green);
+      background: var(--green-lt);
+      color: #065f46;
+    }
+
+    @media (max-width: 860px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+    }
+    @media (max-width: 640px) {
+      .passport-top { flex-direction: column; }
+      .form-grid { grid-template-columns: 1fr; }
+      .tabs { overflow-x: auto; }
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="index.html">← Back to Main</a>
-    </nav>
 
-    <!-- ── 状态提示 ── -->
-    <div id="status-msg" style="display:none;padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;"></div>
+  <!-- ── 顶部栏 ── -->
+  <header class="top-bar">
+    <a href="index.html" class="logo">
+      <span>🐱</span> CatFace
+    </a>
+    <div class="top-bar-right">
+      <span class="page-badge">🩺 健康檔案</span>
+    </div>
+  </header>
 
-    <!-- ── 测试 ID 面板（开发用）── -->
-    <div id="test-id-panel" style="background:#fffbeb;border:1px solid #fcd34d;border-radius:18px;padding:18px 22px;">
-      <p style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:12px;">🛠 开发测试面板 — 输入 ID 后点击「加载」即可测试 API</p>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <label style="font-size:12px;font-weight:600;color:#78350f;">猫咪 ID (UUID)</label>
-          <input id="test-cat-id-input" type="text" placeholder="从 pgAdmin 或 POST /api/cats 获取"
-            style="border:1px solid #fcd34d;border-radius:10px;padding:8px 12px;width:300px;font-size:13px;">
+  <!-- ── 侧边栏 ── -->
+  <nav class="sidebar">
+    <ul class="sidebar-nav">
+      <li><a href="index.html">
+        <span class="nav-icon">💬</span> Community
+      </a></li>
+      <li><a href="adoption.html">
+        <span class="nav-icon">🐱</span> Adoption
+      </a></li>
+      <li><a href="index.html">
+        <span class="nav-icon">🔔</span> Notifications
+      </a></li>
+      <li><a href="account.html">
+        <span class="nav-icon">👤</span> Account
+      </a></li>
+    </ul>
+    <div class="sidebar-divider"></div>
+    <ul class="sidebar-nav">
+      <li><a href="health.html" class="active">
+        <span class="nav-icon">🩺</span> Health Records
+      </a></li>
+      <li><a href="clinic-portal.html">
+        <span class="nav-icon">🏥</span> Clinic Portal
+      </a></li>
+      <li><a href="rescue-dashboard.html">
+        <span class="nav-icon">🚑</span> Rescue Dashboard
+      </a></li>
+    </ul>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <div class="user-avatar">🐾</div>
+        <div>
+          <div class="user-name">貓主人</div>
+          <div class="user-role">健康記錄管理</div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <label style="font-size:12px;font-weight:600;color:#78350f;">用户 ID (UUID)</label>
-          <input id="test-user-id-input" type="text" placeholder="从 pgAdmin 或 POST /api/auth/register 获取"
-            style="border:1px solid #fcd34d;border-radius:10px;padding:8px 12px;width:300px;font-size:13px;">
-        </div>
-        <button id="test-apply-btn"
-          style="background:#f59e0b;color:#fff;border:none;border-radius:12px;padding:10px 20px;font-weight:700;cursor:pointer;">
-          加载数据
-        </button>
       </div>
-      <p style="font-size:12px;color:#92400e;margin-top:8px;">
-        当前猫咪：<strong id="current-cat-id" style="font-family:monospace;">未设置</strong>
-      </p>
+    </div>
+  </nav>
+
+  <!-- ── 主内容 ── -->
+  <main class="main">
+
+    <!-- 状态消息 -->
+    <div id="status-msg"></div>
+
+    <!-- 开发测试面板 -->
+    <div class="dev-panel">
+      <div class="dev-panel-title">🛠 開發測試面板</div>
+      <div class="dev-row">
+        <div class="dev-field">
+          <label>貓咪 ID (UUID)</label>
+          <input id="test-cat-id-input" type="text" placeholder="從 pgAdmin 或 seed 資料取得">
+        </div>
+        <div class="dev-field">
+          <label>用戶 ID (UUID)</label>
+          <input id="test-user-id-input" type="text" placeholder="從 pgAdmin 或 register API 取得">
+        </div>
+        <button id="test-apply-btn" class="btn btn-primary" style="align-self:flex-end;">載入</button>
+      </div>
+      <p class="dev-note">目前貓咪：<code id="current-cat-id">未設置</code></p>
     </div>
 
-    <header class="hero">
-      <div class="hero-copy">
-        <div class="eyebrow">Cat Health Data</div>
-        <h1>Medical Data Integration and Health Management</h1>
-        <p>
-          This page only contains two parts: user-uploaded cat health data and medical institution health records.
-          Users can fill in vaccination, allergy, and recent examination information, while official health records are uploaded by medical institutions and shown here for reference.
-        </p>
+    <!-- 导航行：标题 + 标签页 -->
+    <div class="page-nav">
+      <div class="page-title">🐾 貓咪健康檔案</div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('records')">📋 健康記錄</button>
+        <button class="tab-btn" onclick="switchTab('clinic')">🏥 診所認證</button>
+        <button class="tab-btn" onclick="switchTab('share')">🔑 授權管理</button>
       </div>
-    </header>
+    </div>
 
-    <section class="section" aria-label="User health data upload">
-      <div class="content">
-        <section class="panel">
-          <div class="panel-head">
-            <div>
-              <h2>Cat Health Record</h2>
-              <p>
-                Review your cat's current health information first. If you need to update it, click edit and then save your changes.
-              </p>
+    <!-- 健康护照卡 -->
+    <div class="passport">
+      <div class="passport-top" style="position:relative;z-index:1;">
+        <div class="passport-avatar">🐱</div>
+        <div class="passport-info">
+          <h1 id="passport-name">— 健康護照</h1>
+          <p class="meta" id="passport-meta">請先輸入貓咪 ID 載入資料</p>
+        </div>
+      </div>
+      <div class="passport-badges" id="passport-badges">
+        <div class="pbadge none"><span class="pb-icon">💉</span><span class="pb-label">疫苗</span><span class="pb-date">未記錄</span></div>
+        <div class="pbadge none"><span class="pb-icon">🐛</span><span class="pb-label">驅蟲</span><span class="pb-date">未記錄</span></div>
+        <div class="pbadge none"><span class="pb-icon">✂️</span><span class="pb-label">絕育</span><span class="pb-date">未記錄</span></div>
+        <div class="pbadge none"><span class="pb-icon">⚖️</span><span class="pb-label">體重</span><span class="pb-date">— kg</span></div>
+      </div>
+    </div>
+
+    <!-- ── Tab 1：健康記錄 ── -->
+    <div id="tab-records" class="tab-pane active">
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">
+            📋 我的健康記錄
+            <span class="chip chip-gray" id="owner-count">0 筆</span>
+          </span>
+          <button class="btn btn-primary btn-sm" id="toggle-add-btn">＋ 新增記錄</button>
+        </div>
+
+        <!-- 新增表单 -->
+        <div id="add-record-section" style="display:none;">
+          <div style="padding:18px 22px 0;">
+            <div class="form-card">
+              <h3>🗂 新增健康記錄</h3>
+              <form id="add-record-form">
+                <div class="form-grid">
+                  <div class="field">
+                    <label>記錄類型 *</label>
+                    <select id="rec-type" required>
+                      <option value="vaccine">💉 疫苗接種</option>
+                      <option value="deworming">🐛 驅蟲</option>
+                      <option value="checkup">🩺 一般體檢</option>
+                      <option value="treatment">💊 疾病治療</option>
+                      <option value="surgery">✂️ 手術記錄</option>
+                      <option value="other">📋 其他</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>就診日期 *</label>
+                    <input id="rec-date" type="date" required>
+                  </div>
+                  <div class="field">
+                    <label>下次提醒日期</label>
+                    <input id="rec-next" type="date">
+                  </div>
+                  <div class="field">
+                    <label>體重（kg）</label>
+                    <input id="rec-weight" type="number" step="0.01" min="0" placeholder="例：4.20">
+                  </div>
+                  <div class="field">
+                    <label>主治醫師</label>
+                    <input id="rec-vet" type="text" placeholder="例：王大明醫師">
+                  </div>
+                  <div class="field">
+                    <label>醫療院所</label>
+                    <input id="rec-clinic" type="text" placeholder="例：愛貓動物醫院">
+                  </div>
+                </div>
+                <div class="form-grid wide" style="margin-top:12px;">
+                  <div class="field">
+                    <label>描述 / 備註 *</label>
+                    <textarea id="rec-desc" placeholder="例：完成三聯疫苗第一針（FVRCP），接種後 30 分鐘觀察無異常。" required></textarea>
+                  </div>
+                  <div class="field">
+                    <label>附件（圖片或 PDF · 最大 10 MB）</label>
+                    <input id="rec-file" type="file" accept="image/*,application/pdf"
+                      style="border:1px solid var(--border);border-radius:var(--r-md);padding:9px 12px;background:var(--surface);font-size:13px;cursor:pointer;width:100%;">
+                    <div id="rec-file-preview" style="display:none;margin-top:8px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);"></div>
+                    <div id="rec-upload-status" style="display:none;font-size:13px;color:var(--muted);margin-top:4px;"></div>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn btn-ghost" id="cancel-add-btn">取消</button>
+                  <button type="submit" class="btn btn-primary" id="rec-submit-btn">儲存記錄</button>
+                </div>
+              </form>
             </div>
-            <span class="status-pill">User Input</span>
+          </div>
+        </div>
+
+        <!-- 记录列表 -->
+        <div id="owner-records-list" style="padding:16px 22px;">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>請先輸入貓咪 ID 並點擊「載入」</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab 2：診所認證 ── -->
+    <div id="tab-clinic" class="tab-pane">
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">
+            🏥 診所認證報告
+            <span class="chip chip-green" id="clinic-count">0 筆</span>
+          </span>
+          <span class="chip chip-teal">唯讀 · 由診所上傳</span>
+        </div>
+        <div class="card-body">
+          <div class="info-bar info-bar-green">
+            ✅ 以下記錄由合作診所上傳，具備官方認證。如需新增報告，請由診所透過「診所門戶」操作。
+          </div>
+          <div id="clinic-records-list">
+            <div class="empty-state">
+              <div class="empty-icon">🏥</div>
+              <p>請先輸入貓咪 ID 並點擊「載入」</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab 3：授權管理 ── -->
+    <div id="tab-share" class="tab-pane">
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">🔑 診所授權管理</span>
+        </div>
+        <div class="card-body">
+          <div class="info-bar">
+            授權後，診所可在「診所門戶」查看您的貓咪健康記錄，並上傳官方認證報告。
+          </div>
+          <div id="share-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;">
+            <div class="empty-state" style="padding:20px;">
+              <div class="empty-icon" style="font-size:28px;">🔑</div>
+              <p>請先載入資料</p>
+            </div>
           </div>
 
-          <div class="share-banner" aria-label="Share data with clinic">
-            <div>
-              <strong>Share with clinic</strong>
-              <div style="font-size:13px; color:#7c2d12;">
-                After you confirm sharing, partner clinics can view your latest data for a specific cat and upload a verified report.
-              </div>
-              <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; font-size:13px;">
-                <label style="display:flex; align-items:center; gap:6px;">
-                  <span>Cat ID</span>
-                  <input id="share-cat-id" type="text" style="border-radius:12px; border:1px solid #e5e7eb; padding:6px 10px; min-width:160px;" placeholder="e.g. CAT-2026-002">
-                </label>
-                <label style="display:flex; align-items:center; gap:6px;">
-                  <span>Clinic</span>
-                  <select id="share-clinic-id" style="border-radius:12px; border:1px solid #e5e7eb; padding:6px 10px; min-width:160px;">
-                    <option value="clinic-a">Clinic A</option>
-                    <option value="clinic-b">Clinic B</option>
-                    <option value="clinic-c">Clinic C</option>
+          <div style="border-top:1px solid var(--border-lt);padding-top:20px;">
+            <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text);">新增授權</h3>
+            <form id="share-form">
+              <div class="form-grid">
+                <div class="field" style="grid-column:1/-1;">
+                  <label>診所機構 ID (UUID)</label>
+                  <input id="share-org-id" type="text" placeholder="從 GET /api/organizations 取得診所 ID">
+                </div>
+                <div class="field">
+                  <label>授權狀態</label>
+                  <select id="share-allowed">
+                    <option value="true">✅ 允許查看</option>
+                    <option value="false">❌ 取消授權</option>
                   </select>
-                </label>
-              </div>
-            </div>
-            <div class="share-actions">
-              <label class="share-toggle">
-                <input type="checkbox" id="share-with-clinic">
-                Share data with clinic
-              </label>
-              <button class="mini-btn" type="button" id="share-now-btn">Confirm Share</button>
-            </div>
-          </div>
-
-          <!-- ── API 记录列表 ── -->
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <h3 style="font-size:16px;font-weight:700;">健康记录列表</h3>
-            <button id="toggle-add-btn" style="background:#ff5a76;color:#fff;border:none;border-radius:999px;padding:8px 18px;font-weight:700;cursor:pointer;">+ 添加记录</button>
-          </div>
-          <div id="owner-records-list" style="display:flex;flex-direction:column;gap:10px;">
-            <p style="color:#888;font-size:14px;">请先在上方填写猫咪 ID 并点击「加载数据」</p>
-          </div>
-
-          <!-- ── 添加记录表单 ── -->
-          <div id="add-record-section">
-            <form id="add-record-form" style="border:1px solid #e5e7eb;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;background:#fafbfc;">
-              <h3 style="font-size:16px;font-weight:700;margin:0;">添加新健康记录</h3>
-              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
-                <div class="field-row">
-                  <label for="rec-type">记录类型 *</label>
-                  <select id="rec-type" class="text-input" required>
-                    <option value="vaccine">💉 疫苗接种</option>
-                    <option value="deworming">🐛 驱虫</option>
-                    <option value="checkup">🩺 体检</option>
-                    <option value="treatment">💊 治疗</option>
-                    <option value="surgery">🔪 手术</option>
-                    <option value="other">📋 其他</option>
-                  </select>
-                </div>
-                <div class="field-row">
-                  <label for="rec-date">记录日期 *</label>
-                  <input id="rec-date" class="date-input" type="date" required>
-                </div>
-                <div class="field-row">
-                  <label for="rec-next">下次提醒日期</label>
-                  <input id="rec-next" class="date-input" type="date">
-                </div>
-                <div class="field-row">
-                  <label for="rec-weight">体重（kg）</label>
-                  <input id="rec-weight" class="text-input" type="number" step="0.1" placeholder="例：4.2">
-                </div>
-                <div class="field-row">
-                  <label for="rec-vet">医生姓名</label>
-                  <input id="rec-vet" class="text-input" type="text" placeholder="例：王医生">
-                </div>
-                <div class="field-row">
-                  <label for="rec-clinic">诊所名称</label>
-                  <input id="rec-clinic" class="text-input" type="text" placeholder="例：爱猫动物医院">
                 </div>
               </div>
-              <div class="field-row">
-                <label for="rec-desc">描述 *</label>
-                <textarea id="rec-desc" class="text-area" placeholder="例：接种狂犬疫苗第一针，反应正常" required></textarea>
-              </div>
-              <div style="display:flex;gap:10px;justify-content:flex-end;">
-                <button type="submit" class="save-btn">提交记录</button>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">設定授權</button>
               </div>
             </form>
           </div>
-
-          <!-- ── 诊所授权设置 ── -->
-          <div style="border-top:1px solid #f0f0f0;padding-top:18px;">
-            <h3 style="font-size:16px;font-weight:700;margin-bottom:12px;">诊所数据授权</h3>
-            <div id="share-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
-              <p style="color:#888;font-size:14px;">请先加载数据</p>
-            </div>
-            <form id="share-form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
-              <div class="field-row" style="flex:1;min-width:200px;">
-                <label for="share-org-id" style="font-size:13px;font-weight:600;">诊所 ID (UUID)</label>
-                <input id="share-org-id" class="text-input" type="text" placeholder="从 GET /api/organizations 获取">
-              </div>
-              <div class="field-row">
-                <label for="share-allowed" style="font-size:13px;font-weight:600;">授权状态</label>
-                <select id="share-allowed" class="text-input">
-                  <option value="true">✅ 允许查看</option>
-                  <option value="false">❌ 取消授权</option>
-                </select>
-              </div>
-              <button type="submit" class="save-btn" style="align-self:flex-end;">设置授权</button>
-            </form>
-          </div>
-
-          <div class="display-grid" id="user-display-grid" style="display:none;">
-            <article class="display-card">
-              <h3>Basic Information</h3>
-              <p>This bar contains the cat profile details maintained by the owner.</p>
-              <div class="summary-list">
-                <div class="summary-item">
-                  <strong>Cat Name</strong>
-                  <span id="user-output-name">Tiger</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Gender</strong>
-                  <span id="user-output-gender">Male</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Birthday</strong>
-                  <span id="user-output-birthday">2024-02-14</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Hobbies</strong>
-                  <span id="user-output-hobbies">Chasing feather toys, window watching</span>
-                </div>
-              </div>
-            </article>
-
-            <article class="display-card">
-              <h3>Health Record</h3>
-              <p>This bar contains the health information that the owner can update directly.</p>
-              <div class="summary-list">
-                <div class="summary-item">
-                  <strong>Spay/Neuter Status</strong>
-                  <span id="user-output-neuter">Completed</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Vaccination</strong>
-                  <span id="user-output-vaccination">Rabies Vaccine</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Allergies</strong>
-                  <span id="user-output-allergies">Grain allergy</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Recent Medical Examination Report</strong>
-                  <span><span id="user-output-date">2026-02-24</span> · <a href="#" id="user-output-report-link">Go to Report</a></span>
-                </div>
-                <div class="summary-item" style="grid-column: 1 / -1;">
-                  <strong>Owner Notes</strong>
-                  <span id="user-output-notes">Appetite normal, litter box routine stable, and no unusual behavior observed this week.</span>
-                </div>
-              </div>
-            </article>
-          </div>
-
-          <div class="editor-layout hidden-section" id="user-editor">
-            <article class="editor-card">
-              <div>
-                <h3>Basic Information</h3>
-                <p>Edit your cat's profile details such as name, gender, birthday, and favorite activities.</p>
-              </div>
-
-              <div class="field-stack">
-                <div class="field-row">
-                  <label for="user-cat-name">Cat Name</label>
-                  <input class="text-input" id="user-cat-name" type="text" value="Tiger" placeholder="Enter cat name">
-                </div>
-
-                <div class="field-row">
-                  <label for="user-cat-gender">Gender</label>
-                  <select class="text-input" id="user-cat-gender">
-                    <option value="Male" selected>Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Unknown">Unknown</option>
-                  </select>
-                </div>
-
-                <div class="field-row">
-                  <label for="user-cat-birthday">Birthday</label>
-                  <input class="date-input" id="user-cat-birthday" type="date" value="2024-02-14">
-                </div>
-
-                <div class="field-row">
-                  <label for="user-cat-hobbies">Hobbies</label>
-                  <input class="text-input" id="user-cat-hobbies" type="text" value="Chasing feather toys, window watching" placeholder="Enter hobbies">
-                </div>
-              </div>
-            </article>
-
-            <article class="editor-card">
-              <div>
-                <h3>Health Record</h3>
-                <p>Update the health information you know directly as the owner.</p>
-              </div>
-
-              <div class="field-stack">
-                <div class="field-row">
-                  <label>Spay/Neuter Status</label>
-                  <div class="choice-pills">
-                    <label><input type="radio" name="user-neuter" value="Completed" checked> Completed</label>
-                    <label><input type="radio" name="user-neuter" value="Not Yet"> Not Yet</label>
-                  </div>
-                </div>
-
-                <div class="field-row">
-                  <label for="user-vaccination">Vaccination</label>
-                  <input class="text-input" id="user-vaccination" type="text" value="Rabies Vaccine" placeholder="Enter vaccination info">
-                </div>
-
-                <div class="field-row">
-                  <label for="user-allergies">Allergies</label>
-                  <input class="text-input" id="user-allergies" type="text" value="Grain allergy" placeholder="Enter allergy info">
-                </div>
-              </div>
-            </article>
-
-            <article class="editor-card">
-              <div>
-                <h3>Recent Medical Check</h3>
-                <p>Record the date of the latest examination and keep the report link for quick reference.</p>
-              </div>
-
-              <div class="field-stack">
-                <div class="field-row">
-                  <label for="user-report-date">Recent examination date</label>
-                  <input class="date-input" id="user-report-date" type="date" value="2026-02-24">
-                </div>
-
-                <div class="field-row">
-                  <label>Medical report</label>
-                  <div class="report-row">
-                    <a class="report-link" id="user-report-link" href="#">Go to Report</a>
-                    <span class="file-pill">Self-updated</span>
-                  </div>
-                  <div class="subtle-note">Users can maintain the check date here, while the official record below remains clinic-managed.</div>
-                </div>
-              </div>
-            </article>
-
-            <article class="editor-card">
-              <div>
-                <h3>Owner Notes</h3>
-                <p>Add daily observations that are useful for long-term care but do not belong to the official clinic record.</p>
-              </div>
-
-              <div class="field-row">
-                <label for="user-owner-notes">Current condition or observations</label>
-                <textarea class="text-area" id="user-owner-notes" placeholder="Example: Appetite is normal, energy level is stable, and no unusual behavior was noticed.">Appetite normal, litter box routine stable, and no unusual behavior observed this week.</textarea>
-              </div>
-            </article>
-          </div>
-
-          <div class="panel-actions">
-            <button class="cancel-btn" id="user-edit-btn" type="button">Edit</button>
-            <button class="cancel-btn hidden-section" id="user-cancel-btn" type="button">Cancel</button>
-            <button class="upload-btn hidden-section" id="user-save-btn" type="button">Save Changes</button>
-          </div>
-
-          <div class="info-banner" id="user-banner">
-            Health information updated successfully.
-          </div>
-        </section>
+        </div>
       </div>
-    </section>
+    </div>
 
-    <section class="section" aria-label="Official health record by medical institution">
-      <div class="content">
-        <section class="panel">
-          <div class="panel-head">
-            <div>
-              <h2>Official Health Record from Medical Institution</h2>
-              <p>
-                This section is uploaded and maintained by partner clinics or veterinary institutions. Users can view the
-                latest official record here, but cannot edit or upload this information themselves.
-              </p>
-            </div>
-            <span class="status-pill">Clinic Uploaded</span>
-          </div>
-
-          <div id="clinic-records-list" style="display:flex;flex-direction:column;gap:10px;">
-            <p style="color:#888;font-size:14px;">请先在上方填写猫咪 ID 并点击「加载数据」</p>
-          </div>
-
-          <div class="info-banner" id="official-banner">
-            <div class="summary-list">
-              <div class="summary-item">
-                <strong>Cat Name</strong>
-                <span id="official-output-cat-name">Tiger</span>
-              </div>
-              <div class="summary-item">
-                <strong>Cat ID</strong>
-                <span id="official-output-cat-id">CAT-2026-002</span>
-              </div>
-              <div class="summary-item">
-                <strong>Spay/Neuter Status</strong>
-                <span id="official-output-neuter">Completed</span>
-              </div>
-              <div class="summary-item">
-                <strong>Vaccination</strong>
-                <span id="official-output-vaccination">Rabies Vaccine</span>
-              </div>
-              <div class="summary-item">
-                <strong>Allergies</strong>
-                <span id="official-output-allergies">Grain allergy</span>
-              </div>
-              <div class="summary-item">
-                <strong>Recent Medical Examination Report</strong>
-                <span><span id="official-output-date">2026-02-24</span> · <a href="#" id="official-output-report-link">Go to Report</a></span>
-              </div>
-              <div class="summary-item" style="grid-column: 1 / -1;">
-                <strong>Other Health Data</strong>
-                <span id="official-output-other">Weight stable, appetite normal, no abnormal findings in recent check.</span>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </section>
-
-    <footer><a href="index.html">Back to Main</a></footer>
-  </div>
+  </main>
 
   <script src="../js/config.js"></script>
   <script src="../js/health.js"></script>
   <script>
-    /* ── 以下是原始 localStorage 备用逻辑，已被 health.js 接管，保留供参考 ── */
-    (function () {
-      const SHARE_KEY = "catface_health_share_enabled";
-      const USER_HEALTH_KEY = "catface_health_user_record";
-      const OFFICIAL_HEALTH_KEY = "catface_health_official_record";
-
-      const userVaccination = document.getElementById("user-vaccination");
-      const userAllergies = document.getElementById("user-allergies");
-      const userReportDate = document.getElementById("user-report-date");
-      const userOwnerNotes = document.getElementById("user-owner-notes");
-      const userCatName = document.getElementById("user-cat-name");
-      const userCatGender = document.getElementById("user-cat-gender");
-      const userCatBirthday = document.getElementById("user-cat-birthday");
-      const userCatHobbies = document.getElementById("user-cat-hobbies");
-      const userDisplayGrid = document.getElementById("user-display-grid");
-      const userEditor = document.getElementById("user-editor");
-      const userEditBtn = document.getElementById("user-edit-btn");
-      const userCancelBtn = document.getElementById("user-cancel-btn");
-      const userSaveBtn = document.getElementById("user-save-btn");
-      const userBanner = document.getElementById("user-banner");
-
-      const userOutputName = document.getElementById("user-output-name");
-      const userOutputGender = document.getElementById("user-output-gender");
-      const userOutputBirthday = document.getElementById("user-output-birthday");
-      const userOutputHobbies = document.getElementById("user-output-hobbies");
-      const userOutputNeuter = document.getElementById("user-output-neuter");
-      const userOutputVaccination = document.getElementById("user-output-vaccination");
-      const userOutputAllergies = document.getElementById("user-output-allergies");
-      const userOutputDate = document.getElementById("user-output-date");
-      const userOutputNotes = document.getElementById("user-output-notes");
-
-      const shareToggle = document.getElementById("share-with-clinic");
-      const shareNowBtn = document.getElementById("share-now-btn");
-      const shareCatIdInput = document.getElementById("share-cat-id");
-      const shareClinicIdSelect = document.getElementById("share-clinic-id");
-
-      const officialOutputCatName = document.getElementById("official-output-cat-name");
-      const officialOutputCatId = document.getElementById("official-output-cat-id");
-      const officialOutputNeuter = document.getElementById("official-output-neuter");
-      const officialOutputVaccination = document.getElementById("official-output-vaccination");
-      const officialOutputAllergies = document.getElementById("official-output-allergies");
-      const officialOutputDate = document.getElementById("official-output-date");
-      const officialOutputOther = document.getElementById("official-output-other");
-      const officialOutputReportLink = document.getElementById("official-output-report-link");
-
-      function safeRead(key) {
-        try {
-          const raw = window.localStorage.getItem(key);
-          return raw ? JSON.parse(raw) : null;
-        } catch (e) {
-          return null;
-        }
-      }
-      function safeWrite(key, value) {
-        try {
-          window.localStorage.setItem(key, JSON.stringify(value));
-        } catch (e) {}
-      }
-      function safeReadBool(key, fallback) {
-        try {
-          const raw = window.localStorage.getItem(key);
-          if (raw == null) return fallback;
-          return raw === "1";
-        } catch (e) {
-          return fallback;
-        }
-      }
-      function safeWriteBool(key, value) {
-        try {
-          window.localStorage.setItem(key, value ? "1" : "0");
-        } catch (e) {}
-      }
-      const userState = {
-        catId: "CAT-2026-002",
-        clinicId: "",
-        name: "Tiger",
-        gender: "Male",
-        birthday: "2024-02-14",
-        hobbies: "Chasing feather toys, window watching",
-        neuter: "Completed",
-        vaccination: "Rabies Vaccine",
-        allergies: "Grain allergy",
-        reportDate: "2026-02-24",
-        ownerNotes: "Appetite normal, litter box routine stable, and no unusual behavior observed this week."
-      };
-
-      // Load user health state from localStorage (if exists)
-      const storedUser = safeRead(USER_HEALTH_KEY);
-      if (storedUser && typeof storedUser === "object") {
-        Object.assign(userState, storedUser);
-      }
-
-      function getRadioValue(name) {
-        const checked = document.querySelector('input[name="' + name + '"]:checked');
-        return checked ? checked.value : "";
-      }
-
-      function renderUserState() {
-        if (shareCatIdInput) shareCatIdInput.value = userState.catId || "";
-        if (shareClinicIdSelect && userState.clinicId) {
-          shareClinicIdSelect.value = userState.clinicId;
-        }
-        userOutputName.textContent = userState.name || "Not specified";
-        userOutputGender.textContent = userState.gender || "Not specified";
-        userOutputBirthday.textContent = userState.birthday || "Not specified";
-        userOutputHobbies.textContent = userState.hobbies || "Not specified";
-        userOutputNeuter.textContent = userState.neuter || "Not specified";
-        userOutputVaccination.textContent = userState.vaccination || "Not specified";
-        userOutputAllergies.textContent = userState.allergies || "Not specified";
-        userOutputDate.textContent = userState.reportDate || "Not selected";
-        userOutputNotes.textContent = userState.ownerNotes || "No owner notes added.";
-
-        userCatName.value = userState.name;
-        userCatGender.value = userState.gender;
-        userCatBirthday.value = userState.birthday;
-        userCatHobbies.value = userState.hobbies;
-        const neuterInput = document.querySelector('input[name="user-neuter"][value="' + userState.neuter + '"]');
-        if (neuterInput) neuterInput.checked = true;
-        userVaccination.value = userState.vaccination;
-        userAllergies.value = userState.allergies;
-        userReportDate.value = userState.reportDate;
-        userOwnerNotes.value = userState.ownerNotes;
-      }
-
-      function renderOfficialFromStorage() {
-        const official = safeRead(OFFICIAL_HEALTH_KEY);
-        if (!official || typeof official !== "object") return;
-        if (officialOutputCatName && official.catName) officialOutputCatName.textContent = official.catName;
-        if (officialOutputCatId && official.catId) officialOutputCatId.textContent = official.catId;
-        if (officialOutputNeuter && official.neuter) officialOutputNeuter.textContent = official.neuter;
-        if (officialOutputVaccination && official.vaccination) officialOutputVaccination.textContent = official.vaccination;
-        if (officialOutputAllergies && official.allergies) officialOutputAllergies.textContent = official.allergies;
-        if (officialOutputDate && official.reportDate) officialOutputDate.textContent = official.reportDate;
-        if (officialOutputOther && official.other) officialOutputOther.textContent = official.other;
-        if (officialOutputReportLink && official.reportUrl) officialOutputReportLink.href = official.reportUrl;
-      }
-
-      function setUserEditMode(isEditing) {
-        userDisplayGrid.classList.toggle("hidden-section", isEditing);
-        userEditor.classList.toggle("show", isEditing);
-        userEditBtn.classList.toggle("hidden-section", isEditing);
-        userCancelBtn.classList.toggle("show", isEditing);
-        userSaveBtn.classList.toggle("show", isEditing);
-      }
-
-      userEditBtn.addEventListener("click", function () {
-        userBanner.classList.remove("show");
-        renderUserState();
-        setUserEditMode(true);
-      });
-
-      userCancelBtn.addEventListener("click", function () {
-        renderUserState();
-        userBanner.classList.remove("show");
-        setUserEditMode(false);
-      });
-
-      userSaveBtn.addEventListener("click", function () {
-        userState.name = userCatName.value.trim() || "Not specified";
-        userState.gender = userCatGender.value || "Not specified";
-        userState.birthday = userCatBirthday.value || "Not specified";
-        userState.hobbies = userCatHobbies.value.trim() || "Not specified";
-        userState.neuter = getRadioValue("user-neuter") || "Not specified";
-        userState.vaccination = userVaccination.value.trim() || "Not specified";
-        userState.allergies = userAllergies.value.trim() || "Not specified";
-        userState.reportDate = userReportDate.value || "Not selected";
-        userState.ownerNotes = userOwnerNotes.value.trim() || "No owner notes added.";
-        safeWrite(USER_HEALTH_KEY, userState);
-        renderUserState();
-        userBanner.classList.add("show");
-        setUserEditMode(false);
-      });
-
-      // Share to clinic controls
-      const initialShare = safeReadBool(SHARE_KEY, false);
-      if (shareToggle) shareToggle.checked = initialShare;
-
-      if (shareToggle) {
-        shareToggle.addEventListener("change", function () {
-          safeWriteBool(SHARE_KEY, shareToggle.checked);
-        });
-      }
-
-      if (shareNowBtn) {
-        shareNowBtn.addEventListener("click", function () {
-          if (!shareToggle || !shareToggle.checked) {
-            alert("Please enable 'Share data with clinic' first.");
-            return;
-          }
-          const catId = shareCatIdInput ? shareCatIdInput.value.trim() : "";
-          const clinicId = shareClinicIdSelect ? shareClinicIdSelect.value : "";
-          if (!catId) {
-            alert("Please enter Cat ID before sharing.");
-            if (shareCatIdInput) shareCatIdInput.focus();
-            return;
-          }
-          if (!clinicId) {
-            alert("Please select which clinic can access this data.");
-            if (shareClinicIdSelect) shareClinicIdSelect.focus();
-            return;
-          }
-          userState.catId = catId;
-          userState.clinicId = clinicId;
-          safeWrite(USER_HEALTH_KEY, userState);
-          alert("Shared successfully. Clinics can now view the latest data for this cat.");
-        });
-      }
-
-      renderUserState();
-      setUserEditMode(false);
-      document.getElementById("official-banner").classList.add("show");
-      renderOfficialFromStorage();
-    })();
+    function switchTab(name) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      const idx = ['records', 'clinic', 'share'].indexOf(name);
+      document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+    }
   </script>
 </body>
 </html>

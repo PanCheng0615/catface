@@ -41,7 +41,7 @@ async function getHealthRecords(req, res) {
 async function createOwnerHealthRecord(req, res) {
   try {
     const { catId } = req.params;
-    const { user_id, record_type, description, date, next_due_date, weight_kg, vet_name, clinic_name } = req.body;
+    const { user_id, record_type, description, date, next_due_date, weight_kg, vet_name, clinic_name, file_url } = req.body;
 
     if (!user_id || !record_type || !description || !date) {
       return res.status(422).json({
@@ -69,7 +69,8 @@ async function createOwnerHealthRecord(req, res) {
         next_due_date: next_due_date ? new Date(next_due_date) : null,
         weight_kg:     weight_kg     ? parseFloat(weight_kg)  : null,
         vet_name:      vet_name      || null,
-        clinic_name:   clinic_name   || null
+        clinic_name:   clinic_name   || null,
+        file_url:      file_url      || null
       }
     });
 
