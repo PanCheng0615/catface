@@ -480,8 +480,9 @@
   <!-- 主内容：分类 + 猫猫帖子 / Main content -->
   <main class="main">
     <nav class="tabs" aria-label="Content categories">
-      <a href="/pages/cat-facebook.html" class="post-cta">Post</a>
       <a href="#" class="current">Recommended</a>
+      <a href="/pages/cat-facebook.html?feed=followed" id="gotoFollowedFeed">Followed</a>
+      <a href="/pages/cat-facebook.html?compose=1" class="post-cta" id="gotoCreatePost">Create post</a>
     </nav>
 
     <section class="feed" id="recommendFeed" aria-label="Cat posts">
@@ -640,7 +641,7 @@
   <section class="post-overlay" id="postDetailOverlay" aria-label="Post detail dialog">
     <div class="post-modal" role="dialog" aria-modal="true">
       <div class="post-modal-image">
-        <img id="detailImage" src="" alt="">
+        <img id="detailImage" src="about:blank" alt="">
       </div>
       <div class="post-modal-right">
         <div class="post-modal-header">
@@ -671,6 +672,26 @@
 
   <script src="../js/config.js"></script>
   <script src="../js/recommend.js"></script>
+  <script>
+    (function () {
+      var gotoFollowedFeed = document.getElementById('gotoFollowedFeed');
+      if (gotoFollowedFeed) {
+        gotoFollowedFeed.addEventListener('click', function () {
+          try {
+            window.localStorage.setItem('catface_preferred_feed', 'followed');
+          } catch (e) {}
+        });
+      }
+      var gotoCreatePost = document.getElementById('gotoCreatePost');
+      if (gotoCreatePost) {
+        gotoCreatePost.addEventListener('click', function () {
+          try {
+            window.localStorage.setItem('catface_open_create_modal', '1');
+          } catch (e) {}
+        });
+      }
+    })();
+  </script>
   <script>
     // 简单登录状态管理：使用 localStorage 记录“已登录”用户，并更新侧边栏按钮
     (function () {

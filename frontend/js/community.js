@@ -1,124 +1,51 @@
 (function () {
-  const API_BASE = typeof API_BASE_URL !== "undefined" ? API_BASE_URL : "";
-  const getAuth = typeof getAuthHeaders === "function" ? getAuthHeaders : function () { return { "Content-Type": "application/json" }; };
-
-  const initialPosts = [
-    {
-      id: 1,
-      author: "Luna",
-      authorInitial: "L",
-      followed: false,
-      image:
-        "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=600&h=800&q=80",
-      text:
-        "Hi! I'm Luna 🐱 My human took me out today and I got to sunbathe! So warm and cozy!",
-      likes: 23000,
-      liked: false,
-      comments: [
-        { author: "Max", text: "Luna is so cute!" },
-        { author: "Ginger", text: "Sunbathing queen ☀️" }
-      ],
-      time: "2h ago"
-    },
-    {
-      id: 2,
-      author: "Max",
-      authorInitial: "M",
-      followed: true,
-      image:
-        "https://images.unsplash.com/photo-1574158622682-e40e69881006?auto=format&fit=crop&w=600&h=800&q=80",
-      text:
-        "Meow! I'm Max the British Shorthair 🐾 Premium kibble only, please!",
-      likes: 67000,
-      liked: true,
-      comments: [{ author: "Luna", text: "Share your diet plan, please!" }],
-      time: "5h ago"
-    },
-    {
-      id: 3,
-      author: "Ginger",
-      authorInitial: "G",
-      followed: false,
-      image:
-        "https://images.unsplash.com/photo-1592194996308-7b43878e84a6?auto=format&fit=crop&w=600&h=800&q=80",
-      text:
-        "Hi humans! I'm Ginger 🧡 I'm 1 year old and super friendly! Looking for my forever home.",
-      likes: 11000,
-      liked: false,
-      comments: [],
-      time: "1d ago"
-    },
-    {
-      id: 4,
-      author: "Whiskers",
-      authorInitial: "W",
-      followed: false,
-      image:
-        "https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=600&h=800&q=80",
-      text: "Just got my checkup! 🏥 My human says I'm super healthy!",
-      likes: 82000,
-      liked: false,
-      comments: [{ author: "Charlie", text: "Health is the best gift!" }],
-      time: "3d ago"
-    }
-  ];
-
   let posts = [];
   let currentPostId = null;
+  let currentFeed = "recommended";
+  let feedLoadState = "loading";
+  let latestFeedRequestId = 0;
 
-  function fileToDataUrl(file) {
-    return new Promise(function (resolve, reject) {
-      const reader = new FileReader();
-      reader.onload = function (ev) {
-        resolve(ev.target.result);
-      };
-      reader.onerror = function () {
-        reject(new Error("read file failed"));
-      };
-      reader.readAsDataURL(file);
-    });
+  function getCurrentUserId() {
+    try {
+      const raw = localStorage.getItem("catface_user");
+      if (!raw) return null;
+      const u = JSON.parse(raw);
+      return u.id || null;
+    } catch (e) {
+      return null;
+    }
   }
 
   function requireLogin() {
-    if (typeof getToken === "function" && getToken()) return true;
+    if (getToken()) return true;
     alert("Please log in first.");
     window.location.href = "/pages/log-in.html";
     return false;
   }
 
-  function loadPostsFromApi() {
-    if (!API_BASE) {
-      posts = initialPosts.slice();
-      renderFeed();
-      return;
-    }
-    fetch(API_BASE + "/community/posts", { headers: getAuth() })
-      .then(function (res) { return res.json(); })
-      .then(function (result) {
-        if (result.success && Array.isArray(result.data)) {
-          posts = result.data.map(function (p) {
-            return {
-              id: p.id,
-              author: p.author || "User",
-              authorInitial: p.authorInitial || (p.author ? p.author[0] : "U"),
-              followed: p.followed || false,
-              image: p.image || "",
-              text: p.text || "",
-              likes: typeof p.likes === "number" ? p.likes : (p.likes ? p.likes.length : 0),
-              liked: p.liked || false,
-              comments: Array.isArray(p.comments) ? p.comments : [],
-              time: p.time || ""
-            };
-          });
-        } else {
-          posts = initialPosts.slice();
-        }
-        renderFeed();
-      })
-      .catch(function () {
-        posts = initialPosts.slice();
-        renderFeed();
-      });
+  function escapeHtml(text) {
+    return String(text || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function setComposeInUrl(isOpen) {
+    const params = new URLSearchParams(window.location.search);
+    if (isOpen) params.set("compose", "1");
+    else params.delete("compose");
+    const next = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+    window.history.replaceState(null, "", next);
+  }
+
+  function syncUrlForMode(mode) {
+    const params = new URLSearchParams(window.location.search);
+    if (mode === "followed") params.set("feed", "followed");
+    else params.delete("feed");
+    const next = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
+    window.history.replaceState(null, "", next);
   }
 
   const feedEl = document.getElementById("feed");
@@ -143,76 +70,30 @@
   const commentsList = document.getElementById("commentsList");
   const commentInput = document.getElementById("commentInput");
   const commentSubmit = document.getElementById("commentSubmit");
+  const detailAuthorRow = document.getElementById("detailAuthorRow") || document.querySelector(".post-modal-author");
 
   function formatLikes(num) {
-    if (num >= 10000) {
-      return (num / 1000).toFixed(0) + "k";
-    }
+    if (num >= 10000) return (num / 1000).toFixed(0) + "k";
     return String(num);
-  }
-
-  function renderFeed() {
-    if (!feedEl) return;
-    feedEl.innerHTML = "";
-    posts.forEach(function (post) {
-      const card = document.createElement("article");
-      card.className = "post-card";
-      card.dataset.id = post.id;
-      card.innerHTML =
-        '<div class="post-image-wrap">' +
-        '<img class="post-image" src="' +
-        post.image +
-        '" alt="Post image of cat">' +
-        "</div>" +
-        '<div class="post-body">' +
-        '<h3 class="post-title">' +
-        post.text.replace(/</g, "&lt;") +
-        "</h3>" +
-        '<div class="post-footer">' +
-        '<div class="post-author">' +
-        '<div class="post-author-avatar">' +
-        (post.authorInitial || post.author[0] || "C") +
-        "</div>" +
-        "<span>" +
-        post.author +
-        "</span>" +
-        "</div>" +
-        '<div class="post-stats">' +
-        '<div class="post-stat"><span>♡</span><span>' +
-        formatLikes(post.likes) +
-        "</span></div>" +
-        '<div class="post-stat"><span>💬</span><span>' +
-        post.comments.length +
-        "</span></div>" +
-        "</div>" +
-        "</div>" +
-        "</div>";
-      card.addEventListener("click", function () {
-        openPostDetail(post.id);
-      });
-      feedEl.appendChild(card);
-    });
   }
 
   function openCreate() {
     createOverlay.classList.add("is-open");
-  }
-  function closeCreate() {
-    createOverlay.classList.remove("is-open");
+    setComposeInUrl(true);
   }
 
-  document
-    .getElementById("openCreateFromTop")
-    .addEventListener("click", openCreate);
-  document
-    .getElementById("openCreateFromQuick")
-    .addEventListener("click", openCreate);
-  Array.prototype.forEach.call(
-    document.querySelectorAll("[data-close-create]"),
-    function (btn) {
-      btn.addEventListener("click", closeCreate);
-    }
-  );
+  function closeCreate() {
+    createOverlay.classList.remove("is-open");
+    setComposeInUrl(false);
+  }
+
+  const openCreateTop = document.getElementById("btnCreatePost") || document.getElementById("openCreateFromTop");
+  if (openCreateTop) openCreateTop.addEventListener("click", openCreate);
+  const openCreateQuick = document.getElementById("openCreateFromQuick");
+  if (openCreateQuick) openCreateQuick.addEventListener("click", openCreate);
+  Array.prototype.forEach.call(document.querySelectorAll("[data-close-create]"), function (btn) {
+    btn.addEventListener("click", closeCreate);
+  });
   createOverlay.addEventListener("click", function (e) {
     if (e.target === createOverlay) closeCreate();
   });
@@ -223,13 +104,11 @@
     if (file) {
       const reader = new FileReader();
       reader.onload = function (ev) {
-        createPreview.innerHTML =
-          '<img src="' + ev.target.result + '" alt="Preview">';
+        createPreview.innerHTML = '<img src="' + ev.target.result + '" alt="Preview">';
       };
       reader.readAsDataURL(file);
     } else {
-      createPreview.innerHTML =
-        "<span>Upload a cat photo to preview here</span>";
+      createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
     }
     createSubmit.disabled = !file || !text;
   });
@@ -245,104 +124,52 @@
     const file = createImageInput.files[0];
     const text = createTextInput.value.trim();
     if (!file || !text) return;
-    if (API_BASE) {
-      if (!requireLogin()) return;
-      fileToDataUrl(file)
-        .then(function (localDataUrl) {
-          return fetch(API_BASE + "/community/upload", {
+    if (!requireLogin()) return;
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const dataUrl = ev.target.result;
+      fetch(API_BASE_URL + "/community/upload", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ imageDataUrl: dataUrl })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (uploadResult) {
+          const imageUrl = uploadResult.success && uploadResult.data && uploadResult.data.url
+            ? uploadResult.data.url
+            : dataUrl;
+          return fetch(API_BASE_URL + "/community/posts", {
             method: "POST",
-            headers: getAuth(),
-            body: JSON.stringify({ imageDataUrl: localDataUrl })
-          })
-            .then(function (res) { return res.json(); })
-            .then(function (uploadResult) {
-              var imageUrl = localDataUrl;
-              if (uploadResult.success && uploadResult.data && uploadResult.data.url) {
-                imageUrl = uploadResult.data.url;
-              }
-              return fetch(API_BASE + "/community/posts", {
-                method: "POST",
-                headers: getAuth(),
-                body: JSON.stringify({ content: text, imageUrl: imageUrl })
-              });
-            })
-            .catch(function () {
-              // Upload API failed: keep development flow by using local data URL.
-              return fetch(API_BASE + "/community/posts", {
-                method: "POST",
-                headers: getAuth(),
-                body: JSON.stringify({ content: text, imageUrl: localDataUrl })
-              });
-            });
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ content: text, image_url: imageUrl })
+          });
         })
         .then(function (res) { return res.json(); })
         .then(function (result) {
+          if (!result.success || !result.data) {
+            alert(result.message || "Post failed");
+            return;
+          }
           createImageInput.value = "";
           createTextInput.value = "";
           createSubmit.disabled = true;
-          createPreview.innerHTML =
-            "<span>Upload a cat photo to preview here</span>";
+          createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
           closeCreate();
-          if (result.success && result.data) {
-            posts.unshift({
-              id: result.data.id,
-              author: result.data.author || "You",
-              authorInitial: result.data.authorInitial || "U",
-              followed: true,
-              image: result.data.image || "",
-              text: result.data.text || text,
-              likes: 0,
-              liked: false,
-              comments: [],
-              time: result.data.time || "Just now"
-            });
-            renderFeed();
-            openPostDetail(result.data.id);
-          } else {
-            alert(result.message || "发布失败");
-          }
+          switchCommunityView("recommended");
         })
         .catch(function () {
-          alert("网络错误，请稍后重试");
+          alert("Network error, please try again.");
         });
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = function (ev) {
-      const newPost = {
-        id: Date.now(),
-        author: "You",
-        authorInitial: "U",
-        followed: true,
-        image: ev.target.result,
-        text: text,
-        likes: 0,
-        liked: false,
-        comments: [],
-        time: "Just now"
-      };
-      posts.unshift(newPost);
-      renderFeed();
-      createImageInput.value = "";
-      createTextInput.value = "";
-      createSubmit.disabled = true;
-      createPreview.innerHTML =
-        "<span>Upload a cat photo to preview here</span>";
-      closeCreate();
-      openPostDetail(newPost.id);
     };
     reader.readAsDataURL(file);
   });
 
   function openPostDetail(id) {
-    const post = posts.find(function (p) {
-      return p.id === id;
-    });
+    const post = posts.find(function (p) { return p.id === id; });
     if (!post) return;
     currentPostId = id;
-    postDetailImage.src = post.image;
-    detailAuthorAvatar.textContent =
-      post.authorInitial || post.author[0] || "C";
+    postDetailImage.src = post.image || feedPlaceholderImage();
+    detailAuthorAvatar.textContent = post.authorInitial || post.author[0] || "C";
     detailAuthorName.textContent = post.author;
     detailTime.textContent = post.time;
     detailText.textContent = post.text;
@@ -350,6 +177,26 @@
     updateLikeButton(post);
     renderComments(post);
     postOverlay.classList.add("is-open");
+    refreshCommentsFromApi(post);
+  }
+
+  function refreshCommentsFromApi(post) {
+    if (!post || !post.fromApi || !post.id) return;
+    fetch(API_BASE_URL + "/community/posts/" + encodeURIComponent(post.id) + "/comments", {
+      method: "GET",
+      headers: getAuthHeaders()
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (result) {
+        if (!result.success || !Array.isArray(result.data)) return;
+        post.comments = result.data;
+        if (currentPostId === post.id) {
+          renderComments(post);
+          updateLikeButton(post);
+          renderFeed();
+        }
+      })
+      .catch(function () {});
   }
 
   function closePostDetail() {
@@ -357,14 +204,32 @@
     currentPostId = null;
   }
 
-  document
-    .getElementById("closePostOverlay")
-    .addEventListener("click", closePostDetail);
+  document.getElementById("closePostOverlay").addEventListener("click", closePostDetail);
   postOverlay.addEventListener("click", function (e) {
     if (e.target === postOverlay) closePostDetail();
   });
 
+  if (detailAuthorRow) {
+    detailAuthorRow.addEventListener("click", function (e) {
+      e.stopPropagation();
+      openProfile();
+    });
+    detailAuthorRow.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        e.stopPropagation();
+        openProfile();
+      }
+    });
+  }
+
   function updateFollowButton(post) {
+    const selfId = getCurrentUserId();
+    if (post.authorId && selfId && post.authorId === selfId) {
+      detailFollowBtn.style.display = "none";
+      return;
+    }
+    detailFollowBtn.style.display = "";
     if (post.followed) {
       detailFollowBtn.textContent = "Following";
       detailFollowBtn.classList.add("is-following");
@@ -374,14 +239,39 @@
     }
   }
 
-  detailFollowBtn.addEventListener("click", function () {
+  detailFollowBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
     if (currentPostId == null) return;
-    const post = posts.find(function (p) {
-      return p.id === currentPostId;
-    });
+    const post = posts.find(function (p) { return p.id === currentPostId; });
     if (!post) return;
-    post.followed = !post.followed;
-    updateFollowButton(post);
+    if (!post.authorId) {
+      alert("This author cannot be followed yet.");
+      return;
+    }
+    if (!requireLogin()) return;
+    fetch(API_BASE_URL + "/users/" + encodeURIComponent(post.authorId) + "/follow", {
+      method: "POST",
+      headers: getAuthHeaders()
+    })
+      .then(function (res) {
+        if (res.status === 401) {
+          window.location.href = "/pages/log-in.html";
+          return null;
+        }
+        return res.json();
+      })
+      .then(function (result) {
+        if (!result || !result.success || !result.data) return;
+        const on = !!result.data.following;
+        posts.forEach(function (p) {
+          if (p.authorId === post.authorId) p.followed = on;
+        });
+        updateFollowButton(post);
+        renderFeed();
+      })
+      .catch(function () {
+        alert("Network error, please try again.");
+      });
   });
 
   function updateLikeButton(post) {
@@ -389,36 +279,33 @@
     detailLikeText.textContent = post.liked ? "Liked" : "Like";
     detailLikeBtn.classList.toggle("is-liked", post.liked);
     detailLikesCount.textContent = post.likes + " likes";
-    detailCommentsCount.textContent =
-      post.comments.length + " comments";
+    detailCommentsCount.textContent = post.comments.length + " comments";
   }
 
   detailLikeBtn.addEventListener("click", function () {
     if (currentPostId == null) return;
-    const post = posts.find(function (p) {
-      return p.id === currentPostId;
-    });
+    const post = posts.find(function (p) { return p.id === currentPostId; });
     if (!post) return;
-    if (!API_BASE) return;
     if (!requireLogin()) return;
-    fetch(API_BASE + "/community/posts/" + post.id + "/like", {
+    fetch(API_BASE_URL + "/community/posts/" + encodeURIComponent(post.id) + "/like", {
       method: "POST",
-      headers: getAuth()
+      headers: getAuthHeaders()
     })
       .then(function (res) { return res.json(); })
       .then(function (result) {
         if (!result.success || !result.data) {
-          alert(result.message || "点赞失败");
+          alert(result.message || "Like failed");
           return;
         }
         post.liked = !!result.data.liked;
-        post.likes += post.liked ? 1 : -1;
-        if (post.likes < 0) post.likes = 0;
+        post.likes = typeof result.data.likes === "number"
+          ? result.data.likes
+          : Math.max(0, post.likes + (post.liked ? 1 : -1));
         updateLikeButton(post);
         renderFeed();
       })
       .catch(function () {
-        alert("网络错误，请稍后重试");
+        alert("Network error, please try again.");
       });
   });
 
@@ -436,37 +323,33 @@
     post.comments.forEach(function (c) {
       const item = document.createElement("div");
       item.className = "comment-item";
-      item.innerHTML =
-        '<span class="comment-author">' +
-        (c.author || "User") +
-        ":</span>" +
-        "<span>" +
-        String(c.text || "").replace(/</g, "&lt;") +
-        "</span>";
+      const authorSpan = document.createElement("span");
+      authorSpan.className = "comment-author";
+      authorSpan.textContent = (c.author || "User") + ":";
+      const textSpan = document.createElement("span");
+      textSpan.textContent = String(c.text || "");
+      item.appendChild(authorSpan);
+      item.appendChild(textSpan);
       commentsList.appendChild(item);
     });
-    detailCommentsCount.textContent =
-      post.comments.length + " comments";
+    detailCommentsCount.textContent = post.comments.length + " comments";
   }
 
   function addComment() {
     const text = commentInput.value.trim();
     if (!text || currentPostId == null) return;
-    const post = posts.find(function (p) {
-      return p.id === currentPostId;
-    });
+    const post = posts.find(function (p) { return p.id === currentPostId; });
     if (!post) return;
-    if (!API_BASE) return;
     if (!requireLogin()) return;
-    fetch(API_BASE + "/community/posts/" + post.id + "/comments", {
+    fetch(API_BASE_URL + "/community/posts/" + encodeURIComponent(post.id) + "/comments", {
       method: "POST",
-      headers: getAuth(),
+      headers: getAuthHeaders(),
       body: JSON.stringify({ content: text })
     })
       .then(function (res) { return res.json(); })
       .then(function (result) {
         if (!result.success || !result.data) {
-          alert(result.message || "评论失败");
+          alert(result.message || "Comment failed");
           return;
         }
         post.comments.push({
@@ -479,7 +362,7 @@
         renderFeed();
       })
       .catch(function () {
-        alert("网络错误，请稍后重试");
+        alert("Network error, please try again.");
       });
   }
 
@@ -491,12 +374,17 @@
     }
   });
 
-  renderFeed();
-
   function openProfile(author) {
+    const post = posts.find(function (p) { return p.id === currentPostId; });
+    if (!author && post && post.author) author = post.author;
     if (!author) author = "Cat Lover";
-    window.location.href =
-      "cat-profile.html?author=" + encodeURIComponent(author);
+    let query = "author=" + encodeURIComponent(author);
+    if (post && post.authorId) query += "&authorId=" + encodeURIComponent(post.authorId);
+    try {
+      if (post && post.authorId) window.localStorage.setItem("catface_last_author_id", String(post.authorId));
+      if (author) window.localStorage.setItem("catface_last_author_name", String(author));
+    } catch (e) {}
+    window.location.href = "/pages/cat-profile.html?" + query;
   }
 
   function attachAuthorClick(card, post) {
@@ -505,55 +393,196 @@
     authorEl.style.cursor = "pointer";
     authorEl.addEventListener("click", function (e) {
       e.stopPropagation();
-      openProfile(post.author);
+      let query = "author=" + encodeURIComponent(post.author || "Cat Lover");
+      if (post.authorId) query += "&authorId=" + encodeURIComponent(post.authorId);
+      try {
+        if (post.authorId) window.localStorage.setItem("catface_last_author_id", String(post.authorId));
+        if (post.author) window.localStorage.setItem("catface_last_author_name", String(post.author));
+      } catch (e) {}
+      window.location.href = "/pages/cat-profile.html?" + query;
     });
   }
 
-  function enhancedRenderFeed() {
-    if (!feedEl) return;
+  function feedPlaceholderImage() {
+    return "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=600&h=800&q=80";
+  }
+
+  function renderFeed() {
     feedEl.innerHTML = "";
+    if (feedLoadState === "loading") {
+      feedEl.innerHTML = '<div class="feed-status">Loading posts...</div>';
+      return;
+    }
+    if (feedLoadState === "error") {
+      feedEl.innerHTML = '<div class="feed-empty">Could not load posts. Check backend service.</div>';
+      return;
+    }
+    if (!posts.length) {
+      const emptyMsg = currentFeed === "followed"
+        ? (!getToken()
+            ? "Log in to see posts from creators you follow."
+            : "No posts here yet. Follow someone from Recommended, then check back.")
+        : "No community posts yet.";
+      feedEl.innerHTML = '<div class="feed-empty">' + emptyMsg + "</div>";
+      return;
+    }
     posts.forEach(function (post) {
       const card = document.createElement("article");
       card.className = "post-card";
       card.dataset.id = post.id;
+      const imgSrc = post.image ? post.image : feedPlaceholderImage();
+      const safeAuthor = post.author || "User";
+      const safeAuthorInitial = post.authorInitial || safeAuthor[0] || "U";
       card.innerHTML =
         '<div class="post-image-wrap">' +
-        '<img class="post-image" src="' +
-        post.image +
-        '" alt="Post image of cat">' +
+        '<img class="post-image" src="' + escapeHtml(imgSrc) + '" alt="Post image of cat">' +
         "</div>" +
         '<div class="post-body">' +
-        '<h3 class="post-title">' +
-        post.text.replace(/</g, "&lt;") +
-        "</h3>" +
+        '<h3 class="post-title">' + escapeHtml(post.text || "") + "</h3>" +
         '<div class="post-footer">' +
         '<div class="post-author">' +
-        '<div class="post-author-avatar">' +
-        (post.authorInitial || post.author[0] || "C") +
-        "</div>" +
-        "<span>" +
-        post.author +
-        "</span>" +
+        '<div class="post-author-avatar">' + escapeHtml(safeAuthorInitial) + "</div>" +
+        "<span>" + escapeHtml(safeAuthor) + "</span>" +
         "</div>" +
         '<div class="post-stats">' +
-        '<div class="post-stat"><span>♡</span><span>' +
-        formatLikes(post.likes) +
-        "</span></div>" +
-        '<div class="post-stat"><span>💬</span><span>' +
-        post.comments.length +
-        "</span></div>" +
+        '<div class="post-stat"><span>♡</span><span>' + formatLikes(post.likes) + "</span></div>" +
+        '<div class="post-stat"><span>💬</span><span>' + post.comments.length + "</span></div>" +
         "</div>" +
         "</div>" +
         "</div>";
-      card.addEventListener("click", function () {
-        openPostDetail(post.id);
-      });
+      card.addEventListener("click", function () { openPostDetail(post.id); });
       attachAuthorClick(card, post);
       feedEl.appendChild(card);
     });
   }
 
-  renderFeed = enhancedRenderFeed;
-  if (feedEl) loadPostsFromApi();
+  function updateTabStyles(mode) {
+    document.querySelectorAll(".feed-nav [data-feed]").forEach(function (b) {
+      b.classList.toggle("is-active", b.getAttribute("data-feed") === mode);
+    });
+  }
+
+  function fetchBrowseFeed(feed) {
+    closeCreate();
+    currentFeed = feed;
+    feedLoadState = "loading";
+    renderFeed();
+    latestFeedRequestId += 1;
+    const requestId = latestFeedRequestId;
+    const q = feed === "followed" ? "followed" : "recommended";
+
+    if (feed === "followed" && !getToken()) {
+      feedLoadState = "ok";
+      posts = [];
+      renderFeed();
+      return;
+    }
+
+    fetch(API_BASE_URL + "/community/posts?feed=" + encodeURIComponent(q), {
+      method: "GET",
+      headers: getAuthHeaders()
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (result) {
+        if (requestId !== latestFeedRequestId || currentFeed !== feed) return;
+        if (!result.success || !Array.isArray(result.data)) {
+          feedLoadState = "error";
+          posts = [];
+          renderFeed();
+          return;
+        }
+        let mappedPosts = result.data.map(function (p) {
+          return {
+            id: p.id,
+            author: p.author || "User",
+            authorId: p.authorId || null,
+            authorInitial: p.authorInitial || "U",
+            fromApi: true,
+            followed: !!p.followed,
+            image: p.image || "",
+            text: p.text || "",
+            likes: typeof p.likes === "number" ? p.likes : 0,
+            liked: !!p.liked,
+            comments: Array.isArray(p.comments) ? p.comments : [],
+            time: p.time || "Just now"
+          };
+        });
+
+        if (feed === "followed") {
+          mappedPosts = mappedPosts.filter(function (p) {
+            return !!p.authorId && !!p.followed;
+          });
+          mappedPosts.forEach(function (p) { p.followed = true; });
+        }
+
+        feedLoadState = "ok";
+        posts = mappedPosts;
+        renderFeed();
+      })
+      .catch(function () {
+        if (requestId !== latestFeedRequestId || currentFeed !== feed) return;
+        feedLoadState = "error";
+        posts = [];
+        renderFeed();
+      });
+  }
+
+  function switchCommunityView(mode) {
+    syncUrlForMode(mode);
+    updateTabStyles(mode);
+    fetchBrowseFeed(mode);
+  }
+
+  document.querySelectorAll(".feed-nav [data-feed]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      switchCommunityView(btn.getAttribute("data-feed"));
+    });
+  });
+
+  function initPageFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const compose = String(params.get("compose") || "").trim() === "1";
+    const feed = String(params.get("feed") || "").trim().toLowerCase();
+    let preferredFeed = "";
+    let forceOpenCreate = false;
+    try {
+      preferredFeed = String(window.localStorage.getItem("catface_preferred_feed") || "").trim().toLowerCase();
+      window.localStorage.removeItem("catface_preferred_feed");
+      forceOpenCreate = window.localStorage.getItem("catface_open_create_modal") === "1";
+      if (forceOpenCreate) window.localStorage.removeItem("catface_open_create_modal");
+    } catch (e) {}
+
+    if (feed === "followed" || preferredFeed === "followed") switchCommunityView("followed");
+    else switchCommunityView("recommended");
+
+    if (compose || forceOpenCreate) {
+      window.setTimeout(function () { openCreate(); }, 0);
+    }
+  }
+
+  initPageFromUrl();
+})();
+
+(function () {
+  const USER_KEY = "catface_user";
+  function loadUser() {
+    try {
+      const raw = window.localStorage.getItem(USER_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
+  const loginBtn = document.querySelector(".login-btn");
+  if (!loginBtn) return;
+  const user = loadUser();
+  if (user) {
+    loginBtn.textContent = "My Account";
+    loginBtn.href = "/pages/account.html";
+  } else {
+    loginBtn.textContent = "Log in";
+    loginBtn.href = "/pages/log-in.html";
+  }
 })();
 

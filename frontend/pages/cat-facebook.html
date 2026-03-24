@@ -54,30 +54,50 @@
     .top-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
-    .chip {
-      padding: 6px 12px;
+    .feed-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .feed-tab {
+      border: 1px solid #eee;
       border-radius: 999px;
-      background: #f5f5f5;
-      font-size: 12px;
-      color: #666;
+      padding: 7px 14px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
     }
-    .create-post-btn {
+    .feed-tab:hover {
+      background: #fafafa;
+      border-color: #e5e5e5;
+    }
+    .feed-tab.is-active {
+      background: #222;
+      color: #fff;
+      border-color: #222;
+    }
+    .feed-tab-create {
       border: none;
       border-radius: 999px;
       padding: 8px 16px;
       background: #ff2442;
       color: #fff;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(255,36,66,.4);
+      box-shadow: 0 6px 18px rgba(255,36,66,.35);
     }
-    .create-post-btn:hover { background: #e61e3a; }
+    .feed-tab-create:hover { background: #e61e3a; }
 
     
     .page {
@@ -162,6 +182,18 @@
       column-count: 3;
       column-gap: 14px;
     }
+    .feed-status,
+    .feed-empty {
+      column-span: all;
+      text-align: center;
+      padding: 48px 20px;
+      font-size: 14px;
+      color: #888;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.04);
+    }
+    .feed-empty { color: #666; line-height: 1.5; }
     @media (max-width: 1100px) {
       .feed-columns { column-count: 2; }
     }
@@ -530,16 +562,15 @@
         </a>
         <div class="community-title">Community · Cat Moments</div>
       </div>
-      <div class="top-actions">
-        <div class="chip">Browse posts · Like · Comment · Follow</div>
-        <button class="create-post-btn" type="button" id="openCreateFromTop">
-          ＋ Post
-        </button>
-      </div>
+      <nav class="top-actions feed-nav" aria-label="Community feed">
+        <button class="feed-tab is-active" type="button" data-feed="recommended" id="tabRecommended">Recommended</button>
+        <button class="feed-tab" type="button" data-feed="followed" id="tabFollowed">Followed</button>
+        <button class="feed-tab-create" type="button" id="btnCreatePost">Create post</button>
+      </nav>
     </div>
   </header>
 
-  <main class="page">
+  <main class="page" id="communityPage">
     <section class="side-panel" aria-label="Create post and shortcuts">
       <div class="card">
         <div class="user-summary">
@@ -564,12 +595,8 @@
       </div>
     </section>
 
-    <section class="feed-placeholder" aria-label="Create post only">
-      <div class="card" style="max-width: 480px; margin: 0 auto;">
-        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.6;">
-          Use <strong>＋ Post</strong> above or the input on the left to create a new post. Your post will appear on the home page under <strong>Recommended</strong>.
-        </p>
-      </div>
+    <section aria-label="Community feed" class="feed-columns" id="feed">
+      <!-- Posts are rendered here by JavaScript -->
     </section>
   </main>
 
@@ -611,11 +638,11 @@
       </div>
       <div class="post-modal-body">
         <div class="post-modal-image">
-          <img id="postDetailImage" src="" alt="">
+          <img id="postDetailImage" src="about:blank" alt="">
         </div>
         <div class="post-modal-right">
           <div class="post-modal-top">
-            <div class="post-modal-author">
+            <div class="post-modal-author" id="detailAuthorRow" role="button" tabindex="0" style="cursor:pointer;" title="View profile">
               <div class="post-author-avatar" id="detailAuthorAvatar"></div>
               <div>
                 <div id="detailAuthorName" style="font-size:13px;font-weight:600;"></div>

@@ -115,9 +115,68 @@
       margin: 0 0 10px;
       font-size: 15px;
     }
+    .cat-profile-card {
+      display: grid;
+      grid-template-columns: 190px minmax(0, 1fr);
+      gap: 16px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid #f0f0f0;
+      background: linear-gradient(180deg, #fff, #fdfdfd);
+      margin-bottom: 12px;
+    }
+    .cat-photo {
+      width: 190px;
+      height: 190px;
+      object-fit: cover;
+      border-radius: 14px;
+      background: #f2f2f2;
+      border: 1px solid #ececec;
+      display: block;
+    }
+    .cat-photo.is-editable {
+      cursor: pointer;
+      outline: 2px solid transparent;
+      transition: outline-color .16s ease, transform .16s ease;
+    }
+    .cat-photo.is-editable:hover {
+      outline-color: #ff9aa8;
+      transform: translateY(-1px);
+    }
+    .cat-edit-tip {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #ff2442;
+      font-weight: 600;
+    }
+    .cat-name {
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .cat-meta {
+      font-size: 18px;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .cat-meta-sub {
+      font-size: 16px;
+      color: #8a8a8a;
+    }
     .placeholder {
       font-size: 13px;
       color: #888;
+    }
+    @media (max-width: 760px) {
+      .cat-profile-card {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .cat-photo {
+        width: 100%;
+        height: 260px;
+      }
     }
   </style>
 </head>
@@ -141,58 +200,64 @@
       <button class="follow-btn" type="button" id="followBtn">Follow</button>
     </section>
 
+    <section class="section" id="catSectionWrap">
+      <h2>Cat profile</h2>
+      <div id="catSection" class="placeholder">Loading...</div>
+    </section>
+
     <section class="section">
       <h2>Posts from this creator</h2>
-      <p class="placeholder">In the prototype, posts are not filtered by author yet. Later, backend or shared storage can be used to show only this creator's posts.</p>
+      <div id="postsSection" class="placeholder">Loading...</div>
     </section>
   </main>
+  <input type="file" id="catPhotoInput" accept="image/*" style="display:none;">
 
+  <script src="../js/config.js"></script>
   <script>
     (function () {
+      const API_BASE = API_BASE_URL + "/users";
       const params = new URLSearchParams(window.location.search);
-      const author = params.get("author") || "Cat Lover";
+      let author = params.get("author") || "";
+      let targetUserId = params.get("authorId") || params.get("id") || "";
+      try {
+        if (!targetUserId) targetUserId = window.localStorage.getItem("catface_last_author_id") || "";
+        if (!author) author = window.localStorage.getItem("catface_last_author_name") || "";
+      } catch (e) {}
+      if (!author) author = "Cat Lover";
+
       const avatarEl = document.getElementById("avatar");
       const nameEl = document.getElementById("name");
       const followersEl = document.getElementById("followers");
       const followingEl = document.getElementById("following");
       const followBtn = document.getElementById("followBtn");
-
-      nameEl.textContent = author;
-      avatarEl.textContent = (author.trim()[0] || "C").toUpperCase();
-
-      const keyFollowers = "catface_followers_" + author;
-      const keyFollowing = "catface_following_you";
-
-      function getNumber(key, fallback) {
+      const catSection = document.getElementById("catSection");
+      const catSectionWrap = document.getElementById("catSectionWrap");
+      const postsSection = document.getElementById("postsSection");
+      const catPhotoInput = document.getElementById("catPhotoInput");
+      const token = window.localStorage.getItem("catface_token");
+      const currentUser = (function () {
         try {
-          const v = window.localStorage.getItem(key);
-          if (v == null) return fallback;
-          const n = parseInt(v, 10);
-          return isNaN(n) ? fallback : n;
+          return JSON.parse(window.localStorage.getItem("catface_user") || "null");
         } catch (e) {
-          return fallback;
+          return null;
         }
-      }
-      function setNumber(key, value) {
-        try {
-          window.localStorage.setItem(key, String(value));
-        } catch (e) {}
-      }
-
-      let followers = getNumber(keyFollowers, Math.floor(Math.random() * 900) + 100);
-      let following = getNumber(keyFollowing, 0);
+      })();
+      const currentUserId = currentUser && currentUser.id ? String(currentUser.id) : "";
+      let followers = 0;
+      let following = 0;
       let isFollowing = false;
-
-      const keyIsFollowing = "catface_is_following_" + author;
-      try {
-        isFollowing = window.localStorage.getItem(keyIsFollowing) === "1";
-      } catch (e) {
-        isFollowing = false;
-      }
+      let isSelfProfile = false;
+      let currentCats = [];
+      let pendingEditCatIndex = -1;
 
       function render() {
         followersEl.textContent = followers;
         followingEl.textContent = following;
+        if (isSelfProfile) {
+          followBtn.style.display = "none";
+          return;
+        }
+        followBtn.style.display = "";
         if (isFollowing) {
           followBtn.textContent = "Following";
           followBtn.classList.add("is-following");
@@ -202,24 +267,200 @@
         }
       }
 
-      followBtn.addEventListener("click", function () {
-        isFollowing = !isFollowing;
-        if (isFollowing) {
-          followers += 1;
-          following += 1;
-        } else {
-          followers = Math.max(0, followers - 1);
-          following = Math.max(0, following - 1);
+      function escapeHtml(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function formatTime(input) {
+        const d = new Date(input);
+        if (Number.isNaN(d.getTime())) return "";
+        return d.toLocaleDateString();
+      }
+
+      function renderCats(cats, hasCat) {
+        if (!hasCat || !Array.isArray(cats) || !cats.length) {
+          if (catSectionWrap) catSectionWrap.style.display = "none";
+          currentCats = [];
+          return;
         }
-        setNumber(keyFollowers, followers);
-        setNumber(keyFollowing, following);
-        try {
-          window.localStorage.setItem(keyIsFollowing, isFollowing ? "1" : "0");
-        } catch (e) {}
-        render();
+        if (catSectionWrap) catSectionWrap.style.display = "";
+        currentCats = cats.slice();
+        catSection.innerHTML = cats.map(function (cat, idx) {
+          const age = typeof cat.age_months === "number" ? cat.age_months + " months" : "Unknown age";
+          return (
+            '<article class="cat-profile-card">' +
+            '<img class="cat-photo' + (isSelfProfile ? " is-editable" : "") + '" data-cat-index="' + String(idx) + '" src="' + escapeHtml(cat.photo_url || "") + '" alt="Cat photo">' +
+            "<div>" +
+            '<div class="cat-name">' + escapeHtml(cat.name || "Unnamed cat") + "</div>" +
+            '<div class="cat-meta">' + escapeHtml(cat.breed || "Unknown breed") + " · " + escapeHtml(age) + "</div>" +
+            '<div class="cat-meta-sub">' + escapeHtml(cat.gender || "Unknown gender") + "</div>" +
+            (isSelfProfile ? '<div class="cat-edit-tip">Click photo to change</div>' : "") +
+            "</div>" +
+            "</article>"
+          );
+        }).join("");
+
+        if (isSelfProfile && catPhotoInput) {
+          Array.prototype.forEach.call(catSection.querySelectorAll(".cat-photo.is-editable"), function (img) {
+            img.addEventListener("click", function () {
+              const idx = parseInt(img.getAttribute("data-cat-index"), 10);
+              if (Number.isNaN(idx)) return;
+              pendingEditCatIndex = idx;
+              catPhotoInput.click();
+            });
+          });
+        }
+      }
+
+      function renderPosts(posts) {
+        if (!Array.isArray(posts) || !posts.length) {
+          postsSection.innerHTML = "No posts yet.";
+          return;
+        }
+        postsSection.innerHTML = posts.map(function (p) {
+          return (
+            '<article style="padding:12px 0;border-bottom:1px solid #f3f3f3;">' +
+            (p.image_url ? '<img src="' + escapeHtml(p.image_url) + '" alt="" style="width:100%;max-height:260px;object-fit:cover;border-radius:12px;background:#f2f2f2;margin-bottom:8px;">' : "") +
+            '<div style="line-height:1.5;">' + escapeHtml(p.content || "") + "</div>" +
+            '<div style="margin-top:6px;font-size:12px;color:#999;">' +
+            escapeHtml(formatTime(p.created_at)) +
+            " · " + Number(p.likes_count || 0) + " likes · " + Number(p.comments_count || 0) + " comments" +
+            "</div>" +
+            "</article>"
+          );
+        }).join("");
+      }
+
+      function loadProfile() {
+        if (!targetUserId) {
+          nameEl.textContent = author;
+          avatarEl.textContent = (author.trim()[0] || "C").toUpperCase();
+          document.getElementById("bio").textContent = "Missing author id.";
+          postsSection.innerHTML = "Missing author id.";
+          followBtn.disabled = true;
+          return;
+        }
+
+        const headers = token ? { Authorization: "Bearer " + token } : {};
+        fetch(API_BASE + "/" + encodeURIComponent(targetUserId) + "/profile", {
+          method: "GET",
+          headers: headers
+        })
+          .then(function (res) { return res.json(); })
+          .then(function (result) {
+            if (!result.success || !result.data) throw new Error(result.message || "Load profile failed");
+            const data = result.data;
+            const displayName = data.display_name || data.username || author;
+            try {
+              if (data.id) window.localStorage.setItem("catface_last_author_id", String(data.id));
+              if (displayName) window.localStorage.setItem("catface_last_author_name", String(displayName));
+            } catch (e) {}
+            nameEl.textContent = displayName;
+            avatarEl.textContent = (displayName.trim()[0] || "C").toUpperCase();
+            document.getElementById("bio").textContent = data.bio || "No bio yet.";
+            followers = Number(data.followers_count || 0);
+            following = Number(data.following_count || 0);
+            isFollowing = !!data.following;
+            isSelfProfile = !!(currentUserId && data.id && String(data.id) === currentUserId);
+            render();
+            renderCats(data.cats, !!data.has_cat);
+            renderPosts(data.posts);
+          })
+          .catch(function () {
+            nameEl.textContent = author;
+            avatarEl.textContent = (author.trim()[0] || "C").toUpperCase();
+            document.getElementById("bio").textContent = "Failed to load profile.";
+            catSection.innerHTML = "Failed to load cat profile.";
+            postsSection.innerHTML = "Failed to load posts.";
+          });
+      }
+
+      followBtn.addEventListener("click", function () {
+        if (isSelfProfile) return;
+        if (!token) {
+          window.location.href = "/pages/log-in.html";
+          return;
+        }
+        if (!targetUserId) return;
+
+        fetch(API_BASE + "/" + encodeURIComponent(targetUserId) + "/follow", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token
+          }
+        })
+          .then(function (res) {
+            if (res.status === 401) {
+              window.location.href = "/pages/log-in.html";
+              return null;
+            }
+            return res.json();
+          })
+          .then(function (result) {
+            if (!result || !result.success || !result.data) return;
+            isFollowing = !!result.data.following;
+            followers = Number(result.data.followersCount || 0);
+            following = Number(result.data.followingCount || 0);
+            render();
+          })
+          .catch(function () {});
       });
 
+      if (catPhotoInput) {
+        catPhotoInput.addEventListener("change", function () {
+          const file = catPhotoInput.files && catPhotoInput.files[0];
+          if (!file) return;
+          if (!isSelfProfile || !token) return;
+          const cat = currentCats[pendingEditCatIndex];
+          if (!cat) return;
+
+          const reader = new FileReader();
+          reader.onload = function (ev) {
+            const dataUrl = ev.target && ev.target.result ? String(ev.target.result) : "";
+            if (!dataUrl) return;
+            const payload = {
+              display_name: nameEl.textContent || "",
+              has_cat: true,
+              cat: {
+                id: cat.id || "",
+                name: cat.name || "",
+                breed: cat.breed || "",
+                gender: cat.gender || "",
+                photo_url: dataUrl,
+                description: cat.description || ""
+              }
+            };
+            fetch(API_BASE + "/me/profile", {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + token
+              },
+              body: JSON.stringify(payload)
+            })
+              .then(function (res) { return res.status === 401 ? null : res.json(); })
+              .then(function (result) {
+                if (!result || !result.success || !result.data) return;
+                const updatedCats = Array.isArray(result.data.cats)
+                  ? result.data.cats
+                  : result.data.cat
+                    ? [result.data.cat]
+                    : [];
+                renderCats(updatedCats, !!result.data.has_cat);
+                catPhotoInput.value = "";
+              })
+              .catch(function () {});
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
       render();
+      loadProfile();
     })();
   </script>
 </body>
