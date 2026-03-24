@@ -285,6 +285,8 @@ model AdopterPreference {
   preferred_gender    String?
   // 偏好品种，允许为空
   preferred_breed     String?
+  // 偏好毛色，例如"orange"、"black"、"white"、"calico"，允许为空
+  preferred_color     String?
   // 是否接受特殊需求猫咪（例如残疾猫），允许为空
   accept_special_need Boolean?
   // 居住类型，例如"apartment"、"house"，影响匹配，允许为空
