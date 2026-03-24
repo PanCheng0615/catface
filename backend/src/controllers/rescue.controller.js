@@ -1,6 +1,16 @@
 const { PrismaClient } = require('@prisma/client');
+const fs = require('fs/promises');
+const fsSync = require('fs');
+const os = require('os');
+const path = require('path');
+const { execFile } = require('child_process');
+const { promisify } = require('util');
 
 const prisma = new PrismaClient();
+const execFileAsync = promisify(execFile);
+const FACE_ID_PYTHON_BIN = fsSync.existsSync(path.join(__dirname, '../../.venv-catface-id/bin/python'))
+  ? path.join(__dirname, '../../.venv-catface-id/bin/python')
+  : 'python3';
 
 function mapCat(cat) {
   return {
@@ -202,6 +212,7 @@ async function createCat(req, res) {
 
     const {
       name,
+      display_id,
       breed,
       gender,
       age,
@@ -223,8 +234,28 @@ async function createCat(req, res) {
     }
 
     const tagValues = normalizeTagValues(tags, personality);
+    const requestedId = typeof display_id === 'string' && display_id.trim()
+      ? display_id.trim()
+      : null;
+
+    if (requestedId) {
+      const existingCat = await prisma.cat.findUnique({
+        where: { id: requestedId },
+        select: { id: true }
+      });
+
+      if (existingCat) {
+        return res.status(409).json({
+          success: false,
+          error: 'DuplicateCatId',
+          message: '该 Cat ID 已存在，请重新生成或手动修改'
+        });
+      }
+    }
+
     const createdCat = await prisma.cat.create({
       data: {
+        id: requestedId || undefined,
         name: String(name).trim(),
         breed: typeof breed === 'string' && breed.trim() ? breed.trim() : null,
         age_months: parseAgeMonthsInput(age),
@@ -262,6 +293,81 @@ async function createCat(req, res) {
       success: false,
       error: 'ServerError',
       message: '服务器错误'
+    });
+  }
+}
+
+async function generateCatFaceId(req, res) {
+  try {
+    const scope = ensureOrganizationScope(req, res);
+    if (!scope) return;
+
+    const imageDataUrl = typeof req.body.image_data_url === 'string'
+      ? req.body.image_data_url.trim()
+      : '';
+
+    if (!imageDataUrl) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '必须提供 image_data_url'
+      });
+    }
+
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'catface-face-id-'));
+    const inputPath = path.join(tempDir, 'payload.json');
+    const scriptPath = path.join(__dirname, '../../scripts/cat_face_id_service.py');
+
+    await fs.writeFile(
+      inputPath,
+      JSON.stringify(
+        {
+          image_data_url: imageDataUrl
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    try {
+      const { stdout, stderr } = await execFileAsync(FACE_ID_PYTHON_BIN, [scriptPath, inputPath], {
+        cwd: path.join(__dirname, '../..'),
+        maxBuffer: 1024 * 1024 * 10
+      });
+
+      if (stderr && stderr.trim()) {
+        console.warn('generateCatFaceId stderr:', stderr);
+      }
+
+      const result = JSON.parse(stdout || '{}');
+
+      if (!result.success) {
+        return res.status(result.status_code || 503).json({
+          success: false,
+          error: result.error || 'CatFaceIdUnavailable',
+          message: result.message || 'Cat Face ID service is unavailable.'
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          generated_id: result.generated_id,
+          provider: result.provider || 'unknown',
+          note: result.note || null
+        },
+        message: 'Cat Face ID generated successfully'
+      });
+    } finally {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    }
+  } catch (error) {
+    console.error('generateCatFaceId error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: 'Cat Face ID generation failed'
     });
   }
 }
@@ -755,6 +861,7 @@ module.exports = {
   getCats,
   createCat,
   updateCat,
+  generateCatFaceId,
   getApplications,
   reviewApplication,
   getAnalytics

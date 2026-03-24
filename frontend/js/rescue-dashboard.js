@@ -324,6 +324,9 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
   }
 
   function buildDashboardCatId(cat) {
+    if (typeof cat.id === "string" && cat.id.indexOf("CAT-") === 0) {
+      return cat.id;
+    }
     return `CAT-${String(cat.id).replace(/-/g, "").slice(0, 6).toUpperCase()}`;
   }
 
@@ -454,6 +457,7 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
       .filter(Boolean);
 
     return {
+      display_id: displayId,
       name: name,
       breed: breed,
       gender: catGenderInput.value,
@@ -555,19 +559,27 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
     openOverlay(catProfileOverlay);
   }
 
-  function generateFaceId() {
-    const timePart = Date.now().toString().slice(-6);
-    const randomPart = Math.random().toString(36).slice(2, 6).toUpperCase();
-    return "CAT-FR-" + timePart + "-" + randomPart;
-  }
-
   function resetFaceRecognitionModal() {
     currentGeneratedFaceId = "";
     generatedFaceId.textContent = "Waiting for image upload";
+    generatedFaceId.title = "";
+    useFaceIdBtn.disabled = true;
     facePreviewImage.src = "";
     facePreviewImage.hidden = true;
     facePreviewPlaceholder.hidden = false;
     faceIdImageInput.value = "";
+  }
+
+  async function requestCatFaceId(imageDataUrl) {
+    const payload = await apiRequest("/rescue/cat-face-id", {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        image_data_url: imageDataUrl
+      })
+    });
+
+    return payload;
   }
 
   async function loadRescueCats() {
@@ -1316,12 +1328,26 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function (loadEvent) {
+    reader.onload = async function (loadEvent) {
       facePreviewImage.src = loadEvent.target.result;
       facePreviewImage.hidden = false;
       facePreviewPlaceholder.hidden = true;
-      currentGeneratedFaceId = generateFaceId();
-      generatedFaceId.textContent = currentGeneratedFaceId;
+
+      currentGeneratedFaceId = "";
+      useFaceIdBtn.disabled = true;
+      generatedFaceId.textContent = "Generating Cat Face ID...";
+
+      try {
+        const result = await requestCatFaceId(loadEvent.target.result);
+        currentGeneratedFaceId = result.generated_id || "";
+        generatedFaceId.textContent = currentGeneratedFaceId || "Cat Face ID unavailable";
+        generatedFaceId.title = result.note || "";
+        useFaceIdBtn.disabled = !currentGeneratedFaceId;
+      } catch (error) {
+        generatedFaceId.textContent = error.message || "Cat Face ID unavailable";
+        generatedFaceId.title = "";
+        window.alert("Cat Face ID generation failed: " + error.message);
+      }
     };
     reader.readAsDataURL(file);
   });
