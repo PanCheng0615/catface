@@ -88,12 +88,15 @@
           c.is_neutered   ? `<span class="chip chip-purple" style="font-size:10px;">✂️ 已絕育</span>` : '',
           c.is_dewormed   ? `<span class="chip chip-green" style="font-size:10px;">🐛 已驅蟲</span>` : ''
         ].filter(Boolean).join('');
+        // 優先顯示 face_code，無則降級顯示 id 前 8 位，歷史資料無需隨機生成
+        const displayCode = c.face_code ? `🐾 ${c.face_code}` : `ID: ${c.id.slice(0,8)}…`;
         return `
           <div class="cat-item" id="cat-item-${c.id}" onclick="selectCat('${c.id}', '${c.name.replace(/'/g,"\\'")}')">
             <div class="cat-avatar">🐱</div>
             <div style="flex:1;min-width:0;">
               <div class="cat-name">${c.name}</div>
               <div class="cat-meta">${c.breed || '品種未知'} · ${gMap[c.gender] || '未知'} · ${c.age_months ? c.age_months + '個月' : '年齡未知'}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px;">${displayCode}</div>
               ${badges ? `<div class="cat-badges">${badges}</div>` : ''}
             </div>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#94a3b8;flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>

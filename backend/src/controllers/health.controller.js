@@ -10,7 +10,11 @@ async function getHealthRecords(req, res) {
   try {
     const { catId } = req.params;
 
-    const [ownerRecords, clinicReports, sharePermissions] = await Promise.all([
+    const [cat, ownerRecords, clinicReports, sharePermissions] = await Promise.all([
+      prisma.cat.findUnique({
+        where: { id: catId },
+        select: { id: true, name: true, face_code: true }
+      }),
       prisma.ownerHealthRecord.findMany({
         where: { cat_id: catId },
         orderBy: { date: 'desc' }
@@ -27,7 +31,7 @@ async function getHealthRecords(req, res) {
 
     return res.json({
       success: true,
-      data: { owner_records: ownerRecords, clinic_reports: clinicReports, share_permissions: sharePermissions },
+      data: { cat, owner_records: ownerRecords, clinic_reports: clinicReports, share_permissions: sharePermissions },
       message: '获取健康记录成功'
     });
   } catch (error) {

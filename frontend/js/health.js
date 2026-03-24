@@ -70,8 +70,12 @@
                               .find(r => daysUntil(r.next_due_date) >= 0);
 
     if (nameEl) nameEl.textContent = catId ? '健康護照' : '— 健康護照';
+    // 優先顯示 face_code，無則顯示 id 前 8 位，兩者皆無則提示載入
+    const catLabel = window._catFaceCode
+      ? `編號：${window._catFaceCode}`
+      : catId ? `ID：${catId.slice(0,8)}…` : '';
     if (metaEl) metaEl.textContent = catId
-      ? `貓咪 ID：${catId.slice(0,8)}…  ·  共 ${all.length} 筆記錄`
+      ? `${catLabel}  ·  共 ${all.length} 筆記錄`
       : '請先輸入貓咪 ID 載入資料';
 
     if (!badgesEl) return;
@@ -210,6 +214,8 @@
       const ownerRecords  = body.data.owner_records    || [];
       const clinicReports = body.data.clinic_reports   || [];
       const sharePerms    = body.data.share_permissions|| [];
+      // 缓存 face_code 供护照卡展示（历史数据可能没有此字段）
+      window._catFaceCode = body.data.cat?.face_code || null;
 
       updatePassport(ownerRecords, clinicReports);
       renderOwnerRecords(ownerRecords);
