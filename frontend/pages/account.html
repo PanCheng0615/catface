@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -10,7 +10,7 @@
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: #F4F9FD;
+      background: #FBF3E8;
       color: #222;
     }
     a { color: #2f6feb; text-decoration: none; }
@@ -32,7 +32,7 @@
     }
     .left { padding: 26px 26px 22px; }
     .right {
-      background: linear-gradient(180deg, #A7C7E7 0%, #C8DFF2 100%);
+      background: linear-gradient(160deg, #C8702A 0%, #D98840 55%, #F0C888 100%);
       color: #fff;
       padding: 26px 24px 22px;
       display: flex;
@@ -60,7 +60,7 @@
       align-items: center;
       gap: 6px;
       font-weight: 800;
-      color: #A7C7E7;
+      color: #C8702A;
       font-size: 18px;
       margin-top: 8px;
     }
@@ -68,7 +68,7 @@
       width: 32px;
       height: 32px;
       border-radius: 10px;
-      background: #A7C7E7;
+      background: #C8702A;
       color: #fff;
       display: grid;
       place-items: center;
@@ -106,7 +106,7 @@
     .pill {
       padding: 6px 10px;
       border-radius: 999px;
-      background: #F4F9FD;
+      background: #FBF3E8;
       font-size: 12px;
       color: #666;
     }
@@ -135,7 +135,7 @@
       border: 1px solid #e5e7eb;
       border-radius: 14px;
       padding: 10px 12px;
-      background: #F4F9FD;
+      background: #FBF3E8;
       outline: none;
       color: #111827;
       font-size: 14px;
@@ -173,13 +173,13 @@
       font-weight: 700;
     }
     .btn-primary {
-      background: #A7C7E7;
+      background: #C8702A;
       color: #fff;
       box-shadow: 0 10px 24px rgba(196,131,106,.22);
     }
-    .btn-primary:hover { background: #7EB8DC; }
+    .btn-primary:hover { background: #A85820; }
     .btn-secondary {
-      background: #F4F9FD;
+      background: #FBF3E8;
       color: #444;
     }
     .btn-danger {
@@ -212,11 +212,27 @@
     .right-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
     .right a { color: #fff; text-decoration: underline; }
     .small-note { font-size: 12px; opacity: .92; }
-  </style>
+    /* Health section */
+    .section[aria-label="Health management"] { margin-top: 24px; }
+    .health-card {
+      display: flex; align-items: center; gap: 14px;
+      background: #FDF0D8; border: 1px solid #E8B050;
+      border-radius: 12px; padding: 16px 18px;
+    }
+    .health-card-icon { font-size: 24px; flex-shrink: 0; }
+    .health-card-body { flex: 1; }
+    .health-card-body h4 { margin: 0 0 3px; font-size: 14px; font-weight: 600; color: #2A1206; }
+    .health-card-body p  { margin: 0; font-size: 12px; color: #6B3A18; }
+    .btn-health {
+      padding: 9px 18px; background: #C8702A; color: #fff;
+      border-radius: 20px; font-size: 13px; font-weight: 600;
+      text-decoration: none; white-space: nowrap; transition: background .15s;
+    }
+    .btn-health:hover { background: #A85820; }  </style>
 </head>
 <body>
   <header class="header" role="banner">
-    <a href="index.html" class="logo">cat face</a>
+    <a href="index.html" class="logo">CatFace</a>
   </header>
 
   <aside class="sidebar">
@@ -224,7 +240,6 @@
       <ul class="sidebar-nav">
         <li><a href="index.html"><span class="icon">💬</span> Community</a></li>
         <li><a href="adoption.html"><span class="icon">🐱</span> Adoption</a></li>
-        <li><a href="health.html"><span class="icon">🩺</span> Health</a></li>
         <li><a href="notifications.html"><span class="icon">🔔</span> Notifications</a></li>
         <li><a href="account.html" class="active"><span class="icon">👤</span> Account</a></li>
         <li><a href="#"><span class="icon">🛍️</span> Store <small style="font-size:10px;color:#bbb;">(soon)</small></a></li>
@@ -401,6 +416,18 @@
           </div>
         </div>
       </div>
+      <div class="section" aria-label="Health management">
+        <h3 class="section-title">Health</h3>
+        <div class="health-card">
+          <div class="health-card-icon">&#x1FA7A;</div>
+          <div class="health-card-body">
+            <h4>Cat Health Records</h4>
+            <p>View and manage your cat's medical data, vaccination history, and share records with clinics.</p>
+          </div>
+          <a href="health.html" class="btn-health">Go to Health &#x2192;</a>
+        </div>
+      </div>
+
 
       <div class="actions">
         <button class="btn btn-secondary" type="button" id="resetBtn">Reset</button>
