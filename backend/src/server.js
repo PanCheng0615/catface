@@ -1,31 +1,36 @@
-// backend/src/server.js
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 
-dotenv.config(); // 读取 .env（如果有）
+const authRoutes = require('./routes/auth.routes');
+const usersRoutes = require('./routes/users.routes');
+const catsRoutes = require('./routes/cats.routes');
+const adoptionRoutes = require('./routes/adoption.routes');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
-const authRouter = require('./routes/auth.routes');
-const usersRouter = require('./routes/users.routes');
-// 这里挂载路由
-app.use('/api/auth', authRouter);
-app.use('/api/users', usersRouter);
+app.get('/health', (req, res) => {
+  res.json({ success: true, data: { ok: true }, message: 'ok' });
+});
 
-// 测试接口：确认服务器能跑
-app.get('/api/healthcheck', (req, res) => {
-  res.json({
-    success: true,
-    data: 'OK',
-    message: 'Server is running'
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/cats', catsRoutes);
+app.use('/api/adoption', adoptionRoutes);
+
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'NotFound',
+    message: '接口不存在'
   });
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

@@ -34,6 +34,7 @@ model User {
   comments                 Comment[]
   adopter_preferences      AdopterPreference?
   adoption_applications    AdoptionApplication[]
+  adoption_swipes          AdoptionSwipe[]
   owner_health_records     OwnerHealthRecord[]
   health_share_permissions HealthSharePermission[]
   followers                UserFollow[]            @relation("following")
@@ -122,6 +123,7 @@ model Cat {
   requirements             CatRequirement[]
   updates                  CatUpdate[]
   adoption_applications    AdoptionApplication[]
+  adoption_swipes          AdoptionSwipe[]
   owner_health_records     OwnerHealthRecord[]
   clinic_reports           ClinicHealthReport[]
   health_share_permissions HealthSharePermission[]
@@ -190,6 +192,21 @@ model AdoptionApplication {
   cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
 
   @@map("adoption_applications")
+}
+
+// 滑动记录：右滑喜欢 / 左滑跳过
+model AdoptionSwipe {
+  id         String   @id @default(uuid())
+  user_id    String
+  cat_id     String
+  liked      Boolean
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, cat_id])
+  @@map("adoption_swipes")
 }
 
 enum ApplicationStatus {

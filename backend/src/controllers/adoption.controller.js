@@ -1,145 +1,351 @@
-/**
- * 领养模块 Controller（Member 2）
- * 滑动、喜欢列表、偏好、领养申请
- */
 const { PrismaClient } = require('@prisma/client');
+const { scoreCatForUser, normalizeText } = require('../utils/adoptionRecommendScore');
+
 const prisma = new PrismaClient();
 
-/** POST /api/adoption/swipe — 记录滑动行为（like / pass） */
+const catCardInclude = {
+  tags: true,
+  organization: { select: { id: true, name: true, logo_url: true } }
+};
+
+// POST /api/adoption/swipe
+// 请求体字段与 AdoptionSwipe 模型一致：cat_id、liked（user_id 由服务端从 token 写入）
 async function recordSwipe(req, res) {
   try {
-    const userId = req.user.id;
-    const { cat_id, direction } = req.body;
+    const { cat_id, liked } = req.body;
+
     if (!cat_id) {
-      return res.status(422).json({ success: false, error: '缺少 cat_id', message: '请选择猫咪' });
-    }
-    const cat = await prisma.cat.findUnique({ where: { id: cat_id } });
-    if (!cat) {
-      return res.status(404).json({ success: false, error: '猫咪不存在', message: '未找到该猫咪' });
-    }
-    if (direction === 'like') {
-      await prisma.catLike.upsert({
-        where: {
-          user_id_cat_id: { user_id: userId, cat_id }
-        },
-        create: { user_id: userId, cat_id },
-        update: {}
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '缺少 cat_id'
       });
     }
-    return res.status(200).json({ success: true, data: { cat_id, direction }, message: '已记录' });
-  } catch (error) {
-    console.error('recordSwipe error:', error);
-    return res.status(500).json({ success: false, error: error.message, message: '服务器错误' });
-  }
-}
 
-/** GET /api/adoption/liked — 获取已喜欢的猫列表 */
-async function getLikedCats(req, res) {
-  try {
-    const userId = req.user.id;
-    const likes = await prisma.catLike.findMany({
-      where: { user_id: userId },
-      include: {
-        cat: {
-          include: { tags: true, organization: { select: { name: true } } }
-        }
-      },
-      orderBy: { created_at: 'desc' }
-    });
-    const cats = likes.map((l) => l.cat);
-    return res.status(200).json({ success: true, data: cats, message: '获取成功' });
-  } catch (error) {
-    console.error('getLikedCats error:', error);
-    return res.status(500).json({ success: false, error: error.message, message: '服务器错误' });
-  }
-}
-
-/** POST /api/adoption/preferences — 设置领养偏好 */
-async function setPreferences(req, res) {
-  try {
-    const userId = req.user.id;
-    const { preferred_age, preferred_gender, preferred_breed } = req.body;
-    const prefs = await prisma.adopterPreference.upsert({
-      where: { user_id: userId },
-      create: {
-        user_id: userId,
-        preferred_age: preferred_age?.trim() || null,
-        preferred_gender: preferred_gender?.trim() || null,
-        preferred_breed: preferred_breed?.trim() || null
-      },
-      update: {
-        preferred_age: preferred_age !== undefined ? (preferred_age?.trim() || null) : undefined,
-        preferred_gender: preferred_gender !== undefined ? (preferred_gender?.trim() || null) : undefined,
-        preferred_breed: preferred_breed !== undefined ? (preferred_breed?.trim() || null) : undefined
-      }
-    });
-    return res.status(200).json({ success: true, data: prefs, message: '偏好已保存' });
-  } catch (error) {
-    console.error('setPreferences error:', error);
-    return res.status(500).json({ success: false, error: error.message, message: '服务器错误' });
-  }
-}
-
-/** POST /api/adoption/applications — 提交领养申请 */
-async function submitApplication(req, res) {
-  try {
-    const userId = req.user.id;
-    const { cat_id, message } = req.body;
-    if (!cat_id) {
-      return res.status(422).json({ success: false, error: '缺少 cat_id', message: '请选择要申请的猫咪' });
+    if (typeof liked !== 'boolean') {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'liked 必须为布尔值（与 schema 中 AdoptionSwipe.liked 一致）'
+      });
     }
+
     const cat = await prisma.cat.findUnique({ where: { id: cat_id } });
     if (!cat) {
-      return res.status(404).json({ success: false, error: '猫咪不存在', message: '未找到该猫咪' });
+      return res.status(404).json({
+        success: false,
+        error: 'NotFound',
+        message: '猫咪不存在'
+      });
     }
-    if (!cat.is_available) {
-      return res.status(422).json({ success: false, error: '猫咪不可领养', message: '该猫咪暂不开放领养' });
-    }
-    const existing = await prisma.adoptionApplication.findFirst({
-      where: { user_id: userId, cat_id }
-    });
-    if (existing) {
-      return res.status(422).json({ success: false, error: '已申请过', message: '您已提交过该猫咪的领养申请' });
-    }
-    const app = await prisma.adoptionApplication.create({
-      data: {
-        user_id: userId,
-        cat_id,
-        message: message?.trim() || null
+
+    const swipe = await prisma.adoptionSwipe.upsert({
+      where: {
+        user_id_cat_id: { user_id: req.user.id, cat_id: cat_id }
       },
-      include: { cat: { select: { name: true } } }
+      create: {
+        user_id: req.user.id,
+        cat_id: cat_id,
+        liked
+      },
+      update: { liked }
     });
-    return res.status(201).json({ success: true, data: app, message: '申请已提交' });
+
+    return res.json({
+      success: true,
+      data: swipe,
+      message: '已记录滑动'
+    });
   } catch (error) {
-    console.error('submitApplication error:', error);
-    return res.status(500).json({ success: false, error: error.message, message: '服务器错误' });
+    console.error('recordSwipe error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
   }
 }
 
-/** GET /api/adoption/applications/me — 获取当前用户的领养申请列表 */
-async function getMyApplications(req, res) {
+// GET /api/adoption/feed — 按偏好 + 右滑喜欢学习到的品种/标签打分排序（仅返回尚未滑动过的待领养猫）
+async function getFeed(req, res) {
   try {
+    const limitRaw = req.query.limit;
+    let limit = 30;
+    if (limitRaw != null && limitRaw !== '') {
+      const n = parseInt(String(limitRaw), 10);
+      if (!Number.isNaN(n) && n > 0) {
+        limit = Math.min(n, 50);
+      }
+    }
+
     const userId = req.user.id;
-    const list = await prisma.adoptionApplication.findMany({
-      where: { user_id: userId },
+
+    const pref = await prisma.adopterPreference.findUnique({
+      where: { user_id: userId }
+    });
+
+    const likedSwipes = await prisma.adoptionSwipe.findMany({
+      where: { user_id: userId, liked: true },
       include: {
-        cat: {
-          select: { id: true, name: true, photo_url: true, breed: true }
+        cat: { include: { tags: true } }
+      }
+    });
+
+    const likedBreedSet = new Set();
+    const likedTagSet = new Set();
+    for (const sw of likedSwipes) {
+      if (!sw.cat) continue;
+      const b = normalizeText(sw.cat.breed);
+      if (b) likedBreedSet.add(b);
+      if (Array.isArray(sw.cat.tags)) {
+        for (const row of sw.cat.tags) {
+          const t = normalizeText(row.tag);
+          if (t) likedTagSet.add(t);
         }
-      },
+      }
+    }
+
+    const allSwipes = await prisma.adoptionSwipe.findMany({
+      where: { user_id: userId },
+      select: { cat_id: true }
+    });
+    const swipedCatIds = allSwipes.map((s) => s.cat_id);
+
+    const where = {
+      is_available: true,
+      ...(swipedCatIds.length > 0 ? { id: { notIn: swipedCatIds } } : {})
+    };
+
+    const candidates = await prisma.cat.findMany({
+      where,
+      include: catCardInclude,
       orderBy: { created_at: 'desc' }
     });
-    return res.status(200).json({ success: true, data: list, message: '获取成功' });
+
+    const scored = candidates.map((cat) => {
+      const { recommendation_score, score_breakdown } = scoreCatForUser(
+        cat,
+        pref,
+        likedBreedSet,
+        likedTagSet
+      );
+      return {
+        ...cat,
+        recommendation_score,
+        score_breakdown
+      };
+    });
+
+    scored.sort((a, b) => {
+      if (b.recommendation_score !== a.recommendation_score) {
+        return b.recommendation_score - a.recommendation_score;
+      }
+      const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return tb - ta;
+    });
+
+    const data = scored.slice(0, limit);
+
+    return res.json({
+      success: true,
+      data,
+      message: '获取推荐列表成功'
+    });
+  } catch (error) {
+    console.error('getFeed error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
+// GET /api/adoption/swipes — 当前用户全部滑动历史（与 AdoptionSwipe 表字段一致，含 liked）
+// 修改态度：再次 POST /api/adoption/swipe，body 传同一 cat_id 与新的 liked（upsert），推荐打分会自动按最新 liked 计算
+async function getSwipes(req, res) {
+  try {
+    const rows = await prisma.adoptionSwipe.findMany({
+      where: { user_id: req.user.id },
+      include: { cat: { include: catCardInclude } },
+      orderBy: { created_at: 'desc' }
+    });
+
+    return res.json({
+      success: true,
+      data: rows,
+      message: '获取滑动历史成功'
+    });
+  } catch (error) {
+    console.error('getSwipes error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
+// GET /api/adoption/liked
+async function getLiked(req, res) {
+  try {
+    const rows = await prisma.adoptionSwipe.findMany({
+      where: { user_id: req.user.id, liked: true },
+      include: { cat: { include: catCardInclude } },
+      orderBy: { created_at: 'desc' }
+    });
+
+    const cats = rows.map((r) => r.cat).filter(Boolean);
+
+    return res.json({
+      success: true,
+      data: cats,
+      message: '获取喜欢的猫咪成功'
+    });
+  } catch (error) {
+    console.error('getLiked error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
+// POST /api/adoption/preferences
+async function setPreferences(req, res) {
+  try {
+    const { preferred_age, preferred_gender, preferred_breed } = req.body;
+
+    const pref = await prisma.adopterPreference.upsert({
+      where: { user_id: req.user.id },
+      create: {
+        user_id: req.user.id,
+        preferred_age: preferred_age ?? null,
+        preferred_gender: preferred_gender ?? null,
+        preferred_breed: preferred_breed ?? null
+      },
+      update: {
+        preferred_age: preferred_age ?? undefined,
+        preferred_gender: preferred_gender ?? undefined,
+        preferred_breed: preferred_breed ?? undefined
+      }
+    });
+
+    return res.json({
+      success: true,
+      data: pref,
+      message: '领养偏好已保存'
+    });
+  } catch (error) {
+    console.error('setPreferences error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
+// POST /api/adoption/applications
+// 请求体字段与 AdoptionApplication 一致：cat_id、message（可选）
+async function createApplication(req, res) {
+  try {
+    const { cat_id, message } = req.body;
+
+    if (!cat_id) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '缺少 cat_id'
+      });
+    }
+
+    const cat = await prisma.cat.findUnique({ where: { id: cat_id } });
+    if (!cat) {
+      return res.status(404).json({
+        success: false,
+        error: 'NotFound',
+        message: '猫咪不存在'
+      });
+    }
+
+    const pending = await prisma.adoptionApplication.findFirst({
+      where: {
+        user_id: req.user.id,
+        cat_id: cat_id,
+        status: 'pending'
+      }
+    });
+
+    if (pending) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '该猫咪已有待处理的申请'
+      });
+    }
+
+    const application = await prisma.adoptionApplication.create({
+      data: {
+        user_id: req.user.id,
+        cat_id: cat_id,
+        message: message ?? null,
+        status: 'pending'
+      },
+      include: {
+        cat: { include: catCardInclude }
+      }
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: application,
+      message: '领养申请已提交'
+    });
+  } catch (error) {
+    console.error('createApplication error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
+// GET /api/adoption/applications/me
+async function getMyApplications(req, res) {
+  try {
+    const applications = await prisma.adoptionApplication.findMany({
+      where: { user_id: req.user.id },
+      orderBy: { created_at: 'desc' },
+      include: {
+        cat: { include: catCardInclude }
+      }
+    });
+
+    return res.json({
+      success: true,
+      data: applications,
+      message: '获取申请状态成功'
+    });
   } catch (error) {
     console.error('getMyApplications error:', error);
-    return res.status(500).json({ success: false, error: error.message, message: '服务器错误' });
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
   }
 }
 
 module.exports = {
   recordSwipe,
-  getLikedCats,
+  getFeed,
+  getSwipes,
+  getLiked,
   setPreferences,
-  submitApplication,
+  createApplication,
   getMyApplications
 };

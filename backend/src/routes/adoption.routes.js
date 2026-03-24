@@ -1,22 +1,22 @@
-/**
- * 领养模块路由（Member 2）
- */
 const express = require('express');
 const router = express.Router();
+const { protect } = require('../middleware/auth');
 const {
   recordSwipe,
-  getLikedCats,
+  getFeed,
+  getSwipes,
+  getLiked,
   setPreferences,
-  submitApplication,
+  createApplication,
   getMyApplications
 } = require('../controllers/adoption.controller');
-const { protect } = require('../middleware/auth');
 
-// 以下接口均需要登录
 router.post('/swipe', protect, recordSwipe);
-router.get('/liked', protect, getLikedCats);
+router.get('/feed', protect, getFeed);
+router.get('/swipes', protect, getSwipes);
+router.get('/liked', protect, getLiked);
 router.post('/preferences', protect, setPreferences);
-router.post('/applications', protect, submitApplication);
+router.post('/applications', protect, createApplication);
 router.get('/applications/me', protect, getMyApplications);
 
 module.exports = router;

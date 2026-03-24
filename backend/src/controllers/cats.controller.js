@@ -1,120 +1,271 @@
-/**
- * 猫咪档案 Controller（Member 2）
- * 创建/获取/更新猫咪信息
- */
 const { PrismaClient } = require('@prisma/client');
+
 const prisma = new PrismaClient();
 
-/** GET /api/cats — 获取猫咪列表（可带 is_available 等筛选） */
+const catInclude = {
+  tags: true,
+  requirements: true,
+  organization: { select: { id: true, name: true, logo_url: true } },
+  owner: {
+    select: { id: true, username: true, display_name: true, avatar_url: true }
+  }
+};
+
+// GET /api/cats
+// 查询参数与 Cat 模型字段一致，例如 is_available=true
 async function getCats(req, res) {
   try {
     const { is_available } = req.query;
     const where = {};
-    if (is_available !== undefined) {
-      where.is_available = is_available === 'true';
+    if (is_available === 'true' || is_available === '1') {
+      where.is_available = true;
     }
+    if (is_available === 'false' || is_available === '0') {
+      where.is_available = false;
+    }
+
     const cats = await prisma.cat.findMany({
       where,
+      orderBy: { created_at: 'desc' },
       include: {
         tags: true,
-        organization: { select: { name: true } }
-      },
-      orderBy: { created_at: 'desc' }
+        organization: { select: { id: true, name: true, logo_url: true } }
+      }
     });
-    return res.status(200).json({ success: true, data: cats, message: '获取成功' });
+
+    return res.json({
+      success: true,
+      data: cats,
+      message: '获取猫咪列表成功'
+    });
   } catch (error) {
     console.error('getCats error:', error);
-    return res.status(500).json({ success: false, error: error.message, message: '服务器错误' });
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
   }
 }
 
-/** GET /api/cats/:id — 获取单只猫信息 */
+// GET /api/cats/:id
 async function getCatById(req, res) {
   try {
-    const { id } = req.params;
     const cat = await prisma.cat.findUnique({
-      where: { id },
+      where: { id: req.params.id },
+      include: {
+        ...catInclude,
+        updates: { orderBy: { created_at: 'desc' }, take: 20 }
+      }
+    });
+
+    if (!cat) {
+      return res.status(404).json({
+        success: false,
+        error: 'NotFound',
+        message: '猫咪不存在'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: cat,
+      message: '获取猫咪信息成功'
+    });
+  } catch (error) {
+    console.error('getCatById error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
+// POST /api/cats — 救助机构建档
+async function createCat(req, res) {
+  try {
+    const {
+      name,
+      breed,
+      age_months,
+      gender,
+      color,
+      description,
+      photo_url,
+      is_available,
+      owner_id,
+      org_id,
+      tags,
+      requirements
+    } = req.body;
+
+    if (!name) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'name 不能为空（Cat.name）'
+      });
+    }
+
+    // tags：与 CatTag 模型一致，每项为 { tag: string }（无需传 cat_id，由创建时关联）
+    const tagCreates = Array.isArray(tags)
+      ? tags
+          .filter((row) => row && typeof row.tag === 'string' && row.tag.trim())
+          .map((row) => ({ tag: row.tag.trim() }))
+      : [];
+
+    // requirements：与 CatRequirement 模型一致，每项为 { description: string }
+    const reqCreates = Array.isArray(requirements)
+      ? requirements
+          .filter((row) => row && typeof row.description === 'string' && row.description.trim())
+          .map((row) => ({ description: row.description.trim() }))
+      : [];
+
+    const cat = await prisma.cat.create({
+      data: {
+        name,
+        breed: breed ?? null,
+        age_months: age_months != null ? Number(age_months) : null,
+        gender: gender ?? null,
+        color: color ?? null,
+        description: description ?? null,
+        photo_url: photo_url ?? null,
+        is_available: is_available !== undefined ? Boolean(is_available) : true,
+        owner_id: owner_id ?? null,
+        org_id: org_id || null,
+        tags: tagCreates.length ? { create: tagCreates } : undefined,
+        requirements: reqCreates.length ? { create: reqCreates } : undefined
+      },
       include: {
         tags: true,
         requirements: true,
-        organization: { select: { id: true, name: true, phone: true, address: true } }
+        organization: { select: { id: true, name: true, logo_url: true } }
       }
     });
-    if (!cat) {
-      return res.status(404).json({ success: false, error: '猫咪不存在', message: '未找到该猫咪' });
-    }
-    return res.status(200).json({ success: true, data: cat, message: '获取成功' });
-  } catch (error) {
-    console.error('getCatById error:', error);
-    return res.status(500).json({ success: false, error: error.message, message: '服务器错误' });
-  }
-}
 
-/** POST /api/cats — 创建猫咪档案（救助机构） */
-async function createCat(req, res) {
-  try {
-    const body = req.body;
-    const { name, breed, age_months, gender, color, description, photo_url, tags } = body;
-    if (!name || !name.trim()) {
-      return res.status(422).json({ success: false, error: '缺少姓名', message: '请填写猫咪名字' });
-    }
-    const cat = await prisma.cat.create({
-      data: {
-        name: name.trim(),
-        breed: breed?.trim() || null,
-        age_months: age_months != null ? parseInt(age_months, 10) : null,
-        gender: gender?.trim() || null,
-        color: color?.trim() || null,
-        description: description?.trim() || null,
-        photo_url: photo_url?.trim() || null,
-        org_id: body.org_id?.trim() || null,
-        tags: Array.isArray(tags) && tags.length
-          ? { create: tags.filter(Boolean).map((t) => ({ tag: String(t).trim() })) }
-          : undefined
-      },
-      include: { tags: true }
+    return res.status(201).json({
+      success: true,
+      data: cat,
+      message: '创建猫咪档案成功'
     });
-    return res.status(201).json({ success: true, data: cat, message: '创建成功' });
   } catch (error) {
     console.error('createCat error:', error);
-    return res.status(500).json({ success: false, error: error.message, message: '服务器错误' });
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
   }
 }
 
-/** PUT /api/cats/:id — 更新猫咪信息 */
+function canEditCat(user, cat) {
+  if (user.role === 'admin' || user.role === 'rescue_staff') {
+    return true;
+  }
+  if (user.role === 'user' && cat.owner_id && cat.owner_id === user.id) {
+    return true;
+  }
+  return false;
+}
+
+// PUT /api/cats/:id
 async function updateCat(req, res) {
   try {
-    const { id } = req.params;
-    const body = req.body;
-    const cat = await prisma.cat.findUnique({ where: { id } });
+    const cat = await prisma.cat.findUnique({ where: { id: req.params.id } });
     if (!cat) {
-      return res.status(404).json({ success: false, error: '猫咪不存在', message: '未找到该猫咪' });
+      return res.status(404).json({
+        success: false,
+        error: 'NotFound',
+        message: '猫咪不存在'
+      });
     }
-    const { name, breed, age_months, gender, color, description, photo_url, is_available } = body;
+
+    if (!canEditCat(req.user, cat)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: '无权修改该猫咪信息'
+      });
+    }
+
+    const {
+      name,
+      breed,
+      age_months,
+      gender,
+      color,
+      description,
+      photo_url,
+      is_available,
+      owner_id,
+      org_id,
+      tags,
+      requirements
+    } = req.body;
+
     const data = {};
-    if (name !== undefined) data.name = String(name).trim();
-    if (breed !== undefined) data.breed = breed ? String(breed).trim() : null;
-    if (age_months !== undefined) data.age_months = age_months === '' || age_months == null ? null : parseInt(age_months, 10);
-    if (gender !== undefined) data.gender = gender ? String(gender).trim() : null;
-    if (color !== undefined) data.color = color ? String(color).trim() : null;
-    if (description !== undefined) data.description = description ? String(description).trim() : null;
-    if (photo_url !== undefined) data.photo_url = photo_url ? String(photo_url).trim() : null;
-    if (typeof is_available === 'boolean') data.is_available = is_available;
-    const updated = await prisma.cat.update({
-      where: { id },
-      data,
-      include: { tags: true }
+    if (name !== undefined) data.name = name;
+    if (breed !== undefined) data.breed = breed;
+    if (age_months !== undefined) data.age_months = age_months != null ? Number(age_months) : null;
+    if (gender !== undefined) data.gender = gender;
+    if (color !== undefined) data.color = color;
+    if (description !== undefined) data.description = description;
+    if (photo_url !== undefined) data.photo_url = photo_url;
+    if (is_available !== undefined) data.is_available = Boolean(is_available);
+    if (owner_id !== undefined) data.owner_id = owner_id || null;
+    if (org_id !== undefined) data.org_id = org_id || null;
+
+    const updated = await prisma.$transaction(async (tx) => {
+      await tx.cat.update({
+        where: { id: cat.id },
+        data
+      });
+
+      if (Array.isArray(tags)) {
+        await tx.catTag.deleteMany({ where: { cat_id: cat.id } });
+        const tagRows = tags
+          .filter((row) => row && typeof row.tag === 'string' && row.tag.trim())
+          .map((row) => ({ cat_id: cat.id, tag: row.tag.trim() }));
+        if (tagRows.length) {
+          await tx.catTag.createMany({ data: tagRows });
+        }
+      }
+
+      if (Array.isArray(requirements)) {
+        await tx.catRequirement.deleteMany({ where: { cat_id: cat.id } });
+        const reqRows = requirements
+          .filter((row) => row && typeof row.description === 'string' && row.description.trim())
+          .map((row) => ({ cat_id: cat.id, description: row.description.trim() }));
+        if (reqRows.length) {
+          await tx.catRequirement.createMany({ data: reqRows });
+        }
+      }
+
+      return tx.cat.findUnique({
+        where: { id: cat.id },
+        include: {
+          tags: true,
+          requirements: true,
+          organization: { select: { id: true, name: true, logo_url: true } },
+          owner: { select: { id: true, username: true, display_name: true } }
+        }
+      });
     });
-    return res.status(200).json({ success: true, data: updated, message: '更新成功' });
+
+    return res.json({
+      success: true,
+      data: updated,
+      message: '更新猫咪信息成功'
+    });
   } catch (error) {
     console.error('updateCat error:', error);
-    return res.status(500).json({ success: false, error: error.message, message: '服务器错误' });
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
   }
 }
 
-module.exports = {
-  getCats,
-  getCatById,
-  createCat,
-  updateCat
-};
+module.exports = { getCats, getCatById, createCat, updateCat };
