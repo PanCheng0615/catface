@@ -1,13 +1,17 @@
 const express = require('express');
 
 const {
+  getAuthorizedCats,
   createClinicReport,
-  getAuthorizedCats
+  updateClinicReport,
+  deleteClinicReport
 } = require('../controllers/clinic.controller');
 
 const router = express.Router();
 
-router.post('/reports/:catId', createClinicReport);
-router.get('/cats', getAuthorizedCats);
+router.get('/cats',                  getAuthorizedCats);
+router.post('/reports/:catId',       createClinicReport);
+router.put('/reports/:reportId',     updateClinicReport);
+router.delete('/reports/:reportId',  deleteClinicReport);
 
 module.exports = router;

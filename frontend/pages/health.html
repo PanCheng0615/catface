@@ -412,6 +412,33 @@
       <a href="index.html">← Back to Main</a>
     </nav>
 
+    <!-- ── 状态提示 ── -->
+    <div id="status-msg" style="display:none;padding:12px 18px;border-radius:14px;font-size:14px;font-weight:600;"></div>
+
+    <!-- ── 测试 ID 面板（开发用）── -->
+    <div id="test-id-panel" style="background:#fffbeb;border:1px solid #fcd34d;border-radius:18px;padding:18px 22px;">
+      <p style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:12px;">🛠 开发测试面板 — 输入 ID 后点击「加载」即可测试 API</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:12px;font-weight:600;color:#78350f;">猫咪 ID (UUID)</label>
+          <input id="test-cat-id-input" type="text" placeholder="从 pgAdmin 或 POST /api/cats 获取"
+            style="border:1px solid #fcd34d;border-radius:10px;padding:8px 12px;width:300px;font-size:13px;">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:12px;font-weight:600;color:#78350f;">用户 ID (UUID)</label>
+          <input id="test-user-id-input" type="text" placeholder="从 pgAdmin 或 POST /api/auth/register 获取"
+            style="border:1px solid #fcd34d;border-radius:10px;padding:8px 12px;width:300px;font-size:13px;">
+        </div>
+        <button id="test-apply-btn"
+          style="background:#f59e0b;color:#fff;border:none;border-radius:12px;padding:10px 20px;font-weight:700;cursor:pointer;">
+          加载数据
+        </button>
+      </div>
+      <p style="font-size:12px;color:#92400e;margin-top:8px;">
+        当前猫咪：<strong id="current-cat-id" style="font-family:monospace;">未设置</strong>
+      </p>
+    </div>
+
     <header class="hero">
       <div class="hero-copy">
         <div class="eyebrow">Cat Health Data</div>
@@ -466,7 +493,85 @@
             </div>
           </div>
 
-          <div class="display-grid" id="user-display-grid">
+          <!-- ── API 记录列表 ── -->
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-size:16px;font-weight:700;">健康记录列表</h3>
+            <button id="toggle-add-btn" style="background:#ff5a76;color:#fff;border:none;border-radius:999px;padding:8px 18px;font-weight:700;cursor:pointer;">+ 添加记录</button>
+          </div>
+          <div id="owner-records-list" style="display:flex;flex-direction:column;gap:10px;">
+            <p style="color:#888;font-size:14px;">请先在上方填写猫咪 ID 并点击「加载数据」</p>
+          </div>
+
+          <!-- ── 添加记录表单 ── -->
+          <div id="add-record-section">
+            <form id="add-record-form" style="border:1px solid #e5e7eb;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;background:#fafbfc;">
+              <h3 style="font-size:16px;font-weight:700;margin:0;">添加新健康记录</h3>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+                <div class="field-row">
+                  <label for="rec-type">记录类型 *</label>
+                  <select id="rec-type" class="text-input" required>
+                    <option value="vaccine">💉 疫苗接种</option>
+                    <option value="deworming">🐛 驱虫</option>
+                    <option value="checkup">🩺 体检</option>
+                    <option value="treatment">💊 治疗</option>
+                    <option value="surgery">🔪 手术</option>
+                    <option value="other">📋 其他</option>
+                  </select>
+                </div>
+                <div class="field-row">
+                  <label for="rec-date">记录日期 *</label>
+                  <input id="rec-date" class="date-input" type="date" required>
+                </div>
+                <div class="field-row">
+                  <label for="rec-next">下次提醒日期</label>
+                  <input id="rec-next" class="date-input" type="date">
+                </div>
+                <div class="field-row">
+                  <label for="rec-weight">体重（kg）</label>
+                  <input id="rec-weight" class="text-input" type="number" step="0.1" placeholder="例：4.2">
+                </div>
+                <div class="field-row">
+                  <label for="rec-vet">医生姓名</label>
+                  <input id="rec-vet" class="text-input" type="text" placeholder="例：王医生">
+                </div>
+                <div class="field-row">
+                  <label for="rec-clinic">诊所名称</label>
+                  <input id="rec-clinic" class="text-input" type="text" placeholder="例：爱猫动物医院">
+                </div>
+              </div>
+              <div class="field-row">
+                <label for="rec-desc">描述 *</label>
+                <textarea id="rec-desc" class="text-area" placeholder="例：接种狂犬疫苗第一针，反应正常" required></textarea>
+              </div>
+              <div style="display:flex;gap:10px;justify-content:flex-end;">
+                <button type="submit" class="save-btn">提交记录</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- ── 诊所授权设置 ── -->
+          <div style="border-top:1px solid #f0f0f0;padding-top:18px;">
+            <h3 style="font-size:16px;font-weight:700;margin-bottom:12px;">诊所数据授权</h3>
+            <div id="share-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+              <p style="color:#888;font-size:14px;">请先加载数据</p>
+            </div>
+            <form id="share-form" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+              <div class="field-row" style="flex:1;min-width:200px;">
+                <label for="share-org-id" style="font-size:13px;font-weight:600;">诊所 ID (UUID)</label>
+                <input id="share-org-id" class="text-input" type="text" placeholder="从 GET /api/organizations 获取">
+              </div>
+              <div class="field-row">
+                <label for="share-allowed" style="font-size:13px;font-weight:600;">授权状态</label>
+                <select id="share-allowed" class="text-input">
+                  <option value="true">✅ 允许查看</option>
+                  <option value="false">❌ 取消授权</option>
+                </select>
+              </div>
+              <button type="submit" class="save-btn" style="align-self:flex-end;">设置授权</button>
+            </form>
+          </div>
+
+          <div class="display-grid" id="user-display-grid" style="display:none;">
             <article class="display-card">
               <h3>Basic Information</h3>
               <p>This bar contains the cat profile details maintained by the owner.</p>
@@ -642,47 +747,8 @@
             <span class="status-pill">Clinic Uploaded</span>
           </div>
 
-          <div class="record-grid">
-            <div class="record-title">Official Health Record</div>
-
-            <div class="record-label">Cat Name</div>
-            <div class="record-value">
-              Tiger
-            </div>
-
-            <div class="record-label">Cat ID</div>
-            <div class="record-value">
-              CAT-2026-002
-            </div>
-
-            <div class="record-label">Spay/Neuter Status</div>
-            <div class="record-value">
-              Completed
-            </div>
-
-            <div class="record-label">Vaccination</div>
-            <div class="record-value">
-              Rabies Vaccine
-            </div>
-
-            <div class="record-label">Allergies</div>
-            <div class="record-value">
-              Grain allergy
-            </div>
-
-            <div class="record-label">Recent Medical Examination Report</div>
-            <div class="record-value">
-              <div class="report-row">
-                <span>2026-02-24</span>
-                <a class="report-link" id="official-report-link" href="#">Go to Report</a>
-                <span class="file-pill">Clinic Verified</span>
-              </div>
-            </div>
-
-            <div class="record-label">Other Health Data</div>
-            <div class="record-value">
-              Weight stable, appetite normal, no abnormal findings in recent check.
-            </div>
+          <div id="clinic-records-list" style="display:flex;flex-direction:column;gap:10px;">
+            <p style="color:#888;font-size:14px;">请先在上方填写猫咪 ID 并点击「加载数据」</p>
           </div>
 
           <div class="info-banner" id="official-banner">
@@ -724,7 +790,10 @@
     <footer><a href="index.html">Back to Main</a></footer>
   </div>
 
+  <script src="../js/config.js"></script>
+  <script src="../js/health.js"></script>
   <script>
+    /* ── 以下是原始 localStorage 备用逻辑，已被 health.js 接管，保留供参考 ── */
     (function () {
       const SHARE_KEY = "catface_health_share_enabled";
       const USER_HEALTH_KEY = "catface_health_user_record";
