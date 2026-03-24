@@ -423,7 +423,8 @@
       border: none;
       background: transparent;
       color: #2f6feb;
-      font-size: 14px;
+      font-size: 13px;
+      font-weight: 600;
       padding: 0;
       cursor: pointer;
     }
@@ -990,6 +991,133 @@
         max-height: 360px;
       }
     }
+
+    .history-link-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: -8px;
+    }
+    .history-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      background: transparent;
+      color: #2f6feb;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 0;
+      cursor: pointer;
+    }
+    .history-link-btn:hover {
+      text-decoration: underline;
+    }
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .history-item {
+      border: 1px solid #ececec;
+      border-radius: 18px;
+      padding: 14px;
+      background: #fafafa;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .history-item-photo {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #f0f0f0;
+    }
+    .history-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .history-item-info h3 {
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    .history-item-info small {
+      color: #777;
+      line-height: 1.5;
+    }
+    .history-item-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .history-status {
+      display: inline-flex;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .history-status.liked {
+      background: #ecfdf3;
+      color: #027a48;
+    }
+    .history-status.disliked {
+      background: #fef3f2;
+      color: #b42318;
+    }
+    .history-toggle-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .history-toggle-btn {
+      border: 1px solid #d8dce3;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      background: #fff;
+      color: #333;
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+    .history-toggle-btn:hover {
+      border-color: #999;
+    }
+    .history-toggle-btn.active-like {
+      background: #ecfdf3;
+      color: #027a48;
+      border-color: #027a48;
+    }
+    .history-toggle-btn.active-dislike {
+      background: #fef3f2;
+      color: #b42318;
+      border-color: #b42318;
+    }
+    .history-toggle-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .history-loading {
+      text-align: center;
+      color: #777;
+      padding: 20px;
+    }
+
+    #contact-overlay .modal {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #contact-overlay .chat-shell {
+      flex: 1;
+      min-height: 0;
+    }
+    #contact-overlay .chat-thread {
+      min-height: 100px;
+      max-height: none;
+    }
   </style>
 </head>
 <body>
@@ -1194,11 +1322,14 @@
           </div>
           <span class="pill-status"><span id="liked-count-side">0</span> saved</span>
         </div>
+        <div class="history-link-row">
+          <button class="history-link-btn" type="button" id="open-history-btn">View History Cats →</button>
+        </div>
         <div class="liked-list" id="liked-list">
           <div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>
         </div>
         <div class="liked-panel-footer">
-          <button class="liked-panel-link" type="button" id="open-liked-list-link" hidden>Open liked cats list →</button>
+          <button class="liked-panel-link" type="button" id="open-liked-list-link" hidden>View all Liked Cats →</button>
         </div>
       </aside>
     </main>
@@ -1393,6 +1524,22 @@
     </div>
   </section>
 
+  <section class="modal-overlay" id="history-overlay" aria-hidden="true">
+    <div class="modal medium" role="dialog" aria-label="Swipe history">
+      <button class="modal-close" type="button" data-close="history-overlay">×</button>
+      <div class="form-shell">
+        <div>
+          <h2>History Cats</h2>
+          <p>View all cats you have swiped. You can change your like or dislike decision here.</p>
+        </div>
+        <div class="history-list" id="history-list">
+          <div class="empty-state" id="history-empty">No history yet. Start swiping to build your history.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="../js/config.js"></script>
   <script>
     (function () {
       const cats = {
@@ -1804,7 +1951,7 @@
 
         if (likedCats.length > likedPreviewLimit) {
           openLikedListLink.hidden = false;
-          openLikedListLink.textContent = "Open liked cats list (" + likedCats.length + ")";
+          openLikedListLink.textContent = "View all Liked Cats (" + likedCats.length + ")";
         } else {
           openLikedListLink.hidden = true;
         }
@@ -2105,6 +2252,13 @@
         }
       });
 
+      chatMessageInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          contactForm.requestSubmit();
+        }
+      });
+
       contactForm.addEventListener("submit", function (event) {
         event.preventDefault();
         if (!activeCatId) return;
@@ -2170,6 +2324,277 @@
       if (firstCard) {
         activeCatId = getCardId(firstCard);
       }
+
+      // ── Enhanced swipe: trackpad drag fix + keyboard + horizontal scroll ──
+      var _swipeDragStartX = 0;
+      var _swipeDragMaxDist = 0;
+
+      stack.addEventListener("mousedown", function (event) {
+        _swipeDragStartX = event.clientX;
+        _swipeDragMaxDist = 0;
+      }, true);
+
+      stack.addEventListener("mousemove", function (event) {
+        var dist = Math.abs(event.clientX - _swipeDragStartX);
+        if (dist > _swipeDragMaxDist) _swipeDragMaxDist = dist;
+      }, true);
+
+      stack.addEventListener("click", function (event) {
+        if (_swipeDragMaxDist > 5) {
+          event.stopPropagation();
+        }
+        _swipeDragMaxDist = 0;
+      }, true);
+
+      document.addEventListener("keydown", function (event) {
+        if (isAnimating) return;
+        var tag = event.target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (document.querySelector(".modal-overlay.open")) return;
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          var current = getCurrentCard();
+          if (!current) return;
+          activeCatId = getCardId(current);
+          swipe(event.key === "ArrowRight" ? "right" : "left");
+        }
+      });
+
+      (function () {
+        var acc = 0;
+        var timer = null;
+        var locked = false;
+        var unlockTimer = null;
+        stack.addEventListener("wheel", function (event) {
+          if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+          event.preventDefault();
+          if (locked || isAnimating) {
+            if (unlockTimer) clearTimeout(unlockTimer);
+            unlockTimer = setTimeout(function () { locked = false; acc = 0; }, 400);
+            return;
+          }
+          acc += event.deltaX;
+          if (timer) clearTimeout(timer);
+          if (Math.abs(acc) > 50) {
+            var dir = acc > 0 ? "left" : "right";
+            var current = getCurrentCard();
+            if (current) {
+              activeCatId = getCardId(current);
+              swipe(dir);
+            }
+            acc = 0;
+            locked = true;
+            unlockTimer = setTimeout(function () { locked = false; }, 400);
+          } else {
+            timer = setTimeout(function () { acc = 0; }, 300);
+          }
+        }, { passive: false });
+      })();
+
+      // ── Persistence (localStorage + backend API sync) ──
+      var STORAGE_KEY_LIKED = 'catface_liked_cats';
+      var STORAGE_KEY_HISTORY = 'catface_swipe_history';
+      var swipeHistory = {};
+
+      function saveAdoptionState() {
+        try {
+          localStorage.setItem(STORAGE_KEY_LIKED, JSON.stringify(likedCats));
+          localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(swipeHistory));
+        } catch (e) {}
+      }
+
+      function loadAdoptionState() {
+        try {
+          var savedLiked = localStorage.getItem(STORAGE_KEY_LIKED);
+          if (savedLiked) {
+            var arr = JSON.parse(savedLiked);
+            if (Array.isArray(arr)) {
+              arr.forEach(function (id) {
+                if (cats[id] && likedCats.indexOf(id) === -1) {
+                  likedCats.push(id);
+                }
+              });
+            }
+          }
+          var savedHistory = localStorage.getItem(STORAGE_KEY_HISTORY);
+          if (savedHistory) {
+            var obj = JSON.parse(savedHistory);
+            if (obj && typeof obj === 'object') {
+              Object.keys(obj).forEach(function (id) {
+                if (cats[id]) swipeHistory[id] = obj[id];
+              });
+            }
+          }
+        } catch (e) {}
+      }
+
+      function getApiToken() {
+        return (typeof getToken === 'function') ? getToken() : null;
+      }
+
+      function getApiBase() {
+        return (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:3000/api';
+      }
+
+      function syncSwipeToBackend(catId, liked) {
+        var token = getApiToken();
+        if (!token) return;
+        fetch(getApiBase() + '/adoption/swipe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ cat_id: catId, liked: liked })
+        }).catch(function () {});
+      }
+
+      var _origUpdateLikedUI = updateLikedUI;
+      updateLikedUI = function () {
+        _origUpdateLikedUI();
+        saveAdoptionState();
+      };
+
+      var _origSwipe = swipe;
+      swipe = function (direction) {
+        var current = getCurrentCard();
+        var catId = current ? getCardId(current) : null;
+        if (catId) {
+          swipeHistory[catId] = (direction === 'right');
+        }
+        var result = _origSwipe(direction);
+        saveAdoptionState();
+        if (catId) syncSwipeToBackend(catId, direction === 'right');
+        return result;
+      };
+
+      loadAdoptionState();
+      updateLikedUI();
+
+      function tryLoadFromBackend() {
+        var token = getApiToken();
+        if (!token) return;
+        fetch(getApiBase() + '/adoption/swipes', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (result) {
+          if (!result.success || !result.data) return;
+          var changed = false;
+          result.data.forEach(function (row) {
+            var catId = row.cat_id;
+            if (!cats[catId]) return;
+            if (swipeHistory[catId] === undefined) {
+              swipeHistory[catId] = row.liked;
+              changed = true;
+            }
+            if (row.liked && likedCats.indexOf(catId) === -1) {
+              likedCats.push(catId);
+              changed = true;
+            }
+          });
+          if (changed) {
+            updateLikedUI();
+          }
+        })
+        .catch(function () {});
+      }
+
+      tryLoadFromBackend();
+
+      // ── History Cats Modal ──
+      var historyOverlay = document.getElementById('history-overlay');
+      var historyListEl = document.getElementById('history-list');
+      var openHistoryBtn = document.getElementById('open-history-btn');
+
+      if (openHistoryBtn) {
+        openHistoryBtn.addEventListener('click', function () {
+          openModal(historyOverlay);
+          renderLocalHistory();
+        });
+      }
+
+      if (historyOverlay) {
+        historyOverlay.addEventListener('click', function (event) {
+          if (event.target === historyOverlay) {
+            closeModal(historyOverlay);
+          }
+        });
+      }
+
+      function renderLocalHistory() {
+        var catIds = Object.keys(swipeHistory);
+        if (!catIds.length) {
+          historyListEl.innerHTML = '<div class="empty-state">No swipe history yet. Start swiping to build your history.</div>';
+          return;
+        }
+
+        historyListEl.innerHTML = catIds.map(function (catId) {
+          var cat = cats[catId];
+          if (!cat) return '';
+          var isLiked = swipeHistory[catId];
+
+          return [
+            '<div class="history-item" data-history-cat-id="' + catId + '">',
+            '  <img class="history-item-photo" src="' + cat.image + '" alt="' + escapeHtml(cat.name) + '">',
+            '  <div class="history-item-info">',
+            '    <h3>' + escapeHtml(cat.name + ' · ' + cat.title) + '</h3>',
+            '    <small>' + escapeHtml(cat.age + ' · ' + cat.gender + ' · ' + cat.temperament) + '</small>',
+            '  </div>',
+            '  <div class="history-item-right">',
+            '    <span class="history-status ' + (isLiked ? 'liked' : 'disliked') + '">' + (isLiked ? '❤ Liked' : '✕ Passed') + '</span>',
+            '    <div class="history-toggle-actions">',
+            '      <button class="history-toggle-btn' + (isLiked ? ' active-like' : '') + '" type="button" data-action="like">❤ Like</button>',
+            '      <button class="history-toggle-btn' + (!isLiked ? ' active-dislike' : '') + '" type="button" data-action="dislike">✕ Dislike</button>',
+            '    </div>',
+            '  </div>',
+            '</div>'
+          ].join('');
+        }).join('');
+      }
+
+      historyListEl.addEventListener('click', function (event) {
+        var btn = event.target.closest('.history-toggle-btn');
+        if (!btn) return;
+
+        var item = btn.closest('[data-history-cat-id]');
+        if (!item) return;
+
+        var catId = item.getAttribute('data-history-cat-id');
+        var action = btn.getAttribute('data-action');
+        var newLiked = (action === 'like');
+
+        var statusEl = item.querySelector('.history-status');
+        var isCurrentlyLiked = statusEl && statusEl.classList.contains('liked');
+        if ((newLiked && isCurrentlyLiked) || (!newLiked && !isCurrentlyLiked)) return;
+
+        swipeHistory[catId] = newLiked;
+
+        if (newLiked) {
+          ensureLiked(catId);
+        } else {
+          var idx = likedCats.indexOf(catId);
+          if (idx !== -1) {
+            likedCats.splice(idx, 1);
+            updateLikedUI();
+          }
+        }
+
+        statusEl.className = 'history-status ' + (newLiked ? 'liked' : 'disliked');
+        statusEl.textContent = newLiked ? '❤ Liked' : '✕ Passed';
+
+        var likeBtn = item.querySelector('[data-action="like"]');
+        var dislikeBtn = item.querySelector('[data-action="dislike"]');
+        likeBtn.className = 'history-toggle-btn' + (newLiked ? ' active-like' : '');
+        dislikeBtn.className = 'history-toggle-btn' + (!newLiked ? ' active-dislike' : '');
+
+        saveAdoptionState();
+        syncSwipeToBackend(catId, newLiked);
+      });
+
     })();
   </script>
 </body>
