@@ -1,0 +1,11 @@
+# Core numerical and image dependencies
+numpy
+opencv-python
+Pillow
+scikit-image
+
+# Deep learning stack
+torch
+torchvision
+timm
+ultralytics
