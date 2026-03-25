@@ -463,6 +463,43 @@
         }
       }
 
+      function syncProfileAfterSignup(isOwner) {
+        if (!getToken()) return Promise.resolve();
+        var payload;
+        if (isOwner) {
+          payload = {
+            display_name: regName.value.trim(),
+            has_cat: true,
+            cat: {
+              name: (myCatName && myCatName.value.trim()) || "My Cat",
+              breed: (myCatBreed && myCatBreed.value.trim()) || "",
+              gender: (myCatGender && myCatGender.value) || "",
+              birthday: (myCatBirthday && myCatBirthday.value) || "",
+              photo_url: pendingCatFaceDataUrl || "",
+              description: "Created from sign-up"
+            }
+          };
+        } else {
+          payload = {
+            display_name: regName.value.trim(),
+            has_cat: false,
+            preferences: {
+              preferred_gender: (prefGender && prefGender.value) || "",
+              preferred_age: (prefAge && prefAge.value) || "",
+              preferred_breed: (prefBreed && prefBreed.value) || ""
+            }
+          };
+        }
+        return fetch(API_BASE + "/users/me/profile", {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload)
+        })
+          .then(function (res) { return res.json(); })
+          .then(function () {})
+          .catch(function () {});
+      }
+
       var tabLogin = document.getElementById('tabLogin');
       var tabSignup = document.getElementById('tabSignup');
       var loginForm = document.getElementById('loginForm');
@@ -649,8 +686,10 @@
               return;
             }
             saveAuth(result.data);
-            alert('Sign up successful.');
-            window.location.href = '/pages/index.html';
+            syncProfileAfterSignup(isOwner).finally(function () {
+              alert('Sign up successful.');
+              window.location.href = '/pages/index.html';
+            });
           })
           .catch(function () {
             alert("Network error. Please check backend service.");

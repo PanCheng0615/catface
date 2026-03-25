@@ -14,6 +14,60 @@
     }
     a { color: inherit; text-decoration: none; }
 
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 200px;
+      bottom: 0;
+      background: #fff;
+      border-right: 1px solid #eee;
+      padding-top: 56px;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-nav {
+      list-style: none;
+      margin: 0;
+      padding: 12px 0 0;
+    }
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      font-size: 15px;
+      color: #333;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      background: #f5f5f5;
+      color: #ff2442;
+    }
+    .sidebar-nav .icon {
+      width: 22px;
+      height: 22px;
+      text-align: center;
+      font-size: 18px;
+    }
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 20px;
+    }
+    .login-btn {
+      display: block;
+      width: 100%;
+      height: 44px;
+      line-height: 44px;
+      text-align: center;
+      border-radius: 999px;
+      background: #ff2442;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
    
     .top-bar {
       position: sticky;
@@ -22,6 +76,7 @@
       background: #ffffffcc;
       backdrop-filter: blur(12px);
       border-bottom: 1px solid #f1f1f1;
+      margin-left: 200px;
     }
     .top-bar-inner {
       max-width: 1200px;
@@ -107,10 +162,19 @@
       display: grid;
       grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
       gap: 16px;
+      margin-left: 200px;
+      max-width: none;
     }
     @media (max-width: 900px) {
       .page {
         grid-template-columns: minmax(0, 1fr);
+        margin-left: 0;
+      }
+      .top-bar {
+        margin-left: 0;
+      }
+      .sidebar {
+        display: none;
       }
     }
 
@@ -254,6 +318,12 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
     }
     .post-author-avatar {
       width: 22px;
@@ -554,6 +624,20 @@
   </style>
 </head>
 <body>
+  <aside class="sidebar" aria-label="Main navigation">
+    <ul class="sidebar-nav">
+      <li><a href="/pages/cat-facebook.html?feed=recommended" class="active"><span class="icon">💬</span> Community</a></li>
+      <li><a href="/pages/adoption.html"><span class="icon">🐱</span> Adoption</a></li>
+      <li><a href="/pages/health.html"><span class="icon">🩺</span> Health</a></li>
+      <li><a href="/pages/notifications.html"><span class="icon">🔔</span> Notifications</a></li>
+      <li><a href="/pages/account.html"><span class="icon">👤</span> Account</a></li>
+      <li><a href="#" title="Store coming soon"><span class="icon">🛍️</span> Store</a></li>
+    </ul>
+    <div class="sidebar-bottom">
+      <a href="/pages/log-in.html" class="login-btn">My Account</a>
+    </div>
+  </aside>
+
   <header class="top-bar" role="banner">
     <div class="top-bar-inner">
       <div class="top-left">
@@ -564,7 +648,7 @@
       </div>
       <nav class="top-actions feed-nav" aria-label="Community feed">
         <button class="feed-tab is-active" type="button" data-feed="recommended" id="tabRecommended">Recommended</button>
-        <button class="feed-tab" type="button" data-feed="followed" id="tabFollowed">Followed</button>
+        <button class="feed-tab" type="button" data-feed="followed" id="tabFollowed">Follow</button>
         <button class="feed-tab-create" type="button" id="btnCreatePost">Create post</button>
       </nav>
     </div>
@@ -673,6 +757,6 @@
   </section>
 
   <script src="../js/config.js"></script>
-  <script src="../js/community.js"></script>
+  <script src="../js/community.js?v=20260325f"></script>
 </body>
 </html>

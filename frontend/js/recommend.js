@@ -12,6 +12,7 @@
   var detailTitle = document.getElementById("detailTitle");
   var detailAuthorAvatar = document.getElementById("detailAuthorAvatar");
   var detailAuthorName = document.getElementById("detailAuthorName");
+  var detailAuthorRow = document.querySelector(".post-modal-author");
   var detailLikeBtn = document.getElementById("detailLikeBtn");
   var detailLikeIcon = document.getElementById("detailLikeIcon");
   var detailLikeLabel = document.getElementById("detailLikeLabel");
@@ -25,6 +26,18 @@
 
   var posts = [];
   var currentIndex = null;
+
+  function openAuthorProfile(post) {
+    if (!post) return;
+    var author = post.author || "Cat Lover";
+    var query = "author=" + encodeURIComponent(author);
+    if (post.authorId) query += "&authorId=" + encodeURIComponent(post.authorId);
+    try {
+      if (post.authorId) window.localStorage.setItem("catface_last_author_id", String(post.authorId));
+      if (author) window.localStorage.setItem("catface_last_author_name", String(author));
+    } catch (e) {}
+    window.location.href = "/pages/cat-profile.html?" + query;
+  }
 
   function formatLikes(num) {
     if (num >= 1000) return (num / 1000).toFixed(0) + "k";
@@ -47,10 +60,20 @@
         '<div class="body">' +
         '<h3 class="title">' + title + '</h3>' +
         '<div class="meta">' +
-        '<span class="user"><span class="avatar"></span> ' + author + '</span>' +
+        '<button class="user" type="button" data-author-click="1" aria-label="View author profile"><span class="avatar"></span> ' + author + '</button>' +
         '<span class="likes">❤️ ' + likesStr + '</span>' +
         '</div></div>';
-      card.addEventListener("click", function () { openDetail(index); });
+      card.addEventListener("click", function (e) {
+        var targetNode = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
+        var fromAuthor = targetNode && targetNode.closest ? targetNode.closest("[data-author-click='1']") : null;
+        if (fromAuthor) {
+          e.preventDefault();
+          e.stopPropagation();
+          openAuthorProfile(post);
+          return;
+        }
+        openDetail(index);
+      }, true);
       feedEl.appendChild(card);
     });
   }
@@ -103,6 +126,15 @@
     updateLikeUI(post);
     renderComments(post);
     overlay.classList.add("is-open");
+  }
+
+  if (detailAuthorRow) {
+    detailAuthorRow.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (currentIndex == null) return;
+      openAuthorProfile(posts[currentIndex]);
+    });
   }
 
   function closeDetail() {
@@ -193,6 +225,7 @@
               image: p.image || "",
               text: p.text || "",
               author: p.author || "User",
+              authorId: p.authorId || null,
               likes: typeof p.likes === "number" ? p.likes : (p.likes ? p.likes.length : 0),
               liked: p.liked || false,
               comments: Array.isArray(p.comments) ? p.comments.slice() : []

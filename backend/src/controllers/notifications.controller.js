@@ -1,4 +1,4 @@
-const { PrismaClient, Prisma } = require('@prisma/client');
+const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
@@ -17,26 +17,15 @@ function formatTime(date) {
   return `${y}-${m}-${day} ${hh}:${mm}`;
 }
 
-async function ensureNotificationReadTable() {
-  await prisma.$executeRawUnsafe(
-    'CREATE TABLE IF NOT EXISTS notification_reads (' +
-      'user_id TEXT NOT NULL,' +
-      'notification_id TEXT NOT NULL,' +
-      'read_at TIMESTAMP NOT NULL DEFAULT NOW(),' +
-      'PRIMARY KEY (user_id, notification_id)' +
-    ')'
-  );
-}
-
 async function loadReadSet(userId, notificationIds) {
-  await ensureNotificationReadTable();
   if (!notificationIds.length) return new Set();
-  const rows = await prisma.$queryRaw`
-    SELECT notification_id
-    FROM notification_reads
-    WHERE user_id = ${String(userId)}
-      AND notification_id IN (${Prisma.join(notificationIds)})
-  `;
+  const rows = await prisma.notificationRead.findMany({
+    where: {
+      user_id: String(userId),
+      notification_id: { in: notificationIds }
+    },
+    select: { notification_id: true }
+  });
   return new Set(rows.map((x) => x.notification_id));
 }
 
@@ -199,15 +188,13 @@ async function markNotificationsRead(req, res) {
       });
     }
 
-    await ensureNotificationReadTable();
-    const inserts = normalized.map((id) =>
-      prisma.$executeRaw`
-        INSERT INTO notification_reads (user_id, notification_id)
-        VALUES (${String(userId)}, ${id})
-        ON CONFLICT (user_id, notification_id) DO NOTHING
-      `
-    );
-    if (inserts.length) await prisma.$transaction(inserts);
+    await prisma.notificationRead.createMany({
+      data: normalized.map((id) => ({
+        user_id: String(userId),
+        notification_id: id
+      })),
+      skipDuplicates: true
+    });
 
     return res.json({
       success: true,

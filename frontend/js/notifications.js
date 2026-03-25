@@ -76,7 +76,32 @@
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify({ ids: normalized })
-    }).then(function () {}).catch(function () {});
+    })
+      .then(function (res) {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .catch(function () {
+        return null;
+      });
+  }
+
+  function fetchNotifications(type) {
+    return fetch(API_BASE_URL + "/notifications?type=" + encodeURIComponent(type), {
+      method: "GET",
+      headers: getAuthHeaders()
+    })
+      .then(function (res) {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then(function (result) {
+        if (!result || !result.success || !Array.isArray(result.data)) return [];
+        return result.data;
+      })
+      .catch(function () {
+        return [];
+      });
   }
 
   function openDetail(item) {
@@ -184,34 +209,16 @@
     render(filtered);
   }
 
-  function fetchTypeItems(type) {
-    return fetch(API_BASE_URL + "/notifications?type=" + encodeURIComponent(type), {
-      method: "GET",
-      headers: getAuthHeaders()
-    })
-      .then(function (res) {
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .then(function (result) {
-        if (!result || !result.success || !Array.isArray(result.data)) return [];
-        return result.data.filter(function (item) {
-          return item && item.type === type;
-        });
-      })
-      .catch(function () {
-        return [];
-      });
-  }
-
   function refreshCategoryBadges() {
     if (!getToken()) {
       TYPES.forEach(function (t) { setBadgeCount(t, 0); });
       return;
     }
-    Promise.all(TYPES.map(fetchTypeItems)).then(function (rows) {
-      TYPES.forEach(function (type, idx) {
-        const arr = Array.isArray(rows[idx]) ? rows[idx] : [];
+    fetchNotifications("all").then(function (allItems) {
+      TYPES.forEach(function (type) {
+        const arr = (Array.isArray(allItems) ? allItems : []).filter(function (item) {
+          return item && item.type === type;
+        });
         const unread = arr.reduce(function (acc, item) {
           const n = Number(item && item.unread_count);
           return acc + (Number.isFinite(n) && n > 0 ? 1 : 0);
@@ -244,6 +251,9 @@
           window.location.href = "/pages/log-in.html";
           return null;
         }
+        if (!res.ok) {
+          return null;
+        }
         return res.json();
       })
       .then(function (result) {
@@ -258,12 +268,14 @@
         const unreadIds = typedItems
           .filter(function (item) { return Number(item.unread_count || 0) > 0; })
           .map(function (item) { return item.id; });
-        markReadOnServer(unreadIds);
-        currentItems = typedItems.map(function (item) {
-          return Object.assign({}, item, { unread_count: 0 });
+        markReadOnServer(unreadIds).finally(function () {
+          if (requestId !== latestRequestId) return;
+          currentItems = typedItems.map(function (item) {
+            return Object.assign({}, item, { unread_count: 0 });
+          });
+          applySearchFilter();
+          refreshCategoryBadges();
         });
-        applySearchFilter();
-        refreshCategoryBadges();
       })
       .catch(function () {
         if (requestId !== latestRequestId) return;

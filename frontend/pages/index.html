@@ -448,7 +448,7 @@
   <aside class="sidebar">
     <div class="sidebar-top">
       <ul class="sidebar-nav">
-        <li><a href="/pages/index.html" class="active"><span class="icon">💬</span> Community</a></li>
+        <li><a href="/pages/cat-facebook.html?feed=recommended" class="active" id="gotoCommunityFeed"><span class="icon">💬</span> Community</a></li>
         <li><a href="/pages/adoption.html"><span class="icon">🐱</span> Adoption</a></li>
         <li><a href="/pages/health.html"><span class="icon">🩺</span> Health</a></li>
         <li><a href="/pages/notifications.html"><span class="icon">🔔</span> Notifications</a></li>
@@ -477,18 +477,8 @@
     </div>
   </aside>
 
-  <!-- 主内容：分类 + 猫猫帖子 / Main content -->
-  <main class="main">
-    <nav class="tabs" aria-label="Content categories">
-      <a href="#" class="current">Recommended</a>
-      <a href="/pages/cat-facebook.html?feed=followed" id="gotoFollowedFeed">Followed</a>
-      <a href="/pages/cat-facebook.html?compose=1" class="post-cta" id="gotoCreatePost">Create post</a>
-    </nav>
-
-    <section class="feed" id="recommendFeed" aria-label="Cat posts">
-      <!-- 推荐流由 recommend.js 从 GET /api/community/posts 拉取并渲染 -->
-    </section>
-  </main>
+  <!-- 主内容区域留空：Community 入口统一从左侧导航进入 -->
+  <main class="main"></main>
 
   <!-- 登录弹窗（浮在主界面上） / Login modal -->
   <section id="login" class="auth-overlay" aria-label="Login dialog">
@@ -671,9 +661,24 @@
   </section>
 
   <script src="../js/config.js"></script>
-  <script src="../js/recommend.js"></script>
   <script>
     (function () {
+      var communityTarget = "/pages/cat-facebook.html?feed=recommended";
+      var gotoCommunityFeed = document.getElementById('gotoCommunityFeed');
+      if (gotoCommunityFeed) {
+        gotoCommunityFeed.addEventListener('click', function (event) {
+          event.preventDefault();
+          window.location.href = communityTarget;
+        });
+      }
+      var gotoRecommendedFeed = document.getElementById('gotoRecommendedFeed');
+      if (gotoRecommendedFeed) {
+        gotoRecommendedFeed.addEventListener('click', function (event) {
+          event.preventDefault();
+          window.location.href = communityTarget;
+        });
+      }
+
       var gotoFollowedFeed = document.getElementById('gotoFollowedFeed');
       if (gotoFollowedFeed) {
         gotoFollowedFeed.addEventListener('click', function () {

@@ -182,7 +182,7 @@
 </head>
 <body>
   <header class="header">
-    <a href="/pages/index.html" class="back-link">← Back to Community</a>
+    <a href="/pages/cat-facebook.html?feed=recommended" class="back-link">← Back to Community</a>
     <div style="font-size:14px;color:#666;">Cat Creator Profile</div>
   </header>
 
@@ -286,12 +286,17 @@
       }
 
       function renderCats(cats, hasCat) {
-        if (!hasCat || !Array.isArray(cats) || !cats.length) {
+        if (!hasCat) {
           if (catSectionWrap) catSectionWrap.style.display = "none";
           currentCats = [];
           return;
         }
         if (catSectionWrap) catSectionWrap.style.display = "";
+        if (!Array.isArray(cats) || !cats.length) {
+          catSection.innerHTML = '<div class="placeholder">Cat profile is not completed yet.</div>';
+          currentCats = [];
+          return;
+        }
         currentCats = cats.slice();
         catSection.innerHTML = cats.map(function (cat, idx) {
           const age = typeof cat.age_months === "number" ? cat.age_months + " months" : "Unknown age";
@@ -371,7 +376,12 @@
             isFollowing = !!data.following;
             isSelfProfile = !!(currentUserId && data.id && String(data.id) === currentUserId);
             render();
-            renderCats(data.cats, !!data.has_cat);
+            const profileCats = Array.isArray(data.cats)
+              ? data.cats
+              : data.cat
+                ? [data.cat]
+                : [];
+            renderCats(profileCats, !!data.has_cat);
             renderPosts(data.posts);
           })
           .catch(function () {

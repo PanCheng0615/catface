@@ -94,13 +94,13 @@ async function updateMe(req, res) {
 async function getMyProfile(req, res) {
   try {
     const userId = req.user.id;
-    const [user, pref, cat] = await Promise.all([
+    const [user, pref, cats] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: { id: true, email: true, username: true, display_name: true, bio: true, role: true }
       }),
       prisma.adopterPreference.findUnique({ where: { user_id: userId } }),
-      prisma.cat.findFirst({
+      prisma.cat.findMany({
         where: { owner_id: userId },
         orderBy: { created_at: 'desc' },
         select: {
@@ -123,12 +123,15 @@ async function getMyProfile(req, res) {
       });
     }
 
+    const hasCatChoice = !pref || cats.length > 0;
+
     return res.json({
       success: true,
       data: {
         user,
-        has_cat: !!cat,
-        cat: cat || null,
+        has_cat: hasCatChoice,
+        cat: cats[0] || null,
+        cats,
         preferences: pref
           ? {
               preferred_gender: pref.preferred_gender || '',
@@ -170,27 +173,27 @@ async function updateMyProfile(req, res) {
         }
       });
 
-      if (preferences) {
+      if (!hasCat) {
+        await tx.cat.deleteMany({ where: { owner_id: userId } });
         await tx.adopterPreference.upsert({
           where: { user_id: userId },
           create: {
             user_id: userId,
-            preferred_gender: toTrimmedString(preferences.preferred_gender) || null,
-            preferred_age: toTrimmedString(preferences.preferred_age) || null,
-            preferred_breed: toTrimmedString(preferences.preferred_breed) || null
+            preferred_gender: toTrimmedString(preferences && preferences.preferred_gender) || null,
+            preferred_age: toTrimmedString(preferences && preferences.preferred_age) || null,
+            preferred_breed: toTrimmedString(preferences && preferences.preferred_breed) || null
           },
           update: {
-            preferred_gender: toTrimmedString(preferences.preferred_gender) || null,
-            preferred_age: toTrimmedString(preferences.preferred_age) || null,
-            preferred_breed: toTrimmedString(preferences.preferred_breed) || null
+            preferred_gender: toTrimmedString(preferences && preferences.preferred_gender) || null,
+            preferred_age: toTrimmedString(preferences && preferences.preferred_age) || null,
+            preferred_breed: toTrimmedString(preferences && preferences.preferred_breed) || null
           }
         });
-      }
-
-      if (!hasCat) {
-        await tx.cat.deleteMany({ where: { owner_id: userId } });
         return;
       }
+
+      // Owner mode: clear adopter marker to persist "I have a cat" choice.
+      await tx.adopterPreference.deleteMany({ where: { user_id: userId } });
 
       const existingCat = await tx.cat.findFirst({
         where: { owner_id: userId },
@@ -229,13 +232,13 @@ async function updateMyProfile(req, res) {
       }
     });
 
-    const [user, pref, cat] = await Promise.all([
+    const [user, pref, cats] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: { id: true, email: true, username: true, display_name: true, bio: true, role: true }
       }),
       prisma.adopterPreference.findUnique({ where: { user_id: userId } }),
-      prisma.cat.findFirst({
+      prisma.cat.findMany({
         where: { owner_id: userId },
         orderBy: { created_at: 'desc' },
         select: {
@@ -250,12 +253,15 @@ async function updateMyProfile(req, res) {
       })
     ]);
 
+    const hasCatChoice = !pref || cats.length > 0;
+
     return res.json({
       success: true,
       data: {
         user,
-        has_cat: !!cat,
-        cat: cat || null,
+        has_cat: hasCatChoice,
+        cat: cats[0] || null,
+        cats,
         preferences: pref
           ? {
               preferred_gender: pref.preferred_gender || '',
@@ -466,7 +472,7 @@ async function getUserProfile(req, res) {
       });
     }
 
-    const [followersCount, followingCount, cats, posts] = await Promise.all([
+    const [followersCount, followingCount, cats, posts, pref] = await Promise.all([
       prisma.userFollow.count({ where: { following_id: targetUserId } }),
       prisma.userFollow.count({ where: { follower_id: targetUserId } }),
       prisma.cat.findMany({
@@ -490,7 +496,8 @@ async function getUserProfile(req, res) {
           comments: { select: { id: true } }
         },
         take: 50
-      })
+      }),
+      prisma.adopterPreference.findUnique({ where: { user_id: targetUserId } })
     ]);
 
     let following = false;
@@ -501,6 +508,8 @@ async function getUserProfile(req, res) {
       });
       following = !!existing;
     }
+
+    const hasCatChoice = !pref || cats.length > 0;
 
     return res.json({
       success: true,
@@ -513,7 +522,7 @@ async function getUserProfile(req, res) {
         followers_count: followersCount,
         following_count: followingCount,
         following,
-        has_cat: cats.length > 0,
+        has_cat: hasCatChoice,
         cats,
         posts: posts.map((p) => ({
           id: p.id,

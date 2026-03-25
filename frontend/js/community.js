@@ -398,10 +398,8 @@
     }
   });
 
-  function openProfile(author) {
-    const post = posts.find(function (p) { return p.id === currentPostId; });
-    if (!author && post && post.author) author = post.author;
-    if (!author) author = "Cat Lover";
+  function navigateToAuthor(post, fallbackAuthor) {
+    let author = fallbackAuthor || (post && post.author) || "Cat Lover";
     let query = "author=" + encodeURIComponent(author);
     if (post && post.authorId) query += "&authorId=" + encodeURIComponent(post.authorId);
     try {
@@ -411,20 +409,16 @@
     window.location.href = "/pages/cat-profile.html?" + query;
   }
 
-  function attachAuthorClick(card, post) {
-    const authorEl = card.querySelector(".post-author");
-    if (!authorEl) return;
-    authorEl.style.cursor = "pointer";
-    authorEl.addEventListener("click", function (e) {
-      e.stopPropagation();
-      let query = "author=" + encodeURIComponent(post.author || "Cat Lover");
-      if (post.authorId) query += "&authorId=" + encodeURIComponent(post.authorId);
-      try {
-        if (post.authorId) window.localStorage.setItem("catface_last_author_id", String(post.authorId));
-        if (post.author) window.localStorage.setItem("catface_last_author_name", String(post.author));
-      } catch (e) {}
-      window.location.href = "/pages/cat-profile.html?" + query;
-    });
+  function getAuthorProfileHref(post) {
+    let author = (post && post.author) || "Cat Lover";
+    let query = "author=" + encodeURIComponent(author);
+    if (post && post.authorId) query += "&authorId=" + encodeURIComponent(post.authorId);
+    return "/pages/cat-profile.html?" + query;
+  }
+
+  function openProfile(author) {
+    const post = posts.find(function (p) { return p.id === currentPostId; });
+    navigateToAuthor(post, author);
   }
 
   function feedPlaceholderImage() {
@@ -458,24 +452,40 @@
       const safeAuthor = post.author || "User";
       const safeAuthorInitial = post.authorInitial || safeAuthor[0] || "U";
       card.innerHTML =
-        '<div class="post-image-wrap">' +
+        '<div class="post-image-wrap" data-open-detail="1">' +
         '<img class="post-image" src="' + escapeHtml(imgSrc) + '" alt="Post image of cat">' +
         "</div>" +
         '<div class="post-body">' +
-        '<h3 class="post-title">' + escapeHtml(post.text || "") + "</h3>" +
+        '<h3 class="post-title" data-open-detail="1">' + escapeHtml(post.text || "") + "</h3>" +
         '<div class="post-footer">' +
-        '<div class="post-author">' +
-        '<div class="post-author-avatar">' + escapeHtml(safeAuthorInitial) + "</div>" +
+        '<a class="post-author" data-author-click="1" href="' + escapeHtml(getAuthorProfileHref(post)) + '" aria-label="View author profile">' +
+        '<span class="post-author-avatar">' + escapeHtml(safeAuthorInitial) + "</span>" +
         "<span>" + escapeHtml(safeAuthor) + "</span>" +
-        "</div>" +
-        '<div class="post-stats">' +
+        "</a>" +
+        '<div class="post-stats" data-open-detail="1">' +
         '<div class="post-stat"><span>♡</span><span>' + formatLikes(post.likes) + "</span></div>" +
         '<div class="post-stat"><span>💬</span><span>' + post.comments.length + "</span></div>" +
         "</div>" +
         "</div>" +
         "</div>";
-      card.addEventListener("click", function () { openPostDetail(post.id); });
-      attachAuthorClick(card, post);
+      card.addEventListener("click", function (e) {
+        const targetNode = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
+        const fromAuthor = targetNode && targetNode.closest
+          ? targetNode.closest("[data-author-click='1']")
+          : null;
+        if (fromAuthor) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+          navigateToAuthor(post);
+          return;
+        }
+        const fromDetailTarget = targetNode && targetNode.closest
+          ? targetNode.closest("[data-open-detail='1']")
+          : null;
+        if (!fromDetailTarget) return;
+        openPostDetail(post.id);
+      }, true);
       feedEl.appendChild(card);
     });
   }
@@ -569,16 +579,15 @@
     const params = new URLSearchParams(window.location.search);
     const compose = String(params.get("compose") || "").trim() === "1";
     const feed = String(params.get("feed") || "").trim().toLowerCase();
-    let preferredFeed = "";
     let forceOpenCreate = false;
     try {
-      preferredFeed = String(window.localStorage.getItem("catface_preferred_feed") || "").trim().toLowerCase();
       window.localStorage.removeItem("catface_preferred_feed");
       forceOpenCreate = window.localStorage.getItem("catface_open_create_modal") === "1";
       if (forceOpenCreate) window.localStorage.removeItem("catface_open_create_modal");
     } catch (e) {}
 
-    if (feed === "followed" || preferredFeed === "followed") switchCommunityView("followed");
+    // Default community entry is always Recommended unless URL explicitly asks Followed.
+    if (feed === "followed") switchCommunityView("followed");
     else switchCommunityView("recommended");
 
     if (compose || forceOpenCreate) {

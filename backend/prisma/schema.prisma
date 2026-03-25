@@ -41,6 +41,7 @@ model User {
   conversations_as_user    Conversation[]          @relation("user_conversations")
   conversations_as_org     Conversation[]          @relation("org_conversations")
   sent_messages            Message[]
+  notification_reads       NotificationRead[]
 
   @@map("users")
 }
@@ -67,6 +68,17 @@ model UserFollow {
 
   @@unique([follower_id, following_id])
   @@map("user_follows")
+}
+
+model NotificationRead {
+  user_id         String
+  notification_id String
+  read_at         DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, notification_id])
+  @@map("notification_reads")
 }
 
 // ─────────────────────────────────────────
