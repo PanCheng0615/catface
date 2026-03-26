@@ -40,86 +40,88 @@ function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function range(n)  { return Array.from({ length: n }, (_, i) => i); }
 
 /**
- * 根据品种推断毛色（写入 cats.color，供领养偏好 preferred_color 与猫毛色匹配测试）
+ * 根据品种推断毛色（英文枚举，写入 cats.color）
+ * breed 约定：orange_tabby / tabby / orange_white / black 等（与 preferred_breed 一致）
  */
 function inferColorFromBreed(breed) {
+  const palette = ['white', 'black', 'calico', 'orange', 'gray', 'orange_white', 'tabby'];
   if (!breed || String(breed).trim() === '') {
-    return pick(['白色', '黑色', '三花', '橘色', '灰色', '狸花']);
+    return pick(palette);
   }
-  const b = String(breed);
-  if (b.includes('橘白')) return '橘白';
-  if (b.includes('橘')) return '橘色';
-  if (b.includes('黑')) return '黑色';
-  if (b.includes('白')) return '白色';
-  if (b.includes('三花')) return '三花';
-  if (b.includes('狸花')) return '狸花';
-  if (b.includes('灰')) return '灰色';
-  return pick(['白色', '黑色', '三花', '橘色', '灰色', '狸花']);
+  const b = String(breed).toLowerCase();
+  if (b.includes('orange_white')) return 'orange_white';
+  if (b.includes('orange')) return 'orange';
+  if (b.includes('black')) return 'black';
+  if (b === 'white' || (b.includes('white') && !b.includes('orange'))) return 'white';
+  if (b.includes('calico')) return 'calico';
+  if (b.includes('tabby')) return 'tabby';
+  if (b.includes('gray') || b.includes('grey')) return 'gray';
+  return pick(palette);
 }
 
 // ─── 猫咪原始数据（来自 Excel）────────────────────────────
 
 const CATS_2ND = [
-  ['墨水',          1,    'M', '1个月',   '橘猫', '已完成', 'N/A',    'N/A',    ['可爱', '淘气'],           ''],
-  ['墨纸',          1,    'M', '1个月',   '橘猫', '已完成', 'N/A',    'N/A',    ['可爱', '淘气'],           ''],
-  ['墨布',          1,    'M', '1个月',   '橘猫', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['豆豆',          0,    'M', '5个月',   '狸花', '已完成', 'N/A',    'N/A',    ['爱说话', '乖巧', '粘人'], ''],
-  ['臭臭',          1,    'M', '2岁',     '黑猫', '已完成', 'N/A',    'N/A',    ['安静', '害羞', '慢热'],   ''],
-  ['小笨笨',        0,    'M', '5个月',   '狸花', '已完成', 'N/A',    'N/A',    ['温顺', '乖巧', '爱吃'],   ''],
-  ['招想',          0,    'F', '2岁',     '橘白', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['墨水',          1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    ['可爱', '淘气'],           ''],
+  ['墨纸',          1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    ['可爱', '淘气'],           ''],
+  ['墨布',          1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['豆豆',          0,    'M', '5个月',   'tabby', '已完成', 'N/A',    'N/A',    ['爱说话', '乖巧', '粘人'], ''],
+  ['臭臭',          1,    'M', '2岁',     'black', '已完成', 'N/A',    'N/A',    ['安静', '害羞', '慢热'],   ''],
+  ['小笨笨',        0,    'M', '5个月',   'tabby', '已完成', 'N/A',    'N/A',    ['温顺', '乖巧', '爱吃'],   ''],
+  ['招想',          0,    'F', '2岁',     'orange_white', '已完成', 'N/A',    'N/A',    [],                       ''],
 ];
 const CATS_3RD = [
-  ['刷碟猫',        '0*', 'F', '1岁5个月','橘白', '已完成', 'N/A',    '已完成', [],                       ''],
-  ['厕所仔(Lucky)', 1,    'M', '6个月',   '橘白', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['洗手盆子',      1,    'M', '4个月',   '狸花', '已完成', 'N/A',    'N/A',    ['异瞳'],                 ''],
-  ['Kiwi',          1,    'F', '4个月',   '狸花', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['毛巾仔',        1,    'M', '4个月',   '狸花', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['格格',          1,    'F', '3个月',   '狸花', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['Luno',          '0*', 'M', '3个月',   '橘白', '已完成', 'N/A',    'N/A',    ['半异瞳'],               ''],
-  ['探职仔(汤圆)',  1,    'M', '3个月',   '狸花', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['豆豆',          0,    'M', '9个月',   '狸花', '已完成', '已完成', '已完成', [],                       '第二次来'],
-  ['招想',          0,    'F', '2岁6个月','橘白', '已完成', '已完成', '已完成', [],                       '第二次来'],
-  ['大B',           1,    'X', '3周',     '狸花', 'N/A',    'N/A',    'N/A',    [],                       ''],
-  ['细B',           1,    'X', '3周',     '狸花', 'N/A',    'N/A',    'N/A',    [],                       ''],
-  ['大小B姊姊',     0,    'F', '8个月',   '狸花', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['虎纹仔(Yomi)', 1,    'M', '1个月',   '狸花', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['小橘(Pika)',   1,    'F', '1个月',   '橘猫', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['白果',          0,    'M', '1岁',     '橘白', '已完成', '已完成', '已完成', [],                       ''],
-  ['大佬',          0,    'M', '1岁',     '橘白', '已完成', '已完成', '已完成', [],                       ''],
+  ['刷碟猫',        '0*', 'F', '1岁5个月','orange_white', '已完成', 'N/A',    '已完成', [],                       ''],
+  ['厕所仔(Lucky)', 1,    'M', '6个月',   'orange_white', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['洗手盆子',      1,    'M', '4个月',   'tabby', '已完成', 'N/A',    'N/A',    ['异瞳'],                 ''],
+  ['Kiwi',          1,    'F', '4个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['毛巾仔',        1,    'M', '4个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['格格',          1,    'F', '3个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['Luno',          '0*', 'M', '3个月',   'orange_white', '已完成', 'N/A',    'N/A',    ['半异瞳'],               ''],
+  ['探职仔(汤圆)',  1,    'M', '3个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['豆豆',          0,    'M', '9个月',   'tabby', '已完成', '已完成', '已完成', [],                       '第二次来'],
+  ['招想',          0,    'F', '2岁6个月','orange_white', '已完成', '已完成', '已完成', [],                       '第二次来'],
+  ['大B',           1,    'X', '3周',     'tabby', 'N/A',    'N/A',    'N/A',    [],                       ''],
+  ['细B',           1,    'X', '3周',     'tabby', 'N/A',    'N/A',    'N/A',    [],                       ''],
+  ['大小B姊姊',     0,    'F', '8个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['虎纹仔(Yomi)', 1,    'M', '1个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['小橘(Pika)',   1,    'F', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['白果',          0,    'M', '1岁',     'orange_white', '已完成', '已完成', '已完成', [],                       ''],
+  ['大佬',          0,    'M', '1岁',     'orange_white', '已完成', '已完成', '已完成', [],                       ''],
 ];
 const CATS_4TH = [
-  ['果妹',          1,    'F', '6个月',   '橘猫', '已完成', 'N/A',    'N/A',    [],  '2026.1提前上架'],
-  ['救命',          0,    'F', '6个月',   '狸花', '已完成', 'N/A',    'N/A',    [],  ''],
-  ['起司',          0,    'M', '6个月',   '狸花', '已完成', 'N/A',    'N/A',    [],  ''],
-  ['乌云踏雪',      1,    'M', '7个月',   '狸花', '已完成', '已完成', 'N/A',    [],  ''],
-  ['乌云燕雪',      1,    'M', '7个月',   '狸花', '已完成', '已完成', 'N/A',    [],  ''],
-  ['赤绒趴雪',      0,    'M', '7个月',   '橘猫', '已完成', '已完成', 'N/A',    [],  ''],
-  ['小橘',          1,    'M', '6个月',   '橘猫', '已完成', 'N/A',    'N/A',    [],  ''],
+  ['果妹',          1,    'F', '6个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],  '2026.1提前上架'],
+  ['救命',          0,    'F', '6个月',   'tabby', '已完成', 'N/A',    'N/A',    [],  ''],
+  ['起司',          0,    'M', '6个月',   'tabby', '已完成', 'N/A',    'N/A',    [],  ''],
+  ['乌云踏雪',      1,    'M', '7个月',   'tabby', '已完成', '已完成', 'N/A',    [],  ''],
+  ['乌云燕雪',      1,    'M', '7个月',   'tabby', '已完成', '已完成', 'N/A',    [],  ''],
+  ['赤绒趴雪',      0,    'M', '7个月',   'orange_tabby', '已完成', '已完成', 'N/A',    [],  ''],
+  ['小橘',          1,    'M', '6个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],  ''],
 ];
 
 // ─── 测试用户（偏好多样，覆盖推荐算法各场景）────────────────
 
 const TEST_USERS = [
   { email: 'alice@test.com',  username: 'alice',  display_name: '小艾',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: '橘猫', preferred_color: '橘色', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
+    pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: 'orange_tabby', preferred_color: 'orange', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
   { email: 'bob@test.com',    username: 'bob',    display_name: '阿伯',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: '狸花', preferred_color: '狸花', has_other_pets: true,  has_children: false, home_type: 'house',     accept_special_need: false } },
+    pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: 'tabby', preferred_color: 'tabby', has_other_pets: true,  has_children: false, home_type: 'house',     accept_special_need: false } },
   { email: 'carol@test.com',  username: 'carol',  display_name: '小玲',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: null,   preferred_color: '三花', has_other_pets: false, has_children: true,  home_type: 'apartment', accept_special_need: true  } },
+    pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: null,   preferred_color: 'calico', has_other_pets: false, has_children: true,  home_type: 'apartment', accept_special_need: true  } },
   { email: 'david@test.com',  username: 'david',  display_name: '大卫',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: '橘白', preferred_color: '橘白', has_other_pets: false, has_children: false, home_type: 'house',     accept_special_need: false } },
+    pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: 'orange_white', preferred_color: 'orange_white', has_other_pets: false, has_children: false, home_type: 'house',     accept_special_need: false } },
   { email: 'emma@test.com',   username: 'emma',   display_name: 'Emma',  role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'male',          preferred_breed: '橘猫', preferred_color: '橘色', has_other_pets: true,  has_children: true,  home_type: 'house',     accept_special_need: false } },
+    pref: { preferred_age: 'kitten', preferred_gender: 'male',          preferred_breed: 'orange_tabby', preferred_color: 'orange', has_other_pets: true,  has_children: true,  home_type: 'house',     accept_special_need: false } },
   { email: 'frank@test.com',  username: 'frank',  display_name: '法兰克', role: 'user',
-    pref: { preferred_age: 'senior', preferred_gender: 'no_preference', preferred_breed: '黑猫', preferred_color: '黑色', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: true  } },
+    pref: { preferred_age: 'senior', preferred_gender: 'no_preference', preferred_breed: 'black', preferred_color: 'black', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: true  } },
   { email: 'grace@test.com',  username: 'grace',  display_name: '阿雅',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: '狸花', preferred_color: '灰色', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
+    pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: 'tabby', preferred_color: 'gray', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
   { email: 'henry@test.com',  username: 'henry',  display_name: '阿亨',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: null,   preferred_color: '白色', has_other_pets: true,  has_children: true,  home_type: 'house',     accept_special_need: false } },
+    pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: null,   preferred_color: 'white', has_other_pets: true,  has_children: true,  home_type: 'house',     accept_special_need: false } },
   { email: 'iris@test.com',   username: 'iris',   display_name: '小欣',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: '橘白', preferred_color: '橘白', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
+    pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: 'orange_white', preferred_color: 'orange_white', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
   { email: 'jack@test.com',   username: 'jack',   display_name: '小杰',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: '狸花', preferred_color: '狸花', has_other_pets: false, has_children: false, home_type: 'house',     accept_special_need: true  } },
+    pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: 'tabby', preferred_color: 'tabby', has_other_pets: false, has_children: false, home_type: 'house',     accept_special_need: true  } },
   // 机构工作人员账号（供 Member 6 聊天测试用）
   { email: 'staff@rescue.com', username: 'rescue_staff', display_name: '救助站小陈', role: 'rescue_staff', pref: null },
   { email: 'vet@clinic.com',   username: 'clinic_vet',   display_name: '林医生',     role: 'clinic_staff', pref: null },
