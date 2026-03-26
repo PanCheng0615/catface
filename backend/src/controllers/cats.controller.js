@@ -2,29 +2,28 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-const CAT_STATUSES = ['available', 'adopted', 'unavailable'];
+// 与 prisma/schema.prisma 中 CatStatus 枚举保持一致
+const CAT_STATUSES = ['available', 'adopted', 'fostered', 'deceased'];
 
 /**
  * @param {unknown} raw
- * @returns {'available'|'adopted'|'unavailable'|null}
+ * @returns {'available'|'adopted'|'fostered'|'deceased'|null}
  */
 function parseCatStatus(raw) {
   if (raw == null || raw === '') return null;
   const s = String(raw).trim().toLowerCase();
-  return CAT_STATUSES.includes(s) ? /** @type {'available'|'adopted'|'unavailable'} */ (s) : null;
+  return CAT_STATUSES.includes(s)
+    ? /** @type {'available'|'adopted'|'fostered'|'deceased'} */ (s)
+    : null;
 }
 
 /**
- * Body: prefer `status` (CatStatus); legacy `is_available` maps to available / unavailable.
- * @param {{ status?: unknown, is_available?: unknown }} body
- * @returns {'available'|'adopted'|'unavailable'}
+ * @param {{ status?: unknown }} body
+ * @returns {'available'|'adopted'|'fostered'|'deceased'}
  */
 function resolveCatStatusForCreate(body) {
   const parsed = parseCatStatus(body.status);
   if (parsed) return parsed;
-  const { is_available } = body;
-  if (is_available === true || is_available === 'true' || is_available === '1') return 'available';
-  if (is_available === false || is_available === 'false' || is_available === '0') return 'unavailable';
   return 'available';
 }
 
@@ -38,19 +37,15 @@ const catInclude = {
 };
 
 // GET /api/cats
-// 查询：status=available|adopted|unavailable；兼容旧参数 is_available=true|false（映射为 status）
+// 查询参数：status=available|adopted|fostered|deceased
 async function getCats(req, res) {
   try {
-    const { status: statusQ, is_available: legacyAvail } = req.query;
+    const { status: statusQ } = req.query;
     const where = {};
 
     const parsed = parseCatStatus(statusQ);
     if (parsed) {
       where.status = parsed;
-    } else if (legacyAvail === 'true' || legacyAvail === '1') {
-      where.status = 'available';
-    } else if (legacyAvail === 'false' || legacyAvail === '0') {
-      where.status = { not: 'available' };
     }
 
     const cats = await prisma.cat.findMany({
@@ -123,7 +118,6 @@ async function createCat(req, res) {
       description,
       photo_url,
       status,
-      is_available,
       owner_id,
       org_id,
       tags,
@@ -142,18 +136,16 @@ async function createCat(req, res) {
       return res.status(422).json({
         success: false,
         error: 'ValidationError',
-        message: 'status 必须是 available、adopted 或 unavailable（CatStatus）'
+        message: 'status 必须是 available、adopted、fostered 或 deceased（CatStatus）'
       });
     }
 
-    // tags：与 CatTag 模型一致，每项为 { tag: string }（无需传 cat_id，由创建时关联）
     const tagCreates = Array.isArray(tags)
       ? tags
           .filter((row) => row && typeof row.tag === 'string' && row.tag.trim())
           .map((row) => ({ tag: row.tag.trim() }))
       : [];
 
-    // requirements：与 CatRequirement 模型一致，每项为 { description: string }
     const reqCreates = Array.isArray(requirements)
       ? requirements
           .filter((row) => row && typeof row.description === 'string' && row.description.trim())
@@ -169,7 +161,7 @@ async function createCat(req, res) {
         color: color ?? null,
         description: description ?? null,
         photo_url: photo_url ?? null,
-        status: resolveCatStatusForCreate({ status, is_available }),
+        status: resolveCatStatusForCreate({ status }),
         owner_id: owner_id ?? null,
         org_id: org_id || null,
         tags: tagCreates.length ? { create: tagCreates } : undefined,
@@ -236,7 +228,6 @@ async function updateCat(req, res) {
       description,
       photo_url,
       status,
-      is_available,
       owner_id,
       org_id,
       tags,
@@ -249,7 +240,7 @@ async function updateCat(req, res) {
         return res.status(422).json({
           success: false,
           error: 'ValidationError',
-          message: 'status 必须是 available、adopted 或 unavailable（CatStatus）'
+          message: 'status 必须是 available、adopted、fostered 或 deceased（CatStatus）'
         });
       }
     }
@@ -263,9 +254,7 @@ async function updateCat(req, res) {
     if (description !== undefined) data.description = description;
     if (photo_url !== undefined) data.photo_url = photo_url;
     if (status !== undefined && status !== null && status !== '') {
-      data.status = /** @type {'available'|'adopted'|'unavailable'} */ (parseCatStatus(status));
-    } else if (is_available !== undefined) {
-      data.status = Boolean(is_available) ? 'available' : 'unavailable';
+      data.status = /** @type {'available'|'adopted'|'fostered'|'deceased'} */ (parseCatStatus(status));
     }
     if (owner_id !== undefined) data.owner_id = owner_id || null;
     if (org_id !== undefined) data.org_id = org_id || null;

@@ -2809,7 +2809,9 @@
             var s = dbCat.status;
             if (s === 'available') return 'Available';
             if (s === 'adopted') return 'Adopted';
-            return 'Unavailable';
+            if (s === 'fostered') return 'Fostered';
+            if (s === 'deceased') return 'Deceased';
+            return 'Unknown';
           })(),
           image: dbCat.photo_url || '',
           summary: dbCat.description || '',

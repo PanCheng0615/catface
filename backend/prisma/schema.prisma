@@ -45,6 +45,7 @@ model User {
   comments                 Comment[]               // 该用户发表的评论
   adopter_preferences      AdopterPreference?      // 该用户的领养偏好（一对一）
   adoption_applications    AdoptionApplication[]   // 该用户提交的领养申请
+  adoption_swipes          AdoptionSwipe[]         // 领养推荐滑动记录（Member 2）
   owner_health_records     OwnerHealthRecord[]     // 该用户记录的猫咪健康档案
   health_share_permissions HealthSharePermission[] // 该用户授权给诊所的健康数据权限
   followers                UserFollow[]            @relation("following") // 关注该用户的人
@@ -215,6 +216,7 @@ model Cat {
   requirements             CatRequirement[]        // 领养要求
   updates                  CatUpdate[]             // 猫咪动态更新
   adoption_applications    AdoptionApplication[]   // 针对该猫咪的领养申请
+  adoption_swipes          AdoptionSwipe[]         // 用户对该猫的滑动记录
   owner_health_records     OwnerHealthRecord[]     // 猫主人记录的健康档案
   clinic_reports           ClinicHealthReport[]    // 诊所上传的官方健康报告
   health_share_permissions HealthSharePermission[] // 健康数据共享授权记录
@@ -358,6 +360,21 @@ model AdoptionApplication {
   reviewer User?          @relation("reviewer", fields: [reviewed_by], references: [id])
 
   @@map("adoption_applications")
+}
+
+// 滑动记录：右滑喜欢 / 左滑跳过（@@unique([user_id, cat_id])）
+model AdoptionSwipe {
+  id         String   @id @default(uuid())
+  user_id    String
+  cat_id     String
+  liked      Boolean
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, cat_id])
+  @@map("adoption_swipes")
 }
 
 // 领养申请状态枚举
