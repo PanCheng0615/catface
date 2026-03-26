@@ -1,6 +1,7 @@
 // This is your Prisma schema file
-// Member 5 is the sole maintainer of this file
+// Member 5 is the SOLE maintainer of this file
 // Run: npx prisma migrate dev --name <description> after any changes
+// DO NOT modify this file without notifying Member 5 first
 
 generator client {
   provider = "prisma-client-js"
@@ -16,36 +17,51 @@ datasource db {
 // ─────────────────────────────────────────
 
 model User {
+  // 主键，UUID 格式，由数据库自动生成
   id           String   @id @default(uuid())
+  // 登录用邮箱，全局唯一，不可重复
   email        String   @unique
+  // bcrypt 加密后的密码，原始密码不存储
   password     String
+  // 唯一的用户名，用于 @mention 和个人页 URL，不可重复
   username     String   @unique
+  // 公开展示名称，可重复，允许为空
   display_name String?
+  // 头像图片的云端 URL（Cloudinary），允许为空
   avatar_url   String?
+  // 个人简介，允许为空，最长建议 300 字
   bio          String?
+  // 用户角色，决定页面访问权限，默认为普通用户
   role         Role     @default(user)
+  // 账号注册时间，自动生成
   created_at   DateTime @default(now())
+  // 账号最后一次更新时间，由 Prisma 自动维护
   updated_at   DateTime @updatedAt
 
-  // Relations
-  cats                     Cat[]
-  posts                    Post[]
-  post_likes               PostLike[]
-  comments                 Comment[]
-  adopter_preferences      AdopterPreference?
-  adoption_applications    AdoptionApplication[]
-  adoption_swipes          AdoptionSwipe[]
-  owner_health_records     OwnerHealthRecord[]
-  health_share_permissions HealthSharePermission[]
-  followers                UserFollow[]            @relation("following")
-  following                UserFollow[]            @relation("follower")
-  conversations_as_user    Conversation[]          @relation("user_conversations")
-  conversations_as_org     Conversation[]          @relation("org_conversations")
-  sent_messages            Message[]
+  // 关联关系
+  cats                     Cat[]                   // 该用户名下的猫咪档案
+  posts                    Post[]                  // 该用户发布的社区帖子
+  post_likes               PostLike[]              // 该用户对帖子的点赞记录
+  comments                 Comment[]               // 该用户发表的评论
+  adopter_preferences      AdopterPreference?      // 该用户的领养偏好（一对一）
+  adoption_applications    AdoptionApplication[]   // 该用户提交的领养申请
+  owner_health_records     OwnerHealthRecord[]     // 该用户记录的猫咪健康档案
+  health_share_permissions HealthSharePermission[] // 该用户授权给诊所的健康数据权限
+  followers                UserFollow[]            @relation("following") // 关注该用户的人
+  following                UserFollow[]            @relation("follower")  // 该用户关注的人
+  conversations_as_user    Conversation[]          @relation("user_conversations") // 以普通用户身份参与的对话
+  conversations_as_org     Conversation[]          @relation("org_conversations")  // 以机构账号身份参与的对话
+  sent_messages            Message[]               // 该用户发送的消息
+  reviewed_applications    AdoptionApplication[]   @relation("reviewer")  // 该用户（机构工作人员）审核过的申请
 
   @@map("users")
 }
 
+// 用户角色枚举
+// user: 普通用户/猫主人，可发帖、申请领养、管理自己的猫和健康记录
+// rescue_staff: 救助机构工作人员，可录入流浪猫、审核领养申请、查看数据分析
+// clinic_staff: 诊所工作人员，可上传官方健康报告、查看授权的猫咪健康数据
+// admin: 系统管理员，拥有全部权限（当前阶段留空备用）
 enum Role {
   user
   rescue_staff
@@ -59,13 +75,16 @@ enum Role {
 
 model UserFollow {
   id           String   @id @default(uuid())
+  // 发起关注的用户 ID
   follower_id  String
+  // 被关注的用户 ID
   following_id String
   created_at   DateTime @default(now())
 
   follower  User @relation("follower", fields: [follower_id], references: [id], onDelete: Cascade)
   following User @relation("following", fields: [following_id], references: [id], onDelete: Cascade)
 
+  // 同一对用户之间只能有一条关注记录，防止重复关注
   @@unique([follower_id, following_id])
   @@map("user_follows")
 }
@@ -75,71 +94,181 @@ model UserFollow {
 // ─────────────────────────────────────────
 
 model Organization {
-  id          String   @id @default(uuid())
-  name        String
-  type        OrgType
-  email       String   @unique
-  password    String
-  phone       String?
-  address     String?
-  logo_url    String?
-  description String?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id             String   @id @default(uuid())
+  // 机构名称，例如"爱猫救助站"
+  name           String
+  // 机构类型：rescue（救助机构）或 clinic（诊所）
+  type           OrgType
+  // 机构登录邮箱，全局唯一
+  email          String   @unique
+  // bcrypt 加密后的机构账号密码
+  password       String
+  // 联系电话，允许为空
+  phone          String?
+  // 机构地址，用于地图展示或联系，允许为空
+  address        String?
+  // 机构 Logo 的云端 URL，允许为空
+  logo_url       String?
+  // 机构简介，允许为空
+  description    String?
+  // 机构执照编号或注册编号，用于资质核实，允许为空
+  license_number String?
+  // 是否已通过平台认证，默认未认证
+  is_verified    Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
-  cats           Cat[]
-  clinic_reports ClinicHealthReport[]
+  cats            Cat[]                // 该机构登记的猫咪档案
+  clinic_reports  ClinicHealthReport[] // 该机构上传的诊所健康报告
+  adoption_events AdoptionEvent[]      // 该机构举办的领养活动
 
   @@map("organizations")
 }
 
+// 机构类型枚举
+// rescue: 救助/领养机构，负责收容流浪猫和审核领养申请
+// clinic: 诊所，负责上传官方健康报告和查看授权猫咪记录
 enum OrgType {
   rescue
   clinic
 }
 
 // ─────────────────────────────────────────
+// Member 5 — 领养活动（对应 Excel 中的"届"）
+// ─────────────────────────────────────────
+
+model AdoptionEvent {
+  id          String    @id @default(uuid())
+  // 活动名称，例如"第2届领养会"
+  name        String
+  // 活动届次编号，例如 2、3、4，允许为空
+  edition     Int?
+  // 活动开始日期
+  start_date  DateTime
+  // 活动结束日期，允许为空（单日活动可不填）
+  end_date    DateTime?
+  // 活动地点，允许为空
+  location    String?
+  // 活动说明，允许为空
+  description String?
+  // 举办该活动的机构 ID，允许为空（独立活动可不绑定机构）
+  org_id      String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  organization Organization?       @relation(fields: [org_id], references: [id])
+  cats         Cat[]               // 参与本次活动的猫咪
+  applications AdoptionApplication[] // 通过本次活动发起的领养申请
+
+  @@map("adoption_events")
+}
+
+// ─────────────────────────────────────────
 // Member 2 — 猫咪档案 + 领养模块
 // ─────────────────────────────────────────
 
-enum CatStatus {
-  available
-  adopted
-  unavailable
-}
-
 model Cat {
-  id           String    @id @default(uuid())
-  name         String
-  breed        String?
-  age_months   Int?
-  gender       String?
-  color        String?
-  description  String?
-  photo_url    String?
-  status       CatStatus @default(available)
-  owner_id     String?
-  org_id       String?
-  created_at   DateTime  @default(now())
-  updated_at   DateTime  @updatedAt
+  id            String      @id @default(uuid())
+  // 猫咪名字，必填
+  name          String
+  // 品种，例如"奶橘"、"狸花"、"安哥拉"，允许为空
+  breed         String?
+  // 年龄（以月计），例如 6 表示 6 个月，允许为空
+  age_months    Int?
+  // 性别枚举：male 公 / female 母 / unknown 未知
+  gender        CatGender?
+  // 毛色描述，例如"橘白"、"黑白"，允许为空
+  color         String?
+  // 猫咪简介，性格、习惯等，允许为空
+  description   String?
+  // 主图的云端 URL，允许为空
+  photo_url     String?
+  // 猫咪当前状态，控制是否在领养列表展示
+  status        CatStatus   @default(available)
+  // 是否已完成绝育/结扎，null 表示未知
+  is_neutered   Boolean?
+  // 是否已接种核心疫苗，null 表示未知
+  is_vaccinated Boolean?
+  // 是否已驱虫（体内外），null 表示未知
+  is_dewormed   Boolean?
+  // 猫咪进入系统的日期，例如救助日期或录入日期，允许为空
+  intake_date      DateTime?
+  // 发现/救助地点，流浪猫被发现的地址描述，例如「台北市大安区和平东路」，允许为空
+  found_location   String?
+  // 猫主人的用户 ID，个人猫咪档案关联，允许为空
+  owner_id      String?
+  // 来源机构的 ID，救助机构登记的流浪猫关联，允许为空
+  org_id        String?
+  // 当前参与的领养活动 ID，允许为空
+  event_id      String?
+  // ── Member 4 猫脸识别 ──
+  // 猫脸识别系统分配的唯一编号，格式如 "CF-2026-00042"，允许为空（历史数据无此字段）
+  // 前端展示猫咪编号时优先使用此字段，无则降级显示 id 前 8 位
+  face_code     String?     @unique
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
 
   owner                    User?                   @relation(fields: [owner_id], references: [id])
   organization             Organization?           @relation(fields: [org_id], references: [id])
-  tags                     CatTag[]
-  requirements             CatRequirement[]
-  updates                  CatUpdate[]
-  adoption_applications    AdoptionApplication[]
-  adoption_swipes          AdoptionSwipe[]
-  owner_health_records     OwnerHealthRecord[]
-  clinic_reports           ClinicHealthReport[]
-  health_share_permissions HealthSharePermission[]
+  event                    AdoptionEvent?          @relation(fields: [event_id], references: [id])
+  tags                     CatTag[]                // 猫咪性格/特点标签
+  requirements             CatRequirement[]        // 领养要求
+  updates                  CatUpdate[]             // 猫咪动态更新
+  adoption_applications    AdoptionApplication[]   // 针对该猫咪的领养申请
+  owner_health_records     OwnerHealthRecord[]     // 猫主人记录的健康档案
+  clinic_reports           ClinicHealthReport[]    // 诊所上传的官方健康报告
+  health_share_permissions HealthSharePermission[] // 健康数据共享授权记录
+  face_embedding           CatFaceEmbedding?       // 猫脸特征向量（一对一）
 
   @@map("cats")
+}
+
+// ─────────────────────────────────────────
+// Member 4 — 猫脸识别特征表
+// ─────────────────────────────────────────
+
+model CatFaceEmbedding {
+  id            String   @id @default(uuid())
+  // 对应的猫咪 ID，一只猫只有一条 embedding 记录
+  cat_id        String   @unique
+  // 猫脸特征向量，JSON 数组格式存储，例如 [0.12, -0.34, ...]
+  // 由 Member 4 的 Python 模型生成，维度取决于所用模型
+  embedding     Json
+  // 生成该向量所用的模型版本，便于日后模型升级时批量重算，例如 "v1.0"
+  model_version String   @default("v1.0")
+  // 用于生成 embedding 的原始图片 URL，允许为空（可用于复核和重新计算）
+  source_image_url String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  cat Cat @relation(fields: [cat_id], references: [id], onDelete: Cascade)
+
+  @@map("cat_face_embeddings")
+}
+
+// 猫咪性别枚举
+enum CatGender {
+  male    // 公猫
+  female  // 母猫
+  unknown // 性别未知（幼猫或未确认）
+}
+
+// 猫咪状态枚举
+// available: 可领养，展示在领养列表中
+// adopted: 已领养，不再展示但保留档案
+// fostered: 寄养中，暂时不对外开放领养
+// deceased: 已离世，仅作历史记录保留
+enum CatStatus {
+  available
+  adopted
+  fostered
+  deceased
 }
 
 model CatTag {
   id         String   @id @default(uuid())
   cat_id     String
+  // 标签内容，例如"亲人"、"怕生"、"爱玩"、"安静"
   tag        String
   created_at DateTime @default(now())
 
@@ -151,6 +280,7 @@ model CatTag {
 model CatRequirement {
   id          String   @id @default(uuid())
   cat_id      String
+  // 领养要求描述，例如"需要有独立房间"、"不可与其他宠物同住"
   description String
   created_at  DateTime @default(now())
 
@@ -162,7 +292,9 @@ model CatRequirement {
 model CatUpdate {
   id         String   @id @default(uuid())
   cat_id     String
+  // 动态内容，例如"今天打了疫苗"、"体重增加到 3kg"
   content    String
+  // 动态配图 URL，允许为空
   photo_url  String?
   created_at DateTime @default(now())
 
@@ -172,14 +304,27 @@ model CatUpdate {
 }
 
 model AdopterPreference {
-  id               String   @id @default(uuid())
-  user_id          String   @unique
-  preferred_age    String?
-  preferred_gender String?
-  preferred_breed  String?
-  preferred_color  String?
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  // 每位用户只能有一份偏好设置
+  user_id             String   @unique
+  // 偏好年龄段，例如"kitten"、"adult"、"senior"，允许为空
+  preferred_age       String?
+  // 偏好性别：male / female / no_preference，允许为空
+  preferred_gender    String?
+  // 偏好品种，允许为空
+  preferred_breed     String?
+  // 偏好毛色，例如"orange"、"black"、"white"、"calico"，允许为空
+  preferred_color     String?
+  // 是否接受特殊需求猫咪（例如残疾猫），允许为空
+  accept_special_need Boolean?
+  // 居住类型，例如"apartment"、"house"，影响匹配，允许为空
+  home_type           String?
+  // 是否有其他宠物，影响匹配，允许为空
+  has_other_pets      Boolean?
+  // 是否有小孩，影响匹配，允许为空
+  has_children        Boolean?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -187,35 +332,38 @@ model AdopterPreference {
 }
 
 model AdoptionApplication {
-  id         String            @id @default(uuid())
-  user_id    String
-  cat_id     String
-  status     ApplicationStatus @default(pending)
-  message    String?
-  created_at DateTime          @default(now())
-  updated_at DateTime          @updatedAt
+  id          String            @id @default(uuid())
+  // 提交申请的用户 ID
+  user_id     String
+  // 申请领养的猫咪 ID
+  cat_id      String
+  // 通过哪个领养活动提交的，允许为空（线上直接申请可不绑定活动）
+  event_id    String?
+  // 申请状态：pending 待审核 / approved 通过 / rejected 拒绝
+  status      ApplicationStatus @default(pending)
+  // 申请人的自我介绍或申请说明，允许为空
+  message     String?
+  // 审核该申请的工作人员用户 ID，允许为空（审核前为空）
+  reviewed_by String?
+  // 审核完成的时间，允许为空（审核前为空）
+  reviewed_at DateTime?
+  // 拒绝原因，仅在 status=rejected 时填写，允许为空
+  reject_note String?
+  created_at  DateTime          @default(now())
+  updated_at  DateTime          @updatedAt
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cat      Cat            @relation(fields: [cat_id], references: [id], onDelete: Cascade)
+  event    AdoptionEvent? @relation(fields: [event_id], references: [id])
+  reviewer User?          @relation("reviewer", fields: [reviewed_by], references: [id])
 
   @@map("adoption_applications")
 }
 
-// 滑动记录：右滑喜欢 / 左滑跳过
-model AdoptionSwipe {
-  id         String   @id @default(uuid())
-  user_id    String
-  cat_id     String
-  liked      Boolean
-  created_at DateTime @default(now())
-
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
-
-  @@unique([user_id, cat_id])
-  @@map("adoption_swipes")
-}
-
+// 领养申请状态枚举
+// pending: 等待机构工作人员审核
+// approved: 审核通过，猫咪状态应同步更新为 adopted
+// rejected: 审核拒绝，应填写 reject_note 说明原因
 enum ApplicationStatus {
   pending
   approved
@@ -229,7 +377,9 @@ enum ApplicationStatus {
 model Post {
   id         String   @id @default(uuid())
   user_id    String
+  // 帖子正文内容，不限长度
   content    String
+  // 帖子配图 URL，允许为空
   image_url  String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -250,6 +400,7 @@ model PostLike {
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
   post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
 
+  // 同一用户对同一帖子只能点赞一次
   @@unique([user_id, post_id])
   @@map("post_likes")
 }
@@ -258,6 +409,7 @@ model Comment {
   id         String   @id @default(uuid())
   user_id    String
   post_id    String
+  // 评论内容
   content    String
   created_at DateTime @default(now())
 
@@ -272,14 +424,27 @@ model Comment {
 // ─────────────────────────────────────────
 
 model OwnerHealthRecord {
-  id          String   @id @default(uuid())
-  cat_id      String
-  user_id     String
-  record_type String
-  description String
-  date        DateTime
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id            String           @id @default(uuid())
+  // 对应的猫咪 ID
+  cat_id        String
+  // 记录该健康记录的用户（猫主人）ID
+  user_id       String
+  // 记录类型枚举，控制前端展示样式和筛选
+  record_type   HealthRecordType
+  // 详细描述，例如"接种狂犬疫苗"、"体重 4.2kg 正常"，必填
+  description   String
+  // 该记录发生的日期，例如就诊日期或记录日期
+  date          DateTime
+  // 下次需要处理的日期，例如疫苗补打日期，允许为空
+  next_due_date DateTime?
+  // 记录时的体重（千克），允许为空
+  weight_kg     Float?
+  // 就诊医生姓名，允许为空
+  vet_name      String?
+  // 就诊诊所名称，允许为空
+  clinic_name   String?
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
 
   cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -287,15 +452,39 @@ model OwnerHealthRecord {
   @@map("owner_health_records")
 }
 
+// 健康记录类型枚举（猫主人填写）
+// vaccine: 疫苗接种，应填写 next_due_date 提醒补打
+// deworming: 驱虫处理（体内/体外），应填写 next_due_date
+// checkup: 定期体检，无特殊后续
+// treatment: 疾病治疗记录，例如感冒、骨折等
+// surgery: 手术记录，例如绝育手术
+// other: 其他健康相关记录
+enum HealthRecordType {
+  vaccine
+  deworming
+  checkup
+  treatment
+  surgery
+  other
+}
+
 model ClinicHealthReport {
-  id          String   @id @default(uuid())
+  id          String           @id @default(uuid())
+  // 对应的猫咪 ID
   cat_id      String
+  // 上传该报告的诊所机构 ID
   org_id      String
-  report_type String
+  // 报告类型枚举，控制前端展示样式和筛选
+  report_type ClinicReportType
+  // 报告详细描述，必填
   description String
+  // 报告附件 URL（PDF 或图片），允许为空
   file_url    String?
+  // 报告对应的实际日期（例如检查日期，非上传日期）
   date        DateTime
-  created_at  DateTime @default(now())
+  created_at  DateTime         @default(now())
+  // 诊所报告允许更新（例如补充说明）
+  updated_at  DateTime         @updatedAt
 
   cat          Cat          @relation(fields: [cat_id], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
@@ -303,11 +492,33 @@ model ClinicHealthReport {
   @@map("clinic_health_reports")
 }
 
+// 诊所报告类型枚举
+// vaccination: 官方疫苗接种证明
+// deworming: 官方驱虫证明
+// checkup: 常规体检报告
+// blood_test: 血液检查报告
+// treatment: 疾病治疗记录
+// surgery: 手术记录（含绝育手术证明）
+// other: 其他官方医疗文件
+enum ClinicReportType {
+  vaccination
+  deworming
+  checkup
+  blood_test
+  treatment
+  surgery
+  other
+}
+
 model HealthSharePermission {
   id         String   @id @default(uuid())
+  // 授权的猫咪 ID
   cat_id     String
+  // 做出授权决定的猫主人用户 ID
   user_id    String
+  // 被授权的诊所机构 ID
   org_id     String
+  // 是否允许该诊所查看该猫咪的健康数据，默认不允许
   is_allowed Boolean  @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -315,6 +526,7 @@ model HealthSharePermission {
   cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  // 同一只猫对同一家诊所只有一条授权记录，更新用 upsert
   @@unique([cat_id, org_id])
   @@map("health_share_permissions")
 }
@@ -325,7 +537,9 @@ model HealthSharePermission {
 
 model Conversation {
   id         String   @id @default(uuid())
+  // 发起对话的普通用户 ID
   user_id    String
+  // 对话对象的机构账号 ID（救助机构或诊所）
   org_id     String
   created_at DateTime @default(now())
 
@@ -333,14 +547,18 @@ model Conversation {
   org      User      @relation("org_conversations", fields: [org_id], references: [id], onDelete: Cascade)
   messages Message[]
 
+  // 同一用户与同一机构只能有一条对话（追加消息而非新建对话）
   @@unique([user_id, org_id])
   @@map("conversations")
 }
 
 model Message {
   id              String   @id @default(uuid())
+  // 所属对话 ID
   conversation_id String
+  // 发送消息的用户 ID（可能是普通用户或机构账号）
   sender_id       String
+  // 消息文字内容
   content         String
   created_at      DateTime @default(now())
 
@@ -354,7 +572,9 @@ model Message {
 model MessageAttachment {
   id         String   @id @default(uuid())
   message_id String
+  // 附件的云端 URL（图片、文档等）
   file_url   String
+  // 附件类型，例如 "image/jpeg"、"application/pdf"
   file_type  String
   created_at DateTime @default(now())
 
