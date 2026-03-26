@@ -394,13 +394,17 @@
           <li>You can share health data with clinics on the Health page.</li>
         </ul>
       </div>
-      <div class="small-note">Data is stored locally in your browser (`localStorage`).</div>
+      <div class="small-note">Profile changes sync to backend and will reflect on author profile pages.</div>
     </aside>
   </div>
 
+  <script src="../js/config.js"></script>
   <script>
     (function () {
+      var API_BASE = (typeof API_BASE_URL !== "undefined" ? API_BASE_URL : "http://localhost:3000/api") + "/users";
       var USER_KEY = "catface_user";
+      var currentCatPhotoUrl = "";
+      var currentCatId = "";
 
       function readUser() {
         try {
@@ -419,6 +423,18 @@
         try {
           window.localStorage.removeItem(USER_KEY);
         } catch (e) {}
+      }
+      function getTokenSafe() {
+        if (typeof getToken === "function") return getToken();
+        try { return window.localStorage.getItem("catface_token"); } catch (e) { return null; }
+      }
+      function getAuthHeadersSafe() {
+        if (typeof getAuthHeaders === "function") return getAuthHeaders();
+        var token = getTokenSafe();
+        return {
+          "Content-Type": "application/json",
+          "Authorization": token ? "Bearer " + token : ""
+        };
       }
 
       var loginStatus = document.getElementById("loginStatus");
@@ -485,64 +501,143 @@
         savedBanner.classList.remove("show");
         var user = readUser();
         if (!user) user = {};
+        var token = getTokenSafe();
 
-        var isLoggedIn = !!user.email;
+        var isLoggedIn = !!token;
         loginStatus.textContent = isLoggedIn ? "Logged in" : "Not logged in";
 
-        uName.value = user.name || "";
-        uEmail.value = user.email || "";
-
-        var pref = user.preferences || {};
-        prefGender.value = pref.gender || "";
-        prefAge.value = pref.age || "";
-        prefBreed.value = pref.breed || "";
-        prefHome.value = pref.home || "";
-        setTagsToUI(pref.tags || []);
-
-        var cat = user.myCat || {};
-        hasCat.checked = !!cat.hasCat;
-        catId.value = cat.catId || "";
-        catName.value = cat.name || "";
-        catBreed.value = cat.breed || "";
-        catGender.value = cat.gender || "";
-        catBirthday.value = cat.birthday || "";
-        catNeuter.value = cat.neuter || "";
-        catVaccination.value = cat.vaccination || "";
-        catAllergies.value = cat.allergies || "";
-        catNotes.value = cat.notes || "";
-
         applyCatEnabledState();
+        if (!token) return;
+
+        loginStatus.textContent = "Loading...";
+        fetch(API_BASE + "/me/profile", {
+          method: "GET",
+          headers: getAuthHeadersSafe()
+        })
+          .then(function (res) {
+            if (res.status === 401) return null;
+            return res.json();
+          })
+          .then(function (result) {
+            if (!result || !result.success || !result.data) {
+              loginStatus.textContent = "Load failed";
+              return;
+            }
+            var data = result.data;
+            var userData = data.user || {};
+            var pref = data.preferences || {};
+            var cat = (Array.isArray(data.cats) && data.cats.length ? data.cats[0] : null) || data.cat || null;
+
+            uName.value = userData.display_name || userData.username || "";
+            uEmail.value = userData.email || "";
+            prefGender.value = pref.preferred_gender || "";
+            prefAge.value = pref.preferred_age || "";
+            prefBreed.value = pref.preferred_breed || "";
+            prefHome.value = "";
+            setTagsToUI([]);
+
+            hasCat.checked = !!data.has_cat;
+            currentCatId = cat && cat.id ? String(cat.id) : "";
+            currentCatPhotoUrl = cat && cat.photo_url ? String(cat.photo_url) : "";
+            catId.value = currentCatId;
+            catName.value = cat && cat.name ? cat.name : "";
+            catBreed.value = cat && cat.breed ? cat.breed : "";
+            catGender.value = cat && cat.gender ? cat.gender : "";
+            catBirthday.value = "";
+            catNeuter.value = "";
+            catVaccination.value = "";
+            catAllergies.value = "";
+            catNotes.value = cat && cat.description ? cat.description : "";
+            applyCatEnabledState();
+
+            user.id = userData.id || user.id || "";
+            user.email = userData.email || "";
+            user.username = userData.username || "";
+            user.display_name = userData.display_name || userData.username || "";
+            user.name = user.display_name;
+            writeUser(user);
+            loginStatus.textContent = "Logged in";
+          })
+          .catch(function () {
+            loginStatus.textContent = "Load failed";
+          });
       }
 
       function saveFromUI() {
-        var current = readUser() || {};
-        current.name = uName.value.trim();
-        current.email = uEmail.value.trim();
-        current.preferences = {
-          gender: prefGender.value,
-          age: prefAge.value,
-          breed: prefBreed.value,
-          home: prefHome.value,
-          tags: getTagsFromUI()
-        };
-        current.myCat = {
-          hasCat: !!hasCat.checked,
-          catId: catId.value.trim(),
-          name: catName.value.trim(),
-          breed: catBreed.value.trim(),
-          gender: catGender.value,
-          birthday: catBirthday.value,
-          neuter: catNeuter.value,
-          vaccination: catVaccination.value.trim(),
-          allergies: catAllergies.value.trim(),
-          notes: catNotes.value.trim()
-        };
+        var token = getTokenSafe();
+        if (!token) {
+          alert("Please log in first.");
+          window.location.href = "/pages/log-in.html";
+          return;
+        }
 
-        writeUser(current);
-        savedBanner.classList.add("show");
-        window.setTimeout(function () {
-          savedBanner.classList.remove("show");
-        }, 2200);
+        var payload = {
+          display_name: uName.value.trim()
+        };
+        if (hasCat.checked) {
+          payload.has_cat = true;
+          payload.cat = {
+            id: currentCatId || catId.value.trim(),
+            name: catName.value.trim(),
+            breed: catBreed.value.trim(),
+            gender: catGender.value,
+            birthday: catBirthday.value,
+            photo_url: currentCatPhotoUrl || "",
+            description: catNotes.value.trim()
+          };
+        } else {
+          payload.has_cat = false;
+          payload.preferences = {
+            preferred_gender: prefGender.value,
+            preferred_age: prefAge.value,
+            preferred_breed: prefBreed.value
+          };
+        }
+
+        saveBtn.disabled = true;
+        fetch(API_BASE + "/me/profile", {
+          method: "PUT",
+          headers: getAuthHeadersSafe(),
+          body: JSON.stringify(payload)
+        })
+          .then(function (res) {
+            if (res.status === 401) return null;
+            return res.json();
+          })
+          .then(function (result) {
+            if (!result || !result.success || !result.data) {
+              alert((result && result.message) || "Save failed.");
+              return;
+            }
+            var data = result.data;
+            var cat = (Array.isArray(data.cats) && data.cats.length ? data.cats[0] : null) || data.cat || null;
+            currentCatId = cat && cat.id ? String(cat.id) : "";
+            currentCatPhotoUrl = cat && cat.photo_url ? String(cat.photo_url) : "";
+            catId.value = currentCatId;
+            if (cat && cat.description !== undefined) catNotes.value = cat.description || "";
+            hasCat.checked = !!data.has_cat;
+            applyCatEnabledState();
+
+            var current = readUser() || {};
+            var returnedUser = data.user || {};
+            current.id = returnedUser.id || current.id || "";
+            current.email = returnedUser.email || uEmail.value.trim();
+            current.username = returnedUser.username || current.username || "";
+            current.display_name = returnedUser.display_name || uName.value.trim();
+            current.name = current.display_name;
+            writeUser(current);
+
+            savedBanner.classList.add("show");
+            window.setTimeout(function () {
+              savedBanner.classList.remove("show");
+            }, 2200);
+          })
+          .catch(function () {
+            alert("Network error. Please check backend service.");
+          })
+          .finally(function () {
+            saveBtn.disabled = false;
+          });
       }
 
       hasCat.addEventListener("change", function () {
@@ -552,6 +647,12 @@
       saveBtn.addEventListener("click", saveFromUI);
       logoutBtn.addEventListener("click", function () {
         if (!confirm("Log out now?")) return;
+        if (typeof logout === "function") {
+          clearUser();
+          logout();
+          return;
+        }
+        try { window.localStorage.removeItem("catface_token"); } catch (e) {}
         clearUser();
         loadToUI();
         alert("Logged out.");

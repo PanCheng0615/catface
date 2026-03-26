@@ -71,6 +71,7 @@
   const commentInput = document.getElementById("commentInput");
   const commentSubmit = document.getElementById("commentSubmit");
   const detailAuthorRow = document.getElementById("detailAuthorRow") || document.querySelector(".post-modal-author");
+  const closePostOverlayBtn = document.getElementById("closePostOverlay");
 
   function formatLikes(num) {
     if (num >= 10000) return (num / 1000).toFixed(0) + "k";
@@ -95,11 +96,13 @@
   }
 
   function openCreate() {
+    if (!createOverlay) return;
     createOverlay.classList.add("is-open");
     setComposeInUrl(true);
   }
 
   function closeCreate() {
+    if (!createOverlay) return;
     createOverlay.classList.remove("is-open");
     setComposeInUrl(false);
   }
@@ -111,80 +114,87 @@
   Array.prototype.forEach.call(document.querySelectorAll("[data-close-create]"), function (btn) {
     btn.addEventListener("click", closeCreate);
   });
-  createOverlay.addEventListener("click", function (e) {
-    if (e.target === createOverlay) closeCreate();
-  });
+  if (createOverlay) {
+    createOverlay.addEventListener("click", function (e) {
+      if (e.target === createOverlay) closeCreate();
+    });
+  }
 
-  createImageInput.addEventListener("change", function () {
-    const file = createImageInput.files[0];
-    const text = createTextInput.value.trim();
-    if (file) {
+  if (createImageInput && createTextInput && createPreview && createSubmit) {
+    createImageInput.addEventListener("change", function () {
+      const file = createImageInput.files[0];
+      const text = createTextInput.value.trim();
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          createPreview.innerHTML = '<img src="' + ev.target.result + '" alt="Preview">';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
+      }
+      createSubmit.disabled = !file || !text;
+    });
+
+    createTextInput.addEventListener("input", function () {
+      const file = createImageInput.files[0];
+      const text = createTextInput.value.trim();
+      createSubmit.disabled = !file || !text;
+    });
+  }
+
+  if (createForm && createImageInput && createTextInput && createSubmit && createPreview) {
+    createForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const file = createImageInput.files[0];
+      const text = createTextInput.value.trim();
+      if (!file || !text) return;
+      if (!requireLogin()) return;
       const reader = new FileReader();
       reader.onload = function (ev) {
-        createPreview.innerHTML = '<img src="' + ev.target.result + '" alt="Preview">';
+        const dataUrl = ev.target.result;
+        fetch(API_BASE_URL + "/community/upload", {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ imageDataUrl: dataUrl })
+        })
+          .then(function (res) { return res.json(); })
+          .then(function (uploadResult) {
+            const imageUrl = uploadResult.success && uploadResult.data && uploadResult.data.url
+              ? uploadResult.data.url
+              : dataUrl;
+            return fetch(API_BASE_URL + "/community/posts", {
+              method: "POST",
+              headers: getAuthHeaders(),
+              body: JSON.stringify({ content: text, image_url: imageUrl })
+            });
+          })
+          .then(function (res) { return res.json(); })
+          .then(function (result) {
+            if (!result.success || !result.data) {
+              alert(result.message || "Post failed");
+              return;
+            }
+            createImageInput.value = "";
+            createTextInput.value = "";
+            createSubmit.disabled = true;
+            createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
+            closeCreate();
+            switchCommunityView("recommended");
+          })
+          .catch(function () {
+            alert("Network error, please try again.");
+          });
       };
       reader.readAsDataURL(file);
-    } else {
-      createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
-    }
-    createSubmit.disabled = !file || !text;
-  });
-
-  createTextInput.addEventListener("input", function () {
-    const file = createImageInput.files[0];
-    const text = createTextInput.value.trim();
-    createSubmit.disabled = !file || !text;
-  });
-
-  createForm.addEventListener("submit", function (e) {
-    e.preventDefault();
-    const file = createImageInput.files[0];
-    const text = createTextInput.value.trim();
-    if (!file || !text) return;
-    if (!requireLogin()) return;
-    const reader = new FileReader();
-    reader.onload = function (ev) {
-      const dataUrl = ev.target.result;
-      fetch(API_BASE_URL + "/community/upload", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({ imageDataUrl: dataUrl })
-      })
-        .then(function (res) { return res.json(); })
-        .then(function (uploadResult) {
-          const imageUrl = uploadResult.success && uploadResult.data && uploadResult.data.url
-            ? uploadResult.data.url
-            : dataUrl;
-          return fetch(API_BASE_URL + "/community/posts", {
-            method: "POST",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ content: text, image_url: imageUrl })
-          });
-        })
-        .then(function (res) { return res.json(); })
-        .then(function (result) {
-          if (!result.success || !result.data) {
-            alert(result.message || "Post failed");
-            return;
-          }
-          createImageInput.value = "";
-          createTextInput.value = "";
-          createSubmit.disabled = true;
-          createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
-          closeCreate();
-          switchCommunityView("recommended");
-        })
-        .catch(function () {
-          alert("Network error, please try again.");
-        });
-    };
-    reader.readAsDataURL(file);
-  });
+    });
+  }
 
   function openPostDetail(id) {
     const post = posts.find(function (p) { return p.id === id; });
     if (!post) return;
     currentPostId = id;
+    if (!postOverlay || !postDetailImage || !detailAuthorAvatar || !detailAuthorName || !detailTime || !detailText) return;
     postDetailImage.src = post.image || feedPlaceholderImage();
     detailAuthorAvatar.textContent = post.authorInitial || post.author[0] || "C";
     detailAuthorName.textContent = post.author;
@@ -217,14 +227,17 @@
   }
 
   function closePostDetail() {
+    if (!postOverlay) return;
     postOverlay.classList.remove("is-open");
     currentPostId = null;
   }
 
-  document.getElementById("closePostOverlay").addEventListener("click", closePostDetail);
-  postOverlay.addEventListener("click", function (e) {
-    if (e.target === postOverlay) closePostDetail();
-  });
+  if (closePostOverlayBtn) closePostOverlayBtn.addEventListener("click", closePostDetail);
+  if (postOverlay) {
+    postOverlay.addEventListener("click", function (e) {
+      if (e.target === postOverlay) closePostDetail();
+    });
+  }
 
   if (detailAuthorRow) {
     detailAuthorRow.addEventListener("click", function (e) {
@@ -241,6 +254,7 @@
   }
 
   function updateFollowButton(post) {
+    if (!detailFollowBtn) return;
     const selfId = getCurrentUserId();
     if (post.authorId && selfId && post.authorId === selfId) {
       detailFollowBtn.style.display = "none";
@@ -256,49 +270,52 @@
     }
   }
 
-  detailFollowBtn.addEventListener("click", function (e) {
-    e.stopPropagation();
-    if (currentPostId == null) return;
-    const post = posts.find(function (p) { return p.id === currentPostId; });
-    if (!post) return;
-    if (!post.authorId) {
-      alert("This author cannot be followed yet.");
-      return;
-    }
-    if (!requireLogin()) return;
-    detailFollowBtn.disabled = true;
-    fetch(API_BASE_URL + "/users/" + encodeURIComponent(post.authorId) + "/follow", {
-      method: "POST",
-      headers: getAuthHeaders()
-    })
-      .then(function (res) {
-        if (res.status === 401) {
-          window.location.href = "/pages/log-in.html";
-          return null;
-        }
-        return res.json();
+  if (detailFollowBtn) {
+    detailFollowBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (currentPostId == null) return;
+      const post = posts.find(function (p) { return p.id === currentPostId; });
+      if (!post) return;
+      if (!post.authorId) {
+        alert("This author cannot be followed yet.");
+        return;
+      }
+      if (!requireLogin()) return;
+      detailFollowBtn.disabled = true;
+      fetch(API_BASE_URL + "/users/" + encodeURIComponent(post.authorId) + "/follow", {
+        method: "POST",
+        headers: getAuthHeaders()
       })
-      .then(function (result) {
-        if (!result || !result.success || !result.data) {
-          alert((result && result.message) || "Follow failed");
-          return;
-        }
-        const on = !!result.data.following;
-        posts.forEach(function (p) {
-          if (p.authorId === post.authorId) p.followed = on;
+        .then(function (res) {
+          if (res.status === 401) {
+            window.location.href = "/pages/log-in.html";
+            return null;
+          }
+          return res.json();
+        })
+        .then(function (result) {
+          if (!result || !result.success || !result.data) {
+            alert((result && result.message) || "Follow failed");
+            return;
+          }
+          const on = !!result.data.following;
+          posts.forEach(function (p) {
+            if (p.authorId === post.authorId) p.followed = on;
+          });
+          updateFollowButton(post);
+          renderFeed();
+        })
+        .catch(function () {
+          alert("Network error, please try again.");
+        })
+        .finally(function () {
+          detailFollowBtn.disabled = false;
         });
-        updateFollowButton(post);
-        renderFeed();
-      })
-      .catch(function () {
-        alert("Network error, please try again.");
-      })
-      .finally(function () {
-        detailFollowBtn.disabled = false;
-      });
-  });
+    });
+  }
 
   function updateLikeButton(post) {
+    if (!detailLikeIcon || !detailLikeText || !detailLikeBtn || !detailLikesCount || !detailCommentsCount) return;
     detailLikeIcon.textContent = post.liked ? "❤" : "♡";
     detailLikeText.textContent = post.liked ? "Liked" : "Like";
     detailLikeBtn.classList.toggle("is-liked", post.liked);
@@ -306,34 +323,37 @@
     detailCommentsCount.textContent = post.comments.length + " comments";
   }
 
-  detailLikeBtn.addEventListener("click", function () {
-    if (currentPostId == null) return;
-    const post = posts.find(function (p) { return p.id === currentPostId; });
-    if (!post) return;
-    if (!requireLogin()) return;
-    fetch(API_BASE_URL + "/community/posts/" + encodeURIComponent(post.id) + "/like", {
-      method: "POST",
-      headers: getAuthHeaders()
-    })
-      .then(function (res) { return res.json(); })
-      .then(function (result) {
-        if (!result.success || !result.data) {
-          alert(result.message || "Like failed");
-          return;
-        }
-        post.liked = !!result.data.liked;
-        post.likes = typeof result.data.likes === "number"
-          ? result.data.likes
-          : Math.max(0, post.likes + (post.liked ? 1 : -1));
-        updateLikeButton(post);
-        renderFeed();
+  if (detailLikeBtn) {
+    detailLikeBtn.addEventListener("click", function () {
+      if (currentPostId == null) return;
+      const post = posts.find(function (p) { return p.id === currentPostId; });
+      if (!post) return;
+      if (!requireLogin()) return;
+      fetch(API_BASE_URL + "/community/posts/" + encodeURIComponent(post.id) + "/like", {
+        method: "POST",
+        headers: getAuthHeaders()
       })
-      .catch(function () {
-        alert("Network error, please try again.");
-      });
-  });
+        .then(function (res) { return res.json(); })
+        .then(function (result) {
+          if (!result.success || !result.data) {
+            alert(result.message || "Like failed");
+            return;
+          }
+          post.liked = !!result.data.liked;
+          post.likes = typeof result.data.likes === "number"
+            ? result.data.likes
+            : Math.max(0, post.likes + (post.liked ? 1 : -1));
+          updateLikeButton(post);
+          renderFeed();
+        })
+        .catch(function () {
+          alert("Network error, please try again.");
+        });
+    });
+  }
 
   function renderComments(post) {
+    if (!commentsList || !detailCommentsCount) return;
     commentsList.innerHTML = "";
     if (!post.comments.length) {
       const empty = document.createElement("div");
@@ -390,13 +410,15 @@
       });
   }
 
-  commentSubmit.addEventListener("click", addComment);
-  commentInput.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      addComment();
-    }
-  });
+  if (commentSubmit) commentSubmit.addEventListener("click", addComment);
+  if (commentInput) {
+    commentInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        addComment();
+      }
+    });
+  }
 
   function navigateToAuthor(post, fallbackAuthor) {
     let author = fallbackAuthor || (post && post.author) || "Cat Lover";
