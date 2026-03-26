@@ -39,6 +39,24 @@ function parseBool(val) {
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function range(n)  { return Array.from({ length: n }, (_, i) => i); }
 
+/**
+ * 根据品种推断毛色（写入 cats.color，供领养偏好 preferred_color 与猫毛色匹配测试）
+ */
+function inferColorFromBreed(breed) {
+  if (!breed || String(breed).trim() === '') {
+    return pick(['白色', '黑色', '三花', '橘色', '灰色', '狸花']);
+  }
+  const b = String(breed);
+  if (b.includes('橘白')) return '橘白';
+  if (b.includes('橘')) return '橘色';
+  if (b.includes('黑')) return '黑色';
+  if (b.includes('白')) return '白色';
+  if (b.includes('三花')) return '三花';
+  if (b.includes('狸花')) return '狸花';
+  if (b.includes('灰')) return '灰色';
+  return pick(['白色', '黑色', '三花', '橘色', '灰色', '狸花']);
+}
+
 // ─── 猫咪原始数据（来自 Excel）────────────────────────────
 
 const CATS_2ND = [
@@ -83,25 +101,25 @@ const CATS_4TH = [
 
 const TEST_USERS = [
   { email: 'alice@test.com',  username: 'alice',  display_name: '小艾',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: '橘猫', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
+    pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: '橘猫', preferred_color: '橘色', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
   { email: 'bob@test.com',    username: 'bob',    display_name: '阿伯',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: '狸花', has_other_pets: true,  has_children: false, home_type: 'house',     accept_special_need: false } },
+    pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: '狸花', preferred_color: '狸花', has_other_pets: true,  has_children: false, home_type: 'house',     accept_special_need: false } },
   { email: 'carol@test.com',  username: 'carol',  display_name: '小玲',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: null,   has_other_pets: false, has_children: true,  home_type: 'apartment', accept_special_need: true  } },
+    pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: null,   preferred_color: '三花', has_other_pets: false, has_children: true,  home_type: 'apartment', accept_special_need: true  } },
   { email: 'david@test.com',  username: 'david',  display_name: '大卫',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: '橘白', has_other_pets: false, has_children: false, home_type: 'house',     accept_special_need: false } },
+    pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: '橘白', preferred_color: '橘白', has_other_pets: false, has_children: false, home_type: 'house',     accept_special_need: false } },
   { email: 'emma@test.com',   username: 'emma',   display_name: 'Emma',  role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'male',          preferred_breed: '橘猫', has_other_pets: true,  has_children: true,  home_type: 'house',     accept_special_need: false } },
+    pref: { preferred_age: 'kitten', preferred_gender: 'male',          preferred_breed: '橘猫', preferred_color: '橘色', has_other_pets: true,  has_children: true,  home_type: 'house',     accept_special_need: false } },
   { email: 'frank@test.com',  username: 'frank',  display_name: '法兰克', role: 'user',
-    pref: { preferred_age: 'senior', preferred_gender: 'no_preference', preferred_breed: '黑猫', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: true  } },
+    pref: { preferred_age: 'senior', preferred_gender: 'no_preference', preferred_breed: '黑猫', preferred_color: '黑色', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: true  } },
   { email: 'grace@test.com',  username: 'grace',  display_name: '阿雅',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: '狸花', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
+    pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: '狸花', preferred_color: '灰色', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
   { email: 'henry@test.com',  username: 'henry',  display_name: '阿亨',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: null,   has_other_pets: true,  has_children: true,  home_type: 'house',     accept_special_need: false } },
+    pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: null,   preferred_color: '白色', has_other_pets: true,  has_children: true,  home_type: 'house',     accept_special_need: false } },
   { email: 'iris@test.com',   username: 'iris',   display_name: '小欣',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: '橘白', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
+    pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: '橘白', preferred_color: '橘白', has_other_pets: false, has_children: false, home_type: 'apartment', accept_special_need: false } },
   { email: 'jack@test.com',   username: 'jack',   display_name: '小杰',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: '狸花', has_other_pets: false, has_children: false, home_type: 'house',     accept_special_need: true  } },
+    pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: '狸花', preferred_color: '狸花', has_other_pets: false, has_children: false, home_type: 'house',     accept_special_need: true  } },
   // 机构工作人员账号（供 Member 6 聊天测试用）
   { email: 'staff@rescue.com', username: 'rescue_staff', display_name: '救助站小陈', role: 'rescue_staff', pref: null },
   { email: 'vet@clinic.com',   username: 'clinic_vet',   display_name: '林医生',     role: 'clinic_staff', pref: null },
@@ -232,9 +250,11 @@ async function main() {
   for (const { row, event, date } of allCatRows) {
     const [name, adopted, gender, ageStr, breed, dewormed, vaccinated, neutered, tags] = row;
     const g = gender === 'X' ? 'unknown' : parseGender(gender);
+    const color = inferColorFromBreed(breed);
     const cat = await prisma.cat.create({
       data: {
         name, breed,
+        color,
         age_months:    parseAge(ageStr),
         gender:        g,
         status:        parseStatus(adopted),

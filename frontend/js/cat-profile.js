@@ -85,20 +85,48 @@
 
   let currentCat = null;
 
+  function resetProfileAfterError(message) {
+    currentCat = null;
+    if (profileName) profileName.textContent = message || '—';
+    if (profileMeta) profileMeta.textContent = '—';
+    if (profileDesc) profileDesc.textContent = '—';
+    if (profileTags) profileTags.innerHTML = '';
+    if (profilePhoto) profilePhoto.removeAttribute('src');
+    var st = ensureProfileCatStatusEl();
+    if (st) st.textContent = '状态：—';
+    if (sectionOrg) sectionOrg.style.display = 'none';
+  }
+
   async function loadCat() {
     try {
       const headers = getToken() ? getAuthHeaders() : { 'Content-Type': 'application/json' };
-      const res = await fetch(API + '/cats/' + catId, { headers });
-      const result = await res.json();
-      if (!result.success) {
+      const res = await fetch(API + '/cats/' + encodeURIComponent(catId), { headers });
+      const result = await res.json().catch(function () {
+        return {};
+      });
+
+      if (res.status === 404) {
+        resetProfileAfterError('未找到');
+        alert(result.message || '猫咪不存在');
+        return;
+      }
+      if (!res.ok) {
+        resetProfileAfterError('加载失败');
+        alert(result.message || ('加载失败 (' + res.status + ')'));
+        return;
+      }
+      if (!result.success || !result.data) {
+        resetProfileAfterError('加载失败');
         alert(result.message || '加载失败');
         return;
       }
+
       currentCat = result.data;
       renderProfile(currentCat);
       if (getToken() && btnApply) btnApply.style.display = 'block';
     } catch (err) {
       console.error('loadCat error:', err);
+      resetProfileAfterError('加载失败');
       if (profileName) profileName.textContent = '加载失败';
       alert('网络错误，请检查后端是否启动');
     }
@@ -124,7 +152,11 @@
   }
 
   function renderProfile(cat) {
-    if (!cat) return;
+    if (!cat) {
+      var stOnly = ensureProfileCatStatusEl();
+      if (stOnly) stOnly.textContent = '状态：—';
+      return;
+    }
 
     if (profilePhoto) {
       profilePhoto.src = cat.photo_url || '';
@@ -240,13 +272,27 @@
       }
 
       try {
-        const res = await fetch(API + '/cats/' + id, {
+        const res = await fetch(API + '/cats/' + encodeURIComponent(id), {
           method: 'PUT',
           headers: getAuthHeaders(),
           body: JSON.stringify(data)
         });
-        const result = await res.json();
-        if (result.success) {
+        const result = await res.json().catch(function () {
+          return {};
+        });
+        if (res.status === 404) {
+          alert(result.message || '猫咪不存在');
+          return;
+        }
+        if (res.status === 422) {
+          alert(result.message || '参数无效（请检查 status 等字段）');
+          return;
+        }
+        if (!res.ok) {
+          alert(result.message || ('保存失败 (' + res.status + ')'));
+          return;
+        }
+        if (result.success && result.data) {
           currentCat = result.data;
           renderProfile(currentCat);
           if (profileEdit) profileEdit.classList.remove('show');

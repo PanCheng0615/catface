@@ -1,6 +1,69 @@
 const { PrismaClient } = require('@prisma/client');
+const {
+  PrismaClientKnownRequestError,
+  PrismaClientValidationError
+} = require('@prisma/client/runtime/library');
 
 const prisma = new PrismaClient();
+
+/**
+ * 将 Prisma 写入类错误映射为 422，避免非法枚举等以 500 返回。
+ * @returns {boolean} 若已发送响应则 true，否则 false（由调用方继续走 500）
+ */
+function tryRespondPrismaCatWriteError(error, res) {
+  if (error instanceof PrismaClientValidationError) {
+    const msg = String(error.message || '');
+    let message = '请求参数与数据库约束不匹配，请检查字段类型与枚举取值';
+    if (/[`']status[`']|CatStatus|\.status/i.test(msg)) {
+      message = 'status 取值无效，请使用：available、adopted、fostered、deceased';
+    } else if (/[`']gender[`']|CatGender|\.gender/i.test(msg)) {
+      message = 'gender 取值无效，请使用：male、female、unknown';
+    } else if (/Invalid value for argument/i.test(msg)) {
+      message = '部分字段取值无效（如 status、gender 等枚举），请对照 API 文档填写';
+    }
+    res.status(422).json({
+      success: false,
+      error: 'ValidationError',
+      message
+    });
+    return true;
+  }
+
+  if (error instanceof PrismaClientKnownRequestError) {
+    if (error.code === 'P2002') {
+      const target = error.meta && error.meta.target;
+      const field = Array.isArray(target) ? target.join(', ') : String(target || '');
+      res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: field.includes('face_code')
+          ? 'face_code 已存在，请使用其他编号'
+          : '数据冲突：唯一字段已存在，请修改后重试'
+      });
+      return true;
+    }
+    if (error.code === 'P2003') {
+      res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '关联的 owner_id 或 org_id 不存在（外键无效）'
+      });
+      return true;
+    }
+  }
+
+  const raw = String((error && error.message) || '');
+  if (/invalid input value for enum|22P02/i.test(raw)) {
+    res.status(422).json({
+      success: false,
+      error: 'ValidationError',
+      message: '枚举字段取值无效（如 status 或 gender），请使用允许的枚举值'
+    });
+    return true;
+  }
+
+  return false;
+}
 
 // 与 prisma/schema.prisma 中 CatStatus 枚举保持一致
 const CAT_STATUSES = ['available', 'adopted', 'fostered', 'deceased'];
@@ -43,8 +106,15 @@ async function getCats(req, res) {
     const { status: statusQ } = req.query;
     const where = {};
 
-    const parsed = parseCatStatus(statusQ);
-    if (parsed) {
+    if (statusQ != null && String(statusQ).trim() !== '') {
+      const parsed = parseCatStatus(statusQ);
+      if (!parsed) {
+        return res.status(422).json({
+          success: false,
+          error: 'ValidationError',
+          message: '查询参数 status 必须是 available、adopted、fostered 或 deceased（CatStatus）'
+        });
+      }
       where.status = parsed;
     }
 
@@ -181,6 +251,7 @@ async function createCat(req, res) {
     });
   } catch (error) {
     console.error('createCat error:', error);
+    if (tryRespondPrismaCatWriteError(error, res)) return;
     return res.status(500).json({
       success: false,
       error: 'ServerError',
@@ -303,6 +374,7 @@ async function updateCat(req, res) {
     });
   } catch (error) {
     console.error('updateCat error:', error);
+    if (tryRespondPrismaCatWriteError(error, res)) return;
     return res.status(500).json({
       success: false,
       error: 'ServerError',
