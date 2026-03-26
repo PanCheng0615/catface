@@ -2,6 +2,7 @@
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { generateToken } = require('../utils/generateToken');
+const { runKamFaceInference } = require('../services/cat-face.service');
 
 const prisma = new PrismaClient();
 
@@ -131,5 +132,28 @@ async function login(req, res) {
     });
   }
 }
+async function identifySignupCatFace(req, res) {
+  try {
+    const { image_data_url } = req.body;
 
-module.exports = { register, login };
+    if (!image_data_url) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'image_data_url is required'
+      });
+    }
+
+    const payload = await runKamFaceInference(image_data_url);
+
+    return res.status(200).json(payload);
+  } catch (error) {
+    console.error('identifySignupCatFace error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: error.message || 'Cat face identification failed'
+    });
+  }
+}
+module.exports = { register, login, identifySignupCatFace };
