@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CatFace 数据库字段字典</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f6fa; color: #2d3436; }
+
+    header {
+      background: linear-gradient(135deg, #fd79a8, #e17055);
+      color: white;
+      padding: 32px 40px;
+    }
+    header h1 { font-size: 28px; font-weight: 700; }
+    header p { margin-top: 8px; font-size: 14px; opacity: 0.85; }
+
+    .toc {
+      background: white;
+      border-bottom: 1px solid #dfe6e9;
+      padding: 16px 40px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .toc a {
+      text-decoration: none;
+      color: #636e72;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: 1px solid #dfe6e9;
+      transition: all .2s;
+    }
+    .toc a:hover { background: #fd79a8; color: white; border-color: #fd79a8; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+
+    .section { margin-bottom: 56px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #fd79a8;
+    }
+    .section-header h2 { font-size: 20px; font-weight: 700; }
+    .badge {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .badge-m1 { background: #dfe6e9; color: #2d3436; }
+    .badge-m2 { background: #ffeaa7; color: #856404; }
+    .badge-m3 { background: #b2bec3; color: #2d3436; }
+    .badge-m5 { background: #d4edda; color: #155724; }
+    .badge-m6 { background: #cce5ff; color: #004085; }
+
+    .table-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 24px;
+    }
+    .table-title {
+      background: #2d3436;
+      color: white;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: monospace;
+      letter-spacing: 0.5px;
+    }
+    .table-title span { color: #fd79a8; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      background: #f8f9fa;
+      color: #636e72;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 10px 16px;
+      text-align: left;
+      border-bottom: 1px solid #dfe6e9;
+    }
+    tbody tr { border-bottom: 1px solid #f0f0f0; transition: background .15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fff8f9; }
+    tbody td { padding: 12px 16px; font-size: 13.5px; vertical-align: top; }
+
+    .field-name { font-family: monospace; font-weight: 600; color: #2d3436; font-size: 13px; }
+    .type-tag {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-weight: 600;
+    }
+    .type-string  { background: #e3f2fd; color: #1565c0; }
+    .type-int     { background: #fff3e0; color: #e65100; }
+    .type-float   { background: #fff3e0; color: #e65100; }
+    .type-bool    { background: #f3e5f5; color: #6a1b9a; }
+    .type-datetime{ background: #e8f5e9; color: #2e7d32; }
+    .type-enum    { background: #fce4ec; color: #880e4f; }
+    .type-uuid    { background: #e8eaf6; color: #283593; }
+    .type-relation{ background: #f5f5f5; color: #424242; }
+
+    .req-tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    .req-required { background: #ffcdd2; color: #c62828; }
+    .req-optional { background: #e8f5e9; color: #2e7d32; }
+    .req-auto     { background: #e3f2fd; color: #1565c0; }
+
+    .enum-section { margin-bottom: 56px; }
+    .enum-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+    .enum-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .enum-card-title {
+      background: #6c5ce7;
+      color: white;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: monospace;
+    }
+    .enum-list { padding: 12px 16px; }
+    .enum-item {
+      display: flex;
+      gap: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 13px;
+    }
+    .enum-item:last-child { border-bottom: none; }
+    .enum-val { font-family: monospace; font-weight: 600; color: #6c5ce7; min-width: 120px; }
+
+    footer {
+      text-align: center;
+      padding: 32px;
+      color: #b2bec3;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🐱 CatFace 数据库字段字典</h1>
+  <p>维护人：Member 5 &nbsp;|&nbsp; 最后更新：2026-03-17 &nbsp;|&nbsp; 所有字段变更请先通知 Member 5</p>
+</header>
+
+<nav class="toc">
+  <a href="#m1">用户系统</a>
+  <a href="#m3-follow">关注关系</a>
+  <a href="#m5-org">机构/诊所</a>
+  <a href="#m5-event">领养活动</a>
+  <a href="#m2-cat">猫咪档案</a>
+  <a href="#m2-adoption">领养模块</a>
+  <a href="#m3-community">社区模块</a>
+  <a href="#m5-health">健康管理</a>
+  <a href="#m6-chat">聊天功能</a>
+  <a href="#enums">枚举值说明</a>
+</nav>
+
+<main>
+
+<!-- ─── Member 1：用户系统 ─── -->
+<section class="section" id="m1">
+  <div class="section-header">
+    <h2>用户系统</h2>
+    <span class="badge badge-m1">Member 1</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>users</span> — 用户账号</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键，由数据库自动生成，全局唯一</td></tr>
+        <tr><td class="field-name">email</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>登录邮箱，全局唯一，不可重复注册</td></tr>
+        <tr><td class="field-name">password</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>bcrypt 加密后的密码，原始密码永远不存储</td></tr>
+        <tr><td class="field-name">username</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>唯一用户名，用于 @mention 和个人主页 URL，不可重复</td></tr>
+        <tr><td class="field-name">display_name</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>公开展示名称，可以重复，允许中文</td></tr>
+        <tr><td class="field-name">avatar_url</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>头像图片的 Cloudinary 云端 URL</td></tr>
+        <tr><td class="field-name">bio</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>个人简介，建议最长 300 字</td></tr>
+        <tr><td class="field-name">role</td><td><span class="type-tag type-enum">Role</span></td><td><span class="req-tag req-auto">默认 user</span></td><td>用户角色，控制页面访问权限，见枚举说明</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>账号注册时间</td></tr>
+        <tr><td class="field-name">updated_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>账号最后更新时间，由 Prisma 自动维护</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── Member 3：关注关系 ─── -->
+<section class="section" id="m3-follow">
+  <div class="section-header">
+    <h2>关注关系</h2>
+    <span class="badge badge-m3">Member 3</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>user_follows</span> — 用户之间的关注记录</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">follower_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>发起关注的用户 ID（关注别人的人）</td></tr>
+        <tr><td class="field-name">following_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>被关注的用户 ID（被别人关注的人）</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>关注时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── Member 5：机构/诊所 ─── -->
+<section class="section" id="m5-org">
+  <div class="section-header">
+    <h2>救助机构 / 诊所</h2>
+    <span class="badge badge-m5">Member 5</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>organizations</span> — 救助机构和诊所账号</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">name</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>机构名称，例如「爱猫救助站」</td></tr>
+        <tr><td class="field-name">type</td><td><span class="type-tag type-enum">OrgType</span></td><td><span class="req-tag req-required">必填</span></td><td>机构类型：rescue（救助机构）或 clinic（诊所）</td></tr>
+        <tr><td class="field-name">email</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>机构登录邮箱，全局唯一</td></tr>
+        <tr><td class="field-name">password</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>bcrypt 加密后的机构账号密码</td></tr>
+        <tr><td class="field-name">phone</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>联系电话</td></tr>
+        <tr><td class="field-name">address</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>机构地址，用于地图展示或线下联系</td></tr>
+        <tr><td class="field-name">logo_url</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>机构 Logo 的 Cloudinary 云端 URL</td></tr>
+        <tr><td class="field-name">description</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>机构简介</td></tr>
+        <tr><td class="field-name">license_number</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>执照编号或注册编号，用于平台资质核实</td></tr>
+        <tr><td class="field-name">is_verified</td><td><span class="type-tag type-bool">Boolean</span></td><td><span class="req-tag req-auto">默认 false</span></td><td>是否已通过平台认证，认证后显示认证标记</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>注册时间</td></tr>
+        <tr><td class="field-name">updated_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>最后更新时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── Member 5：领养活动 ─── -->
+<section class="section" id="m5-event">
+  <div class="section-header">
+    <h2>领养活动</h2>
+    <span class="badge badge-m5">Member 5</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>adoption_events</span> — 领养会/领养活动记录（对应 Excel 的「届」）</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">name</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>活动名称，例如「第 2 届领养会」</td></tr>
+        <tr><td class="field-name">edition</td><td><span class="type-tag type-int">Int?</span></td><td><span class="req-tag req-optional">可空</span></td><td>届次编号，例如 2、3、4，用于排序和筛选</td></tr>
+        <tr><td class="field-name">start_date</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-required">必填</span></td><td>活动开始日期</td></tr>
+        <tr><td class="field-name">end_date</td><td><span class="type-tag type-datetime">DateTime?</span></td><td><span class="req-tag req-optional">可空</span></td><td>活动结束日期，单日活动可不填</td></tr>
+        <tr><td class="field-name">location</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>活动地点</td></tr>
+        <tr><td class="field-name">description</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>活动说明和注意事项</td></tr>
+        <tr><td class="field-name">org_id</td><td><span class="type-tag type-uuid">UUID?</span></td><td><span class="req-tag req-optional">可空</span></td><td>主办机构 ID，关联 organizations 表</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>创建时间</td></tr>
+        <tr><td class="field-name">updated_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>最后更新时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── Member 2：猫咪档案 ─── -->
+<section class="section" id="m2-cat">
+  <div class="section-header">
+    <h2>猫咪档案</h2>
+    <span class="badge badge-m2">Member 2</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>cats</span> — 猫咪主档案</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">name</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>猫咪名字</td></tr>
+        <tr><td class="field-name">breed</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>品种，例如「奶橘」「狸花」「安哥拉」</td></tr>
+        <tr><td class="field-name">age_months</td><td><span class="type-tag type-int">Int?</span></td><td><span class="req-tag req-optional">可空</span></td><td>年龄（以月为单位），例如 6 = 6个月，24 = 2岁</td></tr>
+        <tr><td class="field-name">gender</td><td><span class="type-tag type-enum">CatGender?</span></td><td><span class="req-tag req-optional">可空</span></td><td>性别枚举：male（公）/ female（母）/ unknown（未知）</td></tr>
+        <tr><td class="field-name">color</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>毛色描述，例如「橘白」「黑白」</td></tr>
+        <tr><td class="field-name">description</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>猫咪简介，性格、习惯、特点等</td></tr>
+        <tr><td class="field-name">photo_url</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>主照片的 Cloudinary 云端 URL</td></tr>
+        <tr><td class="field-name">status</td><td><span class="type-tag type-enum">CatStatus</span></td><td><span class="req-tag req-auto">默认 available</span></td><td>当前状态：available（可领养）/ adopted（已领养）/ fostered（代养中）/ deceased（已离世）</td></tr>
+        <tr><td class="field-name">is_neutered</td><td><span class="type-tag type-bool">Boolean?</span></td><td><span class="req-tag req-optional">可空</span></td><td>是否已完成绝育/结扎。null 表示不明</td></tr>
+        <tr><td class="field-name">is_vaccinated</td><td><span class="type-tag type-bool">Boolean?</span></td><td><span class="req-tag req-optional">可空</span></td><td>是否已接种核心疫苗。null 表示不明</td></tr>
+        <tr><td class="field-name">is_dewormed</td><td><span class="type-tag type-bool">Boolean?</span></td><td><span class="req-tag req-optional">可空</span></td><td>是否已完成驱虫（体内+体外）。null 表示不明</td></tr>
+        <tr><td class="field-name">intake_date</td><td><span class="type-tag type-datetime">DateTime?</span></td><td><span class="req-tag req-optional">可空</span></td><td>猫咪进入系统的日期，即救助日期或登记日期</td></tr>
+        <tr><td class="field-name">found_location</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>发现/救助地点，流浪猫被发现的地址描述，例如「台北市大安区和平东路」</td></tr>
+        <tr><td class="field-name">owner_id</td><td><span class="type-tag type-uuid">UUID?</span></td><td><span class="req-tag req-optional">可空</span></td><td>猫主人的用户 ID，个人养猫用户关联</td></tr>
+        <tr><td class="field-name">org_id</td><td><span class="type-tag type-uuid">UUID?</span></td><td><span class="req-tag req-optional">可空</span></td><td>来源机构的 ID，流浪猫由救助机构登记时关联</td></tr>
+        <tr><td class="field-name">event_id</td><td><span class="type-tag type-uuid">UUID?</span></td><td><span class="req-tag req-optional">可空</span></td><td>当前参与的领养活动 ID</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>档案创建时间</td></tr>
+        <tr><td class="field-name">updated_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>档案最后更新时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>cat_tags</span> — 猫咪性格/特点标签</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">cat_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>关联猫咪 ID</td></tr>
+        <tr><td class="field-name">tag</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>标签内容，例如「亲人」「怕生」「爱玩」「安静」「粘人」</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>添加时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>cat_requirements</span> — 猫咪领养要求</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">cat_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>关联猫咪 ID</td></tr>
+        <tr><td class="field-name">description</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>要求描述，例如「需要有独立房间」「不可与其他宠物同住」</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>创建时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>cat_updates</span> — 猫咪动态更新</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">cat_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>关联猫咪 ID</td></tr>
+        <tr><td class="field-name">content</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>动态内容，例如「今天打了疫苗」「体重增加到 3kg」「已成功领养」</td></tr>
+        <tr><td class="field-name">photo_url</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>配图的 Cloudinary 云端 URL</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>发布时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── Member 2：领养模块 ─── -->
+<section class="section" id="m2-adoption">
+  <div class="section-header">
+    <h2>领养模块</h2>
+    <span class="badge badge-m2">Member 2</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>adopter_preferences</span> — 用户领养偏好设置</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">user_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>关联用户 ID，每位用户只有一份偏好设置</td></tr>
+        <tr><td class="field-name">preferred_age</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>偏好年龄段，例如「kitten」「adult」「senior」</td></tr>
+        <tr><td class="field-name">preferred_gender</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>偏好性别：male / female / no_preference</td></tr>
+        <tr><td class="field-name">preferred_breed</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>偏好品种，允许为空表示不限</td></tr>
+        <tr><td class="field-name">accept_special_need</td><td><span class="type-tag type-bool">Boolean?</span></td><td><span class="req-tag req-optional">可空</span></td><td>是否愿意领养特殊需求猫咪（残疾、慢性病等）</td></tr>
+        <tr><td class="field-name">home_type</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>居住类型，例如「apartment」「house」，用于匹配猫咪要求</td></tr>
+        <tr><td class="field-name">has_other_pets</td><td><span class="type-tag type-bool">Boolean?</span></td><td><span class="req-tag req-optional">可空</span></td><td>是否已有其他宠物，用于匹配猫咪要求</td></tr>
+        <tr><td class="field-name">has_children</td><td><span class="type-tag type-bool">Boolean?</span></td><td><span class="req-tag req-optional">可空</span></td><td>是否家中有小孩，用于匹配猫咪要求</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>创建时间</td></tr>
+        <tr><td class="field-name">updated_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>最后更新时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>adoption_applications</span> — 领养申请</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">user_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>提交申请的用户 ID</td></tr>
+        <tr><td class="field-name">cat_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>申请领养的猫咪 ID</td></tr>
+        <tr><td class="field-name">event_id</td><td><span class="type-tag type-uuid">UUID?</span></td><td><span class="req-tag req-optional">可空</span></td><td>通过哪次领养活动提交的，线上直接申请可为空</td></tr>
+        <tr><td class="field-name">status</td><td><span class="type-tag type-enum">ApplicationStatus</span></td><td><span class="req-tag req-auto">默认 pending</span></td><td>申请状态：pending（待审核）/ approved（通过）/ rejected（拒绝）</td></tr>
+        <tr><td class="field-name">message</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>申请人的自我介绍或申请说明，给机构参考</td></tr>
+        <tr><td class="field-name">reviewed_by</td><td><span class="type-tag type-uuid">UUID?</span></td><td><span class="req-tag req-optional">可空</span></td><td>审核人的用户 ID（rescue_staff），审核前为空</td></tr>
+        <tr><td class="field-name">reviewed_at</td><td><span class="type-tag type-datetime">DateTime?</span></td><td><span class="req-tag req-optional">可空</span></td><td>审核完成的时间，审核前为空</td></tr>
+        <tr><td class="field-name">reject_note</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>拒绝原因说明，仅在 status=rejected 时填写</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>提交申请时间</td></tr>
+        <tr><td class="field-name">updated_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>最后更新时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── Member 3：社区模块 ─── -->
+<section class="section" id="m3-community">
+  <div class="section-header">
+    <h2>社区模块</h2>
+    <span class="badge badge-m3">Member 3</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>posts</span> — 社区帖子</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">user_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>发帖用户 ID</td></tr>
+        <tr><td class="field-name">content</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>帖子正文，不限长度</td></tr>
+        <tr><td class="field-name">image_url</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>帖子配图的 Cloudinary 云端 URL</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>发布时间</td></tr>
+        <tr><td class="field-name">updated_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>最后编辑时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>post_likes</span> — 帖子点赞记录</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">user_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>点赞的用户 ID</td></tr>
+        <tr><td class="field-name">post_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>被点赞的帖子 ID，同一用户对同一帖子只能点一次</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>点赞时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>comments</span> — 评论</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">user_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>评论用户 ID</td></tr>
+        <tr><td class="field-name">post_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>被评论的帖子 ID</td></tr>
+        <tr><td class="field-name">content</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>评论文字内容</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>评论时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── Member 5：健康管理 ─── -->
+<section class="section" id="m5-health">
+  <div class="section-header">
+    <h2>健康管理模块</h2>
+    <span class="badge badge-m5">Member 5</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>owner_health_records</span> — 猫主人记录的健康档案</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">cat_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>关联猫咪 ID</td></tr>
+        <tr><td class="field-name">user_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>记录人（猫主人）的用户 ID</td></tr>
+        <tr><td class="field-name">record_type</td><td><span class="type-tag type-enum">HealthRecordType</span></td><td><span class="req-tag req-required">必填</span></td><td>记录类型枚举：vaccine / deworming / checkup / treatment / surgery / other</td></tr>
+        <tr><td class="field-name">description</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>详细描述，例如「接种狂犬疫苗，第一针」</td></tr>
+        <tr><td class="field-name">date</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-required">必填</span></td><td>该记录发生的实际日期（就诊日期或记录日期）</td></tr>
+        <tr><td class="field-name">next_due_date</td><td><span class="type-tag type-datetime">DateTime?</span></td><td><span class="req-tag req-optional">可空</span></td><td>下次需要处理的日期，例如疫苗补打日期，用于提醒功能</td></tr>
+        <tr><td class="field-name">weight_kg</td><td><span class="type-tag type-float">Float?</span></td><td><span class="req-tag req-optional">可空</span></td><td>记录时猫咪体重（千克），例如 4.2</td></tr>
+        <tr><td class="field-name">vet_name</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>就诊医生姓名</td></tr>
+        <tr><td class="field-name">clinic_name</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>就诊诊所名称</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>记录创建时间</td></tr>
+        <tr><td class="field-name">updated_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>最后更新时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>clinic_health_reports</span> — 诊所上传的官方健康报告</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">cat_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>关联猫咪 ID</td></tr>
+        <tr><td class="field-name">org_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>上传报告的诊所机构 ID</td></tr>
+        <tr><td class="field-name">report_type</td><td><span class="type-tag type-enum">ClinicReportType</span></td><td><span class="req-tag req-required">必填</span></td><td>报告类型枚举：vaccination / deworming / checkup / blood_test / treatment / surgery / other</td></tr>
+        <tr><td class="field-name">description</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>报告详细描述，必填</td></tr>
+        <tr><td class="field-name">file_url</td><td><span class="type-tag type-string">String?</span></td><td><span class="req-tag req-optional">可空</span></td><td>报告附件 URL（PDF 或图片扫描件）</td></tr>
+        <tr><td class="field-name">date</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-required">必填</span></td><td>报告对应的实际日期（检查日期，非上传日期）</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>上传时间</td></tr>
+        <tr><td class="field-name">updated_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>最后更新时间（允许诊所补充修改）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>health_share_permissions</span> — 健康数据共享授权</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">cat_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>被授权查看数据的猫咪 ID</td></tr>
+        <tr><td class="field-name">user_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>做出授权决定的猫主人用户 ID</td></tr>
+        <tr><td class="field-name">org_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>被授权查看数据的诊所机构 ID</td></tr>
+        <tr><td class="field-name">is_allowed</td><td><span class="type-tag type-bool">Boolean</span></td><td><span class="req-tag req-auto">默认 false</span></td><td>是否允许该诊所查看该猫的健康数据，false=拒绝，true=允许</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>首次设置时间</td></tr>
+        <tr><td class="field-name">updated_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>最后修改授权时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── Member 6：聊天功能 ─── -->
+<section class="section" id="m6-chat">
+  <div class="section-header">
+    <h2>聊天功能</h2>
+    <span class="badge badge-m6">Member 6</span>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>conversations</span> — 聊天会话（用户与机构之间）</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">user_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>发起对话的普通用户 ID</td></tr>
+        <tr><td class="field-name">org_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>对话对象的机构账号 ID（救助机构或诊所）</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>对话创建时间，同一用户与同一机构只有一条对话记录</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>messages</span> — 聊天消息</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">conversation_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>所属对话 ID</td></tr>
+        <tr><td class="field-name">sender_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>发送者的用户 ID（可以是普通用户或机构账号）</td></tr>
+        <tr><td class="field-name">content</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>消息文字内容</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>发送时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-card">
+    <div class="table-title"><span>message_attachments</span> — 消息附件</div>
+    <table>
+      <thead><tr><th>字段名</th><th>类型</th><th>必填</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td class="field-name">id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-auto">自动</span></td><td>主键</td></tr>
+        <tr><td class="field-name">message_id</td><td><span class="type-tag type-uuid">UUID</span></td><td><span class="req-tag req-required">必填</span></td><td>关联消息 ID</td></tr>
+        <tr><td class="field-name">file_url</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>附件的 Cloudinary 云端 URL</td></tr>
+        <tr><td class="field-name">file_type</td><td><span class="type-tag type-string">String</span></td><td><span class="req-tag req-required">必填</span></td><td>附件 MIME 类型，例如「image/jpeg」「application/pdf」</td></tr>
+        <tr><td class="field-name">created_at</td><td><span class="type-tag type-datetime">DateTime</span></td><td><span class="req-tag req-auto">自动</span></td><td>上传时间</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── 枚举值说明 ─── -->
+<section class="enum-section" id="enums">
+  <div class="section-header">
+    <h2>枚举值完整说明</h2>
+  </div>
+  <div class="enum-grid">
+
+    <div class="enum-card">
+      <div class="enum-card-title">Role — 用户角色</div>
+      <div class="enum-list">
+        <div class="enum-item"><span class="enum-val">user</span><span>普通用户/猫主人，可发帖、申请领养、管理健康记录</span></div>
+        <div class="enum-item"><span class="enum-val">rescue_staff</span><span>救助机构工作人员，可录入猫咪、审核领养申请、查看数据分析</span></div>
+        <div class="enum-item"><span class="enum-val">clinic_staff</span><span>诊所工作人员，可上传官方健康报告，查看授权猫咪记录</span></div>
+        <div class="enum-item"><span class="enum-val">admin</span><span>系统管理员，拥有全部权限（当前阶段留空备用）</span></div>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-card-title">OrgType — 机构类型</div>
+      <div class="enum-list">
+        <div class="enum-item"><span class="enum-val">rescue</span><span>救助/领养机构，收容流浪猫、主办领养活动、审核领养申请</span></div>
+        <div class="enum-item"><span class="enum-val">clinic</span><span>动物诊所，上传官方健康报告、查看授权的猫咪健康数据</span></div>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-card-title">CatGender — 猫咪性别</div>
+      <div class="enum-list">
+        <div class="enum-item"><span class="enum-val">male</span><span>公猫</span></div>
+        <div class="enum-item"><span class="enum-val">female</span><span>母猫</span></div>
+        <div class="enum-item"><span class="enum-val">unknown</span><span>性别未知（幼猫或尚未确认）</span></div>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-card-title">CatStatus — 猫咪当前状态</div>
+      <div class="enum-list">
+        <div class="enum-item"><span class="enum-val">available</span><span>可领养，在领养列表中展示</span></div>
+        <div class="enum-item"><span class="enum-val">adopted</span><span>已领养，不再展示但保留档案</span></div>
+        <div class="enum-item"><span class="enum-val">fostered</span><span>代养中，暂时不对外开放领养</span></div>
+        <div class="enum-item"><span class="enum-val">deceased</span><span>已离世，仅作历史记录保留</span></div>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-card-title">ApplicationStatus — 领养申请状态</div>
+      <div class="enum-list">
+        <div class="enum-item"><span class="enum-val">pending</span><span>待审核，等待机构工作人员处理</span></div>
+        <div class="enum-item"><span class="enum-val">approved</span><span>已通过，猫咪状态应同步更新为 adopted</span></div>
+        <div class="enum-item"><span class="enum-val">rejected</span><span>已拒绝，应填写 reject_note 说明原因</span></div>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-card-title">HealthRecordType — 健康记录类型（主人记录）</div>
+      <div class="enum-list">
+        <div class="enum-item"><span class="enum-val">vaccine</span><span>疫苗接种，填 next_due_date 提醒补打</span></div>
+        <div class="enum-item"><span class="enum-val">deworming</span><span>驱虫处理（体内/体外），填 next_due_date 提醒下次</span></div>
+        <div class="enum-item"><span class="enum-val">checkup</span><span>定期体检，无特殊后续</span></div>
+        <div class="enum-item"><span class="enum-val">treatment</span><span>疾病治疗记录，例如感冒、骨折</span></div>
+        <div class="enum-item"><span class="enum-val">surgery</span><span>手术记录，例如绝育手术</span></div>
+        <div class="enum-item"><span class="enum-val">other</span><span>其他健康相关记录</span></div>
+      </div>
+    </div>
+
+    <div class="enum-card">
+      <div class="enum-card-title">ClinicReportType — 诊所报告类型</div>
+      <div class="enum-list">
+        <div class="enum-item"><span class="enum-val">vaccination</span><span>官方疫苗接种证明</span></div>
+        <div class="enum-item"><span class="enum-val">deworming</span><span>官方驱虫证明</span></div>
+        <div class="enum-item"><span class="enum-val">checkup</span><span>常规体检报告</span></div>
+        <div class="enum-item"><span class="enum-val">blood_test</span><span>血液检查报告</span></div>
+        <div class="enum-item"><span class="enum-val">treatment</span><span>疾病治疗记录</span></div>
+        <div class="enum-item"><span class="enum-val">surgery</span><span>手术记录（含绝育手术证明）</span></div>
+        <div class="enum-item"><span class="enum-val">other</span><span>其他官方医疗文件</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</main>
+
+<footer>
+  CatFace 数据库字段字典 &nbsp;|&nbsp; 维护人：Member 5 &nbsp;|&nbsp; 所有字段变更请先通知 Member 5 执行 migrate
+</footer>
+
+</body>
+</html>
