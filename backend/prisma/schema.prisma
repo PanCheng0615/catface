@@ -201,6 +201,10 @@ model Cat {
   org_id        String?
   // 当前参与的领养活动 ID，允许为空
   event_id      String?
+  // ── Member 4 猫脸识别 ──
+  // 猫脸识别系统分配的唯一编号，格式如 "CF-2026-00042"，允许为空（历史数据无此字段）
+  // 前端展示猫咪编号时优先使用此字段，无则降级显示 id 前 8 位
+  face_code     String?     @unique
   created_at    DateTime    @default(now())
   updated_at    DateTime    @updatedAt
 
@@ -214,8 +218,32 @@ model Cat {
   owner_health_records     OwnerHealthRecord[]     // 猫主人记录的健康档案
   clinic_reports           ClinicHealthReport[]    // 诊所上传的官方健康报告
   health_share_permissions HealthSharePermission[] // 健康数据共享授权记录
+  face_embedding           CatFaceEmbedding?       // 猫脸特征向量（一对一）
 
   @@map("cats")
+}
+
+// ─────────────────────────────────────────
+// Member 4 — 猫脸识别特征表
+// ─────────────────────────────────────────
+
+model CatFaceEmbedding {
+  id            String   @id @default(uuid())
+  // 对应的猫咪 ID，一只猫只有一条 embedding 记录
+  cat_id        String   @unique
+  // 猫脸特征向量，JSON 数组格式存储，例如 [0.12, -0.34, ...]
+  // 由 Member 4 的 Python 模型生成，维度取决于所用模型
+  embedding     Json
+  // 生成该向量所用的模型版本，便于日后模型升级时批量重算，例如 "v1.0"
+  model_version String   @default("v1.0")
+  // 用于生成 embedding 的原始图片 URL，允许为空（可用于复核和重新计算）
+  source_image_url String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  cat Cat @relation(fields: [cat_id], references: [id], onDelete: Cascade)
+
+  @@map("cat_face_embeddings")
 }
 
 // 猫咪性别枚举
