@@ -299,7 +299,7 @@
 <body>
   <div class="shell">
     <section class="left">
-      <a href="/pages/index.html" class="back-link">← Back to Home</a>
+      <a href="./index.html" class="back-link">← Back to Home</a>
       <div class="logo">
         <span class="logo-mark">🐱</span>
         <span>CatFace</span>
@@ -338,8 +338,8 @@
 
         <button class="btn-primary" id="login-submit" type="submit">Log in</button>
         <div class="login-alt-box">
-          <div class="login-alt-title">Or prepare cat face login</div>
-          <div class="login-alt-sub">You can scan a cat face now. Real cat face login will be enabled after backend account matching is added.</div>
+          <div class="login-alt-title">Or log in with cat face</div>
+          <div class="login-alt-sub">Upload a registered cat face image and the system will try to log in the owner automatically.</div>
           <button class="btn-secondary" id="login-catface-toggle" type="button">Log in with cat face</button>
           <div id="login-catface-panel" style="display:none;">
             <div class="field">
@@ -350,7 +350,7 @@
               <span class="label-inline">Preview</span>
               <div style="display:flex; align-items:center; gap:10px;">
                 <img id="login-catface-preview" src="about:blank" alt="Login cat face preview" style="width:64px;height:64px;border-radius:16px;object-fit:cover;border:1px solid #e5e7eb;">
-                <span style="font-size:12px;color:#777;">This preview is only for the future cat face login flow.</span>
+                <span style="font-size:12px;color:#777;">Use a clear cat face photo that has already been registered.</span>
               </div>
             </div>
             <div class="field">
@@ -571,6 +571,24 @@
           });
       }
 
+      function loginByCatFace(imageDataUrl) {
+        return fetch(API_BASE + "/auth/cat-face/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image_data_url: imageDataUrl
+          })
+        })
+          .then(function (response) {
+            return parseApiResult(response).then(function (payload) {
+              if (!response.ok || !payload.success || !payload.data) {
+                throw new Error(payload.message || "Cat face login failed.");
+              }
+              return payload;
+            });
+          });
+      }
+
       var tabLogin = document.getElementById('tabLogin');
       var tabSignup = document.getElementById('tabSignup');
       var loginForm = document.getElementById('loginForm');
@@ -693,8 +711,8 @@
         loginCatFaceToggle.addEventListener('click', function () {
           toggleLoginCatFacePanel();
           if (loginCatFaceOpen) {
-            setStatus(loginStatus, "info", "Upload a cat face image to test the future login flow.");
-            setStatus(loginCatFaceStatus, "info", "This area is a placeholder for future cat face login.");
+            setStatus(loginStatus, "info", "Upload a registered cat face image to log in.");
+            setStatus(loginCatFaceStatus, "info", "Ready to scan for cat face login.");
           } else {
             setStatus(loginStatus, "", "");
             resetLoginCatFaceState();
@@ -724,26 +742,27 @@
             loginCatFaceIdentifying = true;
             if (loginCatFacePreview) loginCatFacePreview.src = loginCatFaceDataUrl;
             if (loginCatFacePreviewRow) loginCatFacePreviewRow.style.display = "";
-            if (loginCatFaceResult) loginCatFaceResult.value = "Scanning...";
-            setStatus(loginStatus, "info", "Cat face uploaded. Scanning for future login support...");
-            setStatus(loginCatFaceStatus, "info", "Scanning now. This will not log in yet.");
+            if (loginCatFaceResult) loginCatFaceResult.value = "Scanning and matching...";
+            setStatus(loginStatus, "info", "Cat face uploaded. Matching owner account...");
+            setStatus(loginCatFaceStatus, "info", "Scanning and matching now...");
             updateLoginButton();
 
-            identifyOwnerCatFace(loginCatFaceDataUrl)
+            loginByCatFace(loginCatFaceDataUrl)
               .then(function (payload) {
                 loginCatFaceCode =
-                  (payload.data.best_match && payload.data.best_match.cat && payload.data.best_match.cat.face_code) ||
-                  payload.data.suggested_face_code ||
+                  (payload.data.cat && payload.data.cat.face_code) ||
                   "";
-                if (loginCatFaceResult) loginCatFaceResult.value = loginCatFaceCode || "Scan completed";
-                setStatus(loginStatus, "success", "Scan completed. Cat face login UI is ready, but final account login still needs the backend matching feature.");
-                setStatus(loginCatFaceStatus, "success", "Scan completed. Cat face login is not enabled yet because backend account matching is still missing.");
+                if (loginCatFaceResult) loginCatFaceResult.value = loginCatFaceCode || "Matched";
+                saveAuth(payload.data);
+                setStatus(loginStatus, "success", "Cat face login successful. Redirecting...");
+                setStatus(loginCatFaceStatus, "success", "Matched successfully. Redirecting now...");
+                window.location.href = './index.html';
               })
               .catch(function (error) {
                 loginCatFaceCode = "";
                 if (loginCatFaceResult) loginCatFaceResult.value = "";
-                setStatus(loginStatus, "error", error.message || "Cat face scan failed.");
-                setStatus(loginCatFaceStatus, "error", error.message || "Cat face scan failed.");
+                setStatus(loginStatus, "error", error.message || "Cat face login failed.");
+                setStatus(loginCatFaceStatus, "error", error.message || "Cat face login failed.");
               })
               .finally(function () {
                 loginCatFaceIdentifying = false;
@@ -792,7 +811,7 @@
             }
             saveAuth(result.data);
             setStatus(loginStatus, "success", "Logged in successfully. Redirecting...");
-            window.location.href = '/pages/index.html';
+            window.location.href = './index.html';
           })
           .catch(function () {
             setStatus(loginStatus, "error", "Network error. Please check backend service.");
@@ -963,6 +982,10 @@
           registerPayload.cat_face_code = pendingCatFaceCode;
           registerPayload.cat_face_embedding = pendingCatFaceEmbedding;
           registerPayload.cat_face_image_data_url = pendingCatFaceDataUrl;
+          registerPayload.cat_name = myCatName ? myCatName.value.trim() : "";
+          registerPayload.cat_breed = myCatBreed ? myCatBreed.value.trim() : "";
+          registerPayload.cat_gender = myCatGender ? myCatGender.value : "";
+          registerPayload.cat_birthday = myCatBirthday ? myCatBirthday.value : "";
         }
 
         fetch(API_BASE + "/auth/register", {
@@ -978,7 +1001,7 @@
             }
             saveAuth(result.data);
             setStatus(signupStatus, "success", "Sign up successful. Redirecting...");
-            window.location.href = '/pages/index.html';
+            window.location.href = './index.html';
           })
           .catch(function () {
             setStatus(signupStatus, "error", "Network error. Please check backend service.");
