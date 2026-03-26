@@ -102,8 +102,14 @@ enum OrgType {
 // Member 2 — 猫咪档案 + 领养模块
 // ─────────────────────────────────────────
 
+enum CatStatus {
+  available
+  adopted
+  unavailable
+}
+
 model Cat {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   name         String
   breed        String?
   age_months   Int?
@@ -111,11 +117,11 @@ model Cat {
   color        String?
   description  String?
   photo_url    String?
-  is_available Boolean  @default(true)
+  status       CatStatus @default(available)
   owner_id     String?
   org_id       String?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
 
   owner                    User?                   @relation(fields: [owner_id], references: [id])
   organization             Organization?           @relation(fields: [org_id], references: [id])

@@ -2805,7 +2805,12 @@
           foundLocation: '',
           allergyHistory: '',
           temperament: dbCat.description || '',
-          status: dbCat.is_available ? 'Available' : 'Adopted',
+          status: (function () {
+            var s = dbCat.status;
+            if (s === 'available') return 'Available';
+            if (s === 'adopted') return 'Adopted';
+            return 'Unavailable';
+          })(),
           image: dbCat.photo_url || '',
           summary: dbCat.description || '',
           health: '',

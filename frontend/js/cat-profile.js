@@ -86,7 +86,15 @@
     document.getElementById('editColor').value = currentCat.color || '';
     document.getElementById('editDescription').value = currentCat.description || '';
     document.getElementById('editPhotoUrl').value = currentCat.photo_url || '';
-    document.getElementById('editIsAvailable').value = currentCat.is_available ? 'true' : 'false';
+    var statusEl = document.getElementById('editCatStatus') || document.getElementById('editIsAvailable');
+    if (statusEl) {
+      var sv = currentCat.status || 'available';
+      if (statusEl.id === 'editIsAvailable') {
+        statusEl.value = sv === 'available' ? 'true' : 'false';
+      } else {
+        statusEl.value = sv;
+      }
+    }
   });
 
   btnCancelEdit.addEventListener('click', function () {
@@ -96,6 +104,17 @@
 
   btnSave.addEventListener('click', async function () {
     const id = document.getElementById('editId').value;
+    var statusElSave = document.getElementById('editCatStatus') || document.getElementById('editIsAvailable');
+    var statusPayload;
+    if (statusElSave) {
+      if (statusElSave.id === 'editIsAvailable') {
+        statusPayload = statusElSave.value === 'true' ? 'available' : 'unavailable';
+      } else {
+        statusPayload = statusElSave.value || 'available';
+      }
+    } else {
+      statusPayload = 'available';
+    }
     const data = {
       name: document.getElementById('editName').value.trim(),
       breed: document.getElementById('editBreed').value.trim() || null,
@@ -104,7 +123,7 @@
       color: document.getElementById('editColor').value.trim() || null,
       description: document.getElementById('editDescription').value.trim() || null,
       photo_url: document.getElementById('editPhotoUrl').value.trim() || null,
-      is_available: document.getElementById('editIsAvailable').value === 'true'
+      status: statusPayload
     };
     if (!data.name) {
       alert('请填写名字');

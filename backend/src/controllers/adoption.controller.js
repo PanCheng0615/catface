@@ -112,7 +112,7 @@ async function getFeed(req, res) {
     const swipedCatIds = allSwipes.map((s) => s.cat_id);
 
     const where = {
-      is_available: true,
+      status: 'available',
       ...(swipedCatIds.length > 0 ? { id: { notIn: swipedCatIds } } : {})
     };
 

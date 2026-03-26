@@ -2,6 +2,32 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
+const CAT_STATUSES = ['available', 'adopted', 'unavailable'];
+
+/**
+ * @param {unknown} raw
+ * @returns {'available'|'adopted'|'unavailable'|null}
+ */
+function parseCatStatus(raw) {
+  if (raw == null || raw === '') return null;
+  const s = String(raw).trim().toLowerCase();
+  return CAT_STATUSES.includes(s) ? /** @type {'available'|'adopted'|'unavailable'} */ (s) : null;
+}
+
+/**
+ * Body: prefer `status` (CatStatus); legacy `is_available` maps to available / unavailable.
+ * @param {{ status?: unknown, is_available?: unknown }} body
+ * @returns {'available'|'adopted'|'unavailable'}
+ */
+function resolveCatStatusForCreate(body) {
+  const parsed = parseCatStatus(body.status);
+  if (parsed) return parsed;
+  const { is_available } = body;
+  if (is_available === true || is_available === 'true' || is_available === '1') return 'available';
+  if (is_available === false || is_available === 'false' || is_available === '0') return 'unavailable';
+  return 'available';
+}
+
 const catInclude = {
   tags: true,
   requirements: true,
@@ -12,16 +38,19 @@ const catInclude = {
 };
 
 // GET /api/cats
-// 查询参数与 Cat 模型字段一致，例如 is_available=true
+// 查询：status=available|adopted|unavailable；兼容旧参数 is_available=true|false（映射为 status）
 async function getCats(req, res) {
   try {
-    const { is_available } = req.query;
+    const { status: statusQ, is_available: legacyAvail } = req.query;
     const where = {};
-    if (is_available === 'true' || is_available === '1') {
-      where.is_available = true;
-    }
-    if (is_available === 'false' || is_available === '0') {
-      where.is_available = false;
+
+    const parsed = parseCatStatus(statusQ);
+    if (parsed) {
+      where.status = parsed;
+    } else if (legacyAvail === 'true' || legacyAvail === '1') {
+      where.status = 'available';
+    } else if (legacyAvail === 'false' || legacyAvail === '0') {
+      where.status = { not: 'available' };
     }
 
     const cats = await prisma.cat.findMany({
@@ -93,6 +122,7 @@ async function createCat(req, res) {
       color,
       description,
       photo_url,
+      status,
       is_available,
       owner_id,
       org_id,
@@ -105,6 +135,14 @@ async function createCat(req, res) {
         success: false,
         error: 'ValidationError',
         message: 'name 不能为空（Cat.name）'
+      });
+    }
+
+    if (status !== undefined && status !== null && status !== '' && !parseCatStatus(status)) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'status 必须是 available、adopted 或 unavailable（CatStatus）'
       });
     }
 
@@ -131,7 +169,7 @@ async function createCat(req, res) {
         color: color ?? null,
         description: description ?? null,
         photo_url: photo_url ?? null,
-        is_available: is_available !== undefined ? Boolean(is_available) : true,
+        status: resolveCatStatusForCreate({ status, is_available }),
         owner_id: owner_id ?? null,
         org_id: org_id || null,
         tags: tagCreates.length ? { create: tagCreates } : undefined,
@@ -197,12 +235,24 @@ async function updateCat(req, res) {
       color,
       description,
       photo_url,
+      status,
       is_available,
       owner_id,
       org_id,
       tags,
       requirements
     } = req.body;
+
+    if (status !== undefined && status !== null && status !== '') {
+      const p = parseCatStatus(status);
+      if (!p) {
+        return res.status(422).json({
+          success: false,
+          error: 'ValidationError',
+          message: 'status 必须是 available、adopted 或 unavailable（CatStatus）'
+        });
+      }
+    }
 
     const data = {};
     if (name !== undefined) data.name = name;
@@ -212,7 +262,11 @@ async function updateCat(req, res) {
     if (color !== undefined) data.color = color;
     if (description !== undefined) data.description = description;
     if (photo_url !== undefined) data.photo_url = photo_url;
-    if (is_available !== undefined) data.is_available = Boolean(is_available);
+    if (status !== undefined && status !== null && status !== '') {
+      data.status = /** @type {'available'|'adopted'|'unavailable'} */ (parseCatStatus(status));
+    } else if (is_available !== undefined) {
+      data.status = Boolean(is_available) ? 'available' : 'unavailable';
+    }
     if (owner_id !== undefined) data.owner_id = owner_id || null;
     if (org_id !== undefined) data.org_id = org_id || null;
 
