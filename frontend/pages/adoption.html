@@ -6,6 +6,7 @@
   <title>Adoption Recommendations — Cat Platform</title>
   <style>
     * { box-sizing: border-box; }
+    html { overscroll-behavior-x: none; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
@@ -173,6 +174,8 @@
       position: relative;
       width: min(420px, 100%);
       height: 100%;
+      overscroll-behavior-x: none;
+      touch-action: pan-y;
     }
     .cat-card {
       position: absolute;
@@ -423,7 +426,8 @@
       border: none;
       background: transparent;
       color: #2f6feb;
-      font-size: 14px;
+      font-size: 13px;
+      font-weight: 600;
       padding: 0;
       cursor: pointer;
     }
@@ -433,6 +437,68 @@
     .liked-panel-link[hidden] {
       display: none;
     }
+    /* Preferences modal — matches account.html layout */
+    .pref-section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .pref-section-head h2 { font-size: 17px; margin: 0; }
+    .pref-pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f5f5f5;
+      font-size: 12px;
+      color: #666;
+    }
+    .pref-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 8px;
+    }
+    @media (max-width: 600px) {
+      .pref-grid { grid-template-columns: 1fr; }
+    }
+    .pref-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .pref-field.pref-full { grid-column: 1 / -1; }
+    .pref-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+    }
+    .pref-select {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: #fafafa;
+      outline: none;
+      color: #111827;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .pref-select:focus {
+      border-color: #ffd0d7;
+      background: #fff;
+    }
+    .pref-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 13px;
+      color: #444;
+      margin-top: 2px;
+    }
+    .pref-tags label { cursor: pointer; }
+
     .pill-status {
       display: inline-flex;
       align-items: center;
@@ -443,7 +509,11 @@
       font-weight: 700;
       background: #ecfdf3;
       color: #027a48;
+      white-space: nowrap;
     }
+    .pill-status.status-pending { background: #fff8e1; color: #f59e0b; }
+    .pill-status.status-approved { background: #ecfdf3; color: #027a48; }
+    .pill-status.status-rejected { background: #fef2f2; color: #dc2626; }
 
     .toast {
       position: fixed;
@@ -702,6 +772,7 @@
       gap: 10px;
       justify-content: flex-end;
       flex-wrap: wrap;
+      margin-top: 18px;
     }
     .status-box {
       border-radius: 18px;
@@ -990,6 +1061,189 @@
         max-height: 360px;
       }
     }
+
+    .history-link-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: -8px;
+    }
+    .history-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      background: transparent;
+      color: #2f6feb;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 0;
+      cursor: pointer;
+    }
+    .history-link-btn:hover {
+      text-decoration: underline;
+    }
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .history-item {
+      border: 1px solid #ececec;
+      border-radius: 18px;
+      padding: 14px;
+      background: #fafafa;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .history-item-photo {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #f0f0f0;
+    }
+    .history-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .history-item-info h3 {
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    .history-item-info small {
+      color: #777;
+      line-height: 1.5;
+    }
+    .history-item-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .history-status {
+      display: inline-flex;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .history-status.liked {
+      background: #ecfdf3;
+      color: #027a48;
+    }
+    .history-status.disliked {
+      background: #fef3f2;
+      color: #b42318;
+    }
+    .history-toggle-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .history-toggle-btn {
+      border: 1px solid #d8dce3;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      background: #fff;
+      color: #333;
+      transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+    .history-toggle-btn:hover {
+      border-color: #999;
+    }
+    .history-toggle-btn.active-like {
+      background: #ecfdf3;
+      color: #027a48;
+      border-color: #027a48;
+    }
+    .history-toggle-btn.active-dislike {
+      background: #fef3f2;
+      color: #b42318;
+      border-color: #b42318;
+    }
+    .history-toggle-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .history-loading {
+      text-align: center;
+      color: #777;
+      padding: 20px;
+    }
+
+    #contact-overlay .modal {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #contact-overlay .chat-shell {
+      flex: 1;
+      min-height: 0;
+    }
+    #contact-overlay .chat-thread {
+      min-height: 100px;
+      max-height: none;
+    }
+
+    /* History Cats modal — fixed header, internal scroll */
+    #history-overlay .modal {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #history-overlay .form-shell {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    #history-overlay .history-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    /* Liked Cats modal — fixed header, internal scroll */
+    #liked-overlay .modal,
+    #applications-overlay .modal {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #liked-overlay .form-shell,
+    #applications-overlay .form-shell {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    #liked-overlay .liked-full-list,
+    #applications-overlay .liked-full-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    /* Profile modal — internal scroll per column */
+    #profile-overlay .modal {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #profile-overlay .profile-layout {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    #profile-overlay .profile-cover {
+      overflow-y: auto;
+    }
+    #profile-overlay .profile-main {
+      overflow-y: auto;
+    }
+
   </style>
 </head>
 <body>
@@ -997,7 +1251,9 @@
     <div class="page-topbar">
       <a class="back-link" href="/pages/index.html">← Back to Home</a>
       <div class="topbar-actions">
+        <button class="ghost-btn" type="button" id="open-preferences-btn">⚙ Preferences</button>
         <button class="ghost-btn" type="button" id="open-liked-panel">Liked Cats (<span id="liked-count-top">0</span>)</button>
+        <button class="ghost-btn" type="button" id="open-applications-btn">My Applications</button>
       </div>
     </div>
 
@@ -1194,11 +1450,14 @@
           </div>
           <span class="pill-status"><span id="liked-count-side">0</span> saved</span>
         </div>
+        <div class="history-link-row">
+          <button class="history-link-btn" type="button" id="open-history-btn">View History Cats →</button>
+        </div>
         <div class="liked-list" id="liked-list">
           <div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>
         </div>
         <div class="liked-panel-footer">
-          <button class="liked-panel-link" type="button" id="open-liked-list-link" hidden>Open liked cats list →</button>
+          <button class="liked-panel-link" type="button" id="open-liked-list-link" hidden>View all Liked Cats →</button>
         </div>
       </aside>
     </main>
@@ -1393,6 +1652,107 @@
     </div>
   </section>
 
+  <section class="modal-overlay" id="history-overlay" aria-hidden="true">
+    <div class="modal medium" role="dialog" aria-label="Swipe history">
+      <button class="modal-close" type="button" data-close="history-overlay">×</button>
+      <div class="form-shell">
+        <div>
+          <h2>History Cats</h2>
+          <p>View all cats you have swiped. You can change your like or dislike decision here.</p>
+        </div>
+        <div class="history-list" id="history-list">
+          <div class="empty-state" id="history-empty">No history yet. Start swiping to build your history.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="modal-overlay" id="preferences-overlay" aria-hidden="true">
+    <div class="modal medium" role="dialog" aria-label="Set adoption preferences">
+      <button class="modal-close" type="button" data-close="preferences-overlay">×</button>
+      <div class="form-shell">
+        <div class="pref-section-head">
+          <h2>Adoption preferences</h2>
+        </div>
+        <form id="preferences-form">
+          <div class="pref-grid">
+            <div class="pref-field">
+              <div class="pref-label">Preferred gender</div>
+              <select class="pref-select" id="pref-gender">
+                <option value="">Any</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="no preference">No preference</option>
+              </select>
+            </div>
+            <div class="pref-field">
+              <div class="pref-label">Preferred age</div>
+              <select class="pref-select" id="pref-age">
+                <option value="">Any</option>
+                <option value="kitten">Kitten (0–1 year)</option>
+                <option value="adult">Adult (1–7 years)</option>
+                <option value="senior">Senior (7+ years)</option>
+              </select>
+            </div>
+            <div class="pref-field">
+              <div class="pref-label">Preferred breed</div>
+              <select class="pref-select" id="pref-breed">
+                <option value="">Any</option>
+                <option value="Domestic Short Hair">Domestic short hair</option>
+                <option value="British Shorthair">British Shorthair</option>
+                <option value="Ragdoll">Ragdoll</option>
+                <option value="Persian">Persian</option>
+                <option value="American Shorthair">American Shorthair</option>
+                <option value="Mixed / Rescue cat">Mixed / Rescue cat</option>
+              </select>
+            </div>
+            <div class="pref-field">
+              <div class="pref-label">Home environment</div>
+              <select class="pref-select" id="pref-home">
+                <option value="">Optional</option>
+                <option value="quiet">Quiet (1–2 adults)</option>
+                <option value="family-kids">Family with children</option>
+                <option value="other-pets">Already have other pets</option>
+                <option value="first-time">First-time cat owner</option>
+              </select>
+            </div>
+            <div class="pref-field pref-full">
+              <div class="pref-label">Personality tags (multiple)</div>
+              <div class="pref-tags">
+                <label><input type="checkbox" id="pref-tag-playful"> Playful / Active</label>
+                <label><input type="checkbox" id="pref-tag-gentle"> Gentle / Calm</label>
+                <label><input type="checkbox" id="pref-tag-kid"> Good with kids</label>
+                <label><input type="checkbox" id="pref-tag-beginner"> Good for first-time owners</label>
+                <label><input type="checkbox" id="pref-tag-special"> OK with special needs</label>
+              </div>
+            </div>
+          </div>
+          <div class="status-box" id="pref-status"></div>
+          <div class="form-actions">
+            <button class="ghost-btn" type="button" data-close="preferences-overlay">Cancel</button>
+            <button class="solid-btn" type="submit">Save Preferences</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="modal-overlay" id="applications-overlay" aria-hidden="true">
+    <div class="modal medium" role="dialog" aria-label="My adoption applications">
+      <button class="modal-close" type="button" data-close="applications-overlay">×</button>
+      <div class="form-shell">
+        <div>
+          <h2>My Adoption Applications</h2>
+          <p>Track the status of your submitted adoption requests. You can view the cat profile or contact the rescue organization from here.</p>
+        </div>
+        <div class="liked-full-list" id="applications-list">
+          <div class="empty-state" id="applications-empty">No applications yet. Like a cat and apply to adopt!</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="../js/config.js"></script>
   <script>
     (function () {
       const cats = {
@@ -1784,27 +2144,35 @@
       }
 
       function updateLikedUI() {
-        likedCountTop.textContent = likedCats.length;
-        likedCountSide.textContent = likedCats.length;
+        if (!getApiToken()) {
+          for (var pi = likedCats.length - 1; pi >= 0; pi--) {
+            if (!cats[likedCats[pi]]) likedCats.splice(pi, 1);
+          }
+        }
+        var visibleIds = likedCats.filter(function (catId) {
+          return cats[catId];
+        });
+        likedCountTop.textContent = visibleIds.length;
+        likedCountSide.textContent = visibleIds.length;
 
-        if (!likedCats.length) {
+        if (!visibleIds.length) {
           likedList.innerHTML = '<div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>';
           likedFullList.innerHTML = '<div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>';
           openLikedListLink.hidden = true;
           return;
         }
 
-        likedList.innerHTML = likedCats.slice(0, likedPreviewLimit).map(function (catId) {
+        likedList.innerHTML = visibleIds.slice(0, likedPreviewLimit).map(function (catId) {
           return renderLikedItem(cats[catId]);
         }).join("");
 
-        likedFullList.innerHTML = likedCats.map(function (catId) {
+        likedFullList.innerHTML = visibleIds.map(function (catId) {
           return renderLikedItem(cats[catId]);
         }).join("");
 
-        if (likedCats.length > likedPreviewLimit) {
+        if (visibleIds.length > likedPreviewLimit) {
           openLikedListLink.hidden = false;
-          openLikedListLink.textContent = "Open liked cats list (" + likedCats.length + ")";
+          openLikedListLink.textContent = "View all Liked Cats (" + visibleIds.length + ")";
         } else {
           openLikedListLink.hidden = true;
         }
@@ -2105,6 +2473,13 @@
         }
       });
 
+      chatMessageInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          contactForm.requestSubmit();
+        }
+      });
+
       contactForm.addEventListener("submit", function (event) {
         event.preventDefault();
         if (!activeCatId) return;
@@ -2170,6 +2545,915 @@
       if (firstCard) {
         activeCatId = getCardId(firstCard);
       }
+
+      // ── Enhanced swipe: trackpad drag fix + keyboard + horizontal scroll ──
+      var _swipeDragStartX = 0;
+      var _swipeDragMaxDist = 0;
+
+      stack.addEventListener("mousedown", function (event) {
+        _swipeDragStartX = event.clientX;
+        _swipeDragMaxDist = 0;
+      }, true);
+
+      stack.addEventListener("mousemove", function (event) {
+        var dist = Math.abs(event.clientX - _swipeDragStartX);
+        if (dist > _swipeDragMaxDist) _swipeDragMaxDist = dist;
+      }, true);
+
+      stack.addEventListener("click", function (event) {
+        if (_swipeDragMaxDist > 5) {
+          event.stopPropagation();
+        }
+        _swipeDragMaxDist = 0;
+      }, true);
+
+      document.addEventListener("keydown", function (event) {
+        if (isAnimating) return;
+        var tag = event.target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (document.querySelector(".modal-overlay.open")) return;
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          var current = getCurrentCard();
+          if (!current) return;
+          activeCatId = getCardId(current);
+          swipe(event.key === "ArrowRight" ? "right" : "left");
+        }
+      });
+
+      (function () {
+        var acc = 0;
+        var timer = null;
+        var locked = false;
+        var unlockTimer = null;
+        stack.addEventListener("wheel", function (event) {
+          if (Math.abs(event.deltaX) > 0) event.preventDefault();
+          if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+          if (locked || isAnimating) {
+            if (unlockTimer) clearTimeout(unlockTimer);
+            unlockTimer = setTimeout(function () { locked = false; acc = 0; }, 400);
+            return;
+          }
+          acc += event.deltaX;
+          if (timer) clearTimeout(timer);
+          if (Math.abs(acc) > 50) {
+            var dir = acc > 0 ? "left" : "right";
+            var current = getCurrentCard();
+            if (current) {
+              activeCatId = getCardId(current);
+              swipe(dir);
+            }
+            acc = 0;
+            locked = true;
+            unlockTimer = setTimeout(function () { locked = false; }, 400);
+          } else {
+            timer = setTimeout(function () { acc = 0; }, 300);
+          }
+        }, { passive: false });
+      })();
+
+      // ── Persistence (database-first + localStorage cache) ──
+      var STORAGE_KEY_LIKED = 'catface_liked_cats';
+      var STORAGE_KEY_HISTORY = 'catface_swipe_history';
+      var swipeHistory = {};
+
+      var catDbIds = {};
+      var dbIdToLocal = {};
+
+      function saveAdoptionState() {
+        try {
+          localStorage.setItem(STORAGE_KEY_LIKED, JSON.stringify(likedCats));
+          localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(swipeHistory));
+        } catch (e) {}
+      }
+
+      function loadAdoptionState() {
+        try {
+          var savedLiked = localStorage.getItem(STORAGE_KEY_LIKED);
+          if (savedLiked) {
+            var arr = JSON.parse(savedLiked);
+            if (Array.isArray(arr)) {
+              arr.forEach(function (id) {
+                if (likedCats.indexOf(id) === -1) {
+                  likedCats.push(id);
+                }
+              });
+            }
+          }
+          var savedHistory = localStorage.getItem(STORAGE_KEY_HISTORY);
+          if (savedHistory) {
+            var obj = JSON.parse(savedHistory);
+            if (obj && typeof obj === 'object') {
+              Object.keys(obj).forEach(function (id) {
+                swipeHistory[id] = obj[id];
+              });
+            }
+          }
+        } catch (e) {}
+      }
+
+      function getApiBase() {
+        return (typeof API_BASE_URL !== 'undefined') ? API_BASE_URL : 'http://localhost:3000/api';
+      }
+
+      function getApiToken() {
+        try { return localStorage.getItem('catface_token') || null; } catch (e) { return null; }
+      }
+
+      function autoAuth() {
+        return new Promise(function (resolve) {
+          if (getApiToken()) { resolve(true); return; }
+          var userRaw;
+          try { userRaw = JSON.parse(localStorage.getItem('catface_user')); } catch (e) {}
+          if (!userRaw || !userRaw.email) { resolve(false); return; }
+
+          var email = userRaw.email;
+          var password = 'CatfaceP@ss_' + email;
+          var username = email.replace(/[^a-zA-Z0-9]/g, '_');
+          var displayName = userRaw.name || username;
+          var base = getApiBase();
+
+          fetch(base + '/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: password, username: username, display_name: displayName })
+          })
+          .then(function (r) { return r.json(); })
+          .then(function (res) {
+            if (res.success && res.data && res.data.token) {
+              localStorage.setItem('catface_token', res.data.token);
+              resolve(true);
+              return;
+            }
+            return fetch(base + '/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: email, password: password })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (loginRes) {
+              if (loginRes.success && loginRes.data && loginRes.data.token) {
+                localStorage.setItem('catface_token', loginRes.data.token);
+                resolve(true);
+              } else {
+                resolve(false);
+              }
+            });
+          })
+          .catch(function () { resolve(false); });
+        });
+      }
+
+      function syncSwipeToBackend(catId, liked) {
+        var token = getApiToken();
+        if (!token) return;
+        var dbId = catDbIds[catId] || catId;
+        fetch(getApiBase() + '/adoption/swipe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({ cat_id: dbId, liked: liked })
+        }).catch(function () {});
+      }
+
+      function loadFromBackend() {
+        var token = getApiToken();
+        if (!token) return Promise.resolve();
+        return fetch(getApiBase() + '/adoption/swipes', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (!result.success || !result.data) return;
+          var changed = false;
+          result.data.forEach(function (row) {
+            var catId = row.cat_id;
+            if (row.cat && !cats[catId]) {
+              cats[catId] = dbCatToLocal(row.cat);
+            }
+            catDbIds[catId] = catId;
+            dbIdToLocal[catId] = catId;
+            if (swipeHistory[catId] === undefined || swipeHistory[catId] !== row.liked) {
+              swipeHistory[catId] = row.liked;
+              changed = true;
+            }
+            if (row.liked && likedCats.indexOf(catId) === -1) {
+              likedCats.push(catId);
+              changed = true;
+            }
+            if (!row.liked && likedCats.indexOf(catId) !== -1) {
+              likedCats.splice(likedCats.indexOf(catId), 1);
+              changed = true;
+            }
+          });
+          if (changed) saveAdoptionState();
+          updateLikedUI();
+        })
+        .catch(function () {});
+      }
+
+      var _origUpdateLikedUI = updateLikedUI;
+      updateLikedUI = function () {
+        _origUpdateLikedUI();
+        saveAdoptionState();
+      };
+
+      var _origSwipe = swipe;
+      swipe = function (direction) {
+        var current = getCurrentCard();
+        var catId = current ? getCardId(current) : null;
+        if (catId) {
+          swipeHistory[catId] = (direction === 'right');
+        }
+        var result = _origSwipe(direction);
+        saveAdoptionState();
+        if (catId) syncSwipeToBackend(catId, direction === 'right');
+        return result;
+      };
+
+      // ── DB ↔ Local Cat Conversion ──
+      function formatCatAge(months) {
+        if (months == null) return 'Unknown age';
+        if (months >= 12) {
+          var y = Math.floor(months / 12);
+          return y + ' year' + (y > 1 ? 's' : '');
+        }
+        return months + ' month' + (months !== 1 ? 's' : '');
+      }
+
+      function dbCatToLocal(dbCat) {
+        var tags = (dbCat.tags || []).map(function (t) { return t.tag || t.name || (typeof t === 'string' ? t : ''); }).filter(Boolean);
+        var org = dbCat.organization || {};
+        var ageStr = formatCatAge(dbCat.age_months);
+        return {
+          id: dbCat.id,
+          catId: dbCat.id,
+          name: dbCat.name || 'Unknown',
+          title: dbCat.breed || '',
+          age: ageStr,
+          gender: dbCat.gender || 'Unknown',
+          breed: dbCat.breed || 'Unknown',
+          birthday: '',
+          personalityProfile: dbCat.description || '',
+          spayedNeutered: '',
+          vaccinationStatus: '',
+          foundLocation: '',
+          allergyHistory: '',
+          temperament: dbCat.description || '',
+          status: (function () {
+            var s = dbCat.status;
+            if (s === 'available') return 'Available';
+            if (s === 'adopted') return 'Adopted';
+            if (s === 'fostered') return 'Fostered';
+            if (s === 'deceased') return 'Deceased';
+            return 'Unknown';
+          })(),
+          image: dbCat.photo_url || '',
+          summary: dbCat.description || '',
+          health: '',
+          rescueOrg: org.name || 'Unknown Organization',
+          rescueNotes: '',
+          accountNote: '',
+          tags: tags,
+          requirements: (dbCat.requirements || []).map(function (r) { return r.description || r; }),
+          basic: [dbCat.gender, ageStr, dbCat.breed].filter(Boolean).join(' \u00b7 '),
+          updates: (dbCat.updates || []).map(function (u) { return u.content || u; })
+        };
+      }
+
+      function openApplicationFullProfile(catDbId) {
+        if (!catDbId) return;
+        var token = getApiToken();
+        if (!token) return;
+        fetch(getApiBase() + '/cats/' + encodeURIComponent(catDbId), {
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (result) {
+            if (!result.success || !result.data) {
+              alert(result.message || 'Could not load cat profile.');
+              return;
+            }
+            var local = dbCatToLocal(result.data);
+            cats[local.id] = local;
+            catDbIds[local.id] = local.id;
+            dbIdToLocal[local.id] = local.id;
+            closeModal(applicationsOverlay);
+            openProfile(local.id);
+          })
+          .catch(function () {
+            alert('Network error. Please try again.');
+          });
+      }
+
+      // ── Dynamic Card Creation ──
+      function createCardElement(catData) {
+        var article = document.createElement('article');
+        article.className = 'cat-card';
+        article.setAttribute('data-cat-id', catData.id);
+        var tagsHtml = catData.tags.map(function (tag) {
+          return '<span class="cat-tag">' + escapeHtml(tag) + '</span>';
+        }).join('');
+        article.innerHTML =
+          '<div class="card-inner">' +
+          '<div class="card-face card-front">' +
+          '<div class="cat-bg"><img src="' + escapeHtml(catData.image) + '" alt="' + escapeHtml(catData.name) + '"></div>' +
+          '<div class="cat-info">' +
+          '<div class="cat-name">' + escapeHtml(catData.name) + (catData.title ? ' \u00b7 ' + escapeHtml(catData.title) : '') + '</div>' +
+          '<div class="cat-meta">' + escapeHtml(catData.basic) + '</div>' +
+          '<div class="cat-tags">' + tagsHtml + '</div>' +
+          '</div></div>' +
+          '<div class="card-face card-back"><div>' +
+          '<h3>' + escapeHtml(catData.name) + (catData.title ? ' \u00b7 ' + escapeHtml(catData.title) : '') + '</h3>' +
+          '<p><strong>Gender:</strong> ' + escapeHtml(catData.gender) + '</p>' +
+          '<p><strong>Age:</strong> ' + escapeHtml(catData.age) + '</p>' +
+          '<p><strong>Breed:</strong> ' + escapeHtml(catData.breed) + '</p>' +
+          (catData.summary ? '<p style="margin-top:8px;color:#666;">' + escapeHtml(catData.summary) + '</p>' : '') +
+          '</div>' +
+          '<div class="card-back-actions"><button type="button" class="open-profile-btn">View Full Profile</button></div>' +
+          '</div></div>';
+        return article;
+      }
+
+      function attachCardInteractions(card) {
+        var profileButton = card.querySelector('.open-profile-btn');
+        var cardId = getCardId(card);
+        if (profileButton) {
+          profileButton.addEventListener('click', function (e) {
+            e.stopPropagation();
+            openProfile(cardId);
+          });
+        }
+        card.addEventListener('click', function () {
+          if (isAnimating) return;
+          card.classList.toggle('flipped');
+        });
+        var startX = null, currentX = null, dragging = false;
+        function onPointerDown(event) {
+          if (isAnimating) return;
+          if (event.target.closest('.open-profile-btn')) return;
+          var e = event.touches ? event.touches[0] : event;
+          startX = e.clientX; currentX = startX; dragging = true;
+          card.style.transition = '';
+        }
+        function onPointerMove(event) {
+          if (!dragging || isAnimating) return;
+          var e = event.touches ? event.touches[0] : event;
+          currentX = e.clientX;
+          var deltaX = currentX - startX;
+          if (getCurrentCard() !== card) return;
+          card.style.transform = 'translateX(' + deltaX + 'px) rotate(' + (deltaX / 15) + 'deg)';
+          card.style.boxShadow = '0 16px 40px rgba(0,0,0,.25)';
+          if (event.cancelable) event.preventDefault();
+        }
+        function onPointerUp() {
+          if (!dragging || isAnimating) return;
+          dragging = false;
+          if (getCurrentCard() !== card) { card.style.transform = ''; card.style.boxShadow = ''; return; }
+          var deltaX = currentX - startX;
+          if (Math.abs(deltaX) > 80) {
+            var direction = deltaX > 0 ? 'right' : 'left';
+            card.style.transform = ''; card.style.boxShadow = '';
+            activeCatId = cardId;
+            swipe(direction);
+          } else {
+            card.style.transition = 'transform 0.25s ease, box-shadow 0.25s ease';
+            card.style.transform = 'translateX(0) rotate(0deg)';
+            card.style.boxShadow = '';
+            card.addEventListener('transitionend', function handle() {
+              card.removeEventListener('transitionend', handle);
+              card.style.transition = '';
+            });
+          }
+        }
+        card.addEventListener('mousedown', function (event) {
+          if (event.button !== 0) return;
+          onPointerDown(event);
+          window.addEventListener('mousemove', onPointerMove);
+          window.addEventListener('mouseup', function handleUp(upEvent) {
+            window.removeEventListener('mousemove', onPointerMove);
+            window.removeEventListener('mouseup', handleUp);
+            onPointerUp(upEvent);
+          });
+        });
+        card.addEventListener('touchstart', onPointerDown, { passive: false });
+        card.addEventListener('touchmove', onPointerMove, { passive: false });
+        card.addEventListener('touchend', onPointerUp);
+        card.addEventListener('touchcancel', onPointerUp);
+      }
+
+      // ── Load Cats from Database ──
+      function loadCatsFromDB() {
+        var token = getApiToken();
+        if (!token) return Promise.resolve();
+        return fetch(getApiBase() + '/adoption/feed', {
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (!result.success || !result.data || !result.data.length) return;
+          stack.innerHTML = '';
+          result.data.forEach(function (dbCat) {
+            var localCat = dbCatToLocal(dbCat);
+            cats[dbCat.id] = localCat;
+            catDbIds[dbCat.id] = dbCat.id;
+            dbIdToLocal[dbCat.id] = dbCat.id;
+            var cardEl = createCardElement(localCat);
+            stack.appendChild(cardEl);
+            attachCardInteractions(cardEl);
+          });
+          var first = getCurrentCard();
+          if (first) activeCatId = getCardId(first);
+        })
+        .catch(function (err) { console.error('loadCatsFromDB:', err); });
+      }
+
+      loadAdoptionState();
+      updateLikedUI();
+
+      autoAuth().then(function (ok) {
+        if (!ok) return;
+        return loadCatsFromDB().then(function () {
+          return loadFromBackend();
+        }).then(function () {
+          return loadLikedFromBackend();
+        });
+      });
+
+      // ── History Cats Modal (database-first) ──
+      var historyOverlay = document.getElementById('history-overlay');
+      var historyListEl = document.getElementById('history-list');
+      var openHistoryBtn = document.getElementById('open-history-btn');
+
+      if (openHistoryBtn) {
+        openHistoryBtn.addEventListener('click', function () {
+          openModal(historyOverlay);
+          loadHistory();
+        });
+      }
+
+      if (historyOverlay) {
+        historyOverlay.addEventListener('click', function (event) {
+          if (event.target === historyOverlay) {
+            closeModal(historyOverlay);
+          }
+        });
+      }
+
+      function loadHistory() {
+        var token = getApiToken();
+        if (!token) {
+          renderLocalHistory();
+          return;
+        }
+        historyListEl.innerHTML = '<div class="history-loading">Loading history...</div>';
+        fetch(getApiBase() + '/adoption/swipes', {
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (!result.success || !result.data || !result.data.length) {
+            renderLocalHistory();
+            return;
+          }
+          renderDbHistory(result.data);
+        })
+        .catch(function () { renderLocalHistory(); });
+      }
+
+      function renderLocalHistory() {
+        var catIds = Object.keys(swipeHistory);
+        if (!catIds.length) {
+          historyListEl.innerHTML = '<div class="empty-state">No swipe history yet. Start swiping to build your history.</div>';
+          return;
+        }
+        historyListEl.innerHTML = catIds.map(function (catId) {
+          var cat = cats[catId];
+          if (!cat) return '';
+          var isLiked = swipeHistory[catId];
+          return buildHistoryItem(catId, cat.name + ' · ' + cat.title, cat.age + ' · ' + cat.gender + ' · ' + cat.temperament, cat.image, isLiked, false);
+        }).join('');
+      }
+
+      function renderDbHistory(swipes) {
+        historyListEl.innerHTML = swipes.map(function (row) {
+          var cat = row.cat || {};
+          var catName = cat.name || 'Unknown';
+          var parts = [cat.breed || '', cat.age_months != null ? cat.age_months + ' months' : '', cat.gender || ''].filter(Boolean);
+          var meta = parts.length ? parts.join(' · ') : (cat.description || '');
+          return buildHistoryItem(row.cat_id, catName, meta, cat.photo_url || '', row.liked, true);
+        }).join('');
+      }
+
+      function buildHistoryItem(catId, name, meta, photoUrl, isLiked, isDb) {
+        return [
+          '<div class="history-item" data-history-cat-id="' + catId + '" data-src="' + (isDb ? 'db' : 'local') + '">',
+          photoUrl
+            ? '  <img class="history-item-photo" src="' + photoUrl + '" alt="' + escapeHtml(name) + '" onerror="this.style.background=\'#eee\'">'
+            : '  <div class="history-item-photo" style="display:flex;align-items:center;justify-content:center;font-size:24px;">🐱</div>',
+          '  <div class="history-item-info">',
+          '    <h3>' + escapeHtml(name) + '</h3>',
+          '    <small>' + escapeHtml(meta) + '</small>',
+          '  </div>',
+          '  <div class="history-item-right">',
+          '    <span class="history-status ' + (isLiked ? 'liked' : 'disliked') + '">' + (isLiked ? '❤ Liked' : '✕ Passed') + '</span>',
+          '    <div class="history-toggle-actions">',
+          '      <button class="history-toggle-btn' + (isLiked ? ' active-like' : '') + '" type="button" data-action="like">❤ Like</button>',
+          '      <button class="history-toggle-btn' + (!isLiked ? ' active-dislike' : '') + '" type="button" data-action="dislike">✕ Dislike</button>',
+          '    </div>',
+          '  </div>',
+          '</div>'
+        ].join('');
+      }
+
+      historyListEl.addEventListener('click', function (event) {
+        var btn = event.target.closest('.history-toggle-btn');
+        if (!btn) return;
+
+        var item = btn.closest('[data-history-cat-id]');
+        if (!item) return;
+
+        var catId = item.getAttribute('data-history-cat-id');
+        var src = item.getAttribute('data-src');
+        var action = btn.getAttribute('data-action');
+        var newLiked = (action === 'like');
+
+        var statusEl = item.querySelector('.history-status');
+        var isCurrentlyLiked = statusEl && statusEl.classList.contains('liked');
+        if ((newLiked && isCurrentlyLiked) || (!newLiked && !isCurrentlyLiked)) return;
+
+        statusEl.className = 'history-status ' + (newLiked ? 'liked' : 'disliked');
+        statusEl.textContent = newLiked ? '❤ Liked' : '✕ Passed';
+        var likeBtn = item.querySelector('[data-action="like"]');
+        var dislikeBtn = item.querySelector('[data-action="dislike"]');
+        likeBtn.className = 'history-toggle-btn' + (newLiked ? ' active-like' : '');
+        dislikeBtn.className = 'history-toggle-btn' + (!newLiked ? ' active-dislike' : '');
+
+        if (src === 'db') {
+          var token = getApiToken();
+          if (token) {
+            fetch(getApiBase() + '/adoption/swipe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+              body: JSON.stringify({ cat_id: catId, liked: newLiked })
+            }).catch(function () {});
+          }
+          var localId = dbIdToLocal[catId];
+          if (localId && cats[localId]) {
+            swipeHistory[localId] = newLiked;
+            if (newLiked) { ensureLiked(localId); }
+            else {
+              var idx = likedCats.indexOf(localId);
+              if (idx !== -1) { likedCats.splice(idx, 1); updateLikedUI(); }
+            }
+            saveAdoptionState();
+          }
+        } else {
+          swipeHistory[catId] = newLiked;
+          if (newLiked) { ensureLiked(catId); }
+          else {
+            var idx = likedCats.indexOf(catId);
+            if (idx !== -1) { likedCats.splice(idx, 1); updateLikedUI(); }
+          }
+          saveAdoptionState();
+          syncSwipeToBackend(catId, newLiked);
+        }
+      });
+
+      // ══════════════════════════════════════════════════════════
+      // Backend integration: Preferences, Liked, Applications
+      // ══════════════════════════════════════════════════════════
+
+      var preferencesOverlay = document.getElementById('preferences-overlay');
+      var applicationsOverlay = document.getElementById('applications-overlay');
+      var preferencesForm = document.getElementById('preferences-form');
+      var prefStatus = document.getElementById('pref-status');
+      var applicationsList = document.getElementById('applications-list');
+      var applicationsEmpty = document.getElementById('applications-empty');
+
+      // ── Preferences ──
+
+      var prefGenderEl = document.getElementById('pref-gender');
+      var prefAgeEl = document.getElementById('pref-age');
+      var prefBreedEl = document.getElementById('pref-breed');
+      var prefHomeEl = document.getElementById('pref-home');
+      var prefTagPlayful = document.getElementById('pref-tag-playful');
+      var prefTagGentle = document.getElementById('pref-tag-gentle');
+      var prefTagKid = document.getElementById('pref-tag-kid');
+      var prefTagBeginner = document.getElementById('pref-tag-beginner');
+      var prefTagSpecial = document.getElementById('pref-tag-special');
+
+      function getPrefTagsFromUI() {
+        var tags = [];
+        if (prefTagPlayful.checked) tags.push('playful');
+        if (prefTagGentle.checked) tags.push('gentle');
+        if (prefTagKid.checked) tags.push('good-with-kids');
+        if (prefTagBeginner.checked) tags.push('beginner-friendly');
+        if (prefTagSpecial.checked) tags.push('special-needs-ok');
+        return tags;
+      }
+
+      function setPrefTagsToUI(tags) {
+        var set = new Set(Array.isArray(tags) ? tags : []);
+        prefTagPlayful.checked = set.has('playful');
+        prefTagGentle.checked = set.has('gentle');
+        prefTagKid.checked = set.has('good-with-kids');
+        prefTagBeginner.checked = set.has('beginner-friendly');
+        prefTagSpecial.checked = set.has('special-needs-ok');
+      }
+
+      document.getElementById('open-preferences-btn').addEventListener('click', function () {
+        openModal(preferencesOverlay);
+        loadSavedPreferences();
+      });
+
+      function loadSavedPreferences() {
+        try {
+          var userRaw = localStorage.getItem('catface_user');
+          if (userRaw) {
+            var user = JSON.parse(userRaw);
+            var pref = user.preferences || {};
+            prefGenderEl.value = pref.gender || '';
+            prefAgeEl.value = pref.age || '';
+            prefBreedEl.value = pref.breed || '';
+            prefHomeEl.value = pref.home || '';
+            setPrefTagsToUI(pref.tags || []);
+            return;
+          }
+        } catch (e) {}
+        try {
+          var saved = localStorage.getItem('catface_preferences');
+          if (saved) {
+            var p = JSON.parse(saved);
+            if (p.preferred_gender) prefGenderEl.value = p.preferred_gender;
+            if (p.preferred_age) prefAgeEl.value = p.preferred_age;
+            if (p.preferred_breed) prefBreedEl.value = p.preferred_breed;
+          }
+        } catch (e) {}
+      }
+
+      function savePrefToLocalStorage() {
+        try {
+          var userRaw = localStorage.getItem('catface_user');
+          var user = userRaw ? JSON.parse(userRaw) : {};
+          user.preferences = {
+            gender: prefGenderEl.value,
+            age: prefAgeEl.value,
+            breed: prefBreedEl.value,
+            home: prefHomeEl.value,
+            tags: getPrefTagsFromUI()
+          };
+          localStorage.setItem('catface_user', JSON.stringify(user));
+        } catch (e) {}
+      }
+
+      preferencesForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        savePrefToLocalStorage();
+
+        var token = getApiToken();
+        if (!token) {
+          prefStatus.textContent = 'Preferences saved locally. Log in to sync with the server.';
+          prefStatus.classList.add('show');
+          return;
+        }
+        var body = {
+          preferred_gender: prefGenderEl.value || null,
+          preferred_age: prefAgeEl.value || null,
+          preferred_breed: prefBreedEl.value || null
+        };
+        prefStatus.textContent = 'Saving...';
+        prefStatus.classList.add('show');
+        fetch(getApiBase() + '/adoption/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(body)
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (result.success) {
+            prefStatus.textContent = 'Preferences saved! Recommendations will update on next refresh.';
+          } else {
+            prefStatus.textContent = result.message || 'Failed to save preferences.';
+          }
+        })
+        .catch(function () {
+          prefStatus.textContent = 'Network error. Preferences saved locally only.';
+        });
+      });
+
+      // ── Liked list: sync from backend ──
+
+      var _origOpenLikedListLink = openLikedListLink;
+      if (_origOpenLikedListLink) {
+        _origOpenLikedListLink.addEventListener('click', function () {
+          loadLikedFromBackend();
+        });
+      }
+
+      function loadLikedFromBackend() {
+        var token = getApiToken();
+        if (!token) return Promise.resolve();
+        return fetch(getApiBase() + '/adoption/liked', {
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (!result.success) return;
+          var rows = Array.isArray(result.data) ? result.data : [];
+          likedCats.length = 0;
+          rows.forEach(function (dbCat) {
+            var localCat = dbCatToLocal(dbCat);
+            cats[dbCat.id] = localCat;
+            catDbIds[dbCat.id] = dbCat.id;
+            dbIdToLocal[dbCat.id] = dbCat.id;
+            likedCats.push(dbCat.id);
+          });
+          saveAdoptionState();
+          updateLikedUI();
+        })
+        .catch(function (err) { console.error('loadLikedFromBackend:', err); });
+      }
+
+      // ── Applications: submit to backend ──
+
+      var _origApplyFormHandler = null;
+      applyForm.removeEventListener('submit', _origApplyFormHandler);
+      applyForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        var cat = cats[activeCatId];
+        if (!cat) return;
+
+        var token = getApiToken();
+        if (!token) {
+          applyStatus.textContent = 'Please log in to submit an adoption application.';
+          applyStatus.classList.add('show');
+          return;
+        }
+
+        var catDbId = catDbIds[activeCatId] || activeCatId;
+        var reasonText = document.getElementById('apply-reason') ? document.getElementById('apply-reason').value.trim() : '';
+        var nameText = document.getElementById('apply-name') ? document.getElementById('apply-name').value.trim() : '';
+        var phoneText = document.getElementById('apply-phone') ? document.getElementById('apply-phone').value.trim() : '';
+        var expText = document.getElementById('apply-experience') ? document.getElementById('apply-experience').value : '';
+        var homeText = document.getElementById('apply-home') ? document.getElementById('apply-home').value : '';
+
+        var messageParts = [];
+        if (nameText) messageParts.push('Name: ' + nameText);
+        if (phoneText) messageParts.push('Phone: ' + phoneText);
+        if (expText) messageParts.push('Experience: ' + expText);
+        if (homeText) messageParts.push('Home: ' + homeText);
+        if (reasonText) messageParts.push('Reason: ' + reasonText);
+        var message = messageParts.join(' | ');
+
+        applyStatus.textContent = 'Submitting application...';
+        applyStatus.classList.add('show');
+
+        fetch(getApiBase() + '/adoption/applications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ cat_id: catDbId, message: message })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (result.success) {
+            applyStatus.textContent = 'Your adoption application for ' + cat.name + ' has been submitted successfully! Status: Pending review.';
+            applyForm.reset();
+          } else {
+            applyStatus.textContent = result.message || 'Failed to submit application.';
+          }
+        })
+        .catch(function () {
+          applyStatus.textContent = 'Network error. Please check if the backend is running.';
+        });
+      }, true);
+
+      // ── Applications: view status from backend ──
+
+      document.getElementById('open-applications-btn').addEventListener('click', function () {
+        openModal(applicationsOverlay);
+        loadApplicationsFromBackend();
+      });
+
+      function loadApplicationsFromBackend() {
+        var token = getApiToken();
+        if (!token) {
+          applicationsList.innerHTML = '<div class="empty-state">Please log in to view your applications.</div>';
+          return;
+        }
+        applicationsList.innerHTML = '<div class="empty-state">Loading applications...</div>';
+        fetch(getApiBase() + '/adoption/applications/me', {
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (!result.success || !result.data || !result.data.length) {
+            applicationsList.innerHTML = '<div class="empty-state">No applications yet. Like a cat and apply to adopt!</div>';
+            return;
+          }
+          var statusLabels = { pending: 'Pending Review', approved: 'Approved', rejected: 'Rejected' };
+          applicationsList.innerHTML = result.data.map(function (app) {
+            var cat = app.cat || {};
+            var statusClass = 'status-' + (app.status || 'pending');
+            var statusLabel = statusLabels[app.status] || app.status;
+            var date = new Date(app.created_at).toLocaleDateString();
+            var catName = escapeHtml(cat.name || 'Unknown');
+            var breed = cat.breed ? escapeHtml(cat.breed) : '';
+            var ageStr = cat.age_months != null ? formatCatAge(cat.age_months) : '';
+            var gender = cat.gender ? escapeHtml(cat.gender) : '';
+            var meta = [ageStr, gender, breed].filter(Boolean).join(' · ');
+            var msg = app.message ? escapeHtml(app.message) : '';
+            var catDbId = cat.id || '';
+
+            var isPending = (app.status === 'pending');
+            return [
+              '<article class="liked-item" data-app-id="' + app.id + '" data-app-cat-id="' + catDbId + '">',
+              '  <div class="liked-item-top">',
+              '    <div>',
+              '      <h3>' + catName + (breed ? ' · ' + breed : '') + '</h3>',
+              '      <small>' + meta + (meta ? ' · ' : '') + 'Applied: ' + date + '</small>',
+              '    </div>',
+              '    <span class="pill-status ' + statusClass + '">' + statusLabel + '</span>',
+              '  </div>',
+              msg ? '  <small>' + msg + '</small>' : '',
+              '  <div class="liked-item-actions">',
+              '    <button class="ghost-btn app-view-profile" type="button" data-cat-id="' + catDbId + '">View Full Profile</button>',
+              isPending ? '    <button class="ghost-btn app-cancel-btn" type="button" data-app-id="' + app.id + '" data-cat-name="' + catName + '" style="color:#dc2626;">Cancel Application</button>' : '',
+              '  </div>',
+              '</article>'
+            ].join('');
+          }).join('');
+
+          applicationsList.querySelectorAll('.app-view-profile').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var catId = this.getAttribute('data-cat-id');
+              if (!catId) return;
+              if (cats[catId]) {
+                closeModal(applicationsOverlay);
+                openProfile(catId);
+              } else {
+                openApplicationFullProfile(catId);
+              }
+            });
+          });
+
+          applicationsList.querySelectorAll('.app-cancel-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var appId = this.getAttribute('data-app-id');
+              var catName = this.getAttribute('data-cat-name');
+              if (!confirm('Are you sure you want to cancel your adoption application for ' + catName + '? This action cannot be undone.')) return;
+              var token = getApiToken();
+              if (!token) return;
+              btn.disabled = true;
+              btn.textContent = 'Cancelling...';
+              fetch(getApiBase() + '/adoption/applications/' + appId, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+              })
+              .then(function (r) { return r.json(); })
+              .then(function (result) {
+                if (result.success) {
+                  alert('Application for ' + catName + ' has been cancelled. The rescue organization has been notified.');
+                  loadApplicationsFromBackend();
+                } else {
+                  alert(result.message || 'Failed to cancel application.');
+                  btn.disabled = false;
+                  btn.textContent = 'Cancel Application';
+                }
+              })
+              .catch(function () {
+                alert('Network error. Please try again.');
+                btn.disabled = false;
+                btn.textContent = 'Cancel Application';
+              });
+            });
+          });
+        })
+        .catch(function () {
+          applicationsList.innerHTML = '<div class="empty-state">Network error. Please check if the backend is running.</div>';
+        });
+      }
+
+      // Wire close buttons and backdrop clicks for new overlays
+      [preferencesOverlay, applicationsOverlay].forEach(function (overlay) {
+        if (!overlay) return;
+        overlay.addEventListener('click', function (event) {
+          if (event.target === overlay) closeModal(overlay);
+        });
+        overlay.querySelectorAll('[data-close]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            closeModal(overlay);
+          });
+        });
+      });
+
     })();
   </script>
 </body>
