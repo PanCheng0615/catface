@@ -14,7 +14,61 @@
     }
     a { color: inherit; text-decoration: none; }
 
-    /* 顶部导航，回到首页 + 发帖按钮 */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 200px;
+      bottom: 0;
+      background: #fff;
+      border-right: 1px solid #eee;
+      padding-top: 56px;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-nav {
+      list-style: none;
+      margin: 0;
+      padding: 12px 0 0;
+    }
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      font-size: 15px;
+      color: #333;
+    }
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      background: #f5f5f5;
+      color: #ff2442;
+    }
+    .sidebar-nav .icon {
+      width: 22px;
+      height: 22px;
+      text-align: center;
+      font-size: 18px;
+    }
+    .sidebar-bottom {
+      margin-top: auto;
+      padding: 20px;
+    }
+    .login-btn {
+      display: block;
+      width: 100%;
+      height: 44px;
+      line-height: 44px;
+      text-align: center;
+      border-radius: 999px;
+      background: #ff2442;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+   
     .top-bar {
       position: sticky;
       top: 0;
@@ -22,6 +76,7 @@
       background: #ffffffcc;
       backdrop-filter: blur(12px);
       border-bottom: 1px solid #f1f1f1;
+      margin-left: 200px;
     }
     .top-bar-inner {
       max-width: 1200px;
@@ -54,32 +109,52 @@
     .top-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
-    .chip {
-      padding: 6px 12px;
+    .feed-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .feed-tab {
+      border: 1px solid #eee;
       border-radius: 999px;
-      background: #f5f5f5;
-      font-size: 12px;
-      color: #666;
+      padding: 7px 14px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
     }
-    .create-post-btn {
+    .feed-tab:hover {
+      background: #fafafa;
+      border-color: #e5e5e5;
+    }
+    .feed-tab.is-active {
+      background: #222;
+      color: #fff;
+      border-color: #222;
+    }
+    .feed-tab-create {
       border: none;
       border-radius: 999px;
       padding: 8px 16px;
       background: #ff2442;
       color: #fff;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(255,36,66,.4);
+      box-shadow: 0 6px 18px rgba(255,36,66,.35);
     }
-    .create-post-btn:hover { background: #e61e3a; }
+    .feed-tab-create:hover { background: #e61e3a; }
 
-    /* 页面布局：左侧个人/发帖卡 + 右侧瀑布流 */
+    
     .page {
       max-width: 1200px;
       margin: 0 auto;
@@ -87,10 +162,19 @@
       display: grid;
       grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
       gap: 16px;
+      margin-left: 200px;
+      max-width: none;
     }
     @media (max-width: 900px) {
       .page {
         grid-template-columns: minmax(0, 1fr);
+        margin-left: 0;
+      }
+      .top-bar {
+        margin-left: 0;
+      }
+      .sidebar {
+        display: none;
       }
     }
 
@@ -157,11 +241,23 @@
       line-height: 1.6;
     }
 
-    /* 瀑布流列表，小红书式卡片 */
+   
     .feed-columns {
       column-count: 3;
       column-gap: 14px;
     }
+    .feed-status,
+    .feed-empty {
+      column-span: all;
+      text-align: center;
+      padding: 48px 20px;
+      font-size: 14px;
+      color: #888;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.04);
+    }
+    .feed-empty { color: #666; line-height: 1.5; }
     @media (max-width: 1100px) {
       .feed-columns { column-count: 2; }
     }
@@ -222,6 +318,12 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
     }
     .post-author-avatar {
       width: 22px;
@@ -243,7 +345,7 @@
     .post-stat { display: flex; align-items: center; gap: 3px; }
     .post-stat span { font-size: 11px; }
 
-    /* 公共弹窗基础样式 */
+   
     .overlay {
       position: fixed;
       inset: 0;
@@ -290,7 +392,7 @@
     }
     .modal-close:hover { background: #f5f5f5; }
 
-    /* 发帖弹窗内容 */
+    
     .create-modal-body {
       padding: 14px 16px 16px;
       display: grid;
@@ -376,7 +478,7 @@
       cursor: default;
     }
 
-    /* 帖子详情弹窗：左图右信息 */
+    
     .post-modal-body {
       display: grid;
       grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
@@ -522,24 +624,37 @@
   </style>
 </head>
 <body>
+  <aside class="sidebar" aria-label="Main navigation">
+    <ul class="sidebar-nav">
+      <li><a href="/pages/cat-facebook.html?feed=recommended" class="active"><span class="icon">💬</span> Community</a></li>
+      <li><a href="/pages/adoption.html"><span class="icon">🐱</span> Adoption</a></li>
+      <li><a href="/pages/health.html"><span class="icon">🩺</span> Health</a></li>
+      <li><a href="/pages/notifications.html"><span class="icon">🔔</span> Notifications</a></li>
+      <li><a href="/pages/account.html"><span class="icon">👤</span> Account</a></li>
+      <li><a href="#" title="Store coming soon"><span class="icon">🛍️</span> Store</a></li>
+    </ul>
+    <div class="sidebar-bottom">
+      <a href="/pages/log-in.html" class="login-btn">My Account</a>
+    </div>
+  </aside>
+
   <header class="top-bar" role="banner">
     <div class="top-bar-inner">
       <div class="top-left">
-        <a href="index.html" class="back-link" aria-label="Back to Home">
+        <a href="/pages/index.html" class="back-link" aria-label="Back to Home">
           ← Home
         </a>
         <div class="community-title">Community · Cat Moments</div>
       </div>
-      <div class="top-actions">
-        <div class="chip">Browse posts · Like · Comment · Follow</div>
-        <button class="create-post-btn" type="button" id="openCreateFromTop">
-          ＋ Post
-        </button>
-      </div>
+      <nav class="top-actions feed-nav" aria-label="Community feed">
+        <button class="feed-tab is-active" type="button" data-feed="recommended" id="tabRecommended">Recommended</button>
+        <button class="feed-tab" type="button" data-feed="followed" id="tabFollowed">Follow</button>
+        <button class="feed-tab-create" type="button" id="btnCreatePost">Create post</button>
+      </nav>
     </div>
   </header>
 
-  <main class="page">
+  <main class="page" id="communityPage">
     <section class="side-panel" aria-label="Create post and shortcuts">
       <div class="card">
         <div class="user-summary">
@@ -569,7 +684,7 @@
     </section>
   </main>
 
-  <!-- 发帖弹窗：图片 + 文本 -->
+  
   <section class="overlay" id="createOverlay" aria-label="Create post dialog">
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-header">
@@ -598,7 +713,7 @@
     </div>
   </section>
 
-  <!-- 帖子详情弹窗：浏览、评论、喜欢、关注作者 -->
+  
   <section class="overlay" id="postOverlay" aria-label="Post detail dialog">
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-header">
@@ -607,11 +722,11 @@
       </div>
       <div class="post-modal-body">
         <div class="post-modal-image">
-          <img id="postDetailImage" src="" alt="">
+          <img id="postDetailImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="">
         </div>
         <div class="post-modal-right">
           <div class="post-modal-top">
-            <div class="post-modal-author">
+            <div class="post-modal-author" id="detailAuthorRow" role="button" tabindex="0" style="cursor:pointer;" title="View profile">
               <div class="post-author-avatar" id="detailAuthorAvatar"></div>
               <div>
                 <div id="detailAuthorName" style="font-size:13px;font-weight:600;"></div>
@@ -641,352 +756,7 @@
     </div>
   </section>
 
-  <script>
-    (function () {
-      // 模拟后端数据：初始帖子
-      const initialPosts = [
-        {
-          id: 1,
-          author: "Luna",
-          authorInitial: "L",
-          followed: false,
-          image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=600&h=800&q=80",
-          text: "Hi! I'm Luna 🐱 My human took me out today and I got to sunbathe! So warm and cozy!",
-          likes: 23000,
-          liked: false,
-          comments: [
-            { author: "Max", text: "Luna is so cute!" },
-            { author: "Ginger", text: "Sunbathing queen ☀️" }
-          ],
-          time: "2h ago"
-        },
-        {
-          id: 2,
-          author: "Max",
-          authorInitial: "M",
-          followed: true,
-          image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?auto=format&fit=crop&w=600&h=800&q=80",
-          text: "Meow! I'm Max the British Shorthair 🐾 Premium kibble only, please!",
-          likes: 67000,
-          liked: true,
-          comments: [{ author: "Luna", text: "Share your diet plan, please!" }],
-          time: "5h ago"
-        },
-        {
-          id: 3,
-          author: "Ginger",
-          authorInitial: "G",
-          followed: false,
-          image: "https://images.unsplash.com/photo-1592194996308-7b43878e84a6?auto=format&fit=crop&w=600&h=800&q=80",
-          text: "Hi humans! I'm Ginger 🧡 I'm 1 year old and super friendly! Looking for my forever home.",
-          likes: 11000,
-          liked: false,
-          comments: [],
-          time: "1d ago"
-        },
-        {
-          id: 4,
-          author: "Whiskers",
-          authorInitial: "W",
-          followed: false,
-          image: "https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=600&h=800&q=80",
-          text: "Just got my checkup! 🏥 My human says I'm super healthy!",
-          likes: 82000,
-          liked: false,
-          comments: [{ author: "Charlie", text: "Health is the best gift!" }],
-          time: "3d ago"
-        }
-      ];
-
-      let posts = initialPosts.slice();
-      let currentPostId = null;
-
-      const feedEl = document.getElementById("feed");
-      const createOverlay = document.getElementById("createOverlay");
-      const createPreview = document.getElementById("createPreview");
-      const createImageInput = document.getElementById("createImage");
-      const createTextInput = document.getElementById("createText");
-      const createSubmit = document.getElementById("createSubmit");
-      const createForm = document.getElementById("createForm");
-      const postOverlay = document.getElementById("postOverlay");
-      const postDetailImage = document.getElementById("postDetailImage");
-      const detailAuthorAvatar = document.getElementById("detailAuthorAvatar");
-      const detailAuthorName = document.getElementById("detailAuthorName");
-      const detailTime = document.getElementById("detailTime");
-      const detailText = document.getElementById("detailText");
-      const detailFollowBtn = document.getElementById("detailFollowBtn");
-      const detailLikeBtn = document.getElementById("detailLikeBtn");
-      const detailLikeIcon = document.getElementById("detailLikeIcon");
-      const detailLikeText = document.getElementById("detailLikeText");
-      const detailLikesCount = document.getElementById("detailLikesCount");
-      const detailCommentsCount = document.getElementById("detailCommentsCount");
-      const commentsList = document.getElementById("commentsList");
-      const commentInput = document.getElementById("commentInput");
-      const commentSubmit = document.getElementById("commentSubmit");
-
-      function formatLikes(num) {
-        if (num >= 10000) {
-          return (num / 1000).toFixed(0) + "k";
-        }
-        return String(num);
-      }
-
-      function renderFeed() {
-        feedEl.innerHTML = "";
-        posts.forEach(function (post) {
-          const card = document.createElement("article");
-          card.className = "post-card";
-          card.dataset.id = post.id;
-          card.innerHTML =
-            '<div class="post-image-wrap">' +
-              '<img class="post-image" src="' + post.image + '" alt="Post image of cat">' +
-            "</div>" +
-            '<div class="post-body">' +
-              '<h3 class="post-title">' + post.text.replace(/</g, "&lt;") + "</h3>" +
-              '<div class="post-footer">' +
-                '<div class="post-author">' +
-                  '<div class="post-author-avatar">' + (post.authorInitial || post.author[0] || "C") + "</div>" +
-                  '<span>' + post.author + "</span>" +
-                "</div>" +
-                '<div class="post-stats">' +
-                  '<div class="post-stat"><span>♡</span><span>' + formatLikes(post.likes) + "</span></div>" +
-                  '<div class="post-stat"><span>💬</span><span>' + post.comments.length + "</span></div>" +
-                "</div>" +
-              "</div>" +
-            "</div>";
-          card.addEventListener("click", function () {
-            openPostDetail(post.id);
-          });
-          feedEl.appendChild(card);
-        });
-      }
-
-      function openCreate() {
-        createOverlay.classList.add("is-open");
-      }
-      function closeCreate() {
-        createOverlay.classList.remove("is-open");
-      }
-
-      document.getElementById("openCreateFromTop").addEventListener("click", openCreate);
-      document.getElementById("openCreateFromQuick").addEventListener("click", openCreate);
-      Array.prototype.forEach.call(document.querySelectorAll("[data-close-create]"), function (btn) {
-        btn.addEventListener("click", closeCreate);
-      });
-      createOverlay.addEventListener("click", function (e) {
-        if (e.target === createOverlay) closeCreate();
-      });
-
-      createImageInput.addEventListener("change", function () {
-        const file = createImageInput.files[0];
-        const text = createTextInput.value.trim();
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function (ev) {
-            createPreview.innerHTML = '<img src="' + ev.target.result + '" alt="Preview">';
-          };
-          reader.readAsDataURL(file);
-        } else {
-          createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
-        }
-        createSubmit.disabled = !file || !text;
-      });
-
-      createTextInput.addEventListener("input", function () {
-        const file = createImageInput.files[0];
-        const text = createTextInput.value.trim();
-        createSubmit.disabled = !file || !text;
-      });
-
-      createForm.addEventListener("submit", function (e) {
-        e.preventDefault();
-        const file = createImageInput.files[0];
-        const text = createTextInput.value.trim();
-        if (!file || !text) return;
-        const reader = new FileReader();
-        reader.onload = function (ev) {
-          const newPost = {
-            id: Date.now(),
-            author: "You",
-            authorInitial: "U",
-            followed: true,
-            image: ev.target.result,
-            text: text,
-            likes: 0,
-            liked: false,
-            comments: [],
-            time: "Just now"
-          };
-          posts.unshift(newPost);
-          renderFeed();
-          createImageInput.value = "";
-          createTextInput.value = "";
-          createSubmit.disabled = true;
-          createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
-          closeCreate();
-          openPostDetail(newPost.id);
-        };
-        reader.readAsDataURL(file);
-      });
-
-      function openPostDetail(id) {
-        const post = posts.find(function (p) { return p.id === id; });
-        if (!post) return;
-        currentPostId = id;
-        postDetailImage.src = post.image;
-        detailAuthorAvatar.textContent = post.authorInitial || post.author[0] || "C";
-        detailAuthorName.textContent = post.author;
-        detailTime.textContent = post.time;
-        detailText.textContent = post.text;
-        updateFollowButton(post);
-        updateLikeButton(post);
-        renderComments(post);
-        postOverlay.classList.add("is-open");
-      }
-
-      function closePostDetail() {
-        postOverlay.classList.remove("is-open");
-        currentPostId = null;
-      }
-
-      document.getElementById("closePostOverlay").addEventListener("click", closePostDetail);
-      postOverlay.addEventListener("click", function (e) {
-        if (e.target === postOverlay) closePostDetail();
-      });
-
-      function updateFollowButton(post) {
-        if (post.followed) {
-          detailFollowBtn.textContent = "Following";
-          detailFollowBtn.classList.add("is-following");
-        } else {
-          detailFollowBtn.textContent = "Follow";
-          detailFollowBtn.classList.remove("is-following");
-        }
-      }
-
-      detailFollowBtn.addEventListener("click", function () {
-        if (currentPostId == null) return;
-        const post = posts.find(function (p) { return p.id === currentPostId; });
-        if (!post) return;
-        post.followed = !post.followed;
-        updateFollowButton(post);
-      });
-
-      function updateLikeButton(post) {
-        detailLikeIcon.textContent = post.liked ? "❤" : "♡";
-        detailLikeText.textContent = post.liked ? "Liked" : "Like";
-        detailLikeBtn.classList.toggle("is-liked", post.liked);
-        detailLikesCount.textContent = post.likes + " likes";
-        detailCommentsCount.textContent = post.comments.length + " comments";
-      }
-
-      detailLikeBtn.addEventListener("click", function () {
-        if (currentPostId == null) return;
-        const post = posts.find(function (p) { return p.id === currentPostId; });
-        if (!post) return;
-        post.liked = !post.liked;
-        post.likes += post.liked ? 1 : -1;
-        if (post.likes < 0) post.likes = 0;
-        updateLikeButton(post);
-        renderFeed();
-      });
-
-      function renderComments(post) {
-        commentsList.innerHTML = "";
-        if (!post.comments.length) {
-          const empty = document.createElement("div");
-          empty.style.color = "#aaa";
-          empty.style.fontSize = "12px";
-          empty.textContent = "No comments yet. Be the first one!";
-          commentsList.appendChild(empty);
-          detailCommentsCount.textContent = "0 comments";
-          return;
-        }
-        post.comments.forEach(function (c) {
-          const item = document.createElement("div");
-          item.className = "comment-item";
-          item.innerHTML =
-            '<span class="comment-author">' + (c.author || "User") + ":</span>" +
-            "<span>" + String(c.text || "").replace(/</g, "&lt;") + "</span>";
-          commentsList.appendChild(item);
-        });
-        detailCommentsCount.textContent = post.comments.length + " comments";
-      }
-
-      function addComment() {
-        const text = commentInput.value.trim();
-        if (!text || currentPostId == null) return;
-        const post = posts.find(function (p) { return p.id === currentPostId; });
-        if (!post) return;
-        post.comments.push({ author: "You", text: text });
-        commentInput.value = "";
-        renderComments(post);
-        updateLikeButton(post);
-        renderFeed();
-      }
-
-      commentSubmit.addEventListener("click", addComment);
-      commentInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          addComment();
-        }
-      });
-
-      renderFeed();
-
-      function openProfile(author) {
-        if (!author) author = "Cat Lover";
-        window.location.href = "cat-profile.html?author=" + encodeURIComponent(author);
-      }
-
-      // 帖子卡片上的作者头像 / 名字进入主页
-      function attachAuthorClick(card, post) {
-        const authorEl = card.querySelector(".post-author");
-        if (!authorEl) return;
-        authorEl.style.cursor = "pointer";
-        authorEl.addEventListener("click", function (e) {
-          e.stopPropagation();
-          openProfile(post.author);
-        });
-      }
-
-      // 重新包装 renderFeed 以添加作者点击事件
-      const originalRenderFeed = renderFeed;
-      function enhancedRenderFeed() {
-        feedEl.innerHTML = "";
-        posts.forEach(function (post) {
-          const card = document.createElement("article");
-          card.className = "post-card";
-          card.dataset.id = post.id;
-          card.innerHTML =
-            '<div class="post-image-wrap">' +
-              '<img class="post-image" src="' + post.image + '" alt="Post image of cat">' +
-            "</div>" +
-            '<div class="post-body">' +
-              '<h3 class="post-title">' + post.text.replace(/</g, "&lt;") + "</h3>" +
-              '<div class="post-footer">' +
-                '<div class="post-author">' +
-                  '<div class="post-author-avatar">' + (post.authorInitial || post.author[0] || "C") + "</div>" +
-                  '<span>' + post.author + "</span>" +
-                "</div>" +
-                '<div class="post-stats">' +
-                  '<div class="post-stat"><span>♡</span><span>' + formatLikes(post.likes) + "</span></div>" +
-                  '<div class="post-stat"><span>💬</span><span>' + post.comments.length + "</span></div>" +
-                "</div>" +
-              "</div>" +
-            "</div>";
-          card.addEventListener("click", function () {
-            openPostDetail(post.id);
-          });
-          attachAuthorClick(card, post);
-          feedEl.appendChild(card);
-        });
-      }
-      // 用增强版覆盖
-      renderFeed = enhancedRenderFeed;
-      renderFeed();
-    })();
-  </script>
+  <script src="../js/config.js"></script>
+  <script src="../js/community.js?v=20260325g"></script>
 </body>
 </html>

@@ -54,6 +54,7 @@ model User {
   conversations_as_org     Conversation[]          @relation("org_conversations")  // 以机构账号身份参与的对话
   sent_messages            Message[]               // 该用户发送的消息
   reviewed_applications    AdoptionApplication[]   @relation("reviewer")  // 该用户（机构工作人员）审核过的申请
+  notification_reads       NotificationRead[]      // 通知已读记录
 
   @@map("users")
 }
@@ -88,6 +89,17 @@ model UserFollow {
   // 同一对用户之间只能有一条关注记录，防止重复关注
   @@unique([follower_id, following_id])
   @@map("user_follows")
+}
+
+model NotificationRead {
+  user_id         String
+  notification_id String
+  read_at         DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, notification_id])
+  @@map("notification_reads")
 }
 
 // ─────────────────────────────────────────
