@@ -649,6 +649,7 @@
         pendingCatFaceDataUrl = "";
         pendingCatFaceEmbedding = null;
         pendingCatFaceCode = "";
+        pendingCatFaceRegistrationBlocked = false;
         catFaceIdentifying = false;
         if (myCatFace) myCatFace.value = "";
         if (myCatIdDisplay) myCatIdDisplay.value = "";
@@ -868,6 +869,7 @@
       var pendingCatFaceDataUrl = "";
       var pendingCatFaceEmbedding = null;
       var pendingCatFaceCode = "";
+      var pendingCatFaceRegistrationBlocked = false;
       if (myCatFace) {
         myCatFace.addEventListener('change', function () {
           var file = myCatFace.files[0];
@@ -886,6 +888,7 @@
             pendingCatFaceDataUrl = ev.target.result;
             pendingCatFaceEmbedding = null;
             pendingCatFaceCode = "";
+            pendingCatFaceRegistrationBlocked = false;
             catFaceIdentifying = true;
             if (myCatFacePreview) myCatFacePreview.src = pendingCatFaceDataUrl;
             if (myCatFacePreviewRow) myCatFacePreviewRow.style.display = "";
@@ -896,21 +899,39 @@
             identifyOwnerCatFace(pendingCatFaceDataUrl)
               .then(function (payload) {
                 pendingCatFaceEmbedding = payload.data.embedding;
+                pendingCatFaceRegistrationBlocked = Boolean(payload.data.block_registration);
                 pendingCatFaceCode = payload.data.suggested_face_code || "";
-                if (myCatIdDisplay) myCatIdDisplay.value = pendingCatFaceCode;
-                if (payload.data.matched) {
+
+                if (pendingCatFaceRegistrationBlocked) {
+                  pendingCatFaceCode = "";
+                  if (myCatIdDisplay) {
+                    myCatIdDisplay.value =
+                      (payload.data.best_match && payload.data.best_match.cat && payload.data.best_match.cat.face_code) ||
+                      "Existing cat detected";
+                  }
+                  setStatus(
+                    signupStatus,
+                    "error",
+                    "This cat face already matches an existing account. Please use cat face login or the original account instead of registering again."
+                  );
+                } else if (myCatIdDisplay) {
+                  myCatIdDisplay.value = pendingCatFaceCode;
+                }
+
+                if (!pendingCatFaceRegistrationBlocked && payload.data.matched) {
                   setStatus(
                     signupStatus,
                     "info",
                     "Cat face identified. A similar cat may already exist in the system, but this registration keeps a newly generated cat ID for manual review."
                   );
-                } else {
+                } else if (!pendingCatFaceRegistrationBlocked) {
                   setStatus(signupStatus, "success", "Cat face identified successfully.");
                 }
               })
               .catch(function (error) {
                 pendingCatFaceEmbedding = null;
                 pendingCatFaceCode = "";
+                pendingCatFaceRegistrationBlocked = false;
                 if (myCatIdDisplay) myCatIdDisplay.value = "";
                 setStatus(signupStatus, "error", error.message || "Cat face identification failed.");
               })
@@ -956,6 +977,10 @@
           if (!pendingCatFaceDataUrl) {
             setStatus(signupStatus, "error", "Please upload your cat's face photo first.");
             if (myCatFace) myCatFace.focus();
+            return;
+          }
+          if (pendingCatFaceRegistrationBlocked) {
+            setStatus(signupStatus, "error", "This cat is already registered. Please use cat face login or the original account.");
             return;
           }
           if (!pendingCatFaceCode || !pendingCatFaceEmbedding) {

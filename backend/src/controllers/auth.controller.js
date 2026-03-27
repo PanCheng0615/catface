@@ -19,6 +19,13 @@ function getFaceLoginThreshold() {
   return Math.max(value, warningThreshold);
 }
 
+function getFaceRegisterBlockThreshold() {
+  const loginThreshold = getFaceLoginThreshold();
+  const value = Number(process.env.KAM_FACE_REGISTER_BLOCK_THRESHOLD || loginThreshold);
+  if (!Number.isFinite(value)) return loginThreshold;
+  return Math.max(value, loginThreshold);
+}
+
 function normalizeCatGender(value) {
   if (!value) return undefined;
   const normalized = String(value).trim().toLowerCase();
@@ -188,6 +195,22 @@ async function register(req, res) {
           success: false,
           error: 'ValidationError',
           message: 'Owner sign-up requires cat face code and embedding.'
+        });
+      }
+
+      const registerBlockThreshold = getFaceRegisterBlockThreshold();
+      const duplicateCheck = await findCatFaceMatches(cat_face_embedding, registerBlockThreshold);
+
+      if (duplicateCheck.matched && duplicateCheck.bestMatch && duplicateCheck.bestMatch.cat) {
+        return res.status(422).json({
+          success: false,
+          error: 'CatAlreadyRegistered',
+          message: 'This cat face already matches an existing account. Please use cat face login or the original account.',
+          data: {
+            threshold: registerBlockThreshold,
+            best_match: duplicateCheck.bestMatch,
+            top_matches: duplicateCheck.topMatches
+          }
         });
       }
     }
@@ -393,11 +416,19 @@ async function identifySignupCatFace(req, res) {
     const payload = await runKamFaceInference(image_data_url);
     const warningThreshold = getFaceWarningThreshold();
     const matchResult = await findCatFaceMatches(payload.data.embedding, warningThreshold);
+    const registerBlockThreshold = getFaceRegisterBlockThreshold();
+    const blockRegistration = Boolean(
+      matchResult.bestMatch &&
+      Number.isFinite(matchResult.bestMatch.score) &&
+      matchResult.bestMatch.score >= registerBlockThreshold
+    );
 
     payload.data.threshold = matchResult.threshold;
     payload.data.matched = matchResult.matched;
     payload.data.best_match = matchResult.bestMatch;
     payload.data.top_matches = matchResult.topMatches;
+    payload.data.block_registration = blockRegistration;
+    payload.data.register_block_threshold = registerBlockThreshold;
 
     return res.status(200).json(payload);
   } catch (error) {
