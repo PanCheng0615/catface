@@ -6,10 +6,17 @@ const { runKamFaceInference } = require('../services/cat-face.service');
 
 const prisma = new PrismaClient();
 
-function getFaceMatchThreshold() {
+function getFaceWarningThreshold() {
   const value = Number(process.env.KAM_FACE_THRESHOLD || 0.8);
   if (!Number.isFinite(value)) return 0.8;
   return value;
+}
+
+function getFaceLoginThreshold() {
+  const warningThreshold = getFaceWarningThreshold();
+  const value = Number(process.env.KAM_FACE_LOGIN_THRESHOLD || Math.max(warningThreshold, 0.92));
+  if (!Number.isFinite(value)) return Math.max(warningThreshold, 0.92);
+  return Math.max(value, warningThreshold);
 }
 
 function normalizeCatGender(value) {
@@ -68,8 +75,7 @@ function cosineSimilarity(vecA, vecB) {
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-async function findCatFaceMatches(embedding) {
-  const threshold = getFaceMatchThreshold();
+async function findCatFaceMatches(embedding, threshold) {
   const savedEmbeddings = await prisma.catFaceEmbedding.findMany({
     include: {
       cat: {
@@ -385,7 +391,8 @@ async function identifySignupCatFace(req, res) {
     }
 
     const payload = await runKamFaceInference(image_data_url);
-    const matchResult = await findCatFaceMatches(payload.data.embedding);
+    const warningThreshold = getFaceWarningThreshold();
+    const matchResult = await findCatFaceMatches(payload.data.embedding, warningThreshold);
 
     payload.data.threshold = matchResult.threshold;
     payload.data.matched = matchResult.matched;
@@ -416,7 +423,8 @@ async function loginWithCatFace(req, res) {
     }
 
     const payload = await runKamFaceInference(image_data_url);
-    const matchResult = await findCatFaceMatches(payload.data.embedding);
+    const loginThreshold = getFaceLoginThreshold();
+    const matchResult = await findCatFaceMatches(payload.data.embedding, loginThreshold);
 
     if (!matchResult.matched || !matchResult.bestMatch || !matchResult.bestMatch.owner) {
       return res.status(401).json({

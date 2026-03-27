@@ -896,13 +896,14 @@
             identifyOwnerCatFace(pendingCatFaceDataUrl)
               .then(function (payload) {
                 pendingCatFaceEmbedding = payload.data.embedding;
-                pendingCatFaceCode =
-                  (payload.data.best_match && payload.data.best_match.cat && payload.data.best_match.cat.face_code) ||
-                  payload.data.suggested_face_code ||
-                  "";
+                pendingCatFaceCode = payload.data.suggested_face_code || "";
                 if (myCatIdDisplay) myCatIdDisplay.value = pendingCatFaceCode;
                 if (payload.data.matched) {
-                  setStatus(signupStatus, "info", "Cat face identified. A similar cat may already exist in the system.");
+                  setStatus(
+                    signupStatus,
+                    "info",
+                    "Cat face identified. A similar cat may already exist in the system, but this registration keeps a newly generated cat ID for manual review."
+                  );
                 } else {
                   setStatus(signupStatus, "success", "Cat face identified successfully.");
                 }
