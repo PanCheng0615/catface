@@ -43,6 +43,7 @@
   function syncUrlForMode(mode) {
     const params = new URLSearchParams(window.location.search);
     if (mode === "followed") params.set("feed", "followed");
+    else if (mode === "trending") params.set("feed", "trending");
     else params.delete("feed");
     const next = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
     window.history.replaceState(null, "", next);
@@ -473,23 +474,28 @@
       const imgSrc = post.image ? post.image : feedPlaceholderImage();
       const safeAuthor = post.author || "User";
       const safeAuthorInitial = post.authorInitial || safeAuthor[0] || "U";
+      const avatarInner = post.image
+        ? '<img src="' + escapeHtml(imgSrc) + '" alt="">'
+        : "<span>" + escapeHtml(safeAuthorInitial) + "</span>";
+      const likeIcon = post.liked ? "&#x2665;" : "&#x2661;";
       card.innerHTML =
-        '<div class="post-image-wrap" data-open-detail="1">' +
-        '<img class="post-image" src="' + escapeHtml(imgSrc) + '" alt="Post image of cat">' +
-        "</div>" +
+        '<div class="post-avatar">' + avatarInner + "</div>" +
         '<div class="post-body">' +
-        '<h3 class="post-title" data-open-detail="1">' + escapeHtml(post.text || "") + "</h3>" +
-        '<div class="post-footer">' +
-        '<a class="post-author" data-author-click="1" href="' + escapeHtml(getAuthorProfileHref(post)) + '" aria-label="View author profile">' +
-        '<span class="post-author-avatar">' + escapeHtml(safeAuthorInitial) + "</span>" +
-        "<span>" + escapeHtml(safeAuthor) + "</span>" +
-        "</a>" +
-        '<div class="post-stats" data-open-detail="1">' +
-        '<div class="post-stat"><span>♡</span><span>' + formatLikes(post.likes) + "</span></div>" +
-        '<div class="post-stat"><span>💬</span><span>' + post.comments.length + "</span></div>" +
+        '<div class="post-meta">' +
+        '<span class="post-name" data-author-click="1">' + escapeHtml(safeAuthor) + "</span>" +
+        '<span class="post-dot">&#x2022;</span>' +
+        '<span class="post-time" data-open-detail="1">' + escapeHtml(post.time || "") + "</span>" +
         "</div>" +
-        "</div>" +
-        "</div>";
+        '<p class="post-text" data-open-detail="1">' + escapeHtml(post.text || "") + "</p>" +
+        '<img class="post-img" src="' + escapeHtml(imgSrc) + '" alt="" data-open-detail="1">' +
+        '<div class="post-actions">' +
+        '<button type="button" class="act' + (post.liked ? " liked" : "") + '" data-open-detail="1">' +
+        '<span class="ai">' + likeIcon + "</span> " + formatLikes(post.likes) +
+        "</button>" +
+        '<button type="button" class="act" data-open-detail="1">' +
+        '<span class="ai">&#x1F4AC;</span> ' + post.comments.length +
+        "</button>" +
+        "</div></div>";
       card.addEventListener("click", function (e) {
         const targetNode = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
         const fromAuthor = targetNode && targetNode.closest
@@ -514,7 +520,9 @@
 
   function updateTabStyles(mode) {
     document.querySelectorAll(".feed-nav [data-feed]").forEach(function (b) {
-      b.classList.toggle("is-active", b.getAttribute("data-feed") === mode);
+      var on = b.getAttribute("data-feed") === mode;
+      b.classList.toggle("is-active", on);
+      b.classList.toggle("active", on);
     });
   }
 
@@ -608,8 +616,8 @@
       if (forceOpenCreate) window.localStorage.removeItem("catface_open_create_modal");
     } catch (e) {}
 
-    // Default community entry is always Recommended unless URL explicitly asks Followed.
     if (feed === "followed") switchCommunityView("followed");
+    else if (feed === "trending") switchCommunityView("trending");
     else switchCommunityView("recommended");
 
     if (compose || forceOpenCreate) {
@@ -632,14 +640,21 @@
     }
   }
   const loginBtn = document.querySelector(".login-btn");
-  if (!loginBtn) return;
   const user = loadUser();
+  if (loginBtn) {
+    if (user) {
+      loginBtn.textContent = "My Account";
+      loginBtn.href = "/pages/account.html";
+    } else {
+      loginBtn.textContent = "Log in";
+      loginBtn.href = "/pages/log-in.html";
+    }
+  }
+  var heroName = document.querySelector(".nav-hero-name");
+  var heroHandle = document.querySelector(".u-handle");
   if (user) {
-    loginBtn.textContent = "My Account";
-    loginBtn.href = "/pages/account.html";
-  } else {
-    loginBtn.textContent = "Log in";
-    loginBtn.href = "/pages/log-in.html";
+    if (heroName) heroName.textContent = user.display_name || user.username || user.email || "User";
+    if (heroHandle) heroHandle.textContent = user.username ? "@" + user.username : "";
   }
 })();
 
