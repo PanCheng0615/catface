@@ -207,7 +207,9 @@
     if (catIdDisplay) catIdDisplay.textContent = catId;
 
     try {
-      const res  = await fetch(`${API}/health/records/${catId}`);
+      const res  = await fetch(`${API}/health/records/${catId}`, {
+        headers: getAuthHeaders()
+      });
       const body = await res.json();
       if (!body.success) { showStatus('載入失敗：' + body.message, true); return; }
 
@@ -230,7 +232,10 @@
   window.deleteRecord = async function (recordId) {
     if (!confirm('確定要刪除這筆記錄嗎？')) return;
     try {
-      const res  = await fetch(`${API}/health/records/${recordId}`, { method: 'DELETE' });
+      const res  = await fetch(`${API}/health/records/${recordId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
       const body = await res.json();
       if (body.success) { showStatus('記錄已刪除'); loadAll(); }
       else showStatus('刪除失敗：' + body.message, true);
@@ -277,7 +282,11 @@
         try {
           const formData = new FormData();
           formData.append('file', fileInput.files[0]);
-          const uploadRes  = await fetch(`${API}/health/upload`, { method: 'POST', body: formData });
+          const uploadRes  = await fetch(`${API}/health/upload`, {
+            method: 'POST',
+            headers: { "Authorization": `Bearer ${getToken()}` },
+            body: formData
+          });
           const uploadBody = await uploadRes.json();
           if (uploadBody.success) {
             fileUrl = uploadBody.data.url;
@@ -294,21 +303,22 @@
         }
       }
 
-      // 2. 提交记录
+      // 提交记录（user_id 由后端 JWT 自动取得，前端不需要传）
       const data = {
-        user_id:      userId,
-        record_type:  document.getElementById('rec-type').value,
-        description:  document.getElementById('rec-desc').value.trim(),
-        date:         document.getElementById('rec-date').value,
-        next_due_date:document.getElementById('rec-next').value   || undefined,
-        weight_kg:    document.getElementById('rec-weight').value || undefined,
-        vet_name:     document.getElementById('rec-vet').value.trim()    || undefined,
-        clinic_name:  document.getElementById('rec-clinic').value.trim() || undefined,
-        file_url:     fileUrl || undefined
+        record_type:   document.getElementById('rec-type').value,
+        description:   document.getElementById('rec-desc').value.trim(),
+        date:          document.getElementById('rec-date').value,
+        next_due_date: document.getElementById('rec-next').value   || undefined,
+        weight_kg:     document.getElementById('rec-weight').value || undefined,
+        vet_name:      document.getElementById('rec-vet').value.trim()    || undefined,
+        clinic_name:   document.getElementById('rec-clinic').value.trim() || undefined,
+        file_url:      fileUrl || undefined
       };
       try {
         const res  = await fetch(`${API}/health/records/${catId}`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(data)
         });
         const body = await res.json();
         if (body.success) {
@@ -333,14 +343,15 @@
   if (shareForm) {
     shareForm.addEventListener('submit', async function (e) {
       e.preventDefault();
-      if (!catId || !userId) { showStatus('請先填寫貓咪 ID 和用戶 ID', true); return; }
+      if (!catId) { showStatus('請先輸入貓咪 ID', true); return; }
       const orgId     = document.getElementById('share-org-id').value.trim();
       const isAllowed = document.getElementById('share-allowed').value === 'true';
       if (!orgId) { showStatus('請輸入診所 ID', true); return; }
       try {
         const res  = await fetch(`${API}/health/share`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cat_id: catId, user_id: userId, org_id: orgId, is_allowed: isAllowed })
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ cat_id: catId, org_id: orgId, is_allowed: isAllowed })
         });
         const body = await res.json();
         if (body.success) { showStatus('✅ 授權設定成功！'); loadAll(); }

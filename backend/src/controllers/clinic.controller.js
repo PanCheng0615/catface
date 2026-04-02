@@ -4,14 +4,26 @@ const prisma = new PrismaClient();
 
 const VALID_REPORT_TYPES = ['vaccination', 'deworming', 'checkup', 'blood_test', 'treatment', 'surgery', 'other'];
 
+// 根据登录用户邮箱查找其所属机构 ID（用于 clinic_staff 鉴权）
+async function getOrgIdForUser(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, role: true }
+  });
+  if (!user || user.role !== 'clinic_staff') return null;
+  const org = await prisma.organization.findFirst({
+    where: { email: user.email }
+  });
+  return org ? org.id : null;
+}
+
 // GET /api/clinic/cats
-// 获取某诊所被授权查看的猫咪列表（需要 is_allowed=true）
+// 获取某诊所被授权查看的猫咪列表（clinic_staff 只能看自己机构的）
 async function getAuthorizedCats(req, res) {
   try {
-    const { orgId } = req.query;
-
+    const orgId = await getOrgIdForUser(req.user.id);
     if (!orgId) {
-      return res.status(422).json({ success: false, error: 'ValidationError', message: 'orgId 为必填查询参数' });
+      return res.status(403).json({ success: false, error: 'Forbidden', message: '仅诊所工作人员可访问' });
     }
 
     const permissions = await prisma.healthSharePermission.findMany({
@@ -40,17 +52,21 @@ async function getAuthorizedCats(req, res) {
 }
 
 // POST /api/clinic/reports/:catId
-// 诊所上传一份官方健康报告
+// 诊所上传一份官方健康报告（org_id 从登录用户关联的机构自动取得）
 async function createClinicReport(req, res) {
   try {
     const { catId } = req.params;
-    const { org_id, report_type, description, date, file_url } = req.body;
+    const orgId = await getOrgIdForUser(req.user.id);
+    if (!orgId) {
+      return res.status(403).json({ success: false, error: 'Forbidden', message: '无法识别您的诊所身份，请确认账号已关联诊所' });
+    }
+    const { report_type, description, date, file_url } = req.body;
 
-    if (!org_id || !report_type || !description || !date) {
+    if (!report_type || !description || !date) {
       return res.status(422).json({
         success: false,
         error: 'ValidationError',
-        message: 'org_id、report_type、description、date 为必填项'
+        message: 'report_type、description、date 为必填项'
       });
     }
 
@@ -62,9 +78,8 @@ async function createClinicReport(req, res) {
       });
     }
 
-    // 确认诊所对该猫有授权
     const permission = await prisma.healthSharePermission.findUnique({
-      where: { cat_id_org_id: { cat_id: catId, org_id } }
+      where: { cat_id_org_id: { cat_id: catId, org_id: orgId } }
     });
 
     if (!permission || !permission.is_allowed) {
@@ -78,7 +93,7 @@ async function createClinicReport(req, res) {
     const report = await prisma.clinicHealthReport.create({
       data: {
         cat_id:      catId,
-        org_id,
+        org_id:      orgId,
         report_type,
         description,
         date:        new Date(date),

@@ -1,7 +1,6 @@
 const express = require('express');
-const multer  = require('multer');
-const path    = require('path');
-const crypto  = require('crypto');
+const upload  = require('../middleware/upload');
+const { protect, authorize } = require('../middleware/auth');
 
 const {
   getHealthRecords,
@@ -14,27 +13,8 @@ const {
 
 const router = express.Router();
 
-// ── 文件上传配置 ──
-const storage = multer.diskStorage({
-  destination: path.join(__dirname, '..', '..', 'uploads'),
-  filename: (req, file, cb) => {
-    const ext  = path.extname(file.originalname).toLowerCase();
-    const name = crypto.randomBytes(12).toString('hex') + ext;
-    cb(null, name);
-  }
-});
-const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
-  fileFilter: (req, file, cb) => {
-    if (ALLOWED_MIME.includes(file.mimetype)) cb(null, true);
-    else cb(new Error('只允許上傳圖片（JPG/PNG/GIF/WEBP）或 PDF'));
-  }
-});
-
-// POST /api/health/upload — 上传附件，返回可访问的 URL
-router.post('/upload', upload.single('file'), (req, res) => {
+// POST /api/health/upload — 上传附件（诊所工作人员可上传图片/PDF）
+router.post('/upload', protect, upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, error: 'NoFile', message: '未收到檔案' });
   }
@@ -42,14 +22,14 @@ router.post('/upload', upload.single('file'), (req, res) => {
   return res.json({ success: true, data: { url: fileUrl, filename: req.file.filename }, message: '上傳成功' });
 });
 
-// 健康记录（主人维护）
-router.get('/records/:catId',       getHealthRecords);
-router.post('/records/:catId',      createOwnerHealthRecord);
-router.put('/records/:recordId',    updateOwnerHealthRecord);
-router.delete('/records/:recordId', deleteOwnerHealthRecord);
+// 健康记录（需要登录）
+router.get('/records/:catId',   protect, getHealthRecords);
+router.post('/records/:catId',  protect, createOwnerHealthRecord);
+router.put('/records/:recordId', protect, updateOwnerHealthRecord);
+router.delete('/records/:recordId', protect, deleteOwnerHealthRecord);
 
-// 诊所授权
-router.get('/share/:catId', getSharePermissions);
-router.post('/share',       setHealthSharePermission);
+// 诊所授权（需要登录）
+router.get('/share/:catId', protect, getSharePermissions);
+router.post('/share',       protect, setHealthSharePermission);
 
 module.exports = router;

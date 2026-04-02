@@ -1,7 +1,7 @@
 # Member 5 工作日志
 > 维护人：Member 5（Pan Cheng）
 > 分支：`pc-feature/health`
-> 最后更新：2026-03-17（本次会话）
+> 最后更新：2026-03-26（本次会话）
 
 ---
 
@@ -103,6 +103,43 @@ app.use('/api/health',        healthRouter);
 app.use('/api/clinic',        clinicRouter);
 ```
 
+#### 中间件文件（蓝图规定，本次新建）
+
+| 文件 | 说明 |
+|------|------|
+| `src/middleware/upload.js` | multer 统一上传中间件，含 10MB 限制、文件类型过滤、本地磁盘存储 |
+| `src/middleware/auth.js` | JWT 鉴权（`protect`）+ 角色限制（`authorize`），复用 Member 1 版本 |
+| `src/utils/cloudinary.js` | Cloudinary 上传工具（`uploadImage` / `deleteImage`），配置后自动启用 |
+| `src/utils/generateToken.js` | JWT 生成工具（Member 1 维护） |
+
+#### 安全修复（本次）
+
+- `health.controller.js`：`createOwnerHealthRecord` / `setHealthSharePermission` 不再依赖前端传 `user_id`，统一从 JWT token 的 `req.user.id` 取得（防止身份伪造）
+- 所有 health/clinic/organization/event 路由已加 `protect` 中间件，前端所有 fetch 调用已补上 `getAuthHeaders()`
+- `clinic.routes.js`：加 `clinic_staff` 角色限制，普通用户无法访问诊所接口
+- `organization.routes.js`：加 `protect` + `rescue_staff` 限制
+- `event.routes.js`：加 `protect` + `rescue_staff` 限制
+
+#### 路由鉴权现状
+
+| 路由 | 鉴权 | 说明 |
+|------|------|------|
+| `GET /api/health/records/:catId` | `protect` | 需要登录 |
+| `POST /api/health/records/:catId` | `protect` | 需要登录 |
+| `PUT /api/health/records/:recordId` | `protect` | 需要登录 |
+| `DELETE /api/health/records/:recordId` | `protect` | 需要登录 |
+| `POST /api/health/upload` | `protect` | 需要登录 |
+| `GET /api/health/share/:catId` | `protect` | 需要登录 |
+| `POST /api/health/share` | `protect` | 需要登录 |
+| `GET /api/clinic/cats` | `protect` + `authorize('clinic_staff')` | 仅诊所工作人员 |
+| `POST /api/clinic/reports/:catId` | `protect` + `authorize('clinic_staff')` | 仅诊所工作人员 |
+| `PUT /api/clinic/reports/:reportId` | `protect` + `authorize('clinic_staff')` | 仅诊所工作人员 |
+| `DELETE /api/clinic/reports/:reportId` | `protect` + `authorize('clinic_staff')` | 仅诊所工作人员 |
+| `GET /api/organizations` | 无 | 公开列表 |
+| `POST /api/organizations` | `protect` + `authorize('rescue_staff')` | 仅救助机构 |
+| `GET /api/events` | 无 | 公开列表 |
+| `POST /api/events` | `protect` + `authorize('rescue_staff')` | 仅救助机构 |
+
 ---
 
 ### 2.3 前端页面（本次会话全面重设计）
@@ -202,13 +239,15 @@ npx prisma db push --force-reset && npm run seed
 | posts / comments / likes | 10 / 10 / 40 |
 | conversations / messages | 4 / 16 |
 
+> **注意**：诊所用户（`clinic_staff`）的 email 必须与其所属机构 email 一致，因为 `getOrgIdForUser()` 通过邮箱匹配查找所属诊所。
+
 **测试账号：**
 ```
-普通用户：  alice@test.com        / test1234
-救助员：    staff@rescue.com      / test1234
-诊所员：    vet@clinic.com        / test1234
-救助机构：  rescue@catface-seed.com / seed1234
-诊所机构：  clinic@catface-seed.com / seed1234
+普通用户：  alice@test.com              / test1234
+诊所員工：  clinic@catface-test.com   / test1234  ← email 与机构相同
+救助員工：  rescue@catface-test.com    / test1234  ← email 与机构相同
+救助机构：  rescue@catface-test.com    / test1234
+诊所机构：  clinic@catface-test.com    / test1234
 ```
 
 ---
@@ -253,34 +292,37 @@ Invoke-RestMethod "http://localhost:3000/api/clinic/cats?orgId=4fddae50-31b3-4df
 
 ## 四、待完成工作
 
+###  已完成 ✅
+
+- ✅ **JWT 鉴权中间件**（`protect` + `authorize`）— 已加到所有 health/clinic/organization/event 路由
+- ✅ **`middleware/upload.js`** — 蓝图规定文件，已创建
+- ✅ **`utils/cloudinary.js`** — 蓝图规定文件，已创建
+- ✅ **`clinic_staff` 角色限制** — 已加到 clinic 路由
+- ✅ **`db/face-schema` 分支** — 已在远程创建，单独含 face schema PR
+- ✅ **`health.js`/`clinic-portal.js` 前端** — 完整 UI，联调后端 API
+
 ### 🔴 高优先级
 
-1. **机构登录接口**
-   - `POST /api/organizations/login`（目前只有注册没有登录）
-   - 参考 `auth.controller.js` 写法，返回 JWT token
+1. **health.js / clinic-portal.js 联调测试**
+   - 前端 JS 使用了 `getAuthHeaders()` 和 `getToken()`，需要确保前端登录流程已就绪
+   - `clinic-portal.html` 需要登录后用 clinic_staff 账号才能访问
 
-2. **JWT 鉴权中间件**
-   - 等 Member 1 修好 `backend/src/middleware/auth.js` 后
-   - 在需要登录的接口加 `authenticate` 中间件
-   - 例：`router.post('/records/:catId', authenticate, createOwnerHealthRecord)`
-
-3. **推送 `OwnerHealthRecord.file_url` 到 main**
-   - 目前只在 `pc-feature/health` 分支
-   - 待功能稳定后合并，其他人 `npx prisma db push` 即可同步
+2. **推送 `pc-feature/health` 正式 PR**
+   - 包含：controllers、routes、health.html、health.js、clinic-portal.html、clinic-portal.js
+   - 注意：已经单独发了 `db/face-schema` PR，不要混在一起
 
 ### 🟡 中优先级
 
-4. **提交 `pc-feature/health` 功能代码 PR**
-   - 包含：controllers、routes、health.html、health.js、clinic-portal.html、clinic-portal.js、account.html、index.html
-
-5. **云端文件存储**
+3. **Cloudinary 迁移**（将来）
    - 目前图片存在 `backend/uploads/` 本地目录（部署后会丢失）
-   - 将来可迁移到 Cloudinary / AWS S3 / 自建 OSS
+   - 配置好 `.env` 中的 `CLOUDINARY_*` 后，`utils/cloudinary.js` 可直接使用
+
+4. **rescue-dashboard.html 数据对接**
+   - Member 6 负责页面，数据来自 `/api/events`，可协助对接
 
 ### 🟢 低优先级
 
-6. **rescue-dashboard.html 数据对接**
-   - Member 6 负责页面，数据来自 `/api/events`，协助对接
+5. **`preferred_color` 字段** — 在 `db/schema-v3` 分支已推送，但需确认是否在 schema 中
 
 ---
 
@@ -315,16 +357,22 @@ backend/
 │   ├── schema.prisma              ← Member 5 唯一维护
 │   └── seed.js                    ← 全表测试数据
 ├── src/
+│   ├── middleware/
+│   │   ├── auth.js                ← JWT 鉴权（protect + authorize）
+│   │   └── upload.js              ← multer 统一上传中间件 ⭐本次新增
+│   ├── utils/
+│   │   ├── generateToken.js       ← JWT 生成（Member 1 维护）
+│   │   └── cloudinary.js          ← Cloudinary 上传工具（Member 5 维护）⭐本次新增
 │   ├── controllers/
 │   │   ├── health.controller.js   ← 健康记录 CRUD + 授权
 │   │   ├── clinic.controller.js   ← 诊所报告 CRUD
 │   │   ├── organization.controller.js
 │   │   └── event.controller.js
 │   ├── routes/
-│   │   ├── health.routes.js       ← 含 multer 文件上传路由
-│   │   ├── clinic.routes.js
-│   │   ├── organization.routes.js
-│   │   └── event.routes.js
+│   │   ├── health.routes.js       ← 含 auth 鉴权
+│   │   ├── clinic.routes.js       ← 含 auth + clinic_staff 限制
+│   │   ├── organization.routes.js  ← 含 auth 鉴权
+│   │   └── event.routes.js        ← 含 auth 鉴权
 │   └── server.js                  ← 路由挂载 + 静态文件服务
 ├── uploads/                       ← 用户上传的图片/PDF（本地存储）
 ├── .env                           ← 本地配置，不提交 Git
@@ -332,9 +380,9 @@ backend/
 
 frontend/
 ├── js/
-│   ├── config.js                  ← 全员共用，API_BASE_URL
+│   ├── config.js                  ← 全员共用，API_BASE_URL + getToken/setToken
 │   ├── health.js                  ← 健康页完整 API 逻辑
-│   └── clinic-portal.js           ← 诊所门户完整 API 逻辑（新建）
+│   └── clinic-portal.js           ← 诊所门户完整 API 逻辑
 └── pages/
     ├── health.html                ← 全新 UI：护照卡+标签页+图片上传 ✅
     ├── clinic-portal.html         ← 全新 UI：专业诊所门户 ✅

@@ -1,4 +1,5 @@
 const express = require('express');
+const { protect, authorize } = require('../middleware/auth');
 
 const {
   getOrganizations,
@@ -11,7 +12,7 @@ const router = express.Router();
 
 router.get('/',     getOrganizations);
 router.get('/:id',  getOrganizationById);
-router.post('/',    createOrganization);
-router.put('/:id',  updateOrganization);
+router.post('/',    protect, authorize('rescue_staff'), createOrganization);
+router.put('/:id',  protect, authorize('rescue_staff', 'admin'), updateOrganization);
 
 module.exports = router;

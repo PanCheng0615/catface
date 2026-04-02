@@ -29,6 +29,10 @@ async function getHealthRecords(req, res) {
       })
     ]);
 
+    if (!cat) {
+      return res.status(404).json({ success: false, error: 'NotFound', message: '猫咪不存在' });
+    }
+
     return res.json({
       success: true,
       data: { cat, owner_records: ownerRecords, clinic_reports: clinicReports, share_permissions: sharePermissions },
@@ -41,17 +45,25 @@ async function getHealthRecords(req, res) {
 }
 
 // POST /api/health/records/:catId
-// 新建一条主人健康记录
+// 新建一条主人健康记录（使用 JWT 中的 user id，不依赖前端传 user_id）
 async function createOwnerHealthRecord(req, res) {
   try {
     const { catId } = req.params;
-    const { user_id, record_type, description, date, next_due_date, weight_kg, vet_name, clinic_name, file_url } = req.body;
+    const userId = req.user.id; // 从 JWT token 取得，不依赖前端传参
+    const { record_type, description, date, next_due_date, weight_kg, vet_name, clinic_name, file_url } = req.body;
 
-    if (!user_id || !record_type || !description || !date) {
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: '无法识别当前用户，请重新登录'
+      });
+    }
+    if (!record_type || !description || !date) {
       return res.status(422).json({
         success: false,
         error: 'ValidationError',
-        message: 'user_id、record_type、description、date 为必填项'
+        message: 'record_type、description、date 为必填项'
       });
     }
 
@@ -66,7 +78,7 @@ async function createOwnerHealthRecord(req, res) {
     const record = await prisma.ownerHealthRecord.create({
       data: {
         cat_id:        catId,
-        user_id,
+        user_id:       userId,
         record_type,
         description,
         date:          new Date(date),
@@ -160,22 +172,31 @@ async function getSharePermissions(req, res) {
 
 // POST /api/health/share
 // 设置或更新猫主人对某诊所的授权（upsert）
+// user_id 从 JWT token 取得，不依赖前端传参
 async function setHealthSharePermission(req, res) {
   try {
-    const { cat_id, user_id, org_id, is_allowed } = req.body;
+    const userId = req.user.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: '无法识别当前用户，请重新登录'
+      });
+    }
+    const { cat_id, org_id, is_allowed } = req.body;
 
-    if (!cat_id || !user_id || !org_id || typeof is_allowed !== 'boolean') {
+    if (!cat_id || !org_id || typeof is_allowed !== 'boolean') {
       return res.status(422).json({
         success: false,
         error: 'ValidationError',
-        message: 'cat_id、user_id、org_id、is_allowed（布尔值）为必填项'
+        message: 'cat_id、org_id、is_allowed（布尔值）为必填项'
       });
     }
 
     const permission = await prisma.healthSharePermission.upsert({
       where:  { cat_id_org_id: { cat_id, org_id } },
-      update: { user_id, is_allowed },
-      create: { cat_id, user_id, org_id, is_allowed }
+      update: { user_id: userId, is_allowed },
+      create: { cat_id, user_id: userId, org_id, is_allowed }
     });
 
     return res.json({ success: true, data: permission, message: '授权设置成功' });

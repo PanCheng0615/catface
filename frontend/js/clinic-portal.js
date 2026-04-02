@@ -4,7 +4,6 @@
   const API = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:3000/api';
 
   const params = new URLSearchParams(window.location.search);
-  let orgId = params.get('orgId') || localStorage.getItem('catface_clinic_orgId') || '';
   let selectedCatId = '';
   let selectedCatName = '';
 
@@ -51,18 +50,36 @@
   }
 
   // ── 加载授权猫咪列表 ──
+  // 登录后，后端根据 JWT token 自动识别所属诊所，前端不再需要手动传 orgId
   async function loadAuthorizedCats() {
-    if (!orgId) { catListEl.innerHTML = `<div class="empty-state"><div class="ei">🐱</div><p>請先輸入診所 ID</p></div>`; return; }
-    if (currentOrgEl) currentOrgEl.textContent = orgId;
-    if (clinicIdEl)   clinicIdEl.textContent   = `診所 ID：${orgId.slice(0, 12)}…`;
+    if (!isLoggedIn()) {
+      catListEl.innerHTML = `<div class="empty-state"><div class="ei">🔒</div><p>請先登入診所工作人員帳號</p></div>`;
+      return;
+    }
 
     catListEl.innerHTML = `<div class="empty-state"><div class="ei">⏳</div><p>載入中…</p></div>`;
     try {
-      // 同时获取诊所信息
       const [catsRes, orgsRes] = await Promise.all([
-        fetch(`${API}/clinic/cats?orgId=${encodeURIComponent(orgId)}`),
+        fetch(`${API}/clinic/cats`, { headers: getAuthHeaders() }),
         fetch(`${API}/organizations`)
       ]);
+      const catsBody = await catsRes.json();
+      const orgsBody = await orgsRes.json();
+
+      // 后端从 JWT 自动取 org_id，但前端需要用 token 解码获取 orgId 来显示
+      // 从 orgsBody 里匹配当前 token 的用户邮箱对应的机构
+      let clinicOrgId = '';
+      if (catsBody.data && catsBody.data.length > 0) {
+        clinicOrgId = catsBody.data[0].cat.org_id || '';
+      }
+      if (clinicOrgId && orgsBody.success) {
+        const org = orgsBody.data.find(o => o.id === clinicOrgId);
+        if (org) {
+          if (clinicNameEl) clinicNameEl.textContent = org.name;
+          if (currentOrgEl) currentOrgEl.textContent = org.name;
+          if (clinicIdEl) clinicIdEl.textContent = `ID：${clinicOrgId.slice(0, 12)}…`;
+        }
+      }
       const catsBody = await catsRes.json();
       const orgsBody = await orgsRes.json();
 
@@ -128,13 +145,13 @@
     existingEl.innerHTML   = `<div class="empty-state"><div class="ei">⏳</div><p>載入中…</p></div>`;
 
     try {
-      const res  = await fetch(`${API}/health/records/${catId}`);
+      const res  = await fetch(`${API}/health/records/${catId}`, { headers: getAuthHeaders() });
       const body = await res.json();
       if (!body.success) { showStatus('載入健康記錄失敗', true); return; }
 
       renderPatientTags(body.data.owner_records || []);
       renderOwnerRecords(body.data.owner_records || []);
-      renderExistingReports(body.data.clinic_reports.filter(r => r.org_id === orgId) || []);
+      renderExistingReports(body.data.clinic_reports || []);
     } catch { showStatus('載入失敗', true); }
   };
 
@@ -221,7 +238,10 @@
   window.deleteReport = async function (reportId) {
     if (!confirm('確定要刪除這份報告嗎？')) return;
     try {
-      const res  = await fetch(`${API}/clinic/reports/${reportId}`, { method: 'DELETE' });
+      const res  = await fetch(`${API}/clinic/reports/${reportId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
       const body = await res.json();
       if (body.success) { showStatus('報告已刪除'); selectCat(selectedCatId, selectedCatName); }
       else              showStatus('刪除失敗：' + body.message, true);
@@ -247,7 +267,7 @@
       try {
         const res  = await fetch(`${API}/clinic/reports/${selectedCatId}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify({ org_id: orgId, report_type, description, date })
         });
         const body = await res.json();
@@ -262,19 +282,15 @@
     });
   }
 
-  // ── 测试面板 ──
+  // ── 测试面板 ──（orgId 由后端 JWT 自动识别，前端只需确保已登录）
   if (testApplyBtn) {
     testApplyBtn.addEventListener('click', function () {
-      const id = testOrgInput?.value.trim();
-      if (!id) { showStatus('請輸入診所 ID', true); return; }
-      orgId = id;
-      localStorage.setItem('catface_clinic_orgId', orgId);
-      showStatus('ID 已設置，載入中…');
+      if (!isLoggedIn()) { showStatus('請先登入診所工作人員帳號', true); return; }
+      showStatus('載入中…');
       loadAuthorizedCats();
     });
   }
 
   // ── 初始化 ──
-  if (testOrgInput && orgId) testOrgInput.value = orgId;
   loadAuthorizedCats();
 })();
