@@ -8,6 +8,12 @@ function generateToken(user) {
     role: user.role
   };
 
+  Object.keys(user).forEach((key) => {
+    if (key !== 'id' && key !== 'role' && user[key] !== undefined) {
+      payload[key] = user[key];
+    }
+  });
+
   return jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d'
   });

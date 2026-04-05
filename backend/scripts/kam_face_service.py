@@ -1,100 +1,186 @@
-import sys
+import argparse
+import hashlib
 import json
 import os
-import base64
-import hashlib
-import tempfile
+import sys
 from pathlib import Path
 
-import numpy as np
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-BACKEND_DIR = SCRIPT_DIR.parent
-PROJECT_DIR = BACKEND_DIR.parent
-
-base_dir = (BACKEND_DIR / os.environ.get("KAM_FACE_BASE", "../KAM_Face_pipeline_demo")).resolve()
-weights_dir = (BACKEND_DIR / os.environ.get("KAM_FACE_WEIGHTS_DIR", "../KAM_Face_pipeline_demo/weights")).resolve()
-device = os.environ.get("KAM_FACE_DEVICE", "cpu")
-
-sys.path.insert(0, str(base_dir))
-
-from KAMFace.pipeline import KAMFacePipeline  # noqa: E402
+ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parent
+DEFAULT_BASE = REPO_ROOT / "KAM_Face_pipeline_demo"
+DEFAULT_WEIGHTS_DIR = DEFAULT_BASE / "weights"
+EXPECTED_WEIGHT_FILES = ("best_body.pt", "best_face.pt", "best_backbone.pt")
 
 
-def parse_image_data_url(image_data_url: str):
-    if not image_data_url or "," not in image_data_url:
-        raise ValueError("Invalid image_data_url")
-    header, encoded = image_data_url.split(",", 1)
-
-    ext = ".jpg"
-    lower_header = header.lower()
-    if "png" in lower_header:
-        ext = ".png"
-    elif "webp" in lower_header:
-        ext = ".webp"
-
-    return base64.b64decode(encoded), ext
+def emit(payload):
+    sys.stdout.write(json.dumps(payload, ensure_ascii=False))
 
 
-def build_face_code(embedding_np: np.ndarray) -> str:
-    digest = hashlib.sha1(embedding_np.astype("float32").tobytes()).hexdigest()[:12].upper()
-    return f"CAT-FACE-{digest}"
+def to_plain_value(value):
+    if value is None:
+        return None
+    if hasattr(value, "detach"):
+        value = value.detach().cpu()
+    if hasattr(value, "numpy"):
+        value = value.numpy()
+    if hasattr(value, "tolist"):
+        return value.tolist()
+    return value
+
+
+def normalize_embedding(feat):
+    plain = to_plain_value(feat)
+    if plain is None:
+        return None
+    if isinstance(plain, (list, tuple)):
+        if plain and isinstance(plain[0], (list, tuple)):
+            return [float(item) for row in plain for item in row]
+        return [float(item) for item in plain]
+    return None
+
+
+def build_face_code(image_bytes, embedding):
+    digest_source = image_bytes
+    if embedding:
+        digest_source = json.dumps(embedding, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    digest = hashlib.sha256(digest_source).hexdigest().upper()
+    return f"CAT-FACE-{digest[:12]}"
+
+
+def get_runtime_paths():
+    base = Path(os.environ.get("KAM_FACE_BASE", str(DEFAULT_BASE))).expanduser().resolve()
+    weights_dir = Path(os.environ.get("KAM_FACE_WEIGHTS_DIR", str(DEFAULT_WEIGHTS_DIR))).expanduser().resolve()
+    return base, weights_dir
+
+
+def detect_device(torch_module):
+    configured = os.environ.get("KAM_FACE_DEVICE")
+    if configured:
+        return configured
+    return "cuda" if torch_module.cuda.is_available() else "cpu"
+
+
+def validate_runtime(base, weights_dir):
+    missing = []
+    if not base.exists():
+        missing.append(str(base))
+    for filename in EXPECTED_WEIGHT_FILES:
+        candidate = weights_dir / filename
+        if not candidate.exists():
+            missing.append(str(candidate))
+    return missing
+
+
+def load_pipeline(base, weights_dir):
+    if str(base) not in sys.path:
+        sys.path.insert(0, str(base))
+
+    import torch  # noqa: WPS433
+    from KAMFace.pipeline import KAMFacePipeline  # noqa: WPS433
+
+    device = detect_device(torch)
+    pipe = KAMFacePipeline(
+        yolo_body_detector_path=str(weights_dir / "best_body.pt"),
+        yolo_face_detector_path=str(weights_dir / "best_face.pt"),
+        pet_face_backbone_path=str(weights_dir / "best_backbone.pt"),
+        device=device,
+    )
+    return pipe, device
+
+
+def run_inference(image_path):
+    image_bytes = image_path.read_bytes()
+    base, weights_dir = get_runtime_paths()
+    missing = validate_runtime(base, weights_dir)
+    if missing:
+        return {
+            "success": False,
+            "provider": "kam_face_pipeline",
+            "error_code": "RuntimeMissing",
+            "message": "KAMFace code or model weights are missing.",
+            "missing_paths": missing,
+            "expected_base": str(base),
+            "expected_weights_dir": str(weights_dir),
+        }
+
+    try:
+        pipe, device = load_pipeline(base, weights_dir)
+    except Exception as exc:  # pragma: no cover
+        return {
+            "success": False,
+            "provider": "kam_face_pipeline",
+            "error_code": "PipelineInitFailed",
+            "message": str(exc),
+            "expected_base": str(base),
+            "expected_weights_dir": str(weights_dir),
+        }
+
+    results = pipe(str(image_path))
+    if not results:
+        return {
+            "success": True,
+            "provider": "kam_face_pipeline",
+            "device": device,
+            "face_detected": False,
+            "message": "No cat face was detected in the uploaded image.",
+        }
+
+    first = results[0]
+    embedding = normalize_embedding(first.get("feat"))
+    if not embedding:
+        return {
+            "success": False,
+            "provider": "kam_face_pipeline",
+            "device": device,
+            "error_code": "EmbeddingMissing",
+            "message": "The model ran, but no embedding was returned.",
+        }
+
+    return {
+        "success": True,
+        "provider": "kam_face_pipeline",
+        "device": device,
+        "face_detected": True,
+        "embedding": embedding,
+        "embedding_dim": len(embedding),
+        "suggested_face_code": build_face_code(image_bytes, embedding),
+        "body_bbox": to_plain_value(first.get("body_bbox")),
+        "face_kpts": to_plain_value(first.get("face_kpts")),
+        "img_path": str(image_path),
+    }
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Extract cat-face embedding using KAMFacePipeline.")
+    parser.add_argument("image_path", help="Local image path for inference.")
+    return parser.parse_args()
 
 
 def main():
-    raw = sys.stdin.read()
-    payload = json.loads(raw) if raw else {}
-    image_data_url = payload.get("image_data_url")
-
-    if not image_data_url:
-        print(json.dumps({
-            "success": False,
-            "message": "image_data_url is required"
-        }))
-        sys.exit(1)
-
-    image_bytes, ext = parse_image_data_url(image_data_url)
-    temp_path = None
+    args = parse_args()
+    image_path = Path(args.image_path).expanduser().resolve()
+    if not image_path.exists():
+        emit(
+            {
+                "success": False,
+                "error_code": "InputImageMissing",
+                "message": f"Input image not found: {image_path}",
+            }
+        )
+        return
 
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
-            tmp.write(image_bytes)
-            temp_path = tmp.name
+        payload = run_inference(image_path)
+    except Exception as exc:  # pragma: no cover
+        payload = {
+            "success": False,
+            "provider": "kam_face_pipeline",
+            "error_code": "InferenceFailed",
+            "message": str(exc),
+        }
 
-        pipeline = KAMFacePipeline(
-            yolo_body_detector_path=str(weights_dir / "best_body.pt"),
-            yolo_face_detector_path=str(weights_dir / "best_face.pt"),
-            pet_face_backbone_path=str(weights_dir / "best_backbone.pt"),
-            device=device
-        )
-
-        results = pipeline(temp_path)
-
-        if not results:
-            print(json.dumps({
-                "success": False,
-                "message": "No cat face detected"
-            }))
-            sys.exit(1)
-
-        embedding_np = results[0]["feat"].detach().cpu().numpy().reshape(-1).astype("float32")
-        suggested_face_code = build_face_code(embedding_np)
-
-        print(json.dumps({
-            "success": True,
-            "data": {
-                "matched": False,
-                "suggested_face_code": suggested_face_code,
-                "embedding": embedding_np.tolist(),
-                "embedding_dim": int(embedding_np.shape[0]),
-                "best_match": None,
-                "top_matches": [],
-                "threshold": float(os.environ.get("KAM_FACE_THRESHOLD", "0.8"))
-            }
-        }))
-    finally:
-        if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)
+    emit(payload)
 
 
 if __name__ == "__main__":

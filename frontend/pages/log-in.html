@@ -224,6 +224,19 @@
       font-size: 13px;
       color: #777;
     }
+    .org-login-entry {
+      margin: 8px 0 18px;
+      padding: 14px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      background: #f8fafc;
+      font-size: 13px;
+      color: #475467;
+      line-height: 1.6;
+    }
+    .org-login-entry a {
+      font-weight: 700;
+    }
 
     .right h2 {
       margin: 0 0 6px;
@@ -243,7 +256,7 @@
 <body>
   <div class="shell">
     <section class="left">
-      <a href="/pages/index.html" class="back-link">← Back to Home</a>
+      <a href="index.html" class="back-link">← Back to Home</a>
       <div class="logo">
         <span class="logo-mark">🐱</span>
         <span>CatFace</span>
@@ -253,19 +266,23 @@
         <button class="tab-btn is-active" type="button" id="tabLogin">Log in</button>
         <button class="tab-btn" type="button" id="tabSignup">Sign up</button>
       </div>
+      <div class="org-login-entry">
+        Rescue organization staff:
+        <a href="org-login.html">Go to organization login</a>
+      </div>
 
       <!-- Log in form -->
       <form id="loginForm" aria-label="Email login form">
         <div class="title">Log in</div>
-        <div class="sub">Use your email and password to log in.</div>
+        <div class="sub">Use your email and a mock verification code to log in.</div>
 
         <div class="field">
           <span class="label-inline">Email</span>
           <input class="input" id="login-email" type="email" autocomplete="email" placeholder="Enter email" required>
         </div>
         <div class="field">
-          <span class="label-inline">Password</span>
-          <input class="input" id="login-code" type="password" placeholder="Enter password" required>
+          <span class="label-inline">Code</span>
+          <input class="input" id="login-code" inputmode="numeric" placeholder="Enter verification code" required>
         </div>
 
         <div class="agree">
@@ -281,6 +298,7 @@
 
         <button class="btn-primary" type="submit">Log in</button>
         <div class="switch-text">Don't have an account? <a href="#" id="goSignup">Sign up</a></div>
+        <div class="switch-text">Organization staff? <a href="org-login.html">Go to Organization Log in</a></div>
       </form>
 
       <!-- Sign up form -->
@@ -368,7 +386,7 @@
           <div class="field" id="mycat-face-preview-row" style="display:none;">
             <span class="label-inline">Preview</span>
             <div style="display:flex; align-items:center; gap:10px;">
-              <img id="mycat-face-preview" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="Cat face preview" style="width:64px;height:64px;border-radius:16px;object-fit:cover;border:1px solid #e5e7eb;">
+              <img id="mycat-face-preview" src="" alt="Cat face preview" style="width:64px;height:64px;border-radius:16px;object-fit:cover;border:1px solid #e5e7eb;">
               <span style="font-size:12px;color:#777;">Cat ID will be generated after sign up.</span>
             </div>
           </div>
@@ -429,11 +447,9 @@
     </aside>
   </div>
 
-  <script src="../js/config.js"></script>
   <script>
     (function () {
       var USER_KEY = 'catface_user';
-      var API_BASE = typeof API_BASE_URL !== "undefined" ? API_BASE_URL : "http://localhost:3000/api";
 
       function loadUser() {
         try {
@@ -446,58 +462,6 @@
         try {
           window.localStorage.setItem(USER_KEY, JSON.stringify(user));
         } catch (e) {}
-      }
-      function saveAuth(data) {
-        if (typeof setToken === "function" && data && data.token) {
-          setToken(data.token);
-        }
-        if (data && data.user) {
-          saveUser({
-            id: data.user.id,
-            email: data.user.email,
-            username: data.user.username,
-            display_name: data.user.display_name,
-            role: data.user.role,
-            loggedInAt: new Date().toISOString()
-          });
-        }
-      }
-
-      function syncProfileAfterSignup(isOwner) {
-        if (!getToken()) return Promise.resolve();
-        var payload;
-        if (isOwner) {
-          payload = {
-            display_name: regName.value.trim(),
-            has_cat: true,
-            cat: {
-              name: (myCatName && myCatName.value.trim()) || "My Cat",
-              breed: (myCatBreed && myCatBreed.value.trim()) || "",
-              gender: (myCatGender && myCatGender.value) || "",
-              birthday: (myCatBirthday && myCatBirthday.value) || "",
-              photo_url: pendingCatFaceDataUrl || "",
-              description: "Created from sign-up"
-            }
-          };
-        } else {
-          payload = {
-            display_name: regName.value.trim(),
-            has_cat: false,
-            preferences: {
-              preferred_gender: (prefGender && prefGender.value) || "",
-              preferred_age: (prefAge && prefAge.value) || "",
-              preferred_breed: (prefBreed && prefBreed.value) || ""
-            }
-          };
-        }
-        return fetch(API_BASE + "/users/me/profile", {
-          method: "PUT",
-          headers: getAuthHeaders(),
-          body: JSON.stringify(payload)
-        })
-          .then(function (res) { return res.json(); })
-          .then(function () {})
-          .catch(function () {});
       }
 
       var tabLogin = document.getElementById('tabLogin');
@@ -551,24 +515,13 @@
           return;
         }
 
-        fetch(API_BASE + "/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email, password: code })
-        })
-          .then(function (res) { return res.json(); })
-          .then(function (result) {
-            if (!result.success || !result.data) {
-              alert(result.message || "Login failed.");
-              return;
-            }
-            saveAuth(result.data);
-            alert('Logged in successfully.');
-            window.location.href = '/pages/index.html';
-          })
-          .catch(function () {
-            alert("Network error. Please check backend service.");
-          });
+        var user = loadUser() || {};
+        user.email = email;
+        user.loggedInAt = new Date().toISOString();
+        saveUser(user);
+
+        alert('Logged in successfully.');
+        window.location.href = 'index.html';
       });
 
       // Sign up submit
@@ -656,6 +609,12 @@
         }
 
         var isOwner = typeOwner && typeOwner.checked;
+        var user = {
+          name: name,
+          email: email,
+          userType: isOwner ? 'owner' : 'adopter',
+          registeredAt: new Date().toISOString()
+        };
 
         if (isOwner) {
           if (!pendingCatFaceDataUrl) {
@@ -665,35 +624,34 @@
           }
           var generatedId = "CAT-" + Date.now().toString(36).toUpperCase();
           if (myCatIdDisplay) myCatIdDisplay.value = generatedId;
+          user.myCat = {
+            hasCat: true,
+            catId: generatedId,
+            name: myCatName ? myCatName.value.trim() : '',
+            breed: myCatBreed ? myCatBreed.value.trim() : '',
+            gender: myCatGender ? myCatGender.value : '',
+            birthday: myCatBirthday ? myCatBirthday.value : '',
+            faceImage: pendingCatFaceDataUrl
+          };
         } else {
-          // keep adopter form as frontend-only extra fields for now
+          var preferences = {
+            gender: prefGender.value,
+            age: prefAge.value,
+            breed: prefBreed.value,
+            home: prefHome.value,
+            tags: []
+          };
+          if (prefPlayful.checked) preferences.tags.push('playful');
+          if (prefGentle.checked) preferences.tags.push('gentle');
+          if (prefKid.checked) preferences.tags.push('good-with-kids');
+          if (prefBeginner.checked) preferences.tags.push('beginner-friendly');
+          if (prefSpecial.checked) preferences.tags.push('special-needs-ok');
+          user.preferences = preferences;
         }
-        fetch(API_BASE + "/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: email,
-            password: password,
-            username: name,
-            display_name: name,
-            role: "user"
-          })
-        })
-          .then(function (res) { return res.json(); })
-          .then(function (result) {
-            if (!result.success || !result.data) {
-              alert(result.message || "Sign up failed.");
-              return;
-            }
-            saveAuth(result.data);
-            syncProfileAfterSignup(isOwner).finally(function () {
-              alert('Sign up successful.');
-              window.location.href = '/pages/index.html';
-            });
-          })
-          .catch(function () {
-            alert("Network error. Please check backend service.");
-          });
+        saveUser(user);
+
+        alert('Sign up successful.');
+        window.location.href = 'index.html';
       });
     })();
   </script>
