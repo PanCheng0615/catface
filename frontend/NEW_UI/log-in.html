@@ -88,7 +88,7 @@
 
   <!-- Right panel -->
   <div class="page-right">
-    <a class="back-link" href="/pages/cat-facebook.html">&#x2190; Back to Home</a>
+    <a class="back-link" href="index.html">&#x2190; Back to Home</a>
     <div class="tab-bar">
       <div class="tab active" id="tab-login">Log In</div>
       <div class="tab" id="tab-signup">Sign Up</div>
@@ -123,15 +123,15 @@
       </div>
       <div class="field">
         <label>Nickname</label>
-        <input id="reg-name" type="text" placeholder="Your display name">
+        <input type="text" placeholder="Your display name">
       </div>
       <div class="field">
         <label>Email</label>
-        <input id="reg-email" type="email" placeholder="Enter your email">
+        <input type="email" placeholder="Enter your email">
       </div>
       <div class="field">
         <label>Password</label>
-        <input id="reg-password" type="password" placeholder="Create a password (min. 6 chars)">
+        <input type="password" placeholder="Create a password (min. 6 chars)">
       </div>
       <div class="field">
         <label>I am signing up as</label>
@@ -150,7 +150,7 @@
         </div>
       </div>
       <div class="terms">
-        <label><input type="checkbox" id="reg-agree"> I have read and agree to the <a href="#">User Agreement</a>, <a href="#">Privacy Policy</a>, and <a href="#">Children/Teen Personal Information Protection Rules</a>.</label>
+        <label><input type="checkbox"> I have read and agree to the <a href="#">User Agreement</a>, <a href="#">Privacy Policy</a>, and <a href="#">Children/Teen Personal Information Protection Rules</a>.</label>
       </div>
       <div id="signup-status" class="status-msg"></div>
       <button class="btn-submit" id="signup-btn">Sign Up</button>
@@ -159,7 +159,6 @@
   </div>
 </div>
 
-<script src="../js/config.js"></script>
 <script>
   function switchTab(tab) {
     document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
@@ -170,6 +169,7 @@
   document.getElementById('tab-login').onclick = function(){ switchTab('login'); };
   document.getElementById('tab-signup').onclick = function(){ switchTab('signup'); };
 
+  // Role toggle
   var roleUser = document.getElementById('role-user');
   var roleAdopt = document.getElementById('role-adopt');
   var adoptPrefs = document.getElementById('adopt-prefs');
@@ -182,86 +182,21 @@
     adoptPrefs.style.display = '';
   };
 
-  function saveAuth(data) {
-    if (typeof setToken === "function" && data && data.token) setToken(data.token);
-    if (data && data.user) {
-      try { localStorage.setItem("catface_user", JSON.stringify(data.user)); } catch (e) {}
-    }
-  }
-
+  // Demo login
   document.getElementById('login-btn').onclick = function(){
-    var email = document.getElementById('login-email').value.trim();
+    var email = document.getElementById('login-email').value;
     var pw = document.getElementById('login-pw').value;
     var status = document.getElementById('login-status');
     if(!email || !pw){ status.className='status-msg error'; status.textContent='Please enter email and password.'; return; }
-    status.className='status-msg'; status.textContent='Signing in…';
-    fetch(API_BASE_URL + "/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email, password: pw })
-    })
-      .then(function(res){ return res.json(); })
-      .then(function(result){
-        if (!result.success || !result.data) {
-          status.className='status-msg error';
-          status.textContent = result.message || 'Login failed.';
-          return;
-        }
-        saveAuth(result.data);
-        status.className='status-msg success';
-        status.textContent='Login successful! Redirecting…';
-        setTimeout(function(){ location.href='/pages/cat-facebook.html?feed=recommended'; }, 600);
-      })
-      .catch(function(){
-        status.className='status-msg error';
-        status.textContent='Network error. Is the backend running on port 3000?';
-      });
+    status.className='status-msg success'; status.textContent='Login successful! Redirecting…';
+    setTimeout(function(){ location.href='index.html'; }, 1000);
   };
 
+  // Demo signup
   document.getElementById('signup-btn').onclick = function(){
-    var name = document.getElementById('reg-name').value.trim();
-    var email = document.getElementById('reg-email').value.trim();
-    var password = document.getElementById('reg-password').value;
-    var agree = document.getElementById('reg-agree').checked;
     var status = document.getElementById('signup-status');
-    var isOwner = roleAdopt.classList.contains('selected');
-    if (!name) { status.className='status-msg error'; status.textContent='Please enter a nickname.'; return; }
-    if (!email) { status.className='status-msg error'; status.textContent='Please enter your email.'; return; }
-    if (!password || password.length < 6) { status.className='status-msg error'; status.textContent='Password must be at least 6 characters.'; return; }
-    if (!agree) { status.className='status-msg error'; status.textContent='Please agree to the terms.'; return; }
-    if (isOwner) {
-      status.className='status-msg error';
-      status.textContent='Cat-owner signup with face photo is not available in this form yet. Choose “I want to adopt” or use the legacy flow.';
-      return;
-    }
-    status.className='status-msg'; status.textContent='Creating account…';
-    fetch(API_BASE_URL + "/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: email,
-        password: password,
-        username: name,
-        display_name: name,
-        role: "user"
-      })
-    })
-      .then(function(res){ return res.json(); })
-      .then(function(result){
-        if (!result.success || !result.data) {
-          status.className='status-msg error';
-          status.textContent = result.message || 'Sign up failed.';
-          return;
-        }
-        saveAuth(result.data);
-        status.className='status-msg success';
-        status.textContent='Welcome to CatFace! Redirecting…';
-        setTimeout(function(){ location.href='/pages/cat-facebook.html?feed=recommended'; }, 600);
-      })
-      .catch(function(){
-        status.className='status-msg error';
-        status.textContent='Network error. Is the backend running on port 3000?';
-      });
+    status.className='status-msg success'; status.textContent='Account created! Welcome to CatFace!';
+    setTimeout(function(){ location.href='index.html'; }, 1200);
   };
 </script>
 </body>
