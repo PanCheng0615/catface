@@ -1,33 +1,48 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# macOS / editor
+.DS_Store
+.idea/
+.vscode/
 
-# Environment variables (contains secrets - NEVER commit)
+# Python virtual environments
+.venv/
+venv/
+env/
+**/.venv/
+**/venv/
+backend/.venv-catface-id/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
+node_modules/
+
+# Environment files
 .env
 .env.local
 .env.*.local
 
-# Build outputs
-dist/
-build/
+# Large model weights and binary ML artifacts
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.bin
+*.safetensors
+*.joblib
+*.pkl
 
-# OS files
+# Local data / generated assets
+*.part
+*.tmp
+*.temp
+backend/.venv-catface-id/
+.venv/
+venv/
+__pycache__/
+*.pyc
 .DS_Store
-Thumbs.db
-
-# Editor
-.vscode/
-.idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-
-# Logs
-logs/
-*.log
-
-# Prisma
-prisma/migrations/
+node_modules/
