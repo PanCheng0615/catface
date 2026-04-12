@@ -1,54 +1,58 @@
-require('dotenv').config();
-process.env.TZ = process.env.TZ || 'Asia/Shanghai';
-
+// backend/src/server.js
 const express = require('express');
 const cors = require('cors');
-const authRoutes = require('./routes/auth.routes');
-const usersRoutes = require('./routes/users.routes');
-const catsRoutes = require('./routes/cats.routes');
-const adoptionRoutes = require('./routes/adoption.routes');
-const communityRoutes = require('./routes/community.routes');
-const notificationsRoutes = require('./routes/notifications.routes');
+const dotenv = require('dotenv');
+const path = require('path');
+
+dotenv.config(); // 读取 .env（如果有）
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '15mb' }));
 
-app.get('/health', (req, res) => {
-  res.json({ success: true, data: { ok: true }, message: 'ok' });
-});
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, data: { ok: true }, message: 'ok' });
-});
+// 本地上传文件（健康/诊所附件）：/uploads/<filename>
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/cats', catsRoutes);
-app.use('/api/adoption', adoptionRoutes);
-app.use('/api/community', communityRoutes);
-app.use('/api/notifications', notificationsRoutes);
+const authRouter = require('./routes/auth.routes');
+const usersRouter = require('./routes/users.routes');
+const chatRouter = require('./routes/chat.routes');
+const rescueRouter = require('./routes/rescue.routes');
+const communityRouter = require('./routes/community.routes');
+const notificationsRouter = require('./routes/notifications.routes');
+const catsRouter = require('./routes/cats.routes');
+const adoptionRouter = require('./routes/adoption.routes');
 
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'NotFound',
-    message: '接口不存在'
+// Member 5 — 机构、领养活动、健康、诊所
+const orgRouter = require('./routes/organization.routes');
+const eventRouter = require('./routes/event.routes');
+const healthRouter = require('./routes/health.routes');
+const clinicRouter = require('./routes/clinic.routes');
+
+app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/chat', chatRouter);
+app.use('/api/rescue', rescueRouter);
+app.use('/api/community', communityRouter);
+app.use('/api/notifications', notificationsRouter);
+app.use('/api/cats', catsRouter);
+app.use('/api/adoption', adoptionRouter);
+
+app.use('/api/organizations', orgRouter);
+app.use('/api/events', eventRouter);
+app.use('/api/health', healthRouter);
+app.use('/api/clinic', clinicRouter);
+
+// 测试接口：确认服务器能跑
+app.get('/api/healthcheck', (req, res) => {
+  res.json({
+    success: true,
+    data: 'OK',
+    message: 'Server is running'
   });
 });
 
-app.use((err, req, res, next) => {
-  if (err && err.type === 'entity.too.large') {
-    return res.status(413).json({
-      success: false,
-      error: 'PayloadTooLarge',
-      message: '图片过大，请选择更小的图片后重试'
-    });
-  }
-  return next(err);
-});
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
