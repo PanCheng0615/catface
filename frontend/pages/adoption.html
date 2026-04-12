@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,10 +13,11 @@
       --border: #EAD9C4; --border-light: #F3E8D8; --like-color: #E05B73;
       --radius-lg: 16px; --radius-md: 12px; --radius-sm: 8px;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    html { scrollbar-gutter: stable; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased; }
     a { color: inherit; text-decoration: none; }
     button { font: inherit; cursor: pointer; }
-    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; height: 100vh; }
 
     /* LEFT NAV */
     .left-nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; background: var(--surface); border-right: 1px solid var(--border); }
@@ -47,7 +48,7 @@
     .nav-user-more { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
 
     /* CENTER */
-    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; display: flex; flex-direction: column; }
+    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; height: 100vh; display: flex; flex-direction: column; overflow-y: auto; scrollbar-gutter: stable; }
     .center-header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); padding: 16px 20px; }
     .center-header h2 { font-size: 18px; font-weight: 800; }
     .center-header p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
@@ -91,7 +92,6 @@
     .liked-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
     .liked-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,.04); transition: box-shadow .15s; }
     .liked-item:hover { box-shadow: 0 4px 14px rgba(0,0,0,.09); }
-    .liked-item-img { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
     .liked-item-info { flex: 1; min-width: 0; }
     .liked-item-name { font-size: 14px; font-weight: 700; }
     .liked-item-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
@@ -103,8 +103,10 @@
     .right-panel::-webkit-scrollbar { display: none; }
     .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
     .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
-    .rp-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+    .rp-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); transition: background .15s; }
     .rp-row:last-child { border-bottom: none; }
+    .rp-row[data-id] { cursor: pointer; }
+    .rp-row[data-id]:hover { background: var(--surface-2); }
     .rp-row-img { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: var(--brand-light); }
     .rp-row-info { flex: 1; }
     .rp-row-name { font-size: 13px; font-weight: 700; }
@@ -168,7 +170,7 @@
     <div class="nav-section">
       <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
       <div class="nav-link active"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
-      <div class="nav-link" onclick="location.href='/pages/notifications.html'"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge">3</span></div>
+      <div class="nav-link" onclick="location.href='/pages/notifications.html'"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
       <div class="nav-link" onclick="location.href='/pages/account.html'"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
       <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
     </div>
@@ -304,13 +306,13 @@
     </div>
     <div class="rp-card">
       <div class="rp-card-title">&#x1F4CB; Recently Available</div>
-      <div class="rp-row"><img class="rp-row-img" src="../assets/adoption/luno-blep.png" alt="Luno"><div class="rp-row-info"><div class="rp-row-name">Luno</div><div class="rp-row-sub">3 mo · Male · Heterochromia</div></div><span class="rp-row-badge">New</span></div>
-      <div class="rp-row"><img class="rp-row-img" src="../assets/adoption/orange-cage.png" alt="Marmalade"><div class="rp-row-info"><div class="rp-row-name">Marmalade 小橘</div><div class="rp-row-sub">~4 mo · Female · UM foster</div></div><span class="rp-row-badge">New</span></div>
-      <div class="rp-row"><img class="rp-row-img" src="../assets/adoption/luna-hetero.png" alt="Luna"><div class="rp-row-info"><div class="rp-row-name">Luna</div><div class="rp-row-sub">3 mo · Female · Unique eyes</div></div><span class="rp-row-badge">New</span></div>
-      <div class="rp-row"><img class="rp-row-img" src="../assets/adoption/tabby-white.png" alt="Bean"><div class="rp-row-info"><div class="rp-row-name">Bean 豆豆</div><div class="rp-row-sub">3 mo · Male · Tabby &amp; white</div></div><span class="rp-row-badge">New</span></div>
-      <div class="rp-row"><img class="rp-row-img" src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=100&q=80" alt="Orange"><div class="rp-row-info"><div class="rp-row-name">Orange</div><div class="rp-row-sub">1 yr · Male · Friendly</div></div><span class="rp-row-badge">New</span></div>
-      <div class="rp-row"><img class="rp-row-img" src="https://images.unsplash.com/photo-1517331156700-3c241d2b4d83?w=100&q=80" alt="Snow"><div class="rp-row-info"><div class="rp-row-name">Snow</div><div class="rp-row-sub">1 month · Female · Persian</div></div><span class="rp-row-badge">New</span></div>
-      <div class="rp-row"><img class="rp-row-img" src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=100&q=80" alt="Whiskers"><div class="rp-row-info"><div class="rp-row-name">Whiskers</div><div class="rp-row-sub">8 yrs · Female · Senior</div></div><span class="rp-row-badge">&#x2665; Senior</span></div>
+      <div class="rp-row" data-id="um_luno"><img class="rp-row-img" src="../assets/adoption/luno-blep.png" alt="Luno"><div class="rp-row-info"><div class="rp-row-name">Luno</div><div class="rp-row-sub">3 mo · Male · Heterochromia</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row" data-id="um_marmalade"><img class="rp-row-img" src="../assets/adoption/orange-cage.png" alt="Marmalade"><div class="rp-row-info"><div class="rp-row-name">Marmalade 小橘</div><div class="rp-row-sub">~4 mo · Female · UM foster</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row" data-id="um_luna"><img class="rp-row-img" src="../assets/adoption/luna-hetero.png" alt="Luna"><div class="rp-row-info"><div class="rp-row-name">Luna</div><div class="rp-row-sub">3 mo · Female · Unique eyes</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row" data-id="um_bean"><img class="rp-row-img" src="../assets/adoption/tabby-white.png" alt="Bean"><div class="rp-row-info"><div class="rp-row-name">Bean 豆豆</div><div class="rp-row-sub">3 mo · Male · Tabby &amp; white</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row" data-id="orange"><img class="rp-row-img" src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=100&q=80" alt="Orange"><div class="rp-row-info"><div class="rp-row-name">Orange</div><div class="rp-row-sub">1 yr · Male · Friendly</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row" data-id="snow"><img class="rp-row-img" src="https://images.unsplash.com/photo-1517331156700-3c241d2b4d83?w=100&q=80" alt="Snow"><div class="rp-row-info"><div class="rp-row-name">Snow</div><div class="rp-row-sub">1 month · Female · Persian</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row" data-id="whiskers"><img class="rp-row-img" src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=100&q=80" alt="Whiskers"><div class="rp-row-info"><div class="rp-row-name">Whiskers</div><div class="rp-row-sub">8 yrs · Female · Senior</div></div><span class="rp-row-badge">&#x2665; Senior</span></div>
     </div>
     <div class="rescue-card">
       <span class="rescue-icon">&#x1F691;</span>
@@ -353,6 +355,12 @@
 
 <script>
 (function(){
+  function resolveCatImg(src) {
+    if (!src) return '';
+    if (/^(https?:)?\/\//i.test(src) || src.indexOf('../') === 0) return src;
+    return '../' + src.replace(/^\.?\//, '');
+  }
+
   var cats = {
     um_luno:      { name:'Luno', org:'University of Macau (UM) Cat Care', img:'assets/adoption/luno-blep.png', age:'3 months', gender:'Male', breed:'Tabby & white (heterochromia)', neuter:'Pending age', vaccine:'In progress', found:'UM campus', note:'Quiet and curious; one blue eye and one amber. Loves pets and treats. Deworming completed.' },
     um_marmalade: { name:'Marmalade 小橘', org:'University of Macau (UM) Cat Care', img:'assets/adoption/orange-cage.png', age:'~4 months', gender:'Female', breed:'Orange & white tabby', neuter:'Pending', vaccine:'In progress', found:'UM foster / temp cage', note:'Bright orange markings with white chest; calm in foster. Looking for a stable indoor home.' },
@@ -395,14 +403,14 @@
     likedCount.textContent=liked.length;
     likedList.innerHTML='<div class="liked-grid">'+liked.map(function(cid){
       var c=cats[cid];
-      return '<div class="liked-item"><img class="liked-item-img" src="'+c.img+'" alt="'+c.name+'"><div class="liked-item-info"><div class="liked-item-name">'+c.name+'</div><div class="liked-item-sub">'+c.age+' · '+c.gender+'</div></div><button class="liked-item-btn" onclick="openProfile(\''+cid+'\')">View</button></div>';
+      return '<div class="liked-item"><div class="liked-item-info"><div class="liked-item-name">'+c.name+'</div><div class="liked-item-sub">'+c.age+' · '+c.gender+'</div></div><button class="liked-item-btn" onclick="openProfile(\''+cid+'\')">View</button></div>';
     }).join('')+'</div>';
   }
 
   window.openProfile = function(id){
     var cat=cats[id];
     active=id;
-    document.getElementById('profileImg').src=cat.img;
+    document.getElementById('profileImg').src=resolveCatImg(cat.img);
     document.getElementById('profileName').textContent=cat.name;
     document.getElementById('profileOrg').textContent='Rescue: '+cat.org;
     document.getElementById('profileNote').textContent=cat.note;
@@ -445,6 +453,12 @@
     openProfile(card.dataset.id);
   });
 
+  document.querySelectorAll('.rp-row[data-id]').forEach(function(row){
+    row.addEventListener('click', function(){
+      openProfile(row.dataset.id);
+    });
+  });
+
   // Drag support
   (function(){
     var startX, startTime, dragging=false, moved=false;
@@ -472,6 +486,27 @@
     });
   })();
 })();
+</script>
+<script>
+  (function () {
+    var user = null;
+    try {
+      user = JSON.parse(localStorage.getItem('catface_user') || 'null');
+    } catch (e) {}
+    var unreadCount = 0;
+    try {
+      var badgeCountKey = 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
+      unreadCount = Math.max(0, parseInt(localStorage.getItem(badgeCountKey) || '0', 10) || 0);
+    } catch (e) {}
+    document.querySelectorAll('[data-notif-badge]').forEach(function (badge) {
+      if (unreadCount <= 0) {
+        badge.style.display = 'none';
+      } else {
+        badge.style.display = '';
+        badge.textContent = String(unreadCount);
+      }
+    });
+  })();
 </script>
 </body>
 </html>

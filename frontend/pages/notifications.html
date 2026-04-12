@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,9 +13,10 @@
       --border: #EAD9C4; --border-light: #F3E8D8; --like-color: #E05B73;
       --radius-lg: 16px; --radius-md: 12px; --radius-sm: 8px;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    html { scrollbar-gutter: stable; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased; }
     a { color: inherit; text-decoration: none; } button { font: inherit; cursor: pointer; }
-    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; height: 100vh; }
 
     /* ── LEFT NAV ── */
     .left-nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; background: var(--surface); border-right: 1px solid var(--border); }
@@ -44,22 +45,24 @@
     .nav-user-more { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
 
     /* ── CENTER ── */
-    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; height: 100vh; display: flex; flex-direction: column; overflow: hidden; position: relative; scrollbar-gutter: stable; }
 
     /* Notification list view */
     #view-list { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-    .list-header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); display: flex; flex-shrink: 0; }
-    .ntab { flex: 1; padding: 15px 0; text-align: center; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; transition: color .2s, border-color .2s; }
-    .ntab.active { color: var(--brand); border-bottom-color: var(--brand); }
     .list-scroll { overflow-y: auto; flex: 1; }
     .notif-summary { display: grid; grid-template-columns: repeat(3,1fr); border-bottom: 1px solid var(--border); }
-    .summary-card { padding: 16px 10px; text-align: center; border-right: 1px solid var(--border); }
+    .summary-card { padding: 16px 10px; text-align: center; border-right: 1px solid var(--border); cursor: pointer; transition: background .15s, color .15s; }
     .summary-card:last-child { border-right: none; }
+    .summary-card:hover { background: var(--surface-2); }
+    .summary-card.is-active { background: var(--brand-light); }
     .summary-icon { font-size: 26px; margin-bottom: 4px; }
     .summary-num { font-size: 22px; font-weight: 800; color: var(--brand); }
     .summary-label { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
     .mark-btn { margin: 12px 16px 4px; padding: 9px 18px; border-radius: 99px; border: 1.5px solid var(--border); background: none; color: var(--text-sub); font-size: 13px; font-weight: 700; display: inline-block; }
     .mark-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .list-actions { display: flex; gap: 8px; padding: 0 16px 10px; flex-wrap: wrap; }
+    .list-chip { border: 1.5px solid var(--border); background: #fff; color: var(--text-sub); padding: 8px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .list-chip:hover { border-color: var(--brand); color: var(--brand); }
     .date-div { padding: 8px 16px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; background: var(--bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
     .date-div:first-child { border-top: none; }
     .notif-item { display: flex; gap: 11px; padding: 14px 16px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background .15s; position: relative; align-items: center; }
@@ -73,6 +76,35 @@
     .notif-time { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
     .notif-thumb { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: var(--brand-light); }
     .notif-chevron { color: var(--text-muted); font-size: 14px; flex-shrink: 0; }
+    .loading-state, .empty-state { padding: 28px 20px; color: var(--text-muted); font-size: 14px; text-align: center; }
+    .activity-card, .social-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .activity-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border-light); }
+    .activity-avatar { width: 48px; height: 48px; border-radius: 50%; overflow: hidden; background: var(--brand-light); border: 2px solid var(--border); display: grid; place-items: center; color: var(--brand); font-weight: 800; }
+    .activity-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .activity-title { font-size: 15px; font-weight: 800; }
+    .activity-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .activity-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+    .activity-copy { font-size: 14px; line-height: 1.7; color: var(--text-sub); }
+    .activity-preview { padding: 14px 16px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--border-light); font-size: 14px; line-height: 1.65; color: var(--text); }
+    .activity-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .secondary-btn { border: 1.5px solid var(--border); background: #fff; color: var(--text-sub); padding: 9px 16px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+    .secondary-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .primary-btn { border: none; background: var(--brand); color: #fff; padding: 9px 16px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+    .primary-btn:hover { background: var(--brand-hover); }
+    .social-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border-light); }
+    .social-switch { display: inline-flex; gap: 6px; padding: 4px; background: var(--surface-2); border: 1px solid var(--border-light); border-radius: 999px; }
+    .social-switch button { border: none; background: transparent; padding: 8px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--text-muted); }
+    .social-switch button.is-active { background: #fff; color: var(--brand); box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+    .social-list { display: flex; flex-direction: column; }
+    .social-user { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border-light); }
+    .social-user:last-child { border-bottom: none; }
+    .social-user-avatar { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: var(--brand-light); border: 2px solid var(--border); display: grid; place-items: center; color: var(--brand); font-weight: 800; flex-shrink: 0; }
+    .social-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .social-user-info { flex: 1; min-width: 0; }
+    .social-user-name { font-size: 14px; font-weight: 800; color: var(--text); }
+    .social-user-handle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .social-user-bio { font-size: 12px; color: var(--text-sub); margin-top: 4px; line-height: 1.5; }
+    .social-user-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
     /* ── Detail view (full center column) ── */
     #view-detail { display: none; flex-direction: column; flex: 1; overflow: hidden; }
@@ -184,7 +216,7 @@
     <div class="nav-section">
       <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
       <div class="nav-link" onclick="location.href='/pages/adoption.html'"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
-      <div class="nav-link active"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge">3</span></div>
+      <div class="nav-link active"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" id="notifNavBadge" style="display:none;"></span></div>
       <div class="nav-link" onclick="location.href='/pages/account.html'"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
       <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
     </div>
@@ -201,97 +233,19 @@
 
     <!-- View: Notification List -->
     <div id="view-list">
-      <div class="list-header">
-        <div class="ntab active" data-filter="all">All</div>
-        <div class="ntab" data-filter="like">Likes</div>
-        <div class="ntab" data-filter="comment">Comments</div>
-        <div class="ntab" data-filter="follow">Follows</div>
-      </div>
       <div class="list-scroll">
         <div class="notif-summary">
-          <div class="summary-card"><div class="summary-icon">&#x2665;&#xFE0F;</div><div class="summary-num">127</div><div class="summary-label">Likes</div></div>
-          <div class="summary-card"><div class="summary-icon">&#x1F4AC;</div><div class="summary-num">43</div><div class="summary-label">Comments</div></div>
-          <div class="summary-card"><div class="summary-icon">&#x1F465;</div><div class="summary-num">18</div><div class="summary-label">Followers</div></div>
+          <div class="summary-card" id="summaryLikes"><div class="summary-icon">&#x2665;&#xFE0F;</div><div class="summary-num" id="summaryLikesCount">0</div><div class="summary-label">Likes</div></div>
+          <div class="summary-card" id="summaryComments"><div class="summary-icon">&#x1F4AC;</div><div class="summary-num" id="summaryCommentsCount">0</div><div class="summary-label">Comments</div></div>
+          <div class="summary-card" id="summaryFollowers"><div class="summary-icon">&#x1F465;</div><div class="summary-num" id="summaryFollowersCount">0</div><div class="summary-label">Followers</div></div>
         </div>
-        <button class="mark-btn">Mark all as read</button>
-
-        <div class="date-div">TODAY</div>
-
-        <div class="notif-item unread" data-id="n1">
-          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=80&q=80" alt="Mochi"></div>
-          <div class="notif-content">
-            <div class="notif-text"><strong>Mochi</strong> liked your post "My cat's morning routine &#x1F305;"</div>
-            <div class="notif-time">2 minutes ago</div>
-          </div>
-          <span class="notif-chevron">›</span>
+        <button class="mark-btn" id="markAllReadBtn">Mark all as read</button>
+        <div class="list-actions">
+          <button class="list-chip" type="button" id="viewFollowersBtn">View followers</button>
+          <button class="list-chip" type="button" id="viewFollowingBtn">View following</button>
+          <button class="list-chip" type="button" id="openFollowingFeedBtn">Open Following feed</button>
         </div>
-
-        <div class="notif-item unread" data-id="n2">
-          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=80&q=80" alt="Luna"></div>
-          <div class="notif-content">
-            <div class="notif-text"><strong>Luna</strong> commented: "So cute!! My cat does the same thing every morning &#x1F602;"</div>
-            <div class="notif-time">15 minutes ago</div>
-          </div>
-          <span class="notif-chevron">›</span>
-        </div>
-
-        <div class="notif-item unread" data-id="n3">
-          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=80&q=80" alt="Simba"></div>
-          <div class="notif-content">
-            <div class="notif-text"><strong>Simba</strong> started following you</div>
-            <div class="notif-time">1 hour ago</div>
-          </div>
-          <span class="notif-chevron">›</span>
-        </div>
-
-        <div class="date-div">YESTERDAY</div>
-
-        <div class="notif-item" data-id="n4">
-          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=80&q=80" alt="Nala"></div>
-          <div class="notif-content">
-            <div class="notif-text"><strong>Nala</strong> and <strong>3 others</strong> liked your photo</div>
-            <div class="notif-time">Yesterday at 3:42 PM</div>
-          </div>
-          <span class="notif-chevron">›</span>
-        </div>
-
-        <div class="notif-item" data-id="n5">
-          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=80&q=80" alt="Whiskers"></div>
-          <div class="notif-content">
-            <div class="notif-text"><strong>Whiskers</strong> replied to your comment: "Thanks for the advice! My vet was really helpful too."</div>
-            <div class="notif-time">Yesterday at 11:20 AM</div>
-          </div>
-          <span class="notif-chevron">›</span>
-        </div>
-
-        <div class="date-div">MARCH 22</div>
-
-        <div class="notif-item" data-id="n7">
-          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=80&q=80" alt="Bella"></div>
-          <div class="notif-content">
-            <div class="notif-text"><strong>Bella</strong> and <strong>12 others</strong> liked your post "Adoption success story!"</div>
-            <div class="notif-time">March 22 at 6:18 PM</div>
-          </div>
-          <span class="notif-chevron">›</span>
-        </div>
-
-        <div class="notif-item" data-id="n8">
-          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1548802673-380ab8ebc7b7?w=80&q=80" alt="Oscar"></div>
-          <div class="notif-content">
-            <div class="notif-text"><strong>Oscar</strong> commented: "Congratulations!! This is the most heartwarming thing &#x1F97A;"</div>
-            <div class="notif-time">March 22 at 5:44 PM</div>
-          </div>
-          <span class="notif-chevron">›</span>
-        </div>
-
-        <div class="notif-item" data-id="n9">
-          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=80&q=80" alt="Nala"></div>
-          <div class="notif-content">
-            <div class="notif-text"><strong>Nala</strong> started following you</div>
-            <div class="notif-time">March 22 at 3:10 PM</div>
-          </div>
-          <span class="notif-chevron">›</span>
-        </div>
+        <div id="notifList"></div>
       </div>
     </div>
 
@@ -310,98 +264,363 @@
   <aside class="right-panel">
     <div class="rp-card">
       <div class="rp-title">&#x1F4CA; This Week</div>
-      <div class="rp-row"><div class="rp-icon" style="background:#fff0f3;">&#x2665;&#xFE0F;</div><div class="rp-info"><strong>Likes received</strong><span>+127 total</span></div><div class="rp-num">127</div></div>
-      <div class="rp-row"><div class="rp-icon" style="background:#f0fdf4;">&#x1F4AC;</div><div class="rp-info"><strong>New comments</strong><span>43 replies</span></div><div class="rp-num">43</div></div>
-      <div class="rp-row"><div class="rp-icon" style="background:#eff6ff;">&#x1F465;</div><div class="rp-info"><strong>New followers</strong><span>This month</span></div><div class="rp-num">18</div></div>
+      <div class="rp-row"><div class="rp-icon" style="background:#fff0f3;">&#x2665;&#xFE0F;</div><div class="rp-info"><strong>Likes received</strong><span>Dynamic activity</span></div><div class="rp-num" id="weekLikes">0</div></div>
+      <div class="rp-row"><div class="rp-icon" style="background:#f0fdf4;">&#x1F4AC;</div><div class="rp-info"><strong>New comments</strong><span>Dynamic activity</span></div><div class="rp-num" id="weekComments">0</div></div>
+      <div class="rp-row"><div class="rp-icon" style="background:#eff6ff;">&#x1F465;</div><div class="rp-info"><strong>New followers</strong><span>Current followers</span></div><div class="rp-num" id="weekFollowers">0</div></div>
     </div>
     <div class="rp-card">
       <div class="rp-title">&#x1F43E; Follow Back</div>
-      <div class="fr-row"><div class="fr-avatar"><img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=80&q=80" alt="Simba"></div><div class="fr-info"><div class="fr-name">Simba</div><div class="fr-sub">Followed you · 1h ago</div></div><button class="fr-btn">Follow</button></div>
-      <div class="fr-row"><div class="fr-avatar"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=80&q=80" alt="Nala"></div><div class="fr-info"><div class="fr-name">Nala</div><div class="fr-sub">Followed you · Mar 22</div></div><button class="fr-btn">Follow</button></div>
+      <div id="followBackList"></div>
+    </div>
+    <div class="rp-card">
+      <div class="rp-title">&#x1F9F5; You Follow</div>
+      <div id="followingList"></div>
     </div>
   </aside>
 </div>
 
+<script src="../js/config.js"></script>
 <script>
 (function () {
-  var DATA = {
-    n1: { type: 'post', title: 'Mochi liked your post',
-      post: { name: 'Mochi', handle: '@mochi_cat', avatar: 'https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=80&q=80', time: '3h ago', tag: '&#x1F3E0; Adoption', text: 'After 3 months in the shelter, I finally found my forever home! &#x1F970; My new family is the absolute best — warm bed, endless cuddles, humans who understand me.', img: 'https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=800&q=80', likes: 15302, liked: true, commentCount: 3 },
-      comments: [
-        { name: 'Luna', avatar: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=80&q=80', text: 'Congratulations Mochi!!! You deserve the best forever home &#x1F97A;', time: '2h ago', likes: 284, hi: false },
-        { name: 'Simba', avatar: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=80&q=80', text: 'This made my human cry happy tears. Welcome home! &#x1F3E0;', time: '2h ago', likes: 196, hi: false },
-        { name: 'You', avatar: '', text: 'Thank you all so much!! &#x2665;', time: '1h ago', likes: 44, hi: false }
-      ]
-    },
-    n2: { type: 'post', title: 'Luna commented on your post',
-      post: { name: 'You', handle: '@LV001', avatar: '', time: 'Today', tag: '&#x1F305; Daily', text: 'Good morning everyone! My cat woke me up at 5am again by sitting on my face. Worth it for the purring though &#x1F60A;', img: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&q=80', likes: 342, liked: false, commentCount: 2 },
-      comments: [
-        { name: 'Luna', avatar: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=80&q=80', text: 'So cute!! My cat does the same thing every morning &#x1F602; they just KNOW', time: '15 min ago', likes: 18, hi: true },
-        { name: 'Whiskers', avatar: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=80&q=80', text: '5am is the perfect time to sit on a human face. This is cat science.', time: '10 min ago', likes: 31, hi: false }
-      ]
-    },
-    n3: { type: 'profile', title: 'Simba started following you',
-      user: { name: 'Simba', handle: '@simba_chaotic', avatar: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=80&q=80', bio: 'Professional abstract artist. My medium is knocked-over beverages. My human still doesn\'t appreciate my genius.', followers: '7.2k', following: '142', posts: '86' },
-      recentPosts: [
-        { text: 'I knocked over my human\'s coffee… again. It\'s called abstract art. You wouldn\'t understand.', time: 'Yesterday' },
-        { text: 'The screaming was part of the installation. A truly immersive experience for my human.', time: '2 days ago' }
-      ]
-    },
-    n4: { type: 'post', title: 'Nala and 3 others liked your photo',
-      post: { name: 'You', handle: '@LV001', avatar: '', time: 'Yesterday', tag: '&#x1FA7A; Health', text: 'Just got back from the vet! Everything looks great &#x1F4CB; so relieved. Annual checkup done and all numbers are perfect.', img: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&q=80', likes: 4, liked: false, commentCount: 1 },
-      comments: [
-        { name: 'Nala', avatar: 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=80&q=80', text: 'So glad everything is good!! &#x1F97A; healthy cats are the best', time: 'Yesterday', likes: 8, hi: false }
-      ]
-    },
-    n5: { type: 'post', title: 'Whiskers replied to your comment',
-      post: { name: 'Whiskers', handle: '@whiskers_wise', avatar: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=80&q=80', time: '3 days ago', tag: '&#x1FA7A; Health', text: 'Annual checkup done! Vet says I\'m super healthy. Mom cried a little from relief (I definitely didn\'t see that).', img: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&q=80', likes: 872, liked: false, commentCount: 2 },
-      comments: [
-        { name: 'You', avatar: '', text: 'This is the best news! Always a relief to hear good health news from the vet &#x1F4AA;', time: 'Yesterday', likes: 12, hi: false },
-        { name: 'Whiskers', avatar: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=80&q=80', text: 'Thanks for the advice! My vet was really helpful too. She explained everything so clearly.', time: 'Yesterday at 11:20 AM', likes: 9, hi: true }
-      ]
-    },
-    n7: { type: 'post', title: 'Bella and 12 others liked your post',
-      post: { name: 'You', handle: '@LV001', avatar: '', time: 'March 22', tag: '&#x1F3E0; Adoption', text: 'Adoption success story! After months of waiting, Orange finally found his forever home &#x1F970; So proud of this brave little guy. He was so shy at first, now he runs to the door every day to greet his new family.', img: 'https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=800&q=80', likes: 13, liked: false, commentCount: 2 },
-      comments: [
-        { name: 'Bella', avatar: 'https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=80&q=80', text: 'This is the most wholesome thing I\'ve seen all week!! &#x1F97A;&#x1F97A;', time: 'March 22', likes: 47, hi: false },
-        { name: 'Oscar', avatar: 'https://images.unsplash.com/photo-1548802673-380ab8ebc7b7?w=80&q=80', text: 'Congratulations!! This is the most heartwarming thing &#x1F97A; wishing Orange and his family all the love', time: 'March 22', likes: 38, hi: false }
-      ]
-    },
-    n8: { type: 'post', title: 'Oscar commented on your post',
-      post: { name: 'You', handle: '@LV001', avatar: '', time: 'March 22', tag: '&#x1F3E0; Adoption', text: 'Adoption success story! After months of waiting, Orange finally found his forever home &#x1F970; So proud of this brave little guy.', img: 'https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=800&q=80', likes: 13, liked: false, commentCount: 2 },
-      comments: [
-        { name: 'Oscar', avatar: 'https://images.unsplash.com/photo-1548802673-380ab8ebc7b7?w=80&q=80', text: 'Congratulations!! This is the most heartwarming thing &#x1F97A; wishing Orange and his family all the love', time: 'March 22 at 5:44 PM', likes: 38, hi: true },
-        { name: 'Bella', avatar: 'https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=80&q=80', text: 'This is the most wholesome thing I\'ve seen all week!! &#x1F97A;&#x1F97A;', time: 'March 22', likes: 47, hi: false }
-      ]
-    },
-    n9: { type: 'profile', title: 'Nala started following you',
-      user: { name: 'Nala', handle: '@nala_kitten', avatar: 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=80&q=80', bio: 'Just turned 3 months old! Still figuring out the whole "walking gracefully" thing. Available for adoption &#x1F3E0;', followers: '3.4k', following: '89', posts: '24' },
-      recentPosts: [
-        { text: 'I just turned 3 months old today! &#x1F382; My human says I\'ve grown so much she can barely believe it.', time: '2 days ago' },
-        { text: 'Discovered the sunbeam by the window today. This is my spot now. Humans may not enter.', time: '1 week ago' }
-      ]
-    }
+  var viewList = document.getElementById('view-list');
+  var viewDetail = document.getElementById('view-detail');
+  var detailTitle = document.getElementById('detailTitle');
+  var detailContent = document.getElementById('detailContent');
+  var backBtn = document.getElementById('backBtn');
+  var markAllReadBtn = document.getElementById('markAllReadBtn');
+  var notifNavBadge = document.getElementById('notifNavBadge');
+  var notifList = document.getElementById('notifList');
+  var viewFollowersBtn = document.getElementById('viewFollowersBtn');
+  var viewFollowingBtn = document.getElementById('viewFollowingBtn');
+  var openFollowingFeedBtn = document.getElementById('openFollowingFeedBtn');
+  var summaryLikes = document.getElementById('summaryLikes');
+  var summaryComments = document.getElementById('summaryComments');
+  var summaryFollowers = document.getElementById('summaryFollowers');
+  var state = {
+    notifications: [],
+    filter: 'all',
+    contentMode: 'notifications',
+    socialMode: 'followers',
+    followers: [],
+    following: []
   };
 
-  var viewList   = document.getElementById('view-list');
-  var viewDetail = document.getElementById('view-detail');
-  var detailTitle   = document.getElementById('detailTitle');
-  var detailContent = document.getElementById('detailContent');
-  var backBtn    = document.getElementById('backBtn');
+  function loadUser() {
+    try {
+      return JSON.parse(localStorage.getItem('catface_user') || 'null');
+    } catch (e) {
+      return null;
+    }
+  }
 
-  function showDetail(id) {
-    var d = DATA[id];
-    if (!d) return;
-    /* mark as read */
-    var el = document.querySelector('[data-id="' + id + '"]');
-    if (el) el.classList.remove('unread');
+  function getReadStorageKey() {
+    var user = loadUser();
+    return 'catface_notifications_read_v2_' + ((user && user.id) || 'guest');
+  }
 
-    detailTitle.textContent = d.title;
+  function getBadgeCountStorageKey() {
+    var user = loadUser();
+    return 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
+  }
+
+  function loadReadState() {
+    try {
+      var raw = localStorage.getItem(getReadStorageKey());
+      var parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveReadState(ids) {
+    try {
+      localStorage.setItem(getReadStorageKey(), JSON.stringify(ids));
+    } catch (e) {}
+  }
+
+  function markRead(ids) {
+    var merged = loadReadState().slice();
+    ids.forEach(function (id) {
+      if (merged.indexOf(id) === -1) merged.push(id);
+    });
+    saveReadState(merged);
+  }
+
+  function isRead(id) {
+    return loadReadState().indexOf(id) !== -1;
+  }
+
+  function requireLogin() {
+    if (typeof getToken === 'function' && getToken()) return true;
+    alert('Please log in first.');
+    window.location.href = '/pages/log-in.html';
+    return false;
+  }
+
+  function escapeHtml(text) {
+    return String(text || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function fetchJson(url, options) {
+    return fetch(url, options).then(function (res) {
+      if (res.status === 401) {
+        window.location.href = '/pages/log-in.html';
+        return null;
+      }
+      return res.json();
+    });
+  }
+
+  function avatarMarkup(url, name, className) {
+    var safeClass = className || '';
+    if (url) {
+      return '<div class="' + safeClass + '"><img src="' + escapeHtml(url) + '" alt=""></div>';
+    }
+    return '<div class="' + safeClass + '">' + escapeHtml((name || 'U').charAt(0).toUpperCase()) + '</div>';
+  }
+
+  function formatSectionLabel(iso) {
+    var d = iso ? new Date(iso) : null;
+    if (!d || Number.isNaN(d.getTime())) return 'Earlier';
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var diff = Math.round((today - day) / 86400000);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }).toUpperCase();
+  }
+
+  function formatHandle(username) {
+    return username ? '@' + username : '';
+  }
+
+  function getFilteredNotifications() {
+    return state.notifications.filter(function (item) {
+      return state.filter === 'all' || item.type === state.filter;
+    });
+  }
+
+  function updateUnreadUi() {
+    var unreadCount = state.notifications.filter(function (item) { return !isRead(item.id); }).length;
+    try {
+      localStorage.setItem(getBadgeCountStorageKey(), String(unreadCount));
+    } catch (e) {}
+    if (notifNavBadge) {
+      if (unreadCount > 0) {
+        notifNavBadge.style.display = '';
+        notifNavBadge.textContent = String(unreadCount);
+      } else {
+        notifNavBadge.style.display = 'none';
+      }
+    }
+    if (markAllReadBtn) {
+      markAllReadBtn.disabled = unreadCount === 0;
+      markAllReadBtn.style.opacity = unreadCount === 0 ? '.55' : '';
+      markAllReadBtn.style.cursor = unreadCount === 0 ? 'default' : '';
+    }
+  }
+
+  function renderSummary() {
+    var likeCount = state.notifications.filter(function (item) { return item.type === 'likes'; }).length;
+    var commentCount = state.notifications.filter(function (item) { return item.type === 'comments'; }).length;
+    var followerCount = state.followers.length;
+    document.getElementById('summaryLikesCount').textContent = String(likeCount);
+    document.getElementById('summaryCommentsCount').textContent = String(commentCount);
+    document.getElementById('summaryFollowersCount').textContent = String(followerCount);
+    document.getElementById('weekLikes').textContent = String(likeCount);
+    document.getElementById('weekComments').textContent = String(commentCount);
+    document.getElementById('weekFollowers').textContent = String(followerCount);
+    summaryLikes.classList.toggle('is-active', state.contentMode === 'notifications' && state.filter === 'likes');
+    summaryComments.classList.toggle('is-active', state.contentMode === 'notifications' && state.filter === 'comments');
+    summaryFollowers.classList.toggle('is-active', state.contentMode === 'social');
+  }
+
+  function renderNotificationList() {
+    state.contentMode = 'notifications';
+    var list = getFilteredNotifications();
+    if (!notifList) return;
+    if (!list.length) {
+      notifList.innerHTML = '<div class="empty-state">No activity yet for this tab.</div>';
+      updateUnreadUi();
+      renderSummary();
+      return;
+    }
+    var html = '';
+    var lastSection = '';
+    list.forEach(function (item) {
+      var section = formatSectionLabel(item.created_at);
+      if (section !== lastSection) {
+        html += '<div class="date-div">' + escapeHtml(section) + '</div>';
+        lastSection = section;
+      }
+      html +=
+        '<div class="notif-item' + (isRead(item.id) ? '' : ' unread') + '" data-id="' + escapeHtml(item.id) + '">' +
+          avatarMarkup(item.avatar_url, item.title, 'notif-avatar') +
+          '<div class="notif-content">' +
+            '<div class="notif-text"><strong>' + escapeHtml(item.title) + '</strong> ' + escapeHtml(item.detail) + '</div>' +
+            '<div class="notif-time">' + escapeHtml(item.time || '') + '</div>' +
+          '</div>' +
+          '<span class="notif-chevron">›</span>' +
+        '</div>';
+    });
+    notifList.innerHTML = html;
+    notifList.querySelectorAll('.notif-item[data-id]').forEach(function (itemEl) {
+      itemEl.addEventListener('click', function () {
+        var id = itemEl.getAttribute('data-id');
+        var item = state.notifications.find(function (n) { return n.id === id; });
+        if (item) showNotificationDetail(item);
+      });
+    });
+    updateUnreadUi();
+    renderSummary();
+  }
+
+  function renderInlineSocial(mode) {
+    state.contentMode = 'social';
+    state.socialMode = mode;
+    if (!notifList) return;
+    var list = mode === 'following' ? state.following : state.followers;
+    notifList.innerHTML =
+      '<div class="social-panel" style="margin:10px 16px 18px;">' +
+        '<div class="social-panel-head">' +
+          '<div class="social-switch">' +
+            '<button type="button" data-mode="followers"' + (mode === 'followers' ? ' class="is-active"' : '') + '>Followers</button>' +
+            '<button type="button" data-mode="following"' + (mode === 'following' ? ' class="is-active"' : '') + '>Following</button>' +
+          '</div>' +
+          '<button class="list-chip" type="button" id="openFeedInline">Open Following feed</button>' +
+        '</div>' +
+        '<div class="social-list">' + renderUserRows(list) + '</div>' +
+      '</div>';
+    notifList.querySelectorAll('.social-switch button[data-mode]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        renderInlineSocial(btn.getAttribute('data-mode'));
+      });
+    });
+    var openFeedInline = document.getElementById('openFeedInline');
+    if (openFeedInline) {
+      openFeedInline.addEventListener('click', function () {
+        window.location.href = '/pages/cat-facebook.html?feed=followed';
+      });
+    }
+    bindFollowButtons(notifList);
+    updateUnreadUi();
+    renderSummary();
+  }
+
+  function goToProfile(user) {
+    if (!user) return;
+    var query = 'author=' + encodeURIComponent(user.display_name || user.username || 'User');
+    if (user.id) query += '&authorId=' + encodeURIComponent(user.id);
+    window.location.href = '/pages/cat-profile.html?' + query;
+  }
+
+  function renderNotificationDetail(item) {
+    detailTitle.textContent = item.category || 'Notification';
     detailContent.innerHTML = '';
+    var scroll = document.createElement('div');
+    scroll.className = 'detail-scroll';
+    scroll.innerHTML =
+      '<div class="activity-card">' +
+        '<div class="activity-head">' +
+          avatarMarkup(item.avatar_url, item.title, 'activity-avatar') +
+          '<div style="flex:1;min-width:0;">' +
+            '<div class="activity-title">' + escapeHtml(item.title) + '</div>' +
+            '<div class="activity-sub">' + escapeHtml(item.time || '') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="activity-body">' +
+          '<div class="activity-copy">' + escapeHtml(item.detail) + '</div>' +
+          (item.post_preview ? '<div class="activity-preview">' + escapeHtml(item.post_preview) + '</div>' : '') +
+          (item.comment_text ? '<div class="activity-preview">' + escapeHtml(item.comment_text) + '</div>' : '') +
+          '<div class="activity-actions">' +
+            '<button class="primary-btn" type="button" id="openCommunityBtn">Open Community</button>' +
+            (item.actor_id ? '<button class="secondary-btn" type="button" id="openActorBtn">View Profile</button>' : '') +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    detailContent.appendChild(scroll);
+    var openCommunityBtn = document.getElementById('openCommunityBtn');
+    if (openCommunityBtn) {
+      openCommunityBtn.addEventListener('click', function () {
+        window.location.href = '/pages/cat-facebook.html';
+      });
+    }
+    var openActorBtn = document.getElementById('openActorBtn');
+    if (openActorBtn) {
+      openActorBtn.addEventListener('click', function () {
+        var targetUser = item.is_outgoing
+          ? {
+              id: item.target_user_id,
+              username: item.target_username,
+              display_name: item.target_username || 'User'
+            }
+          : {
+              id: item.actor_id,
+              username: item.actor_username,
+              display_name: item.title
+            };
+        goToProfile(targetUser);
+      });
+    }
+  }
 
-    if (d.type === 'post') renderPost(d);
-    else if (d.type === 'profile') renderProfile(d);
+  function renderUserRows(users) {
+    if (!users.length) return '<div class="empty-state">No users to show yet.</div>';
+    return users.map(function (user) {
+      return (
+        '<div class="social-user" data-user-id="' + escapeHtml(user.id) + '">' +
+          avatarMarkup(user.avatar_url, user.display_name || user.username, 'social-user-avatar') +
+          '<div class="social-user-info">' +
+            '<div class="social-user-name">' + escapeHtml(user.display_name || user.username || 'User') + '</div>' +
+            '<div class="social-user-handle">' + escapeHtml(formatHandle(user.username)) + '</div>' +
+            (user.bio ? '<div class="social-user-bio">' + escapeHtml(user.bio) + '</div>' : '') +
+            '<div class="social-user-meta">' + escapeHtml(user.created_at ? ('Connected ' + new Date(user.created_at).toLocaleDateString()) : '') + '</div>' +
+          '</div>' +
+          '<button class="' + (user.is_following ? 'secondary-btn' : 'primary-btn') + ' user-follow-btn" type="button" data-user-id="' + escapeHtml(user.id) + '">' +
+            (user.is_following ? 'Following' : 'Follow') +
+          '</button>' +
+        '</div>'
+      );
+    }).join('');
+  }
 
+  function bindFollowButtons(scope) {
+    scope.querySelectorAll('.user-follow-btn[data-user-id]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (!requireLogin()) return;
+        btn.disabled = true;
+        toggleFollow(btn.getAttribute('data-user-id')).finally(function () {
+          btn.disabled = false;
+        });
+      });
+    });
+    scope.querySelectorAll('.social-user[data-user-id]').forEach(function (row) {
+      row.addEventListener('click', function (e) {
+        if (e.target.closest('.user-follow-btn')) return;
+        var userId = row.getAttribute('data-user-id');
+        var user = state.followers.concat(state.following).find(function (item) { return item.id === userId; });
+        if (user) goToProfile(user);
+      });
+    });
+  }
+
+  function showSocialDetail(mode) {
+    showList();
+    renderInlineSocial(mode);
+  }
+
+  function showNotificationDetail(item) {
+    markRead([item.id]);
+    renderNotificationList();
+    renderNotificationDetail(item);
     viewList.style.display = 'none';
     viewDetail.classList.add('open');
     viewDetail.style.display = 'flex';
@@ -413,164 +632,159 @@
     viewList.style.display = 'flex';
   }
 
-  /* ── Post + comments view ── */
-  function renderPost(d) {
-    var p = d.post;
-    var av = p.avatar ? '<img src="' + p.avatar + '" alt="' + p.name + '">' : p.name.charAt(0);
-
-    /* scrollable area */
-    var scroll = document.createElement('div');
-    scroll.style.cssText = 'flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;';
-
-    scroll.innerHTML =
-      /* Post card */
-      '<div class="full-post">' +
-        '<div class="full-post-head">' +
-          '<div class="fph-avatar">' + av + '</div>' +
-          '<div style="flex:1;min-width:0;">' +
-            '<div class="fph-name">' + p.name + ' <span style="color:var(--text-muted);font-weight:400;font-size:12px;">' + p.handle + '</span></div>' +
-            '<div class="fph-time">' + p.time + '</div>' +
-          '</div>' +
-          '<span class="fph-tag">' + p.tag + '</span>' +
-        '</div>' +
-        '<p class="full-post-text">' + p.text + '</p>' +
-        (p.img ? '<img class="full-post-img" src="' + p.img + '" alt="">' : '') +
-        '<div class="full-post-actions">' +
-          '<button class="act-btn ' + (p.liked ? 'liked' : '') + '" id="likeBtn">' +
-            '<span>' + (p.liked ? '&#x2665;' : '&#x2661;') + '</span> ' + p.likes +
-          '</button>' +
-          '<button class="act-btn"><span>&#x1F4AC;</span> ' + p.commentCount + '</button>' +
-          '<button class="act-btn"><span>&#x1F501;</span></button>' +
-          '<button class="act-btn act-spacer"><span>&#x1F516;</span></button>' +
-        '</div>' +
-      '</div>' +
-      /* Comments */
-      '<div class="section-label">Comments</div>' +
-      '<div id="commentList" style="display:flex;flex-direction:column;gap:10px;">' +
-        (d.comments || []).map(function (c) {
-          var cav = c.avatar ? '<img src="' + c.avatar + '" alt="' + c.name + '">' : c.name.charAt(0);
-          return '<div class="comment-item">' +
-            '<div class="comment-avatar">' + cav + '</div>' +
-            '<div class="comment-bubble' + (c.hi ? ' highlighted' : '') + '">' +
-              '<div class="comment-name">' + c.name + '</div>' +
-              '<div class="comment-text">' + c.text + '</div>' +
-              '<div class="comment-footer">' +
-                '<span class="comment-time">' + c.time + '</span>' +
-                '<button class="comment-action" onclick="this.style.color=\'var(--like-color)\'">&#x2665; ' + c.likes + '</button>' +
-                '<button class="comment-action">Reply</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        }).join('') +
-      '</div>' +
-      '<div style="height:8px;"></div>';
-
-    detailContent.appendChild(scroll);
-
-    /* Like toggle */
-    scroll.querySelector('#likeBtn').onclick = function () {
-      p.liked = !p.liked;
-      p.likes += p.liked ? 1 : -1;
-      this.classList.toggle('liked');
-      this.innerHTML = '<span>' + (p.liked ? '&#x2665;' : '&#x2661;') + '</span> ' + p.likes;
-    };
-
-    /* Composer */
-    var composer = document.createElement('div');
-    composer.className = 'composer';
-    composer.innerHTML =
-      '<div class="composer-avatar">&#x1F464;</div>' +
-      '<textarea class="composer-input" placeholder="Write a comment…" rows="1"></textarea>' +
-      '<button class="composer-send">Send</button>';
-    detailContent.appendChild(composer);
-
-    var input = composer.querySelector('.composer-input');
-    var sendBtn = composer.querySelector('.composer-send');
-    function sendComment() {
-      var txt = input.value.trim();
-      if (!txt) return;
-      var list = scroll.querySelector('#commentList');
-      var node = document.createElement('div');
-      node.className = 'comment-item';
-      node.innerHTML =
-        '<div class="comment-avatar">Y</div>' +
-        '<div class="comment-bubble">' +
-          '<div class="comment-name">You</div>' +
-          '<div class="comment-text">' + txt + '</div>' +
-          '<div class="comment-footer"><span class="comment-time">Just now</span></div>' +
-        '</div>';
-      list.appendChild(node);
-      node.scrollIntoView({ behavior: 'smooth' });
-      input.value = '';
-      input.style.height = 'auto';
+  function renderRightPanel() {
+    var followBackList = document.getElementById('followBackList');
+    var followingList = document.getElementById('followingList');
+    if (followBackList) {
+      var followersNeedingFollowBack = state.followers.filter(function (user) { return !user.is_following; }).slice(0, 4);
+      followBackList.innerHTML = followersNeedingFollowBack.length
+        ? followersNeedingFollowBack.map(function (user) {
+            return '<div class="fr-row" data-user-id="' + escapeHtml(user.id) + '">' +
+              avatarMarkup(user.avatar_url, user.display_name || user.username, 'fr-avatar') +
+              '<div class="fr-info"><div class="fr-name">' + escapeHtml(user.display_name || user.username || 'User') + '</div><div class="fr-sub">' + escapeHtml(formatHandle(user.username) || 'Followed you') + '</div></div>' +
+              '<button class="fr-btn user-follow-btn" type="button" data-user-id="' + escapeHtml(user.id) + '">Follow</button>' +
+            '</div>';
+          }).join('')
+        : '<div class="empty-state">No follow-back suggestions right now.</div>';
+      bindFollowButtons(followBackList);
     }
-    sendBtn.onclick = sendComment;
-    input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendComment(); } });
-    input.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 110) + 'px'; });
+    if (followingList) {
+      followingList.innerHTML = state.following.length
+        ? state.following.slice(0, 4).map(function (user) {
+            return '<div class="fr-row" data-user-id="' + escapeHtml(user.id) + '">' +
+              avatarMarkup(user.avatar_url, user.display_name || user.username, 'fr-avatar') +
+              '<div class="fr-info"><div class="fr-name">' + escapeHtml(user.display_name || user.username || 'User') + '</div><div class="fr-sub">' + escapeHtml(formatHandle(user.username) || 'Following') + '</div></div>' +
+              '<button class="fr-btn user-follow-btn" type="button" data-user-id="' + escapeHtml(user.id) + '">Following</button>' +
+            '</div>';
+          }).join('')
+        : '<div class="empty-state">You are not following anyone yet.</div>';
+      bindFollowButtons(followingList);
+    }
   }
 
-  /* ── Profile view ── */
-  function renderProfile(d) {
-    var u = d.user;
-    var av = u.avatar ? '<img src="' + u.avatar + '" alt="' + u.name + '">' : u.name.charAt(0);
-
-    var cover = document.createElement('div');
-    cover.className = 'profile-cover';
-    detailContent.appendChild(cover);
-
-    var body = document.createElement('div');
-    body.className = 'profile-body';
-    body.innerHTML =
-      '<div class="profile-top">' +
-        '<div class="profile-avatar-lg">' + av + '</div>' +
-        '<button class="follow-back-btn" id="followBtn">Follow Back</button>' +
-      '</div>' +
-      '<div class="profile-name">' + u.name + '</div>' +
-      '<div class="profile-handle">' + u.handle + '</div>' +
-      '<div class="profile-bio">' + u.bio + '</div>' +
-      '<div class="profile-stats">' +
-        '<div><div class="stat-num">' + u.posts + '</div><div class="stat-label">Posts</div></div>' +
-        '<div><div class="stat-num">' + u.followers + '</div><div class="stat-label">Followers</div></div>' +
-        '<div><div class="stat-num">' + u.following + '</div><div class="stat-label">Following</div></div>' +
-      '</div>' +
-      '<div class="profile-posts-label">Recent Posts</div>' +
-      (d.recentPosts || []).map(function (p) {
-        return '<div class="mini-post"><div class="mini-post-meta">' + p.time + '</div><div class="mini-post-text">' + p.text + '</div></div>';
-      }).join('');
-    detailContent.appendChild(body);
-
-    document.getElementById('followBtn').onclick = function () {
-      if (this.textContent === 'Follow Back') { this.textContent = 'Following ✓'; this.style.background = 'var(--brand-hover)'; }
-      else { this.textContent = 'Follow Back'; this.style.background = ''; }
-    };
+  function loadNotifications() {
+    if (!requireLogin()) return Promise.resolve();
+    notifList.innerHTML = '<div class="loading-state">Loading notifications...</div>';
+    return fetchJson(API_BASE_URL + '/notifications?type=all', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    }).then(function (result) {
+      if (!result || !result.success || !Array.isArray(result.data)) {
+        notifList.innerHTML = '<div class="empty-state">Could not load notifications.</div>';
+        state.notifications = [];
+        renderSummary();
+        updateUnreadUi();
+        return;
+      }
+      state.notifications = result.data.slice().sort(function (a, b) {
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+      renderNotificationList();
+      renderSummary();
+    }).catch(function () {
+      notifList.innerHTML = '<div class="empty-state">Could not load notifications.</div>';
+      state.notifications = [];
+      renderSummary();
+      updateUnreadUi();
+    });
   }
 
-  /* ── Event bindings ── */
-  document.querySelectorAll('.notif-item').forEach(function (item) {
-    item.addEventListener('click', function () { showDetail(this.dataset.id); });
-  });
-  backBtn.addEventListener('click', showList);
+  function loadFollowNetwork(type) {
+    if (!requireLogin()) return Promise.resolve();
+    return fetchJson(API_BASE_URL + '/users/follows?type=' + encodeURIComponent(type), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    }).then(function (result) {
+      var list = result && result.success && Array.isArray(result.data) ? result.data : [];
+      if (type === 'followers') state.followers = list;
+      else state.following = list;
+      renderSummary();
+      renderRightPanel();
+    });
+  }
 
-  /* Tab filter */
-  var typeMap = { n1:'like', n2:'comment', n3:'follow', n4:'like', n5:'comment', n7:'like', n8:'comment', n9:'follow' };
-  document.querySelectorAll('.ntab').forEach(function (t) {
-    t.addEventListener('click', function () {
-      document.querySelectorAll('.ntab').forEach(function (x) { x.classList.remove('active'); });
-      this.classList.add('active');
-      var f = this.dataset.filter;
-      document.querySelectorAll('.notif-item').forEach(function (item) {
-        item.style.display = (f === 'all' || typeMap[item.dataset.id] === f) ? '' : 'none';
+  function toggleFollow(userId) {
+    var socialModeBeforeToggle = state.contentMode === 'social' ? state.socialMode : null;
+    return fetchJson(API_BASE_URL + '/users/' + encodeURIComponent(userId) + '/follow', {
+      method: 'POST',
+      headers: getAuthHeaders()
+    }).then(function () {
+      return Promise.all([loadFollowNetwork('followers'), loadFollowNetwork('following'), loadNotifications()]).then(function () {
+        if (socialModeBeforeToggle) {
+          renderInlineSocial(socialModeBeforeToggle);
+        } else if (viewDetail.classList.contains('open') && state.socialMode) {
+          showSocialDetail(state.socialMode);
+        }
       });
     });
-  });
+  }
 
-  /* Right panel follow buttons */
-  document.querySelectorAll('.fr-btn').forEach(function (b) {
-    b.addEventListener('click', function () {
-      this.textContent = this.textContent === 'Follow' ? 'Following' : 'Follow';
-      this.style.background = this.textContent === 'Following' ? 'var(--brand)' : '';
-      this.style.color = this.textContent === 'Following' ? '#fff' : '';
+  backBtn.addEventListener('click', showList);
+  if (markAllReadBtn) {
+    markAllReadBtn.addEventListener('click', function () {
+      if (!state.notifications.length) return;
+      markRead(state.notifications.map(function (item) { return item.id; }));
+      renderNotificationList();
     });
+  }
+
+  if (summaryLikes) {
+    summaryLikes.addEventListener('click', function () {
+      state.filter = 'likes';
+      showList();
+      renderNotificationList();
+    });
+  }
+  if (summaryComments) {
+    summaryComments.addEventListener('click', function () {
+      state.filter = 'comments';
+      showList();
+      renderNotificationList();
+    });
+  }
+  if (summaryFollowers) {
+    summaryFollowers.addEventListener('click', function () {
+      showSocialDetail('followers');
+    });
+  }
+  if (viewFollowersBtn) {
+    viewFollowersBtn.addEventListener('click', function () {
+      showSocialDetail('followers');
+    });
+  }
+  if (viewFollowingBtn) {
+    viewFollowingBtn.addEventListener('click', function () {
+      showSocialDetail('following');
+    });
+  }
+  if (openFollowingFeedBtn) {
+    openFollowingFeedBtn.addEventListener('click', function () {
+      window.location.href = '/pages/cat-facebook.html?feed=followed';
+    });
+  }
+
+  (function syncUserUi() {
+    var user = loadUser();
+    if (!user) return;
+    var heroName = document.querySelector('.nav-hero-name');
+    var heroStatus = document.querySelector('.nav-hero-status');
+    var navName = document.querySelector('.u-name');
+    var navHandle = document.querySelector('.u-handle');
+    if (heroName) heroName.textContent = user.display_name || user.username || 'User';
+    if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> Logged in · ' + escapeHtml(user.username || '');
+    if (navName) navName.textContent = user.display_name || user.username || 'User';
+    if (navHandle) navHandle.textContent = formatHandle(user.username);
+  })();
+
+  Promise.all([
+    loadNotifications(),
+    loadFollowNetwork('followers'),
+    loadFollowNetwork('following')
+  ]).then(function () {
+    renderNotificationList();
+    renderRightPanel();
+    renderSummary();
+    updateUnreadUi();
   });
 })();
 </script>

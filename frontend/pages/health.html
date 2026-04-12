@@ -39,6 +39,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html { scrollbar-gutter: stable; }
     body {
       background: var(--bg);
       color: var(--text);
@@ -46,20 +47,18 @@
                    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
       font-size: 14px;
       line-height: 1.6;
+      min-height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
     a { color: var(--primary); text-decoration: none; }
     a:hover { text-decoration: underline; }
     button, input, textarea, select { font: inherit; }
 
-    /* ── 顶部栏 ── */
+    /* ── 旧布局（停用） ── */
     .top-bar {
-      position: fixed; top: 0; left: 0; right: 0;
-      height: var(--header-h);
-      background: var(--surface);
-      border-bottom: 1px solid var(--border-lt);
-      display: flex; align-items: center; padding: 0 20px;
-      z-index: 200; gap: 12px;
+      display: none;
     }
     .logo {
       display: flex; align-items: center; gap: 8px;
@@ -77,12 +76,7 @@
 
     /* ── 侧边栏 ── */
     .sidebar {
-      position: fixed; top: var(--header-h); left: 0; bottom: 0;
-      width: var(--sidebar-w);
-      background: var(--surface);
-      border-right: 1px solid var(--border-lt);
-      display: flex; flex-direction: column;
-      padding: 16px 0; z-index: 150; overflow-y: auto;
+      display: none;
     }
     .sidebar-nav { list-style: none; }
     .sidebar-nav a {
@@ -112,10 +106,9 @@
 
     /* ── 主内容 ── */
     .main {
-      margin-left: var(--sidebar-w);
-      margin-top: var(--header-h);
-      padding: 24px 28px 60px;
-      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      min-height: auto;
     }
 
     /* ── 状态消息 ── */
@@ -130,27 +123,6 @@
       z-index: 999;
       box-shadow: var(--shadow-lg);
     }
-
-    /* ── 开发测试面板 ── */
-    .dev-panel {
-      background: #fffcf0;
-      border: 1px dashed #e8c84a;
-      border-radius: var(--r-xl);
-      padding: 14px 18px;
-      margin-bottom: 20px;
-    }
-    .dev-panel-title {
-      font-size: 12px; font-weight: 800; color: #8a6a00;
-      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px;
-    }
-    .dev-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
-    .dev-field { display: flex; flex-direction: column; gap: 4px; }
-    .dev-field label { font-size: 11px; font-weight: 700; color: #7a5c00; }
-    .dev-field input {
-      border: 1px solid #e8c84a; border-radius: var(--r-sm);
-      padding: 7px 10px; min-width: 240px; font-size: 13px; background: #fff;
-    }
-    .dev-note { font-size: 11px; color: #997700; margin-top: 8px; }
 
     /* ── 顶部导航行 ── */
     .page-nav {
@@ -361,9 +333,230 @@
       color: #065f46;
     }
 
+    /* ── 主站统一布局 ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 252px minmax(0,1fr) 308px;
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: 100vh;
+      height: 100vh;
+    }
+    .left-nav {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: none;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+    }
+    .left-nav::-webkit-scrollbar { display: none; }
+    .nav-hero {
+      background: linear-gradient(160deg, #C8702A 0%, #E8B050 100%);
+      padding: 18px 16px 16px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .nav-hero::after {
+      content: '🐱';
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      font-size: 48px;
+      opacity: .15;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .nav-hero-logo {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      color: rgba(255,255,255,.75);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
+    .nav-hero-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.22);
+      border: 2.5px solid rgba(255,255,255,.55);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 19px;
+      flex-shrink: 0;
+    }
+    .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
+    .nav-hero-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: rgba(255,255,255,.75);
+      margin-top: 3px;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #86EFAC;
+      flex-shrink: 0;
+    }
+    .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6B4E2A;
+      transition: background .15s, color .15s;
+      cursor: pointer;
+    }
+    .nav-link:hover { background: #FDF0D8; color: #C8702A; text-decoration: none; }
+    .nav-link.active { background: #FDF0D8; color: #C8702A; font-weight: 700; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; }
+    .n-label { flex: 1; }
+    .n-badge {
+      background: #E05B73;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 99px;
+    }
+    .n-soon {
+      font-size: 10px;
+      font-weight: 600;
+      color: #A87848;
+      background: var(--bg);
+      padding: 2px 7px;
+      border-radius: 99px;
+    }
+    .btn-new-post {
+      margin: 14px 10px 0;
+      padding: 12px 0;
+      border-radius: 12px;
+      background: #C8702A;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      transition: background .15s, transform .12s;
+    }
+    .btn-new-post:hover { background: #A85820; transform: translateY(-1px); }
+    .nav-user {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--border-lt);
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .nav-user:hover { background: #FDFAF6; }
+    .nav-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary-lt);
+      border: 2px solid var(--border);
+      color: var(--primary);
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .u-handle { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .nav-user-more { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+
+    .center {
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      min-height: 100vh;
+      height: 100vh;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+    }
+    .center-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+    }
+    .center-header h2 { font-size: 18px; font-weight: 800; }
+    .center-header p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+    .right-panel {
+      padding: 20px 0 20px 20px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      scrollbar-width: none;
+    }
+    .right-panel::-webkit-scrollbar { display: none; }
+    .rp-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .rp-card-title {
+      font-size: 17px;
+      font-weight: 800;
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .rp-link-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background .12s;
+    }
+    .rp-link-row:last-child { border-bottom: none; }
+    .rp-link-row:hover { background: var(--bg); }
+    .rp-link-icon {
+      font-size: 20px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary-lt);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .rp-link-label { flex: 1; font-size: 14px; font-weight: 600; color: #6B4E2A; }
+    .rp-link-arrow { color: var(--muted); font-size: 16px; }
+    .rp-info-block { padding: 14px 18px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 252px minmax(0,1fr); }
+      .right-panel { display: none; }
+    }
     @media (max-width: 860px) {
-      .sidebar { display: none; }
-      .main { margin-left: 0; }
+      .layout { grid-template-columns: 1fr; }
+      .left-nav { display: none; }
     }
     @media (max-width: 640px) {
       .passport-top { flex-direction: column; }
@@ -373,79 +566,42 @@
   </style>
 </head>
 <body>
-
-  <!-- ── 顶部栏 ── -->
-  <header class="top-bar">
-    <a href="index.html" class="logo">
-      <span>🐱</span> CatFace
-    </a>
-    <div class="top-bar-right">
-      <span class="page-badge">🩺 健康檔案</span>
-    </div>
-  </header>
-
-  <!-- ── 侧边栏 ── -->
-  <nav class="sidebar">
-    <ul class="sidebar-nav">
-      <li><a href="index.html">
-        <span class="nav-icon">💬</span> Community
-      </a></li>
-      <li><a href="adoption.html">
-        <span class="nav-icon">🐱</span> Adoption
-      </a></li>
-      <li><a href="index.html">
-        <span class="nav-icon">🔔</span> Notifications
-      </a></li>
-      <li><a href="account.html">
-        <span class="nav-icon">👤</span> Account
-      </a></li>
-    </ul>
-    <div class="sidebar-divider"></div>
-    <ul class="sidebar-nav">
-      <li><a href="health.html" class="active">
-        <span class="nav-icon">🩺</span> Health Records
-      </a></li>
-      <li><a href="clinic-portal.html">
-        <span class="nav-icon">🏥</span> Clinic Portal
-      </a></li>
-      <li><a href="rescue-dashboard.html">
-        <span class="nav-icon">🚑</span> Rescue Dashboard
-      </a></li>
-    </ul>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-bottom">
-      <div class="sidebar-user">
-        <div class="user-avatar">🐾</div>
+  <div class="layout">
+  <nav class="left-nav">
+    <div class="nav-hero">
+      <div class="nav-hero-logo">CatFace</div>
+      <div class="nav-hero-profile">
+        <div class="nav-hero-avatar">&#x1F464;</div>
         <div>
-          <div class="user-name">貓主人</div>
-          <div class="user-role">健康記錄管理</div>
+          <div class="nav-hero-name">Demo User</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Logged in · LV001</div>
         </div>
       </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+      <div class="nav-link" onclick="location.href='/pages/adoption.html'"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="location.href='/pages/notifications.html'"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
+      <div class="nav-link active" onclick="location.href='/pages/account.html'"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
+    </div>
+    <button class="btn-new-post" onclick="location.href='/pages/cat-facebook.html'">+ New Post</button>
+    <div class="nav-user" onclick="location.href='/pages/account.html'">
+      <div class="nav-avatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name">Demo User</div><div class="u-handle">@LV001</div></div>
+      <span class="nav-user-more">&#x2026;</span>
     </div>
   </nav>
 
-  <!-- ── 主内容 ── -->
-  <main class="main">
+  <div class="center">
+    <div class="center-header">
+      <h2>&#x1FA7A; Health Records</h2>
+      <p>Manage your cat's health history, clinic reports, and sharing permissions</p>
+    </div>
+    <main class="main">
 
     <!-- 状态消息 -->
     <div id="status-msg"></div>
-
-    <!-- 开发测试面板 -->
-    <div class="dev-panel">
-      <div class="dev-panel-title">🛠 開發測試面板</div>
-      <div class="dev-row">
-        <div class="dev-field">
-          <label>貓咪 ID (UUID)</label>
-          <input id="test-cat-id-input" type="text" placeholder="從 pgAdmin 或 seed 資料取得">
-        </div>
-        <div class="dev-field">
-          <label>用戶 ID (UUID)</label>
-          <input id="test-user-id-input" type="text" placeholder="從 pgAdmin 或 register API 取得">
-        </div>
-        <button id="test-apply-btn" class="btn btn-primary" style="align-self:flex-end;">載入</button>
-      </div>
-      <p class="dev-note">目前貓咪：<code id="current-cat-id">未設置</code></p>
-    </div>
 
     <!-- 导航行：标题 + 标签页 -->
     <div class="page-nav">
@@ -622,7 +778,25 @@
       </div>
     </div>
 
-  </main>
+    </main>
+  </div>
+
+  <aside class="right-panel">
+    <div class="rp-card">
+      <div class="rp-card-title">Quick Actions</div>
+      <div class="rp-link-row" onclick="location.href='/pages/cat-facebook.html'"><div class="rp-link-icon">&#x1F4AC;</div><span class="rp-link-label">Community Feed</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="location.href='/pages/adoption.html'"><div class="rp-link-icon">&#x1F431;</div><span class="rp-link-label">Adoption</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="location.href='/pages/account.html'"><div class="rp-link-icon">&#x1FA7A;</div><span class="rp-link-label">Back to Account</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="location.href='/pages/clinic-portal.html'"><div class="rp-link-icon">&#x1F3E5;</div><span class="rp-link-label">Clinic Portal</span><span class="rp-link-arrow">&#x203A;</span></div>
+    </div>
+    <div class="rp-card">
+      <div class="rp-card-title">Tips</div>
+      <div class="rp-info-block">
+        <p>Keep your vaccination, deworming, and checkup records here so your account and health pages feel like one continuous workflow.</p>
+      </div>
+    </div>
+  </aside>
+  </div>
 
   <script src="../js/config.js"></script>
   <script src="../js/health.js"></script>
@@ -634,6 +808,40 @@
       const idx = ['records', 'clinic', 'share'].indexOf(name);
       document.querySelectorAll('.tab-btn')[idx].classList.add('active');
     }
+  </script>
+  <script>
+    (function () {
+      var user = null;
+      try {
+        user = JSON.parse(localStorage.getItem('catface_user') || 'null');
+      } catch (e) {}
+      if (user) {
+        var heroName = document.querySelector('.nav-hero-name');
+        var heroStatus = document.querySelector('.nav-hero-status');
+        var navName = document.querySelector('.u-name');
+        var navHandle = document.querySelector('.u-handle');
+        if (heroName) heroName.textContent = user.display_name || user.username || 'User';
+        if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> Logged in · ' + (user.username || '');
+        if (navName) navName.textContent = user.display_name || user.username || 'User';
+        if (navHandle) navHandle.textContent = user.username ? '@' + user.username : '';
+      }
+
+      var unreadCount = 0;
+      try {
+        var badgeCountKey = 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
+        unreadCount = Math.max(0, parseInt(localStorage.getItem(badgeCountKey) || '0', 10) || 0);
+      } catch (e) {
+        unreadCount = 0;
+      }
+      document.querySelectorAll('[data-notif-badge]').forEach(function (badge) {
+        if (unreadCount <= 0) {
+          badge.style.display = 'none';
+        } else {
+          badge.style.display = '';
+          badge.textContent = String(unreadCount);
+        }
+      });
+    })();
   </script>
 </body>
 </html>

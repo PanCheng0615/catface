@@ -19,6 +19,8 @@ const authRouter = require('./routes/auth.routes');
 const usersRouter = require('./routes/users.routes');
 const chatRouter = require('./routes/chat.routes');
 const rescueRouter = require('./routes/rescue.routes');
+const communityRouter = require('./routes/community.routes');
+const notificationsRouter = require('./routes/notifications.routes');
 
 // Member 5 — 机构、领养活动、健康、诊所
 const orgRouter = require('./routes/organization.routes');
@@ -30,6 +32,8 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/rescue', rescueRouter);
+app.use('/api/community', communityRouter);
+app.use('/api/notifications', notificationsRouter);
 
 app.use('/api/organizations', orgRouter);
 app.use('/api/events', eventRouter);
