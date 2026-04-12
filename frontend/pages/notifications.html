@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -14,9 +14,10 @@
       --radius-lg: 16px; --radius-md: 12px; --radius-sm: 8px;
     }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
-    a { color: inherit; text-decoration: none; }
-    button { font: inherit; cursor: pointer; }
+    a { color: inherit; text-decoration: none; } button { font: inherit; cursor: pointer; }
     .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+
+    /* ── LEFT NAV ── */
     .left-nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; background: var(--surface); border-right: 1px solid var(--border); }
     .left-nav::-webkit-scrollbar { display: none; }
     .nav-hero { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 100%); padding: 18px 16px 16px; position: relative; overflow: hidden; flex-shrink: 0; }
@@ -25,14 +26,13 @@
     .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
     .nav-hero-avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.22); border: 2.5px solid rgba(255,255,255,.55); color: #fff; display: grid; place-items: center; font-size: 19px; flex-shrink: 0; }
     .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
-    .nav-hero-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; cursor: pointer; }
+    .nav-hero-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; }
     .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #86EFAC; flex-shrink: 0; }
     .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
     .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--text-sub); transition: background .15s, color .15s; cursor: pointer; }
     .nav-link:hover { background: var(--brand-light); color: var(--brand); }
     .nav-link.active { background: var(--brand-light); color: var(--brand); font-weight: 700; }
-    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; }
-    .n-label { flex: 1; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; } .n-label { flex: 1; }
     .n-badge { background: var(--like-color); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px; }
     .n-soon { font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--bg); padding: 2px 7px; border-radius: 99px; }
     .btn-new-post { margin: 14px 10px 0; padding: 12px 0; border-radius: 12px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; transition: background .15s, transform .12s; }
@@ -40,31 +40,110 @@
     .nav-user { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--border-light); cursor: pointer; transition: background .15s; }
     .nav-user:hover { background: var(--surface-2); }
     .nav-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--brand-light); border: 2px solid var(--border); color: var(--brand); display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
-    .u-name { font-size: 13px; font-weight: 700; color: var(--text); }
-    .u-handle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); } .u-handle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
     .nav-user-more { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
-    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; display: flex; flex-direction: column; }
-    .center-header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); padding: 16px 20px; }
-    .center-header h2 { font-size: 18px; font-weight: 800; }
-    .center-header p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
-    .notice-tabs { display: flex; gap: 10px; padding: 16px 16px 8px; border-bottom: 1px solid var(--border); background: var(--surface); }
-    .notice-card { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: 16px; padding: 14px 12px; cursor: pointer; transition: border-color .15s, background .15s; position: relative; }
-    .notice-card.active { border-color: var(--brand); background: var(--brand-light); }
-    .notice-card-title { font-size: 13px; font-weight: 700; color: var(--text); }
-    .notice-card-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-    .notice-badge { position: absolute; top: 10px; right: 10px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--like-color); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
-    .message-toolbar { padding: 14px 16px; border-bottom: 1px solid var(--border-light); background: var(--surface); }
-    .search-input { width: 100%; border: 1px solid var(--border); border-radius: 999px; padding: 10px 14px; font: inherit; background: var(--surface-2); }
-    .message-list { overflow-y: auto; flex: 1; }
-    .message-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border-light); cursor: pointer; }
-    .message-item:hover { background: var(--surface-2); }
-    .message-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--brand-light); }
-    .message-main { flex: 1; min-width: 0; }
-    .message-top { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
-    .message-name { font-size: 14px; font-weight: 700; color: var(--text); }
-    .message-time { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-    .message-snippet { font-size: 13px; color: var(--text-sub); margin-top: 4px; line-height: 1.5; }
-    .message-unread { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+
+    /* ── CENTER ── */
+    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+    /* Notification list view */
+    #view-list { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+    .list-header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); display: flex; flex-shrink: 0; }
+    .ntab { flex: 1; padding: 15px 0; text-align: center; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; transition: color .2s, border-color .2s; }
+    .ntab.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .list-scroll { overflow-y: auto; flex: 1; }
+    .notif-summary { display: grid; grid-template-columns: repeat(3,1fr); border-bottom: 1px solid var(--border); }
+    .summary-card { padding: 16px 10px; text-align: center; border-right: 1px solid var(--border); }
+    .summary-card:last-child { border-right: none; }
+    .summary-icon { font-size: 26px; margin-bottom: 4px; }
+    .summary-num { font-size: 22px; font-weight: 800; color: var(--brand); }
+    .summary-label { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .mark-btn { margin: 12px 16px 4px; padding: 9px 18px; border-radius: 99px; border: 1.5px solid var(--border); background: none; color: var(--text-sub); font-size: 13px; font-weight: 700; display: inline-block; }
+    .mark-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .date-div { padding: 8px 16px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; background: var(--bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .date-div:first-child { border-top: none; }
+    .notif-item { display: flex; gap: 11px; padding: 14px 16px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background .15s; position: relative; align-items: center; }
+    .notif-item:hover { background: var(--brand-light); }
+    .notif-item.unread::before { content: ''; position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: var(--brand); }
+    .notif-avatar { width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; background: var(--brand-light); border: 2px solid var(--border); overflow: hidden; display: grid; place-items: center; font-size: 18px; color: var(--brand); font-weight: 700; }
+    .notif-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .notif-content { flex: 1; min-width: 0; }
+    .notif-text { font-size: 13.5px; line-height: 1.5; color: var(--text); }
+    .notif-text strong { font-weight: 700; }
+    .notif-time { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+    .notif-thumb { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: var(--brand-light); }
+    .notif-chevron { color: var(--text-muted); font-size: 14px; flex-shrink: 0; }
+
+    /* ── Detail view (full center column) ── */
+    #view-detail { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    #view-detail.open { display: flex; }
+    .detail-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.92); backdrop-filter: blur(18px); position: sticky; top: 0; z-index: 20; flex-shrink: 0; }
+    .back-btn { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--border); background: none; font-size: 17px; display: grid; place-items: center; cursor: pointer; color: var(--text); flex-shrink: 0; transition: background .15s; }
+    .back-btn:hover { background: var(--bg); }
+    .detail-title { font-size: 16px; font-weight: 800; }
+    .detail-scroll { flex: 1; overflow-y: auto; padding: 20px 20px 0; display: flex; flex-direction: column; gap: 16px; }
+
+    /* Post full view */
+    .full-post { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .full-post-head { display: flex; align-items: center; gap: 11px; padding: 15px 18px 13px; }
+    .fph-avatar { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; flex-shrink: 0; background: var(--brand-light); border: 2px solid var(--border); display: grid; place-items: center; font-size: 17px; font-weight: 700; color: var(--brand); }
+    .fph-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .fph-name { font-size: 15px; font-weight: 800; }
+    .fph-handle { font-size: 12px; color: var(--text-muted); }
+    .fph-time { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .fph-tag { margin-left: auto; padding: 4px 12px; border-radius: 8px; background: var(--brand-light); color: var(--brand); font-size: 12px; font-weight: 700; }
+    .full-post-text { padding: 0 18px 16px; font-size: 15px; line-height: 1.75; color: var(--text); }
+    .full-post-img { width: 100%; max-width: 100%; height: auto; object-fit: contain; display: block; border-top: 1px solid var(--border-light); background: var(--bg); }
+    .full-post-actions { display: flex; gap: 4px; padding: 12px 12px; border-top: 1px solid var(--border-light); }
+    .act-btn { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-muted); background: none; border: none; padding: 7px 12px; border-radius: 99px; cursor: pointer; transition: background .15s, color .15s; font-weight: 500; }
+    .act-btn:hover { background: var(--brand-light); color: var(--brand); }
+    .act-btn.liked { color: var(--like-color); }
+    .act-spacer { margin-left: auto; }
+
+    /* Comments section */
+    .section-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; padding: 4px 0 8px; }
+    .comment-item { display: flex; gap: 10px; }
+    .comment-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: var(--brand-light); border: 2px solid var(--border); overflow: hidden; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--brand); }
+    .comment-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .comment-bubble { flex: 1; background: var(--surface-2); border-radius: 0 16px 16px 16px; padding: 10px 14px; border: 1px solid var(--border-light); }
+    .comment-bubble.highlighted { background: var(--brand-light); border-color: var(--accent); }
+    .comment-name { font-size: 13px; font-weight: 700; }
+    .comment-text { font-size: 13.5px; line-height: 1.6; color: var(--text-sub); margin-top: 3px; }
+    .comment-footer { display: flex; gap: 14px; margin-top: 7px; align-items: center; }
+    .comment-time { font-size: 11px; color: var(--text-muted); }
+    .comment-action { font-size: 11.5px; color: var(--text-muted); background: none; border: none; cursor: pointer; font-weight: 600; padding: 0; }
+    .comment-action:hover { color: var(--brand); }
+
+    /* Composer */
+    .composer { display: flex; gap: 10px; align-items: flex-end; padding: 12px 18px; border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; position: sticky; bottom: 0; }
+    .composer-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--brand-light); color: var(--brand); display: grid; place-items: center; font-size: 14px; font-weight: 700; border: 2px solid var(--border); flex-shrink: 0; }
+    .composer-input { flex: 1; border: 1.5px solid var(--border); border-radius: 20px; padding: 9px 16px; font: inherit; font-size: 14px; background: var(--surface-2); color: var(--text); outline: none; resize: none; min-height: 40px; max-height: 110px; transition: border-color .15s; line-height: 1.5; }
+    .composer-input:focus { border-color: var(--accent); background: #fff; }
+    .composer-input::placeholder { color: var(--text-muted); }
+    .composer-send { padding: 9px 18px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 13px; font-weight: 700; border: none; cursor: pointer; transition: background .15s; flex-shrink: 0; }
+    .composer-send:hover { background: var(--brand-hover); }
+
+    /* Profile view */
+    .profile-cover { height: 120px; background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%); flex-shrink: 0; }
+    .profile-body { padding: 0 20px 20px; flex: 1; overflow-y: auto; }
+    .profile-top { display: flex; align-items: flex-end; justify-content: space-between; margin-top: -32px; margin-bottom: 12px; }
+    .profile-avatar-lg { width: 64px; height: 64px; border-radius: 50%; border: 3.5px solid var(--surface); overflow: hidden; background: var(--brand-light); display: grid; place-items: center; font-size: 26px; color: var(--brand); }
+    .profile-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
+    .follow-back-btn { padding: 9px 22px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: background .15s; }
+    .follow-back-btn:hover { background: var(--brand-hover); }
+    .profile-name { font-size: 20px; font-weight: 800; }
+    .profile-handle { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .profile-bio { font-size: 14px; line-height: 1.65; color: var(--text-sub); margin-top: 12px; }
+    .profile-stats { display: flex; gap: 28px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-light); }
+    .stat-num { font-size: 18px; font-weight: 800; }
+    .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .profile-posts-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin: 18px 0 10px; }
+    .mini-post { padding: 13px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 8px; cursor: pointer; transition: background .15s; }
+    .mini-post:hover { background: var(--surface-2); }
+    .mini-post-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
+    .mini-post-text { font-size: 14px; line-height: 1.55; color: var(--text-sub); }
+
+    /* RIGHT PANEL */
     .right-panel { padding: 20px 0 20px 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; scrollbar-width: none; }
     .right-panel::-webkit-scrollbar { display: none; }
     .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
@@ -76,20 +155,21 @@
     .rp-info strong { font-weight: 700; color: var(--text); display: block; }
     .rp-info span { color: var(--text-muted); }
     .rp-num { font-size: 16px; font-weight: 800; color: var(--brand); }
-    .detail-overlay { position: fixed; inset: 0; background: rgba(17,24,39,.56); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 200; }
-    .detail-overlay.open { display: flex; }
-    .detail-dialog { width: min(520px, 100%); background: var(--surface); border-radius: 20px; overflow: hidden; border: 1px solid var(--border); box-shadow: 0 24px 60px rgba(0,0,0,.22); }
-    .detail-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
-    .detail-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: var(--brand-light); }
-    .detail-meta-wrap { flex: 1; min-width: 0; }
-    .detail-title { font-size: 15px; font-weight: 800; color: var(--text); }
-    .detail-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
-    .detail-close-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-2); font-size: 18px; }
-    .detail-body { padding: 18px; font-size: 14px; color: var(--text-sub); line-height: 1.7; }
+    .fr-row { display: flex; align-items: center; gap: 10px; padding: 11px 18px; border-bottom: 1px solid var(--border); }
+    .fr-row:last-child { border-bottom: none; }
+    .fr-avatar { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--brand); background: var(--brand-light); }
+    .fr-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .fr-info { flex: 1; min-width: 0; }
+    .fr-name { font-size: 13px; font-weight: 700; }
+    .fr-sub { font-size: 12px; color: var(--text-muted); }
+    .fr-btn { padding: 6px 14px; border-radius: 99px; border: 1.5px solid var(--brand); color: var(--brand); background: none; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s; white-space: nowrap; }
+    .fr-btn:hover { background: var(--brand); color: #fff; }
   </style>
 </head>
 <body>
 <div class="layout">
+
+  <!-- LEFT NAV -->
   <nav class="left-nav">
     <div class="nav-hero">
       <div class="nav-hero-logo">CatFace</div>
@@ -97,14 +177,14 @@
         <div class="nav-hero-avatar">&#x1F464;</div>
         <div>
           <div class="nav-hero-name">Demo User</div>
-          <div class="nav-hero-status"><span class="status-dot"></span> Logged in</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Logged in · LV001</div>
         </div>
       </div>
     </div>
     <div class="nav-section">
       <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
       <div class="nav-link" onclick="location.href='/pages/adoption.html'"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
-      <div class="nav-link active"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge">Live</span></div>
+      <div class="nav-link active"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge">3</span></div>
       <div class="nav-link" onclick="location.href='/pages/account.html'"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
       <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
     </div>
@@ -116,59 +196,383 @@
     </div>
   </nav>
 
+  <!-- CENTER -->
   <div class="center">
-    <div class="center-header">
-      <h2>&#x1F514; Notifications</h2>
-      <p>Live notifications from likes, comments, and follows</p>
+
+    <!-- View: Notification List -->
+    <div id="view-list">
+      <div class="list-header">
+        <div class="ntab active" data-filter="all">All</div>
+        <div class="ntab" data-filter="like">Likes</div>
+        <div class="ntab" data-filter="comment">Comments</div>
+        <div class="ntab" data-filter="follow">Follows</div>
+      </div>
+      <div class="list-scroll">
+        <div class="notif-summary">
+          <div class="summary-card"><div class="summary-icon">&#x2665;&#xFE0F;</div><div class="summary-num">127</div><div class="summary-label">Likes</div></div>
+          <div class="summary-card"><div class="summary-icon">&#x1F4AC;</div><div class="summary-num">43</div><div class="summary-label">Comments</div></div>
+          <div class="summary-card"><div class="summary-icon">&#x1F465;</div><div class="summary-num">18</div><div class="summary-label">Followers</div></div>
+        </div>
+        <button class="mark-btn">Mark all as read</button>
+
+        <div class="date-div">TODAY</div>
+
+        <div class="notif-item unread" data-id="n1">
+          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=80&q=80" alt="Mochi"></div>
+          <div class="notif-content">
+            <div class="notif-text"><strong>Mochi</strong> liked your post "My cat's morning routine &#x1F305;"</div>
+            <div class="notif-time">2 minutes ago</div>
+          </div>
+          <span class="notif-chevron">›</span>
+        </div>
+
+        <div class="notif-item unread" data-id="n2">
+          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=80&q=80" alt="Luna"></div>
+          <div class="notif-content">
+            <div class="notif-text"><strong>Luna</strong> commented: "So cute!! My cat does the same thing every morning &#x1F602;"</div>
+            <div class="notif-time">15 minutes ago</div>
+          </div>
+          <span class="notif-chevron">›</span>
+        </div>
+
+        <div class="notif-item unread" data-id="n3">
+          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=80&q=80" alt="Simba"></div>
+          <div class="notif-content">
+            <div class="notif-text"><strong>Simba</strong> started following you</div>
+            <div class="notif-time">1 hour ago</div>
+          </div>
+          <span class="notif-chevron">›</span>
+        </div>
+
+        <div class="date-div">YESTERDAY</div>
+
+        <div class="notif-item" data-id="n4">
+          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=80&q=80" alt="Nala"></div>
+          <div class="notif-content">
+            <div class="notif-text"><strong>Nala</strong> and <strong>3 others</strong> liked your photo</div>
+            <div class="notif-time">Yesterday at 3:42 PM</div>
+          </div>
+          <span class="notif-chevron">›</span>
+        </div>
+
+        <div class="notif-item" data-id="n5">
+          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=80&q=80" alt="Whiskers"></div>
+          <div class="notif-content">
+            <div class="notif-text"><strong>Whiskers</strong> replied to your comment: "Thanks for the advice! My vet was really helpful too."</div>
+            <div class="notif-time">Yesterday at 11:20 AM</div>
+          </div>
+          <span class="notif-chevron">›</span>
+        </div>
+
+        <div class="date-div">MARCH 22</div>
+
+        <div class="notif-item" data-id="n7">
+          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=80&q=80" alt="Bella"></div>
+          <div class="notif-content">
+            <div class="notif-text"><strong>Bella</strong> and <strong>12 others</strong> liked your post "Adoption success story!"</div>
+            <div class="notif-time">March 22 at 6:18 PM</div>
+          </div>
+          <span class="notif-chevron">›</span>
+        </div>
+
+        <div class="notif-item" data-id="n8">
+          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1548802673-380ab8ebc7b7?w=80&q=80" alt="Oscar"></div>
+          <div class="notif-content">
+            <div class="notif-text"><strong>Oscar</strong> commented: "Congratulations!! This is the most heartwarming thing &#x1F97A;"</div>
+            <div class="notif-time">March 22 at 5:44 PM</div>
+          </div>
+          <span class="notif-chevron">›</span>
+        </div>
+
+        <div class="notif-item" data-id="n9">
+          <div class="notif-avatar"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=80&q=80" alt="Nala"></div>
+          <div class="notif-content">
+            <div class="notif-text"><strong>Nala</strong> started following you</div>
+            <div class="notif-time">March 22 at 3:10 PM</div>
+          </div>
+          <span class="notif-chevron">›</span>
+        </div>
+      </div>
     </div>
-    <div class="notice-tabs">
-      <article class="notice-card active" data-filter="likes">
-        <div class="notice-card-title">Likes</div>
-        <div class="notice-card-sub">People who liked your posts</div>
-        <span class="notice-badge" data-count-for="likes" hidden>0</span>
-      </article>
-      <article class="notice-card" data-filter="comments">
-        <div class="notice-card-title">Comments</div>
-        <div class="notice-card-sub">Replies on your posts</div>
-        <span class="notice-badge" data-count-for="comments" hidden>0</span>
-      </article>
-      <article class="notice-card" data-filter="follows">
-        <div class="notice-card-title">Follows</div>
-        <div class="notice-card-sub">New followers and updates</div>
-        <span class="notice-badge" data-count-for="follows" hidden>0</span>
-      </article>
+
+    <!-- View: Detail (full center column replacement) -->
+    <div id="view-detail">
+      <div class="detail-header">
+        <button class="back-btn" id="backBtn">&#x2190;</button>
+        <span class="detail-title" id="detailTitle"></span>
+      </div>
+      <div id="detailContent" style="flex:1;overflow:hidden;display:flex;flex-direction:column;"></div>
     </div>
-    <div class="message-toolbar">
-      <input class="search-input" type="search" placeholder="Search notifications">
-    </div>
-    <div class="message-list"></div>
+
   </div>
 
+  <!-- RIGHT PANEL -->
   <aside class="right-panel">
     <div class="rp-card">
-      <div class="rp-title">&#x1F4CA; This Page</div>
-      <div class="rp-row"><div class="rp-icon" style="background:#fff0f3;">&#x2665;&#xFE0F;</div><div class="rp-info"><strong>Likes</strong><span>Loaded from `/api/notifications`</span></div><div class="rp-num">API</div></div>
-      <div class="rp-row"><div class="rp-icon" style="background:#f0fdf4;">&#x1F4AC;</div><div class="rp-info"><strong>Comments</strong><span>Read state synced to backend</span></div><div class="rp-num">API</div></div>
-      <div class="rp-row"><div class="rp-icon" style="background:#eff6ff;">&#x1F465;</div><div class="rp-info"><strong>Follows</strong><span>Uses real follow notifications</span></div><div class="rp-num">API</div></div>
+      <div class="rp-title">&#x1F4CA; This Week</div>
+      <div class="rp-row"><div class="rp-icon" style="background:#fff0f3;">&#x2665;&#xFE0F;</div><div class="rp-info"><strong>Likes received</strong><span>+127 total</span></div><div class="rp-num">127</div></div>
+      <div class="rp-row"><div class="rp-icon" style="background:#f0fdf4;">&#x1F4AC;</div><div class="rp-info"><strong>New comments</strong><span>43 replies</span></div><div class="rp-num">43</div></div>
+      <div class="rp-row"><div class="rp-icon" style="background:#eff6ff;">&#x1F465;</div><div class="rp-info"><strong>New followers</strong><span>This month</span></div><div class="rp-num">18</div></div>
+    </div>
+    <div class="rp-card">
+      <div class="rp-title">&#x1F43E; Follow Back</div>
+      <div class="fr-row"><div class="fr-avatar"><img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=80&q=80" alt="Simba"></div><div class="fr-info"><div class="fr-name">Simba</div><div class="fr-sub">Followed you · 1h ago</div></div><button class="fr-btn">Follow</button></div>
+      <div class="fr-row"><div class="fr-avatar"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=80&q=80" alt="Nala"></div><div class="fr-info"><div class="fr-name">Nala</div><div class="fr-sub">Followed you · Mar 22</div></div><button class="fr-btn">Follow</button></div>
     </div>
   </aside>
 </div>
 
-<div class="detail-overlay" id="detail-overlay" aria-hidden="true">
-  <div class="detail-dialog">
-    <div class="detail-head">
-      <img class="detail-avatar" id="detail-avatar" src="" alt="">
-      <div class="detail-meta-wrap">
-        <div class="detail-title" id="detail-title">Notification</div>
-        <div class="detail-meta" id="detail-meta"></div>
-      </div>
-      <button class="detail-close-btn" id="detail-close-btn" type="button">×</button>
-    </div>
-    <div class="detail-body" id="detail-body-text"></div>
-  </div>
-</div>
+<script>
+(function () {
+  var DATA = {
+    n1: { type: 'post', title: 'Mochi liked your post',
+      post: { name: 'Mochi', handle: '@mochi_cat', avatar: 'https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=80&q=80', time: '3h ago', tag: '&#x1F3E0; Adoption', text: 'After 3 months in the shelter, I finally found my forever home! &#x1F970; My new family is the absolute best — warm bed, endless cuddles, humans who understand me.', img: 'https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=800&q=80', likes: 15302, liked: true, commentCount: 3 },
+      comments: [
+        { name: 'Luna', avatar: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=80&q=80', text: 'Congratulations Mochi!!! You deserve the best forever home &#x1F97A;', time: '2h ago', likes: 284, hi: false },
+        { name: 'Simba', avatar: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=80&q=80', text: 'This made my human cry happy tears. Welcome home! &#x1F3E0;', time: '2h ago', likes: 196, hi: false },
+        { name: 'You', avatar: '', text: 'Thank you all so much!! &#x2665;', time: '1h ago', likes: 44, hi: false }
+      ]
+    },
+    n2: { type: 'post', title: 'Luna commented on your post',
+      post: { name: 'You', handle: '@LV001', avatar: '', time: 'Today', tag: '&#x1F305; Daily', text: 'Good morning everyone! My cat woke me up at 5am again by sitting on my face. Worth it for the purring though &#x1F60A;', img: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&q=80', likes: 342, liked: false, commentCount: 2 },
+      comments: [
+        { name: 'Luna', avatar: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=80&q=80', text: 'So cute!! My cat does the same thing every morning &#x1F602; they just KNOW', time: '15 min ago', likes: 18, hi: true },
+        { name: 'Whiskers', avatar: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=80&q=80', text: '5am is the perfect time to sit on a human face. This is cat science.', time: '10 min ago', likes: 31, hi: false }
+      ]
+    },
+    n3: { type: 'profile', title: 'Simba started following you',
+      user: { name: 'Simba', handle: '@simba_chaotic', avatar: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=80&q=80', bio: 'Professional abstract artist. My medium is knocked-over beverages. My human still doesn\'t appreciate my genius.', followers: '7.2k', following: '142', posts: '86' },
+      recentPosts: [
+        { text: 'I knocked over my human\'s coffee… again. It\'s called abstract art. You wouldn\'t understand.', time: 'Yesterday' },
+        { text: 'The screaming was part of the installation. A truly immersive experience for my human.', time: '2 days ago' }
+      ]
+    },
+    n4: { type: 'post', title: 'Nala and 3 others liked your photo',
+      post: { name: 'You', handle: '@LV001', avatar: '', time: 'Yesterday', tag: '&#x1FA7A; Health', text: 'Just got back from the vet! Everything looks great &#x1F4CB; so relieved. Annual checkup done and all numbers are perfect.', img: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&q=80', likes: 4, liked: false, commentCount: 1 },
+      comments: [
+        { name: 'Nala', avatar: 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=80&q=80', text: 'So glad everything is good!! &#x1F97A; healthy cats are the best', time: 'Yesterday', likes: 8, hi: false }
+      ]
+    },
+    n5: { type: 'post', title: 'Whiskers replied to your comment',
+      post: { name: 'Whiskers', handle: '@whiskers_wise', avatar: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=80&q=80', time: '3 days ago', tag: '&#x1FA7A; Health', text: 'Annual checkup done! Vet says I\'m super healthy. Mom cried a little from relief (I definitely didn\'t see that).', img: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&q=80', likes: 872, liked: false, commentCount: 2 },
+      comments: [
+        { name: 'You', avatar: '', text: 'This is the best news! Always a relief to hear good health news from the vet &#x1F4AA;', time: 'Yesterday', likes: 12, hi: false },
+        { name: 'Whiskers', avatar: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=80&q=80', text: 'Thanks for the advice! My vet was really helpful too. She explained everything so clearly.', time: 'Yesterday at 11:20 AM', likes: 9, hi: true }
+      ]
+    },
+    n7: { type: 'post', title: 'Bella and 12 others liked your post',
+      post: { name: 'You', handle: '@LV001', avatar: '', time: 'March 22', tag: '&#x1F3E0; Adoption', text: 'Adoption success story! After months of waiting, Orange finally found his forever home &#x1F970; So proud of this brave little guy. He was so shy at first, now he runs to the door every day to greet his new family.', img: 'https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=800&q=80', likes: 13, liked: false, commentCount: 2 },
+      comments: [
+        { name: 'Bella', avatar: 'https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=80&q=80', text: 'This is the most wholesome thing I\'ve seen all week!! &#x1F97A;&#x1F97A;', time: 'March 22', likes: 47, hi: false },
+        { name: 'Oscar', avatar: 'https://images.unsplash.com/photo-1548802673-380ab8ebc7b7?w=80&q=80', text: 'Congratulations!! This is the most heartwarming thing &#x1F97A; wishing Orange and his family all the love', time: 'March 22', likes: 38, hi: false }
+      ]
+    },
+    n8: { type: 'post', title: 'Oscar commented on your post',
+      post: { name: 'You', handle: '@LV001', avatar: '', time: 'March 22', tag: '&#x1F3E0; Adoption', text: 'Adoption success story! After months of waiting, Orange finally found his forever home &#x1F970; So proud of this brave little guy.', img: 'https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=800&q=80', likes: 13, liked: false, commentCount: 2 },
+      comments: [
+        { name: 'Oscar', avatar: 'https://images.unsplash.com/photo-1548802673-380ab8ebc7b7?w=80&q=80', text: 'Congratulations!! This is the most heartwarming thing &#x1F97A; wishing Orange and his family all the love', time: 'March 22 at 5:44 PM', likes: 38, hi: true },
+        { name: 'Bella', avatar: 'https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=80&q=80', text: 'This is the most wholesome thing I\'ve seen all week!! &#x1F97A;&#x1F97A;', time: 'March 22', likes: 47, hi: false }
+      ]
+    },
+    n9: { type: 'profile', title: 'Nala started following you',
+      user: { name: 'Nala', handle: '@nala_kitten', avatar: 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=80&q=80', bio: 'Just turned 3 months old! Still figuring out the whole "walking gracefully" thing. Available for adoption &#x1F3E0;', followers: '3.4k', following: '89', posts: '24' },
+      recentPosts: [
+        { text: 'I just turned 3 months old today! &#x1F382; My human says I\'ve grown so much she can barely believe it.', time: '2 days ago' },
+        { text: 'Discovered the sunbeam by the window today. This is my spot now. Humans may not enter.', time: '1 week ago' }
+      ]
+    }
+  };
 
-<script src="../js/config.js"></script>
-<script src="../js/notifications.js"></script>
+  var viewList   = document.getElementById('view-list');
+  var viewDetail = document.getElementById('view-detail');
+  var detailTitle   = document.getElementById('detailTitle');
+  var detailContent = document.getElementById('detailContent');
+  var backBtn    = document.getElementById('backBtn');
+
+  function showDetail(id) {
+    var d = DATA[id];
+    if (!d) return;
+    /* mark as read */
+    var el = document.querySelector('[data-id="' + id + '"]');
+    if (el) el.classList.remove('unread');
+
+    detailTitle.textContent = d.title;
+    detailContent.innerHTML = '';
+
+    if (d.type === 'post') renderPost(d);
+    else if (d.type === 'profile') renderProfile(d);
+
+    viewList.style.display = 'none';
+    viewDetail.classList.add('open');
+    viewDetail.style.display = 'flex';
+  }
+
+  function showList() {
+    viewDetail.classList.remove('open');
+    viewDetail.style.display = 'none';
+    viewList.style.display = 'flex';
+  }
+
+  /* ── Post + comments view ── */
+  function renderPost(d) {
+    var p = d.post;
+    var av = p.avatar ? '<img src="' + p.avatar + '" alt="' + p.name + '">' : p.name.charAt(0);
+
+    /* scrollable area */
+    var scroll = document.createElement('div');
+    scroll.style.cssText = 'flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;';
+
+    scroll.innerHTML =
+      /* Post card */
+      '<div class="full-post">' +
+        '<div class="full-post-head">' +
+          '<div class="fph-avatar">' + av + '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div class="fph-name">' + p.name + ' <span style="color:var(--text-muted);font-weight:400;font-size:12px;">' + p.handle + '</span></div>' +
+            '<div class="fph-time">' + p.time + '</div>' +
+          '</div>' +
+          '<span class="fph-tag">' + p.tag + '</span>' +
+        '</div>' +
+        '<p class="full-post-text">' + p.text + '</p>' +
+        (p.img ? '<img class="full-post-img" src="' + p.img + '" alt="">' : '') +
+        '<div class="full-post-actions">' +
+          '<button class="act-btn ' + (p.liked ? 'liked' : '') + '" id="likeBtn">' +
+            '<span>' + (p.liked ? '&#x2665;' : '&#x2661;') + '</span> ' + p.likes +
+          '</button>' +
+          '<button class="act-btn"><span>&#x1F4AC;</span> ' + p.commentCount + '</button>' +
+          '<button class="act-btn"><span>&#x1F501;</span></button>' +
+          '<button class="act-btn act-spacer"><span>&#x1F516;</span></button>' +
+        '</div>' +
+      '</div>' +
+      /* Comments */
+      '<div class="section-label">Comments</div>' +
+      '<div id="commentList" style="display:flex;flex-direction:column;gap:10px;">' +
+        (d.comments || []).map(function (c) {
+          var cav = c.avatar ? '<img src="' + c.avatar + '" alt="' + c.name + '">' : c.name.charAt(0);
+          return '<div class="comment-item">' +
+            '<div class="comment-avatar">' + cav + '</div>' +
+            '<div class="comment-bubble' + (c.hi ? ' highlighted' : '') + '">' +
+              '<div class="comment-name">' + c.name + '</div>' +
+              '<div class="comment-text">' + c.text + '</div>' +
+              '<div class="comment-footer">' +
+                '<span class="comment-time">' + c.time + '</span>' +
+                '<button class="comment-action" onclick="this.style.color=\'var(--like-color)\'">&#x2665; ' + c.likes + '</button>' +
+                '<button class="comment-action">Reply</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+      '<div style="height:8px;"></div>';
+
+    detailContent.appendChild(scroll);
+
+    /* Like toggle */
+    scroll.querySelector('#likeBtn').onclick = function () {
+      p.liked = !p.liked;
+      p.likes += p.liked ? 1 : -1;
+      this.classList.toggle('liked');
+      this.innerHTML = '<span>' + (p.liked ? '&#x2665;' : '&#x2661;') + '</span> ' + p.likes;
+    };
+
+    /* Composer */
+    var composer = document.createElement('div');
+    composer.className = 'composer';
+    composer.innerHTML =
+      '<div class="composer-avatar">&#x1F464;</div>' +
+      '<textarea class="composer-input" placeholder="Write a comment…" rows="1"></textarea>' +
+      '<button class="composer-send">Send</button>';
+    detailContent.appendChild(composer);
+
+    var input = composer.querySelector('.composer-input');
+    var sendBtn = composer.querySelector('.composer-send');
+    function sendComment() {
+      var txt = input.value.trim();
+      if (!txt) return;
+      var list = scroll.querySelector('#commentList');
+      var node = document.createElement('div');
+      node.className = 'comment-item';
+      node.innerHTML =
+        '<div class="comment-avatar">Y</div>' +
+        '<div class="comment-bubble">' +
+          '<div class="comment-name">You</div>' +
+          '<div class="comment-text">' + txt + '</div>' +
+          '<div class="comment-footer"><span class="comment-time">Just now</span></div>' +
+        '</div>';
+      list.appendChild(node);
+      node.scrollIntoView({ behavior: 'smooth' });
+      input.value = '';
+      input.style.height = 'auto';
+    }
+    sendBtn.onclick = sendComment;
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendComment(); } });
+    input.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 110) + 'px'; });
+  }
+
+  /* ── Profile view ── */
+  function renderProfile(d) {
+    var u = d.user;
+    var av = u.avatar ? '<img src="' + u.avatar + '" alt="' + u.name + '">' : u.name.charAt(0);
+
+    var cover = document.createElement('div');
+    cover.className = 'profile-cover';
+    detailContent.appendChild(cover);
+
+    var body = document.createElement('div');
+    body.className = 'profile-body';
+    body.innerHTML =
+      '<div class="profile-top">' +
+        '<div class="profile-avatar-lg">' + av + '</div>' +
+        '<button class="follow-back-btn" id="followBtn">Follow Back</button>' +
+      '</div>' +
+      '<div class="profile-name">' + u.name + '</div>' +
+      '<div class="profile-handle">' + u.handle + '</div>' +
+      '<div class="profile-bio">' + u.bio + '</div>' +
+      '<div class="profile-stats">' +
+        '<div><div class="stat-num">' + u.posts + '</div><div class="stat-label">Posts</div></div>' +
+        '<div><div class="stat-num">' + u.followers + '</div><div class="stat-label">Followers</div></div>' +
+        '<div><div class="stat-num">' + u.following + '</div><div class="stat-label">Following</div></div>' +
+      '</div>' +
+      '<div class="profile-posts-label">Recent Posts</div>' +
+      (d.recentPosts || []).map(function (p) {
+        return '<div class="mini-post"><div class="mini-post-meta">' + p.time + '</div><div class="mini-post-text">' + p.text + '</div></div>';
+      }).join('');
+    detailContent.appendChild(body);
+
+    document.getElementById('followBtn').onclick = function () {
+      if (this.textContent === 'Follow Back') { this.textContent = 'Following ✓'; this.style.background = 'var(--brand-hover)'; }
+      else { this.textContent = 'Follow Back'; this.style.background = ''; }
+    };
+  }
+
+  /* ── Event bindings ── */
+  document.querySelectorAll('.notif-item').forEach(function (item) {
+    item.addEventListener('click', function () { showDetail(this.dataset.id); });
+  });
+  backBtn.addEventListener('click', showList);
+
+  /* Tab filter */
+  var typeMap = { n1:'like', n2:'comment', n3:'follow', n4:'like', n5:'comment', n7:'like', n8:'comment', n9:'follow' };
+  document.querySelectorAll('.ntab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('.ntab').forEach(function (x) { x.classList.remove('active'); });
+      this.classList.add('active');
+      var f = this.dataset.filter;
+      document.querySelectorAll('.notif-item').forEach(function (item) {
+        item.style.display = (f === 'all' || typeMap[item.dataset.id] === f) ? '' : 'none';
+      });
+    });
+  });
+
+  /* Right panel follow buttons */
+  document.querySelectorAll('.fr-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      this.textContent = this.textContent === 'Follow' ? 'Following' : 'Follow';
+      this.style.background = this.textContent === 'Following' ? 'var(--brand)' : '';
+      this.style.color = this.textContent === 'Following' ? '#fff' : '';
+    });
+  });
+})();
+</script>
 </body>
 </html>

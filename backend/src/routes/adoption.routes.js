@@ -7,7 +7,6 @@ const {
   getFeed,
   getSwipes,
   getLiked,
-  getPreferences,
   setPreferences,
   createApplication,
   cancelApplication,
@@ -20,7 +19,6 @@ router.post('/swipe', protect, recordSwipe);
 router.get('/feed', protect, getFeed);
 router.get('/swipes', protect, getSwipes);
 router.get('/liked', protect, getLiked);
-router.get('/preferences', protect, getPreferences);
 router.post('/preferences', protect, setPreferences);
 router.post('/applications', protect, createApplication);
 router.delete('/applications/:id', protect, cancelApplication);

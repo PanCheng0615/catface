@@ -1,15 +1,48 @@
-# 依赖（不要上传）
+# macOS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+**/.venv/
+**/venv/
+backend/.venv-catface-id/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
 node_modules/
 
-# 环境变量（含密码，绝不能上传）
+# Environment files
 .env
 .env.local
 .env.*.local
 
-# 本地上传目录
-backend/uploads/
+# Large model weights and binary ML artifacts
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.bin
+*.safetensors
+*.joblib
+*.pkl
 
-# 日志与临时文件
-*.log
+# Local data / generated assets
+*.part
+*.tmp
+*.temp
+backend/.venv-catface-id/
+.venv/
+venv/
+__pycache__/
+*.pyc
 .DS_Store
-Thumbs.db
+node_modules/

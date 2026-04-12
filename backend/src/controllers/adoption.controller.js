@@ -213,32 +213,10 @@ async function getLiked(req, res) {
   }
 }
 
-// GET /api/adoption/preferences
-async function getPreferences(req, res) {
-  try {
-    const pref = await prisma.adopterPreference.findUnique({
-      where: { user_id: req.user.id }
-    });
-
-    return res.json({
-      success: true,
-      data: pref || null,
-      message: '获取领养偏好成功'
-    });
-  } catch (error) {
-    console.error('getPreferences error:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'ServerError',
-      message: '服务器错误'
-    });
-  }
-}
-
 // POST /api/adoption/preferences
 async function setPreferences(req, res) {
   try {
-    const { preferred_age, preferred_gender, preferred_breed } = req.body;
+    const { preferred_age, preferred_gender, preferred_breed, preferred_color } = req.body;
 
     const pref = await prisma.adopterPreference.upsert({
       where: { user_id: req.user.id },
@@ -246,12 +224,14 @@ async function setPreferences(req, res) {
         user_id: req.user.id,
         preferred_age: preferred_age ?? null,
         preferred_gender: preferred_gender ?? null,
-        preferred_breed: preferred_breed ?? null
+        preferred_breed: preferred_breed ?? null,
+        preferred_color: preferred_color ?? null
       },
       update: {
         preferred_age: preferred_age ?? undefined,
         preferred_gender: preferred_gender ?? undefined,
-        preferred_breed: preferred_breed ?? undefined
+        preferred_breed: preferred_breed ?? undefined,
+        preferred_color: preferred_color ?? undefined
       }
     });
 
@@ -473,7 +453,6 @@ module.exports = {
   getFeed,
   getSwipes,
   getLiked,
-  getPreferences,
   setPreferences,
   createApplication,
   cancelApplication,

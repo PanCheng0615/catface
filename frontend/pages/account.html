@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -99,7 +99,7 @@
     .rp-link-label { flex: 1; font-size: 14px; font-weight: 600; color: var(--text-sub); }
     .rp-link-arrow { color: var(--text-muted); font-size: 16px; }
     .rp-info-block { padding: 14px 18px; font-size: 13px; color: var(--text-muted); line-height: 1.7; }
-</style>
+  </style>
 </head>
 <body>
 <div class="layout">
@@ -154,8 +154,8 @@
         </div>
         <div class="section-card-body">
           <div class="form-grid">
-            <div class="field"><label>Nickname</label><input type="text" id="acctNickname" value="Demo User" placeholder="Enter nickname"></div>
-            <div class="field"><label>Email</label><input type="email" id="acctEmail" value="demo@catface.app" placeholder="Enter email" readonly></div>
+            <div class="field"><label>Nickname</label><input type="text" value="Demo User" placeholder="Enter nickname"></div>
+            <div class="field"><label>Email</label><input type="email" value="demo@catface.app" placeholder="Enter email"></div>
           </div>
         </div>
       </div>
@@ -169,11 +169,11 @@
         <div class="section-card-body">
           <div class="form-grid">
             <div class="field"><label>Preferred gender</label>
-              <select id="prefGender"><option value="">Any</option><option value="female">Female</option><option value="male" selected>Male</option><option value="no_preference">No preference</option></select></div>
+              <select><option>Any</option><option>Female</option><option selected>Male</option><option>No preference</option></select></div>
             <div class="field"><label>Preferred age</label>
-              <select id="prefAge"><option value="">Any</option><option value="kitten" selected>Kitten (0–1 year)</option><option value="adult">Adult (1–7 years)</option><option value="senior">Senior (7+ years)</option></select></div>
+              <select><option>Any</option><option selected>Kitten (0–1 year)</option><option>Adult (1–7 years)</option><option>Senior (7+ years)</option></select></div>
             <div class="field"><label>Preferred breed</label>
-              <select id="prefBreed"><option value="" selected>Any</option><option value="Domestic short hair">Domestic short hair</option><option value="British Shorthair">British Shorthair</option><option value="Ragdoll">Ragdoll</option><option value="Persian">Persian</option></select></div>
+              <select><option selected>Any</option><option>Domestic short hair</option><option>British Shorthair</option><option>Ragdoll</option><option>Persian</option></select></div>
             <div class="field"><label>Home environment</label>
               <select><option>Optional</option><option selected>Quiet (1–2 adults)</option><option>Family with children</option><option>Already have other pets</option></select></div>
             <div class="field full"><label>Personality tags</label>
@@ -230,9 +230,9 @@
 
       <div id="savedBanner" class="saved-banner">&#x2705; Saved successfully!</div>
       <div class="form-actions">
-        <button class="btn-secondary" id="resetBtn">Reset</button>
-        <button class="btn-primary" id="saveBtn">Save Changes</button>
-        <button class="btn-danger" id="logoutBtn">Log Out</button>
+        <button class="btn-secondary">Reset</button>
+        <button class="btn-primary" onclick="document.getElementById('savedBanner').classList.add('show');setTimeout(function(){document.getElementById('savedBanner').classList.remove('show');},2000)">Save Changes</button>
+        <button class="btn-danger">Log Out</button>
       </div>
     </div>
   </div>
@@ -258,251 +258,13 @@
     </div>
   </aside>
 </div>
-<script src="../js/config.js"></script>
 <script>
-  (function () {
-    var hasCat = document.getElementById('hasCat');
-    var catFields = document.getElementById('catFields');
-    var saveBtn = document.getElementById('saveBtn');
-    var resetBtn = document.getElementById('resetBtn');
-    var logoutBtn = document.getElementById('logoutBtn');
-    var savedBanner = document.getElementById('savedBanner');
-    var nicknameInput = document.getElementById('acctNickname');
-    var emailInput = document.getElementById('acctEmail');
-    var prefGender = document.getElementById('prefGender');
-    var prefAge = document.getElementById('prefAge');
-    var prefBreed = document.getElementById('prefBreed');
-    var heroName = document.querySelector('.nav-hero-name');
-    var heroStatus = document.querySelector('.nav-hero-status');
-    var avatarBig = document.querySelector('.acct-avatar-big');
-    var heroDisplayName = document.querySelector('.acct-hero-name');
-    var heroSub = document.querySelector('.acct-hero-sub');
-    var navUserName = document.querySelector('.u-name');
-    var navUserHandle = document.querySelector('.u-handle');
-
-    var initialState = null;
-    var saveBannerTimer = null;
-
-    function setCatFieldsEnabled(enabled) {
-      catFields.style.opacity = enabled ? '1' : '.5';
-      catFields.style.pointerEvents = enabled ? '' : 'none';
-    }
-
-    function getStoredUser() {
-      try {
-        var raw = localStorage.getItem('catface_user');
-        return raw ? JSON.parse(raw) : null;
-      } catch (e) {
-        return null;
-      }
-    }
-
-    function setStoredUser(user) {
-      try {
-        localStorage.setItem('catface_user', JSON.stringify(user));
-      } catch (e) {}
-    }
-
-    function showSavedBanner(message, isError) {
-      savedBanner.textContent = message;
-      savedBanner.style.background = isError ? '#fef2f2' : '#ecfdf3';
-      savedBanner.style.color = isError ? '#b42318' : '#027a48';
-      savedBanner.classList.add('show');
-      if (saveBannerTimer) clearTimeout(saveBannerTimer);
-      saveBannerTimer = setTimeout(function () {
-        savedBanner.classList.remove('show');
-      }, 2200);
-    }
-
-    function mapUserToInitialState(user) {
-      return {
-        display_name: user && user.display_name ? user.display_name : '',
-        email: user && user.email ? user.email : '',
-        username: user && user.username ? user.username : '',
-        preferred_gender: '',
-        preferred_age: '',
-        preferred_breed: ''
-      };
-    }
-
-    function applyState(state) {
-      nicknameInput.value = state.display_name || '';
-      emailInput.value = state.email || '';
-      prefGender.value = state.preferred_gender || '';
-      prefAge.value = state.preferred_age || '';
-      prefBreed.value = state.preferred_breed || '';
-
-      var displayName = state.display_name || state.username || 'User';
-      var handle = state.username ? '@' + state.username : '';
-      if (heroName) heroName.textContent = displayName;
-      if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> Logged in' + (state.username ? ' · ' + state.username : '');
-      if (heroDisplayName) heroDisplayName.textContent = displayName;
-      if (heroSub) heroSub.textContent = (state.username || 'user') + ' · Active member';
-      if (navUserName) navUserName.textContent = displayName;
-      if (navUserHandle) navUserHandle.textContent = handle;
-      if (avatarBig) avatarBig.textContent = (displayName.charAt(0) || 'U').toUpperCase();
-    }
-
-    function currentStateFromForm() {
-      return {
-        display_name: nicknameInput.value.trim(),
-        email: emailInput.value.trim(),
-        preferred_gender: prefGender.value || '',
-        preferred_age: prefAge.value || '',
-        preferred_breed: prefBreed.value || ''
-      };
-    }
-
-    function resetForm() {
-      if (!initialState) return;
-      applyState(initialState);
-    }
-
-    async function fetchJson(url, options) {
-      var res = await fetch(url, options);
-      var result = await res.json().catch(function () { return {}; });
-      return { res: res, result: result };
-    }
-
-    async function loadAccount() {
-      if (!getToken()) {
-        window.location.href = '/pages/log-in.html';
-        return;
-      }
-
-      var stored = getStoredUser();
-      if (stored) {
-        applyState(mapUserToInitialState(stored));
-      }
-
-      try {
-        var meResp = await fetchJson(API_BASE_URL + '/users/me', {
-          method: 'GET',
-          headers: getAuthHeaders()
-        });
-
-        if (meResp.res.status === 401) {
-          logout();
-          return;
-        }
-        if (!meResp.res.ok || !meResp.result.success || !meResp.result.data) {
-          showSavedBanner(meResp.result.message || 'Failed to load account.', true);
-          return;
-        }
-
-        var prefResp = await fetchJson(API_BASE_URL + '/adoption/preferences', {
-          method: 'GET',
-          headers: getAuthHeaders()
-        });
-
-        var state = mapUserToInitialState(meResp.result.data);
-        if (prefResp.res.ok && prefResp.result.success && prefResp.result.data) {
-          state.preferred_gender = prefResp.result.data.preferred_gender || '';
-          state.preferred_age = prefResp.result.data.preferred_age || '';
-          state.preferred_breed = prefResp.result.data.preferred_breed || '';
-        }
-
-        initialState = state;
-        applyState(state);
-
-        var mergedUser = Object.assign({}, stored || {}, meResp.result.data);
-        setStoredUser(mergedUser);
-      } catch (error) {
-        console.error('loadAccount error:', error);
-        showSavedBanner('Network error while loading account.', true);
-      }
-    }
-
-    async function saveAccount() {
-      if (!getToken()) {
-        window.location.href = '/pages/log-in.html';
-        return;
-      }
-
-      var displayName = nicknameInput.value.trim();
-      if (!displayName) {
-        showSavedBanner('Nickname is required.', true);
-        return;
-      }
-
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
-
-      try {
-        var userResp = await fetchJson(API_BASE_URL + '/users/me', {
-          method: 'PUT',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ display_name: displayName })
-        });
-
-        if (userResp.res.status === 401) {
-          logout();
-          return;
-        }
-        if (!userResp.res.ok || !userResp.result.success || !userResp.result.data) {
-          showSavedBanner(userResp.result.message || 'Failed to save profile.', true);
-          return;
-        }
-
-        var prefResp = await fetchJson(API_BASE_URL + '/adoption/preferences', {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({
-            preferred_gender: prefGender.value || null,
-            preferred_age: prefAge.value || null,
-            preferred_breed: prefBreed.value || null
-          })
-        });
-
-        if (!prefResp.res.ok || !prefResp.result.success) {
-          showSavedBanner(prefResp.result.message || 'Profile saved, preferences failed.', true);
-          return;
-        }
-
-        initialState = {
-          display_name: userResp.result.data.display_name || '',
-          email: userResp.result.data.email || '',
-          username: userResp.result.data.username || '',
-          preferred_gender: prefResp.result.data.preferred_gender || '',
-          preferred_age: prefResp.result.data.preferred_age || '',
-          preferred_breed: prefResp.result.data.preferred_breed || ''
-        };
-        applyState(initialState);
-
-        var stored = getStoredUser() || {};
-        setStoredUser(Object.assign({}, stored, userResp.result.data));
-        showSavedBanner('Saved successfully!', false);
-      } catch (error) {
-        console.error('saveAccount error:', error);
-        showSavedBanner('Network error while saving.', true);
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Changes';
-      }
-    }
-
-    hasCat.addEventListener('change', function(){
-      setCatFieldsEnabled(this.checked);
-    });
-
-    resetBtn.addEventListener('click', function () {
-      resetForm();
-    });
-
-    saveBtn.addEventListener('click', function () {
-      saveAccount();
-    });
-
-    logoutBtn.addEventListener('click', function () {
-      try {
-        localStorage.removeItem('catface_user');
-      } catch (e) {}
-      logout();
-    });
-
-    setCatFieldsEnabled(false);
-    loadAccount();
-  })();
+  var hasCat = document.getElementById('hasCat');
+  var catFields = document.getElementById('catFields');
+  hasCat.addEventListener('change', function(){
+    catFields.style.opacity = this.checked ? '1' : '.5';
+    catFields.style.pointerEvents = this.checked ? '' : 'none';
+  });
 </script>
 </body>
 </html>

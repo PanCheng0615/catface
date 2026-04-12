@@ -1,5 +1,7 @@
 // frontend/js/config.js
 // 所有人在调用后端时，必须引入这个文件，使用 API_BASE_URL
+// 在其他页面 JS 之前引入：<script src="../js/config.js"></script>
+
 const API_BASE_URL = "http://localhost:3000/api";
 
 function getToken() {
@@ -15,10 +17,15 @@ function logout() {
   if (typeof window !== "undefined") window.location.href = "/pages/log-in.html";
 }
 
+/** Member4：社区等页面用于判断是否已登录 */
+function isLoggedIn() {
+  return !!getToken();
+}
+
 function getAuthHeaders() {
   const token = getToken();
   return {
     "Content-Type": "application/json",
-    "Authorization": token ? "Bearer " + token : ""
+    Authorization: token ? "Bearer " + token : ""
   };
 }
