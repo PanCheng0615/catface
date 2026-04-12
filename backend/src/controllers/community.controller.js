@@ -1,6 +1,187 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
+
+const DEMO_PASSWORD = 'demo1234';
+const DEMO_COMMUNITY_USERS = [
+  {
+    email: 'community.gege@catface.demo',
+    username: 'gege_um',
+    display_name: '格格 Gege',
+    avatar_url: '../assets/community/gege.png'
+  },
+  {
+    email: 'community.luno@catface.demo',
+    username: 'luno_um',
+    display_name: 'Luno',
+    avatar_url: '../assets/community/luno.png'
+  },
+  {
+    email: 'community.spidercat@catface.demo',
+    username: 'spider_cat_um',
+    display_name: '蜘蛛猫',
+    avatar_url: '../assets/community/spider-cat.png'
+  },
+  {
+    email: 'community.tantou@catface.demo',
+    username: 'tantou_um',
+    display_name: '探头仔',
+    avatar_url: '../assets/community/tantou.png'
+  },
+  {
+    email: 'community.maojin@catface.demo',
+    username: 'maojin_um',
+    display_name: '毛巾仔',
+    avatar_url: '../assets/community/maojin.png'
+  },
+  {
+    email: 'community.cesuo@catface.demo',
+    username: 'cesuo_um',
+    display_name: '厕所仔',
+    avatar_url: '../assets/community/cesuo.png'
+  }
+];
+
+const DEMO_COMMUNITY_POSTS = [
+  {
+    username: 'gege_um',
+    content:
+      "Hi, I'm 格格 🐱 Female, 3 months, 1.2 kg, from University of Macau (澳大). I'm gentle and a bit shy but I love people. Volunteers say I like pets, I'm curious, and I'm pretty chill. Deworming done; vaccines still in progress.",
+    image_url: '../assets/community/gege.png',
+    created_at: '2026-04-11T09:00:00.000Z',
+    likes: ['luno_um', 'tantou_um', 'maojin_um'],
+    comments: [
+      { username: 'luno_um', text: 'Campus friends unite 🐾', created_at: '2026-04-11T09:20:00.000Z' }
+    ]
+  },
+  {
+    username: 'luno_um',
+    content:
+      "Luno here ✨ Male, 3 months, 1.3 kg, from UM. Quiet and curious, with two different eye colours. I'm happy to be petted and I really love cat treats. Deworming done; vaccines not finished yet.",
+    image_url: '../assets/community/luno.png',
+    created_at: '2026-04-11T11:00:00.000Z',
+    likes: ['gege_um', 'tantou_um', 'cesuo_um'],
+    comments: [
+      { username: 'gege_um', text: 'Those eyes are amazing ✨', created_at: '2026-04-11T11:10:00.000Z' }
+    ]
+  },
+  {
+    username: 'spider_cat_um',
+    content:
+      "Female, 1 year 5 months, 2.1 kg, orange tabby with white - from 澳大. I love watching everything and I'm super agile. Volunteers say I'm sweet but I'll need patience and lots of love to really open up. Deworming done; vaccines pending.",
+    image_url: '../assets/community/spider-cat.png',
+    created_at: '2026-04-11T14:00:00.000Z',
+    likes: ['gege_um', 'luno_um'],
+    comments: [
+      { username: 'tantou_um', text: "You're so cool on the climbing frames!", created_at: '2026-04-11T14:40:00.000Z' }
+    ]
+  },
+  {
+    username: 'tantou_um',
+    content:
+      "Male tabby and white kitten, 3 months, 1.1 kg, from UM. Active, curious, quick on my paws - and yes, you can pet me! I also have a great appetite 🍽️. Deworming done; vaccines still to complete.",
+    image_url: '../assets/community/tantou.png',
+    created_at: '2026-04-12T08:00:00.000Z',
+    likes: ['gege_um', 'luno_um', 'maojin_um', 'cesuo_um'],
+    comments: [
+      { username: 'maojin_um', text: 'Same litter energy 🐱', created_at: '2026-04-12T08:25:00.000Z' }
+    ]
+  },
+  {
+    username: 'maojin_um',
+    content:
+      "Male, 4 months, 1.1 kg, from 澳大. Quiet, gentle, and I love human pets and napping wrapped in towels 🧺✨. Cat sticks are my favourite snack. Deworming done; vaccines not complete yet.",
+    image_url: '../assets/community/maojin.png',
+    created_at: '2026-04-12T10:00:00.000Z',
+    likes: ['gege_um', 'luno_um', 'tantou_um'],
+    comments: [
+      { username: 'cesuo_um', text: 'Towel gang forever!', created_at: '2026-04-12T10:15:00.000Z' }
+    ]
+  },
+  {
+    username: 'cesuo_um',
+    content:
+      "Male, 6 months, 1.5 kg, mostly white with orange patches - UM campus rescue. Outgoing, friendly, love exploring and cuddles, and humans say I have a sweet voice 🎵. Deworming done; vaccines in progress.",
+    image_url: '../assets/community/cesuo.png',
+    created_at: '2026-04-12T12:00:00.000Z',
+    likes: ['gege_um', 'luno_um', 'spider_cat_um', 'tantou_um'],
+    comments: [
+      { username: 'gege_um', text: 'Such a cheerful photo!', created_at: '2026-04-12T12:30:00.000Z' }
+    ]
+  }
+];
+
+async function ensureDemoCommunityData() {
+  const postCount = await prisma.post.count();
+  if (postCount > 0) return;
+
+  const hashedPassword = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const usersByUsername = new Map();
+
+  for (const userData of DEMO_COMMUNITY_USERS) {
+    const user = await prisma.user.upsert({
+      where: { email: userData.email },
+      update: {
+        display_name: userData.display_name,
+        avatar_url: userData.avatar_url
+      },
+      create: {
+        email: userData.email,
+        password: hashedPassword,
+        username: userData.username,
+        display_name: userData.display_name,
+        avatar_url: userData.avatar_url
+      }
+    });
+    usersByUsername.set(userData.username, user);
+  }
+
+  for (const postData of DEMO_COMMUNITY_POSTS) {
+    const author = usersByUsername.get(postData.username);
+    if (!author) continue;
+
+    const post = await prisma.post.create({
+      data: {
+        user_id: author.id,
+        content: postData.content,
+        image_url: postData.image_url,
+        created_at: new Date(postData.created_at)
+      }
+    });
+
+    for (const likerUsername of postData.likes || []) {
+      const liker = usersByUsername.get(likerUsername);
+      if (!liker || liker.id === author.id) continue;
+      await prisma.postLike.upsert({
+        where: {
+          user_id_post_id: {
+            user_id: liker.id,
+            post_id: post.id
+          }
+        },
+        update: {},
+        create: {
+          user_id: liker.id,
+          post_id: post.id
+        }
+      });
+    }
+
+    for (const commentData of postData.comments || []) {
+      const commenter = usersByUsername.get(commentData.username);
+      if (!commenter) continue;
+      await prisma.comment.create({
+        data: {
+          user_id: commenter.id,
+          post_id: post.id,
+          content: commentData.text,
+          created_at: new Date(commentData.created_at || postData.created_at)
+        }
+      });
+    }
+  }
+}
 
 function formatRelativeTime(date) {
   const now = new Date();
@@ -32,6 +213,7 @@ function mapPostToFeed(post, currentUserId, followingSet) {
     id: post.id,
     author: authorName,
     authorId: author.id,
+    authorAvatar: author.avatar_url || '',
     authorInitial: authorName.charAt(0).toUpperCase(),
     image: post.image_url || '',
     text: post.content,
@@ -54,6 +236,10 @@ async function getPosts(req, res) {
     const feed = String(req.query.feed || 'recommended').toLowerCase();
     const viewerId = req.user && req.user.id;
 
+    if (feed !== 'followed') {
+      await ensureDemoCommunityData();
+    }
+
     let where = {};
     if (feed === 'followed') {
       if (!viewerId) {
@@ -75,7 +261,7 @@ async function getPosts(req, res) {
       orderBy: { created_at: 'desc' },
       take: limit,
       include: {
-        user: { select: { id: true, username: true, display_name: true } },
+        user: { select: { id: true, username: true, display_name: true, avatar_url: true } },
         likes: { select: { user_id: true } },
         comments: { include: { user: { select: { username: true, display_name: true } } } }
       }
@@ -126,7 +312,7 @@ async function createPost(req, res) {
         image_url: imageUrl
       },
       include: {
-        user: { select: { id: true, username: true, display_name: true } },
+        user: { select: { id: true, username: true, display_name: true, avatar_url: true } },
         likes: { select: { user_id: true } },
         comments: { include: { user: { select: { username: true, display_name: true } } } }
       }

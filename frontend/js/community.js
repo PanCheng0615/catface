@@ -43,7 +43,6 @@
   function syncUrlForMode(mode) {
     const params = new URLSearchParams(window.location.search);
     if (mode === "followed") params.set("feed", "followed");
-    else if (mode === "trending") params.set("feed", "trending");
     else params.delete("feed");
     const next = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
     window.history.replaceState(null, "", next);
@@ -73,6 +72,8 @@
   const commentSubmit = document.getElementById("commentSubmit");
   const detailAuthorRow = document.getElementById("detailAuthorRow") || document.querySelector(".post-modal-author");
   const closePostOverlayBtn = document.getElementById("closePostOverlay");
+  const quickComposer = document.querySelector(".composer-input");
+  const quickComposerSubmit = document.querySelector(".composer-submit");
 
   function formatLikes(num) {
     if (num >= 10000) return (num / 1000).toFixed(0) + "k";
@@ -98,8 +99,15 @@
 
   function openCreate() {
     if (!createOverlay) return;
+    if (createImageInput) createImageInput.value = "";
+    if (createPreview) createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
+    if (createTextInput) {
+      const quickText = quickComposer ? quickComposer.value.trim() : "";
+      createTextInput.value = quickText;
+    }
     createOverlay.classList.add("is-open");
     setComposeInUrl(true);
+    updateCreateSubmitState();
   }
 
   function closeCreate() {
@@ -108,10 +116,22 @@
     setComposeInUrl(false);
   }
 
+  function updateCreateSubmitState() {
+    if (!createTextInput || !createSubmit) return;
+    createSubmit.disabled = !createTextInput.value.trim();
+  }
+
   const openCreateTop = document.getElementById("btnCreatePost") || document.getElementById("openCreateFromTop");
   if (openCreateTop) openCreateTop.addEventListener("click", openCreate);
   const openCreateQuick = document.getElementById("openCreateFromQuick");
   if (openCreateQuick) openCreateQuick.addEventListener("click", openCreate);
+  if (quickComposerSubmit) {
+    quickComposerSubmit.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openCreate();
+    });
+  }
   Array.prototype.forEach.call(document.querySelectorAll("[data-close-create]"), function (btn) {
     btn.addEventListener("click", closeCreate);
   });
@@ -124,7 +144,6 @@
   if (createImageInput && createTextInput && createPreview && createSubmit) {
     createImageInput.addEventListener("change", function () {
       const file = createImageInput.files[0];
-      const text = createTextInput.value.trim();
       if (file) {
         const reader = new FileReader();
         reader.onload = function (ev) {
@@ -134,13 +153,11 @@
       } else {
         createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
       }
-      createSubmit.disabled = !file || !text;
+      updateCreateSubmitState();
     });
 
     createTextInput.addEventListener("input", function () {
-      const file = createImageInput.files[0];
-      const text = createTextInput.value.trim();
-      createSubmit.disabled = !file || !text;
+      updateCreateSubmitState();
     });
   }
 
@@ -149,8 +166,47 @@
       e.preventDefault();
       const file = createImageInput.files[0];
       const text = createTextInput.value.trim();
-      if (!file || !text) return;
+      if (!text) return;
       if (!requireLogin()) return;
+      createSubmit.disabled = true;
+
+      function submitPost(imageUrl) {
+        return fetch(API_BASE_URL + "/community/posts", {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            content: text,
+            image_url: imageUrl || null
+          })
+        });
+      }
+
+      function handlePostResult(result) {
+        if (!result.success || !result.data) {
+          alert(result.message || "Post failed");
+          updateCreateSubmitState();
+          return;
+        }
+        createImageInput.value = "";
+        createTextInput.value = "";
+        if (quickComposer) quickComposer.value = "";
+        createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
+        updateCreateSubmitState();
+        closeCreate();
+        switchCommunityView("recommended");
+      }
+
+      if (!file) {
+        submitPost(null)
+          .then(function (res) { return res.json(); })
+          .then(handlePostResult)
+          .catch(function () {
+            alert("Network error, please try again.");
+            updateCreateSubmitState();
+          });
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = function (ev) {
         const dataUrl = ev.target.result;
@@ -164,27 +220,13 @@
             const imageUrl = uploadResult.success && uploadResult.data && uploadResult.data.url
               ? uploadResult.data.url
               : dataUrl;
-            return fetch(API_BASE_URL + "/community/posts", {
-              method: "POST",
-              headers: getAuthHeaders(),
-              body: JSON.stringify({ content: text, image_url: imageUrl })
-            });
+            return submitPost(imageUrl);
           })
           .then(function (res) { return res.json(); })
-          .then(function (result) {
-            if (!result.success || !result.data) {
-              alert(result.message || "Post failed");
-              return;
-            }
-            createImageInput.value = "";
-            createTextInput.value = "";
-            createSubmit.disabled = true;
-            createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
-            closeCreate();
-            switchCommunityView("recommended");
-          })
+          .then(handlePostResult)
           .catch(function () {
             alert("Network error, please try again.");
+            updateCreateSubmitState();
           });
       };
       reader.readAsDataURL(file);
@@ -196,8 +238,13 @@
     if (!post) return;
     currentPostId = id;
     if (!postOverlay || !postDetailImage || !detailAuthorAvatar || !detailAuthorName || !detailTime || !detailText) return;
-    postDetailImage.src = post.image || feedPlaceholderImage();
-    detailAuthorAvatar.textContent = post.authorInitial || post.author[0] || "C";
+    postDetailImage.src = post.image || "";
+    postDetailImage.style.display = post.image ? "" : "none";
+    if (post.authorAvatar) {
+      detailAuthorAvatar.innerHTML = '<img src="' + escapeHtml(post.authorAvatar) + '" alt="">';
+    } else {
+      detailAuthorAvatar.textContent = post.authorInitial || post.author[0] || "C";
+    }
     detailAuthorName.textContent = post.author;
     detailTime.textContent = post.time;
     detailText.textContent = post.text;
@@ -426,6 +473,7 @@
     let query = "author=" + encodeURIComponent(author);
     if (post && post.authorId) query += "&authorId=" + encodeURIComponent(post.authorId);
     try {
+      window.localStorage.removeItem("catface_last_story_profile");
       if (post && post.authorId) window.localStorage.setItem("catface_last_author_id", String(post.authorId));
       if (author) window.localStorage.setItem("catface_last_author_name", String(author));
     } catch (e) {}
@@ -439,14 +487,64 @@
     return "/pages/cat-profile.html?" + query;
   }
 
+  function openStoryProfile(storyKey, storyName) {
+    const key = String(storyKey || "").trim();
+    if (!key) return;
+    const author = String(storyName || key);
+    try {
+      window.localStorage.setItem("catface_last_story_profile", key);
+      window.localStorage.removeItem("catface_last_author_id");
+      window.localStorage.setItem("catface_last_author_name", author);
+    } catch (e) {}
+    window.location.href =
+      "/pages/cat-profile.html?story=" + encodeURIComponent(key) +
+      "&author=" + encodeURIComponent(author);
+  }
+
   function openProfile(author) {
     const post = posts.find(function (p) { return p.id === currentPostId; });
     navigateToAuthor(post, author);
   }
 
-  function feedPlaceholderImage() {
-    return "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=600&h=800&q=80";
-  }
+  document.querySelectorAll(".story[data-user]").forEach(function (storyEl) {
+    storyEl.addEventListener("click", function () {
+      const key = storyEl.getAttribute("data-user") || "";
+      const nameEl = storyEl.querySelector(".story-name");
+      const name = nameEl ? nameEl.textContent.trim() : key;
+      const href = storyEl.getAttribute("data-story-href");
+      if (href) {
+        try {
+          window.localStorage.setItem("catface_last_story_profile", key);
+          window.localStorage.removeItem("catface_last_author_id");
+          window.localStorage.setItem("catface_last_author_name", name);
+        } catch (e) {}
+        window.location.href = href;
+        return;
+      }
+      openStoryProfile(key, name);
+    });
+    storyEl.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        const key = storyEl.getAttribute("data-user") || "";
+        const nameEl = storyEl.querySelector(".story-name");
+        const name = nameEl ? nameEl.textContent.trim() : key;
+        const href = storyEl.getAttribute("data-story-href");
+        if (href) {
+          try {
+            window.localStorage.setItem("catface_last_story_profile", key);
+            window.localStorage.removeItem("catface_last_author_id");
+            window.localStorage.setItem("catface_last_author_name", name);
+          } catch (e) {}
+          window.location.href = href;
+          return;
+        }
+        openStoryProfile(key, name);
+      }
+    });
+    if (!storyEl.hasAttribute("tabindex")) storyEl.setAttribute("tabindex", "0");
+    storyEl.setAttribute("role", "button");
+  });
 
   function renderFeed() {
     feedEl.innerHTML = "";
@@ -471,15 +569,18 @@
       const card = document.createElement("article");
       card.className = "post-card";
       card.dataset.id = post.id;
-      const imgSrc = post.image ? post.image : feedPlaceholderImage();
+      const postImage = post.image || "";
+      const imgHtml = postImage
+        ? '<img class="post-img" src="' + escapeHtml(post.image) + '" alt="" data-open-detail="1">'
+        : "";
       const safeAuthor = post.author || "User";
       const safeAuthorInitial = post.authorInitial || safeAuthor[0] || "U";
-      const avatarInner = post.image
-        ? '<img src="' + escapeHtml(imgSrc) + '" alt="">'
+      const avatarInner = post.authorAvatar
+        ? '<img src="' + escapeHtml(post.authorAvatar) + '" alt="">'
         : "<span>" + escapeHtml(safeAuthorInitial) + "</span>";
       const likeIcon = post.liked ? "&#x2665;" : "&#x2661;";
       card.innerHTML =
-        '<div class="post-avatar">' + avatarInner + "</div>" +
+        '<div class="post-avatar" data-author-click="1">' + avatarInner + "</div>" +
         '<div class="post-body">' +
         '<div class="post-meta">' +
         '<span class="post-name" data-author-click="1">' + escapeHtml(safeAuthor) + "</span>" +
@@ -487,7 +588,7 @@
         '<span class="post-time" data-open-detail="1">' + escapeHtml(post.time || "") + "</span>" +
         "</div>" +
         '<p class="post-text" data-open-detail="1">' + escapeHtml(post.text || "") + "</p>" +
-        '<img class="post-img" src="' + escapeHtml(imgSrc) + '" alt="" data-open-detail="1">' +
+        imgHtml +
         '<div class="post-actions">' +
         '<button type="button" class="act' + (post.liked ? " liked" : "") + '" data-open-detail="1">' +
         '<span class="ai">' + likeIcon + "</span> " + formatLikes(post.likes) +
@@ -561,6 +662,7 @@
             id: p.id,
             author: p.author || "User",
             authorId: p.authorId || null,
+            authorAvatar: p.authorAvatar || "",
             authorInitial: p.authorInitial || "U",
             fromApi: true,
             followed: !!p.followed,
@@ -617,7 +719,6 @@
     } catch (e) {}
 
     if (feed === "followed") switchCommunityView("followed");
-    else if (feed === "trending") switchCommunityView("trending");
     else switchCommunityView("recommended");
 
     if (compose || forceOpenCreate) {

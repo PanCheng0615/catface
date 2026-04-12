@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -136,7 +136,7 @@
     <div class="nav-section">
       <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
       <div class="nav-link" onclick="location.href='/pages/adoption.html'"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
-      <div class="nav-link" onclick="location.href='/pages/notifications.html'"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge">3</span></div>
+      <div class="nav-link" onclick="location.href='/pages/notifications.html'"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
       <div class="nav-link" onclick="location.href='/pages/account.html'"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
       <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
     </div>
@@ -152,7 +152,7 @@
   <div class="center">
     <!-- Cover photo -->
     <div class="profile-cover">
-      <img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=800&q=80" alt="Nala cover">
+      <img id="profileCoverImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="Profile cover">
       <div class="profile-cover-overlay"></div>
       <button class="profile-cover-back" onclick="history.back()">&#x2190; Back</button>
     </div>
@@ -160,31 +160,29 @@
     <!-- Avatar & actions -->
     <div class="profile-main-info">
       <div class="profile-avatar-wrap">
-        <div class="profile-avatar"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=160&q=80" alt="Nala"></div>
+        <div class="profile-avatar"><img id="profileAvatarImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="Profile avatar"></div>
         <div class="profile-actions-row">
           <button class="btn-follow" id="followBtn">Follow</button>
-          <button class="btn-message">Message</button>
+          <button class="btn-message" id="messageBtn">Message</button>
         </div>
       </div>
     </div>
 
     <!-- Name & bio -->
     <div class="profile-name-section">
-      <div class="profile-name">Nala</div>
-      <div class="profile-handle">@nala_kitten · CAT-007</div>
-      <div class="profile-bio">Just turned 3 months old! &#x1F382; Still learning to walk gracefully… My human says I've grown so much. I love sunny spots and attacking feather toys. &#x1F415;&#x200D;&#x1F9BA;</div>
+      <div class="profile-name" id="profileName">Loading profile...</div>
+      <div class="profile-handle" id="profileHandle">@loading</div>
+      <div class="profile-bio" id="profileBio">Fetching profile details.</div>
       <div class="profile-stats">
-        <div class="profile-stat"><div class="profile-stat-num">24</div><div class="profile-stat-label">Posts</div></div>
-        <div class="profile-stat"><div class="profile-stat-num">3,412</div><div class="profile-stat-label">Followers</div></div>
-        <div class="profile-stat"><div class="profile-stat-num">142</div><div class="profile-stat-label">Following</div></div>
+        <div class="profile-stat"><div class="profile-stat-num" id="profilePostsCount">0</div><div class="profile-stat-label">Posts</div></div>
+        <div class="profile-stat"><div class="profile-stat-num" id="profileFollowersCount">0</div><div class="profile-stat-label">Followers</div></div>
+        <div class="profile-stat"><div class="profile-stat-num" id="profileFollowingCount">0</div><div class="profile-stat-label">Following</div></div>
       </div>
     </div>
 
-    <div class="profile-tags">
-      <span class="profile-tag">&#x1F476; Kitten</span>
-      <span class="profile-tag">&#x1F497; Cute</span>
-      <span class="profile-tag">&#x1F3E0; Available for adoption</span>
-      <span class="profile-tag">&#x2B50; Featured</span>
+    <div class="profile-tags" id="profileTags">
+      <span class="profile-tag">&#x1F464; Community member</span>
+      <span class="profile-tag">&#x2728; CatFace profile</span>
     </div>
 
     <!-- Tabs -->
@@ -196,43 +194,13 @@
 
     <!-- Posts tab content -->
     <div id="content-posts">
+      <div id="profilePostsList">
       <div class="post-card">
         <div class="post-body">
-          <div class="post-time">2 days ago</div>
-          <p class="post-text">I just turned 3 months old today! &#x1F382; My human says I've grown so much she can barely believe it. I'm still figuring out this whole "walking gracefully" thing…</p>
-          <img class="post-img" src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=640&q=80" alt="Nala">
-          <div class="post-actions">
-            <button class="act liked"><span class="ai">&#x2665;</span> 3,412</button>
-            <button class="act"><span class="ai">&#x1F4AC;</span> 178</button>
-            <button class="act"><span class="ai">&#x1F501;</span> 640</button>
-            <button class="act act-spacer"><span class="ai">&#x1F516;</span></button>
-          </div>
+          <div class="post-time">Loading...</div>
+          <p class="post-text">Preparing posts for this profile.</p>
         </div>
       </div>
-      <div class="post-card">
-        <div class="post-body">
-          <div class="post-time">1 week ago</div>
-          <p class="post-text">Discovered the sunbeam by the window today. This is my spot now. Humans may not enter. &#x2600;&#xFE0F;&#x1F431;</p>
-          <img class="post-img" src="https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=640&q=80" alt="">
-          <div class="post-actions">
-            <button class="act"><span class="ai">&#x2661;</span> 891</button>
-            <button class="act"><span class="ai">&#x1F4AC;</span> 42</button>
-            <button class="act"><span class="ai">&#x1F501;</span> 180</button>
-            <button class="act act-spacer"><span class="ai">&#x1F516;</span></button>
-          </div>
-        </div>
-      </div>
-      <div class="post-card">
-        <div class="post-body">
-          <div class="post-time">2 weeks ago</div>
-          <p class="post-text">My first vaccination done! &#x1F4AA; The vet said I was the bravest little patient all day. I did not cry (much). I expect extra treats for this heroic act.</p>
-          <div class="post-actions">
-            <button class="act"><span class="ai">&#x2661;</span> 1,204</button>
-            <button class="act"><span class="ai">&#x1F4AC;</span> 67</button>
-            <button class="act"><span class="ai">&#x1F501;</span> 308</button>
-            <button class="act act-spacer"><span class="ai">&#x1F516;</span></button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -240,39 +208,32 @@
     <div id="content-about" style="display:none;">
       <div class="about-body">
         <div class="info-card">
-          <div class="info-card-head">&#x1F4CB; Basic Information</div>
-          <div class="info-row"><span class="info-label">Cat ID</span><span class="info-value">CAT-007</span></div>
-          <div class="info-row"><span class="info-label">Name</span><span class="info-value">Nala</span></div>
-          <div class="info-row"><span class="info-label">Breed</span><span class="info-value">Domestic Shorthair</span></div>
-          <div class="info-row"><span class="info-label">Gender</span><span class="info-value">Female</span></div>
-          <div class="info-row"><span class="info-label">Age</span><span class="info-value">3 months</span></div>
-          <div class="info-row"><span class="info-label">Birthday</span><span class="info-value">Dec 24, 2025</span></div>
+          <div class="info-card-head">&#x1F4CB; Profile Information</div>
+          <div class="info-row"><span class="info-label">Display name</span><span class="info-value" id="aboutDisplayName">Loading</span></div>
+          <div class="info-row"><span class="info-label">Username</span><span class="info-value" id="aboutUsername">@loading</span></div>
+          <div class="info-row"><span class="info-label">Profile type</span><span class="info-value" id="aboutProfileType">Community member</span></div>
+          <div class="info-row"><span class="info-label">Status</span><span class="info-value" id="aboutStatus">Active</span></div>
         </div>
         <div class="info-card">
-          <div class="info-card-head">&#x1FA7A; Health Status</div>
-          <div class="info-row"><span class="info-label">Neutered</span><span class="info-value">Not yet (too young)</span></div>
-          <div class="info-row"><span class="info-label">Vaccination</span><span class="info-value">First dose completed</span></div>
-          <div class="info-row"><span class="info-label">Allergies</span><span class="info-value">None known</span></div>
-          <div class="info-row"><span class="info-label">Adoption Status</span><span class="info-value" style="color:#22c55e;">Available &#x2705;</span></div>
+          <div class="info-card-head">&#x1FA7A; Activity Overview</div>
+          <div class="info-row"><span class="info-label">Posts</span><span class="info-value" id="aboutPostsCount">0</span></div>
+          <div class="info-row"><span class="info-label">Followers</span><span class="info-value" id="aboutFollowersCount">0</span></div>
+          <div class="info-row"><span class="info-label">Following</span><span class="info-value" id="aboutFollowingCount">0</span></div>
+          <div class="info-row"><span class="info-label">Bio</span><span class="info-value" id="aboutBioSummary">CatFace member</span></div>
         </div>
         <div class="info-card">
-          <div class="info-card-head">&#x1F3E0; Rescue Info</div>
-          <div class="info-row"><span class="info-label">Rescue Org</span><span class="info-value">XX Kitten Foster Network</span></div>
-          <div class="info-row"><span class="info-label">Found at</span><span class="info-value">Residential area</span></div>
-          <div class="info-row"><span class="info-label">Intake date</span><span class="info-value">Dec 26, 2025</span></div>
+          <div class="info-card-head">&#x1F3E0; Notes</div>
+          <div class="info-row"><span class="info-label">Profile source</span><span class="info-value" id="aboutSource">CatFace community</span></div>
+          <div class="info-row"><span class="info-label">Last viewed</span><span class="info-value" id="aboutLastViewed">Just now</span></div>
+          <div class="info-row"><span class="info-label">Story profile</span><span class="info-value" id="aboutStoryFlag">No</span></div>
         </div>
       </div>
     </div>
 
     <!-- Photos tab content -->
     <div id="content-photos" style="display:none;padding:16px;display:none;">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-        <img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
-        <img src="https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
-        <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
-        <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
-        <img src="https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
-        <img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
+      <div id="profilePhotosGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <div style="grid-column:1/-1;color:#A87848;font-size:14px;">Loading photos...</div>
       </div>
     </div>
   </div>
@@ -280,9 +241,9 @@
   <!-- RIGHT PANEL -->
   <aside class="right-panel">
     <div class="adopt-cta">
-      <h3>&#x1F3E0; Interested in adopting Nala?</h3>
-      <p>She's available and waiting for her forever home. Contact the rescue organization to begin the process.</p>
-      <button class="adopt-cta-btn" onclick="location.href='/pages/adoption.html'">Start Adoption Process</button>
+      <h3 id="adoptCtaTitle">&#x1F464; View this profile</h3>
+      <p id="adoptCtaText">Explore this CatFace member's profile and recent posts.</p>
+      <button class="adopt-cta-btn" id="adoptCtaBtn" onclick="location.href='/pages/community.html'">Open Community</button>
     </div>
     <div class="rp-card">
       <div class="rp-card-title">&#x1F43E; Similar Cats</div>
@@ -293,34 +254,473 @@
   </aside>
 </div>
 
+<script src="../js/config.js"></script>
 <script>
-  // Tab switching
-  var tabs = {posts:'content-posts', about:'content-about', photos:'content-photos'};
-  document.querySelectorAll('.ptab').forEach(function(t){
-    t.addEventListener('click', function(){
-      document.querySelectorAll('.ptab').forEach(function(x){x.classList.remove('active')});
-      this.classList.add('active');
-      var key = this.id.replace('tab-','');
-      Object.keys(tabs).forEach(function(k){ document.getElementById(tabs[k]).style.display = k===key?'':'none'; });
-    });
-  });
+  (function () {
+    var tabs = { posts: 'content-posts', about: 'content-about', photos: 'content-photos' };
+    var followBtn = document.getElementById('followBtn');
+    var messageBtn = document.getElementById('messageBtn');
+    var profileName = document.getElementById('profileName');
+    var profileHandle = document.getElementById('profileHandle');
+    var profileBio = document.getElementById('profileBio');
+    var profileCoverImage = document.getElementById('profileCoverImage');
+    var profileAvatarImage = document.getElementById('profileAvatarImage');
+    var profilePostsCount = document.getElementById('profilePostsCount');
+    var profileFollowersCount = document.getElementById('profileFollowersCount');
+    var profileFollowingCount = document.getElementById('profileFollowingCount');
+    var profilePostsList = document.getElementById('profilePostsList');
+    var profileTags = document.getElementById('profileTags');
+    var profilePhotosGrid = document.getElementById('profilePhotosGrid');
+    var aboutDisplayName = document.getElementById('aboutDisplayName');
+    var aboutUsername = document.getElementById('aboutUsername');
+    var aboutProfileType = document.getElementById('aboutProfileType');
+    var aboutStatus = document.getElementById('aboutStatus');
+    var aboutPostsCount = document.getElementById('aboutPostsCount');
+    var aboutFollowersCount = document.getElementById('aboutFollowersCount');
+    var aboutFollowingCount = document.getElementById('aboutFollowingCount');
+    var aboutBioSummary = document.getElementById('aboutBioSummary');
+    var aboutSource = document.getElementById('aboutSource');
+    var aboutLastViewed = document.getElementById('aboutLastViewed');
+    var aboutStoryFlag = document.getElementById('aboutStoryFlag');
+    var adoptCtaTitle = document.getElementById('adoptCtaTitle');
+    var adoptCtaText = document.getElementById('adoptCtaText');
+    var adoptCtaBtn = document.getElementById('adoptCtaBtn');
+    var state = {
+      profile: null,
+      targetUserId: null
+    };
+    var STORY_PROFILES = {
+      luna: {
+        username: 'luna_story',
+        display_name: 'Luna',
+        avatar_url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&q=80',
+        bio: 'Sunbeam lover, gentle nap expert, and one of the cutest story regulars on CatFace.',
+        counts: { posts: 12, followers: 2100, following: 84 },
+        posts: [
+          { created_at: new Date(Date.now() - 2 * 86400000).toISOString(), content: 'Perfect sunbeam found. Do not disturb.', image_url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&q=80', likes: 412, comments: 31 }
+        ]
+      },
+      whiskers: {
+        username: 'whiskers_story',
+        display_name: 'Whiskers',
+        avatar_url: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&q=80',
+        bio: 'Health tips, nap notes, and serious tabby wisdom.',
+        counts: { posts: 19, followers: 1750, following: 63 },
+        posts: [
+          { created_at: new Date(Date.now() - 4 * 86400000).toISOString(), content: 'Daily reminder: warm laps are essential for wellness.', image_url: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&q=80', likes: 355, comments: 22 }
+        ]
+      },
+      charlie: {
+        username: 'charlie_story',
+        display_name: 'Charlie',
+        avatar_url: 'https://images.unsplash.com/photo-1495360010541-f48722b34f7d?w=400&q=80',
+        bio: 'Quiet observer with elegant poses and premium side-eye.',
+        counts: { posts: 8, followers: 980, following: 40 },
+        posts: [
+          { created_at: new Date(Date.now() - 6 * 86400000).toISOString(), content: 'Practicing my best statue pose by the window.', image_url: 'https://images.unsplash.com/photo-1495360010541-f48722b34f7d?w=800&q=80', likes: 188, comments: 12 }
+        ]
+      },
+      mochi: {
+        username: 'mochi_story',
+        display_name: 'Mochi',
+        avatar_url: 'https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=400&q=80',
+        bio: 'Small face, big personality, and very professional at looking adorable.',
+        counts: { posts: 16, followers: 3200, following: 96 },
+        posts: [
+          { created_at: new Date(Date.now() - 86400000).toISOString(), content: 'Camera ready from every angle today.', image_url: 'https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=800&q=80', likes: 620, comments: 48 }
+        ]
+      },
+      nala: {
+        username: 'nala_story',
+        display_name: 'Nala',
+        avatar_url: 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=400&q=80',
+        bio: 'Sunny spots, feather toys, and tiny kitten chaos.',
+        counts: { posts: 24, followers: 3412, following: 142 },
+        posts: [
+          { created_at: new Date(Date.now() - 2 * 86400000).toISOString(), content: 'I just turned 3 months old today! Still figuring out this whole "walking gracefully" thing…', image_url: 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=800&q=80', likes: 3412, comments: 178 }
+        ]
+      },
+      simba: {
+        username: 'simba_story',
+        display_name: 'Simba',
+        avatar_url: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=80',
+        bio: 'Golden retriever energy in a CatFace story circle. Yes, I still count.',
+        counts: { posts: 14, followers: 7200, following: 118 },
+        posts: [
+          { created_at: new Date(Date.now() - 3 * 86400000).toISOString(), content: 'Big smile for everyone scrolling today.', image_url: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800&q=80', likes: 2500, comments: 133 }
+        ]
+      },
+      gege: {
+        username: 'gege_um',
+        display_name: '格格 Gege',
+        avatar_url: '../assets/community/gege.png',
+        bio: 'Gentle UM kitten with a calm personality and excellent story presence.',
+        tags: ['Community member', 'UM rescue', 'Gentle'],
+        counts: { posts: 6, followers: 612, following: 33 },
+        posts: [
+          { created_at: new Date(Date.now() - 5 * 86400000).toISOString(), content: 'Campus friends unite. Quiet day, warm naps, good mood.', image_url: '../assets/community/gege.png', likes: 123, comments: 9 }
+        ]
+      },
+      luno: {
+        username: 'luno_um',
+        display_name: 'Luno',
+        avatar_url: '../assets/community/luno.png',
+        bio: 'Quiet, curious, and famous for heterochromia.',
+        counts: { posts: 7, followers: 540, following: 29 },
+        posts: [
+          { created_at: new Date(Date.now() - 3 * 86400000).toISOString(), content: 'Two different eye colours, same excellent attitude.', image_url: '../assets/community/luno.png', likes: 201, comments: 15 }
+        ]
+      },
+      spidercat: {
+        username: 'spider_cat_um',
+        display_name: '蜘蛛貓',
+        avatar_url: '../assets/community/spider-cat.png',
+        bio: 'Curious observer with elite climbing skills.',
+        counts: { posts: 5, followers: 430, following: 21 },
+        posts: [
+          { created_at: new Date(Date.now() - 6 * 86400000).toISOString(), content: 'High ground secured. Watching everything from above.', image_url: '../assets/community/spider-cat.png', likes: 144, comments: 8 }
+        ]
+      },
+      tantou: {
+        username: 'tantou_um',
+        display_name: '探頭仔',
+        avatar_url: '../assets/community/tantou.png',
+        bio: 'Playful kitten who shows up in every interesting corner.',
+        counts: { posts: 5, followers: 398, following: 26 },
+        posts: [
+          { created_at: new Date(Date.now() - 2 * 86400000).toISOString(), content: 'Popped my head out just in time for story hour.', image_url: '../assets/community/tantou.png', likes: 132, comments: 7 }
+        ]
+      },
+      maojin: {
+        username: 'maojin_um',
+        display_name: '毛巾仔',
+        avatar_url: '../assets/community/maojin.png',
+        bio: 'Towel nap expert and calm little gentleman.',
+        counts: { posts: 5, followers: 376, following: 20 },
+        posts: [
+          { created_at: new Date(Date.now() - 4 * 86400000).toISOString(), content: 'Wrapped up for another perfect nap.', image_url: '../assets/community/maojin.png', likes: 111, comments: 6 }
+        ]
+      },
+      cesuo: {
+        username: 'cesuo_um',
+        display_name: '廁所仔',
+        avatar_url: '../assets/community/cesuo.png',
+        bio: 'Outgoing campus rescue cat with sweet voice and lots of energy.',
+        counts: { posts: 5, followers: 402, following: 24 },
+        posts: [
+          { created_at: new Date(Date.now() - 3 * 86400000).toISOString(), content: 'Exploring mode activated. Cuddles available later.', image_url: '../assets/community/cesuo.png', likes: 136, comments: 10 }
+        ]
+      }
+    };
 
-  // Follow button
-  document.getElementById('followBtn').onclick = function(){
-    if(this.textContent==='Follow'){this.textContent='Following';this.style.background='var(--brand-hover)';}
-    else{this.textContent='Follow';this.style.background='';}
-  };
-
-  // Like buttons
-  document.querySelectorAll('.act').forEach(function(b){
-    var ai=b.querySelector('.ai');
-    if(ai&&(ai.textContent==='♡'||ai.innerHTML==='&#x2661;')){
-      b.addEventListener('click',function(){this.classList.toggle('liked');});
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
-  });
 
-  // Follow similar
-  document.querySelectorAll('.follow-btn').forEach(function(b){b.addEventListener('click',function(){if(this.textContent==='Follow'){this.textContent='Following';this.style.background='var(--brand)';this.style.color='#fff';}else{this.textContent='Follow';this.style.background='';this.style.color='';}})}); 
+    function loadCurrentUser() {
+      try {
+        return JSON.parse(localStorage.getItem('catface_user') || 'null');
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function requireLogin() {
+      if (typeof getToken === 'function' && getToken()) return true;
+      alert('Please log in first.');
+      window.location.href = '/pages/log-in.html';
+      return false;
+    }
+
+    function formatCount(value) {
+      return Number(value || 0).toLocaleString();
+    }
+
+    function formatTime(iso) {
+      if (!iso) return 'Just now';
+      var d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return 'Just now';
+      var diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+      if (diffSec < 60) return 'Just now';
+      if (diffSec < 3600) return Math.floor(diffSec / 60) + 'm ago';
+      if (diffSec < 86400) return Math.floor(diffSec / 3600) + 'h ago';
+      if (diffSec < 604800) return Math.floor(diffSec / 86400) + 'd ago';
+      return d.toLocaleDateString();
+    }
+
+    function getTargetUserId() {
+      var params = new URLSearchParams(window.location.search);
+      var story = String(params.get('story') || '').trim();
+      if (story) return '';
+      var authorId = String(params.get('authorId') || '').trim();
+      if (authorId) return authorId;
+      try {
+        return String(localStorage.getItem('catface_last_author_id') || '').trim();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function getStoryKey() {
+      var params = new URLSearchParams(window.location.search);
+      var story = String(params.get('story') || '').trim().toLowerCase();
+      if (story) return story;
+      try {
+        return String(localStorage.getItem('catface_last_story_profile') || '').trim().toLowerCase();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function setFollowButtonState(profile) {
+      if (!followBtn || !profile) return;
+      if (profile.is_self) {
+        followBtn.style.display = 'none';
+        return;
+      }
+      followBtn.style.display = '';
+      if (profile.is_following) {
+        followBtn.textContent = 'Following';
+        followBtn.style.background = 'var(--brand-hover)';
+      } else {
+        followBtn.textContent = 'Follow';
+        followBtn.style.background = '';
+      }
+    }
+
+    function renderPosts(posts) {
+      if (!profilePostsList) return;
+      if (!posts || !posts.length) {
+        profilePostsList.innerHTML =
+          '<div class="post-card"><div class="post-body"><div class="post-time">No posts yet</div><p class="post-text">This user has not shared anything yet.</p></div></div>';
+        return;
+      }
+      profilePostsList.innerHTML = posts.map(function (post) {
+        return (
+          '<div class="post-card">' +
+            '<div class="post-body">' +
+              '<div class="post-time">' + escapeHtml(formatTime(post.created_at)) + '</div>' +
+              '<p class="post-text">' + escapeHtml(post.content || '') + '</p>' +
+              (post.image_url ? '<img class="post-img" src="' + escapeHtml(post.image_url) + '" alt="">' : '') +
+              '<div class="post-actions">' +
+                '<button class="act"><span class="ai">&#x2665;</span> ' + escapeHtml(formatCount(post.likes)) + '</button>' +
+                '<button class="act"><span class="ai">&#x1F4AC;</span> ' + escapeHtml(formatCount(post.comments)) + '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+
+    function renderTags(profile) {
+      if (!profileTags) return;
+      var tags = Array.isArray(profile.tags) && profile.tags.length
+        ? profile.tags
+        : ['Community member', profile.is_story_profile ? 'Story profile' : 'Profile active'];
+      profileTags.innerHTML = tags.map(function (tag) {
+        return '<span class="profile-tag">' + escapeHtml(tag) + '</span>';
+      }).join('');
+    }
+
+    function renderPhotos(profile) {
+      if (!profilePhotosGrid) return;
+      var photos = (profile.posts || [])
+        .map(function (post) { return post.image_url || ''; })
+        .filter(Boolean)
+        .slice(0, 6);
+      if (!photos.length && profile.avatar_url) photos = [profile.avatar_url];
+      if (!photos.length) {
+        profilePhotosGrid.innerHTML = '<div style="grid-column:1/-1;color:#A87848;font-size:14px;">No photos available.</div>';
+        return;
+      }
+      profilePhotosGrid.innerHTML = photos.map(function (src) {
+        return '<img src="' + escapeHtml(src) + '" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">';
+      }).join('');
+    }
+
+    function applyProfile(profile) {
+      state.profile = profile;
+      document.title = 'CatFace · ' + (profile.display_name || profile.username || 'Profile');
+      if (profileName) profileName.textContent = profile.display_name || profile.username || 'User';
+      if (profileHandle) profileHandle.textContent = profile.username ? '@' + profile.username : '';
+      if (profileBio) profileBio.textContent = profile.bio || 'No bio yet.';
+      if (profileAvatarImage && profile.avatar_url) profileAvatarImage.src = profile.avatar_url;
+      if (profileAvatarImage) profileAvatarImage.alt = (profile.display_name || profile.username || 'User') + ' avatar';
+      if (profileCoverImage && profile.avatar_url) profileCoverImage.src = profile.avatar_url;
+      if (profileCoverImage) profileCoverImage.alt = (profile.display_name || profile.username || 'User') + ' cover';
+      if (profilePostsCount) profilePostsCount.textContent = formatCount(profile.counts.posts);
+      if (profileFollowersCount) profileFollowersCount.textContent = formatCount(profile.counts.followers);
+      if (profileFollowingCount) profileFollowingCount.textContent = formatCount(profile.counts.following);
+      if (aboutDisplayName) aboutDisplayName.textContent = profile.display_name || profile.username || 'User';
+      if (aboutUsername) aboutUsername.textContent = profile.username ? '@' + profile.username : 'N/A';
+      if (aboutProfileType) aboutProfileType.textContent = profile.is_story_profile ? 'Story profile' : 'Community member';
+      if (aboutStatus) aboutStatus.textContent = profile.is_self ? 'This is you' : (profile.is_following ? 'Following' : 'Available to follow');
+      if (aboutPostsCount) aboutPostsCount.textContent = formatCount(profile.counts.posts);
+      if (aboutFollowersCount) aboutFollowersCount.textContent = formatCount(profile.counts.followers);
+      if (aboutFollowingCount) aboutFollowingCount.textContent = formatCount(profile.counts.following);
+      if (aboutBioSummary) aboutBioSummary.textContent = profile.bio || 'No bio yet.';
+      if (aboutSource) aboutSource.textContent = profile.is_story_profile ? 'Recent Stories' : 'CatFace community';
+      if (aboutLastViewed) aboutLastViewed.textContent = 'Just now';
+      if (aboutStoryFlag) aboutStoryFlag.textContent = profile.is_story_profile ? 'Yes' : 'No';
+      if (adoptCtaTitle) adoptCtaTitle.innerHTML = '&#x1F464; View ' + escapeHtml(profile.display_name || profile.username || 'this profile');
+      if (adoptCtaText) adoptCtaText.textContent = profile.bio || 'Explore this CatFace member\'s profile and recent posts.';
+      if (adoptCtaBtn) adoptCtaBtn.textContent = 'Open Community';
+      setFollowButtonState(profile);
+      renderPosts(profile.posts || []);
+      renderTags(profile);
+      renderPhotos(profile);
+    }
+
+    function fetchJson(url, options) {
+      return fetch(url, options).then(function (res) {
+        if (res.status === 401) {
+          window.location.href = '/pages/log-in.html';
+          return null;
+        }
+        return res.json();
+      });
+    }
+
+    function loadProfile() {
+      if (!requireLogin()) return;
+      var storyKey = getStoryKey();
+      if (storyKey && STORY_PROFILES[storyKey]) {
+        try {
+          localStorage.removeItem('catface_last_story_profile');
+        } catch (e) {}
+        state.targetUserId = '';
+        applyProfile(Object.assign({
+          id: '',
+          is_self: false,
+          is_following: false,
+          is_story_profile: true
+        }, STORY_PROFILES[storyKey]));
+        return;
+      }
+      state.targetUserId = getTargetUserId();
+      if (!state.targetUserId) return;
+      if (profilePostsList) {
+        profilePostsList.innerHTML =
+          '<div class="post-card"><div class="post-body"><div class="post-time">Loading...</div><p class="post-text">Fetching profile.</p></div></div>';
+      }
+      fetchJson(API_BASE_URL + '/users/' + encodeURIComponent(state.targetUserId) + '/profile', {
+        method: 'GET',
+        headers: getAuthHeaders()
+      }).then(function (result) {
+        if (!result || !result.success || !result.data) {
+          if (profilePostsList) {
+            profilePostsList.innerHTML =
+              '<div class="post-card"><div class="post-body"><div class="post-time">Unavailable</div><p class="post-text">Could not load this profile.</p></div></div>';
+          }
+          return;
+        }
+        applyProfile(Object.assign({ is_story_profile: false }, result.data));
+      }).catch(function () {
+        if (profilePostsList) {
+          profilePostsList.innerHTML =
+            '<div class="post-card"><div class="post-body"><div class="post-time">Unavailable</div><p class="post-text">Could not load this profile.</p></div></div>';
+        }
+      });
+    }
+
+    document.querySelectorAll('.ptab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('.ptab').forEach(function (item) { item.classList.remove('active'); });
+        tab.classList.add('active');
+        var key = tab.id.replace('tab-', '');
+        Object.keys(tabs).forEach(function (name) {
+          document.getElementById(tabs[name]).style.display = name === key ? '' : 'none';
+        });
+      });
+    });
+
+    if (followBtn) {
+      followBtn.addEventListener('click', function () {
+        if (!state.targetUserId || !state.profile || state.profile.is_self) return;
+        if (!requireLogin()) return;
+        followBtn.disabled = true;
+        fetchJson(API_BASE_URL + '/users/' + encodeURIComponent(state.targetUserId) + '/follow', {
+          method: 'POST',
+          headers: getAuthHeaders()
+        }).then(function (result) {
+          if (!result || !result.success || !result.data) {
+            alert((result && result.message) || 'Follow failed');
+            return;
+          }
+          state.profile.is_following = !!result.data.following;
+          state.profile.counts.followers = Math.max(
+            0,
+            Number(state.profile.counts.followers || 0) + (state.profile.is_following ? 1 : -1)
+          );
+          applyProfile(state.profile);
+        }).catch(function () {
+          alert('Network error, please try again.');
+        }).finally(function () {
+          followBtn.disabled = false;
+        });
+      });
+    }
+
+    if (messageBtn) {
+      messageBtn.addEventListener('click', function () {
+        alert('Messaging is not wired on this profile page yet.');
+      });
+    }
+
+    document.querySelectorAll('.follow-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (btn.textContent === 'Follow') {
+          btn.textContent = 'Following';
+          btn.style.background = 'var(--brand)';
+          btn.style.color = '#fff';
+        } else {
+          btn.textContent = 'Follow';
+          btn.style.background = '';
+          btn.style.color = '';
+        }
+      });
+    });
+
+    (function syncShellUserInfo() {
+      var user = loadCurrentUser();
+      if (!user) return;
+      var heroName = document.querySelector('.nav-hero-name');
+      var heroStatus = document.querySelector('.nav-hero-status');
+      var navName = document.querySelector('.u-name');
+      var navHandle = document.querySelector('.u-handle');
+      if (heroName) heroName.textContent = user.display_name || user.username || 'User';
+      if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> Logged in · ' + escapeHtml(user.username || '');
+      if (navName) navName.textContent = user.display_name || user.username || 'User';
+      if (navHandle) navHandle.textContent = user.username ? '@' + user.username : '';
+    })();
+
+    (function syncNotifBadge() {
+      var user = loadCurrentUser();
+      var unreadCount = 0;
+      try {
+        var badgeCountKey = 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
+        unreadCount = Math.max(0, parseInt(localStorage.getItem(badgeCountKey) || '0', 10) || 0);
+      } catch (e) {
+        unreadCount = 0;
+      }
+      document.querySelectorAll('[data-notif-badge]').forEach(function (badge) {
+        if (unreadCount <= 0) {
+          badge.style.display = 'none';
+        } else {
+          badge.style.display = '';
+          badge.textContent = String(unreadCount);
+        }
+      });
+    })();
+
+    loadProfile();
+  })();
 </script>
 </body>
 </html>
