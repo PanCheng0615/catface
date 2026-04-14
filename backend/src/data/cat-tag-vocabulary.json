@@ -1,0 +1,74 @@
+{
+  "version": "v1",
+  "language": "en",
+  "tags": [
+    {
+      "tag": "friendly",
+      "aliases": ["friendly", "people-friendly", "human-friendly", "likes people", "loves people", "seeks attention", "comes up to people", "enjoys pets"]
+    },
+    {
+      "tag": "shy",
+      "aliases": ["shy", "timid around strangers", "wary of strangers", "slow to warm up", "needs time to adjust", "hides at first"]
+    },
+    {
+      "tag": "affectionate",
+      "aliases": ["affectionate", "clingy", "loves cuddles", "follows people around", "wants company", "lap cat", "very sweet"]
+    },
+    {
+      "tag": "independent",
+      "aliases": ["independent", "self-sufficient", "fine alone", "not clingy", "likes personal space", "likes quiet time"]
+    },
+    {
+      "tag": "energetic",
+      "aliases": ["energetic", "active", "high energy", "always moving", "zoomies", "runs around", "full of energy"]
+    },
+    {
+      "tag": "calm",
+      "aliases": ["calm", "quiet", "gentle", "relaxed", "easygoing", "settled", "low energy"]
+    },
+    {
+      "tag": "playful",
+      "aliases": ["playful", "loves toys", "loves wand toys", "likes chasing", "interactive play", "toy-driven", "loves playing"]
+    },
+    {
+      "tag": "food-motivated",
+      "aliases": ["food motivated", "food-motivated", "treat motivated", "loves food", "big appetite", "very food driven", "comes running for food"]
+    },
+    {
+      "tag": "cuddly",
+      "aliases": ["cuddly", "likes being held", "comfortable being held", "easy to carry", "likes cuddles", "okay with being picked up"]
+    },
+    {
+      "tag": "vocal",
+      "aliases": ["vocal", "talkative", "meows a lot", "chatty", "communicative", "very vocal"]
+    },
+    {
+      "tag": "cat-friendly",
+      "aliases": ["cat friendly", "cat-friendly", "good with cats", "gets along with cats", "can live with other cats", "social with cats"]
+    },
+    {
+      "tag": "dog-friendly",
+      "aliases": ["dog friendly", "dog-friendly", "good with dogs", "gets along with dogs", "comfortable around dogs", "can live with dogs"]
+    },
+    {
+      "tag": "timid",
+      "aliases": ["timid", "easily startled", "startles easily", "nervous", "sensitive to noise", "gets anxious quickly"]
+    },
+    {
+      "tag": "adaptable",
+      "aliases": ["adaptable", "adjusts quickly", "settles in quickly", "comfortable in new spaces", "explores quickly", "recovers quickly"]
+    },
+    {
+      "tag": "needs-companionship",
+      "aliases": ["needs companionship", "not good alone for long", "gets anxious when alone", "needs people around", "needs regular company"]
+    },
+    {
+      "tag": "special-care",
+      "aliases": ["special care", "special-care", "needs extra care", "requires regular checkups", "long-term medication", "higher care needs"]
+    },
+    {
+      "tag": "needs-isolation",
+      "aliases": ["needs isolation", "needs-isolation", "must stay separated", "cannot mix with other cats yet", "separate housing needed", "under isolation observation"]
+    }
+  ]
+}
