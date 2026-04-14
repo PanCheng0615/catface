@@ -57,6 +57,7 @@
   const createForm = document.getElementById("createForm");
   const postOverlay = document.getElementById("postOverlay");
   const postDetailImage = document.getElementById("postDetailImage");
+  const postModalBody = document.querySelector(".post-modal-body");
   const detailAuthorAvatar = document.getElementById("detailAuthorAvatar");
   const detailAuthorName = document.getElementById("detailAuthorName");
   const detailTime = document.getElementById("detailTime");
@@ -240,6 +241,9 @@
     if (!postOverlay || !postDetailImage || !detailAuthorAvatar || !detailAuthorName || !detailTime || !detailText) return;
     postDetailImage.src = post.image || "";
     postDetailImage.style.display = post.image ? "" : "none";
+    if (postModalBody) {
+      postModalBody.classList.toggle("no-image", !post.image);
+    }
     if (post.authorAvatar) {
       detailAuthorAvatar.innerHTML = '<img src="' + escapeHtml(post.authorAvatar) + '" alt="">';
     } else {
@@ -501,6 +505,141 @@
       "&author=" + encodeURIComponent(author);
   }
 
+  function buildAuthorLookup(authorRows) {
+    const byUsername = new Map();
+    const byDisplayName = new Map();
+    authorRows.forEach(function (row) {
+      if (!row || !row.id) return;
+      if (row.username) byUsername.set(String(row.username).toLowerCase(), row);
+      if (row.displayName) byDisplayName.set(String(row.displayName).toLowerCase(), row);
+    });
+    return {
+      byUsername: byUsername,
+      byDisplayName: byDisplayName
+    };
+  }
+
+  function resolveFollowAuthor(rowEl, lookup) {
+    if (!rowEl || !lookup) return null;
+    const username = String(rowEl.getAttribute("data-author-username") || "").trim().toLowerCase();
+    const displayName = String(rowEl.getAttribute("data-profile-name") || "").trim().toLowerCase();
+    if (username && lookup.byUsername.has(username)) return lookup.byUsername.get(username);
+    if (displayName && lookup.byDisplayName.has(displayName)) return lookup.byDisplayName.get(displayName);
+    return null;
+  }
+
+  function updateSidebarFollowButtonState(buttonEl, isFollowing) {
+    if (!buttonEl) return;
+    buttonEl.textContent = isFollowing ? "Following" : "Follow";
+    buttonEl.classList.toggle("is-following", !!isFollowing);
+  }
+
+  function bindSidebarProfileCards() {
+    document.querySelectorAll(".trend-row[data-profile-story]").forEach(function (rowEl) {
+      rowEl.style.cursor = "pointer";
+      const imgEl = rowEl.querySelector(".trend-img");
+      if (imgEl) {
+        imgEl.style.cursor = "pointer";
+        imgEl.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          openStoryProfile(rowEl.getAttribute("data-profile-story"), rowEl.getAttribute("data-profile-name"));
+        });
+      }
+    });
+
+    document.querySelectorAll(".follow-row[data-profile-story]").forEach(function (rowEl) {
+      const avatarEl = rowEl.querySelector(".follow-avatar");
+      if (avatarEl) {
+        avatarEl.style.cursor = "pointer";
+        avatarEl.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          openStoryProfile(rowEl.getAttribute("data-profile-story"), rowEl.getAttribute("data-profile-name"));
+        });
+      }
+    });
+  }
+
+  function bindSidebarFollowActions() {
+    const followRows = Array.prototype.slice.call(document.querySelectorAll(".follow-row[data-author-username]"));
+    if (!followRows.length) return;
+
+    fetch(API_BASE_URL + "/community/posts?feed=recommended&limit=50", {
+      method: "GET",
+      headers: getAuthHeaders()
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (result) {
+        if (!result || !result.success || !Array.isArray(result.data)) return;
+        const authorRows = [];
+        result.data.forEach(function (p) {
+          if (!p || !p.authorId) return;
+          authorRows.push({
+            id: p.authorId,
+            username: p.authorUsername || "",
+            displayName: p.author || "",
+            followed: !!p.followed
+          });
+        });
+        const lookup = buildAuthorLookup(authorRows);
+        const selfId = getCurrentUserId();
+
+        followRows.forEach(function (rowEl) {
+          const buttonEl = rowEl.querySelector(".follow-btn");
+          if (!buttonEl) return;
+          const author = resolveFollowAuthor(rowEl, lookup);
+          if (!author || !author.id || (selfId && author.id === selfId)) {
+            buttonEl.style.display = "none";
+            return;
+          }
+          rowEl.setAttribute("data-author-id", String(author.id));
+          updateSidebarFollowButtonState(buttonEl, !!author.followed);
+          buttonEl.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!requireLogin()) return;
+            buttonEl.disabled = true;
+            fetch(API_BASE_URL + "/users/" + encodeURIComponent(author.id) + "/follow", {
+              method: "POST",
+              headers: getAuthHeaders()
+            })
+              .then(function (res) {
+                if (res.status === 401) {
+                  window.location.href = "/pages/log-in.html";
+                  return null;
+                }
+                return res.json();
+              })
+              .then(function (followResult) {
+                if (!followResult || !followResult.success || !followResult.data) {
+                  alert((followResult && followResult.message) || "Follow failed");
+                  return;
+                }
+                const on = !!followResult.data.following;
+                author.followed = on;
+                updateSidebarFollowButtonState(buttonEl, on);
+                posts.forEach(function (p) {
+                  if (p.authorId === author.id) p.followed = on;
+                });
+                if (currentPostId != null) {
+                  const currentPost = posts.find(function (p) { return p.id === currentPostId; });
+                  if (currentPost && currentPost.authorId === author.id) updateFollowButton(currentPost);
+                }
+                renderFeed();
+              })
+              .catch(function () {
+                alert("Network error, please try again.");
+              })
+              .finally(function () {
+                buttonEl.disabled = false;
+              });
+          });
+        });
+      })
+      .catch(function () {});
+  }
+
   function openProfile(author) {
     const post = posts.find(function (p) { return p.id === currentPostId; });
     navigateToAuthor(post, author);
@@ -727,6 +866,8 @@
   }
 
   initPageFromUrl();
+  bindSidebarProfileCards();
+  bindSidebarFollowActions();
 })();
 
 (function () {

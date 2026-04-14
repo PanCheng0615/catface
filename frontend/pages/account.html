@@ -109,10 +109,10 @@
     <div class="nav-hero">
       <div class="nav-hero-logo">CatFace</div>
       <div class="nav-hero-profile">
-        <div class="nav-hero-avatar">&#x1F464;</div>
+        <div class="nav-hero-avatar" id="navHeroAvatar">&#x1F464;</div>
         <div>
-          <div class="nav-hero-name">Demo User</div>
-          <div class="nav-hero-status"><span class="status-dot"></span> Logged in · LV001</div>
+          <div class="nav-hero-name" id="navHeroName">Guest</div>
+          <div class="nav-hero-status"><span class="status-dot"></span><span id="navHeroStatusText">Not logged in</span></div>
         </div>
       </div>
     </div>
@@ -125,8 +125,8 @@
     </div>
     <button class="btn-new-post" onclick="location.href='/pages/cat-facebook.html'">+ New Post</button>
     <div class="nav-user">
-      <div class="nav-avatar">&#x1F464;</div>
-      <div style="flex:1;min-width:0;"><div class="u-name">Demo User</div><div class="u-handle">@LV001</div></div>
+      <div class="nav-avatar" id="navUserAvatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name" id="navUserName">Guest</div><div class="u-handle" id="navUserHandle">Log in to continue</div></div>
       <span class="nav-user-more">&#x2026;</span>
     </div>
   </nav>
@@ -139,12 +139,13 @@
     </div>
     <div class="acct-body">
       <div class="acct-profile-hero">
-        <div class="acct-avatar-big">&#x1F464;</div>
+        <div class="acct-avatar-big" id="acctAvatarBig">&#x1F464;</div>
         <div>
-          <div class="acct-hero-name">Demo User</div>
-          <div class="acct-hero-sub">LV001 · Joined March 2026 · Cat Lover</div>
+          <div class="acct-hero-name" id="acctHeroName">Guest</div>
+          <div class="acct-hero-sub" id="acctHeroSub">Log in to manage your account</div>
         </div>
-        <button class="acct-hero-edit">Edit Photo</button>
+        <button class="acct-hero-edit" id="editPhotoBtn">Edit Photo</button>
+        <input type="file" id="photoUploadInput" accept="image/*" style="display:none;">
       </div>
 
       <!-- Profile Section -->
@@ -155,8 +156,8 @@
         </div>
         <div class="section-card-body">
           <div class="form-grid">
-            <div class="field"><label>Nickname</label><input type="text" value="Demo User" placeholder="Enter nickname"></div>
-            <div class="field"><label>Email</label><input type="email" value="demo@catface.app" placeholder="Enter email"></div>
+            <div class="field"><label>Nickname</label><input type="text" id="nicknameInput" value="Demo User" placeholder="Enter nickname"></div>
+            <div class="field"><label>Email</label><input type="email" id="emailInput" value="demo@catface.app" placeholder="Enter email"></div>
           </div>
         </div>
       </div>
@@ -170,11 +171,11 @@
         <div class="section-card-body">
           <div class="form-grid">
             <div class="field"><label>Preferred gender</label>
-              <select><option>Any</option><option>Female</option><option selected>Male</option><option>No preference</option></select></div>
+              <select id="prefGenderSelect"><option value="">Any</option><option value="female">Female</option><option value="male" selected>Male</option><option value="no_preference">No preference</option></select></div>
             <div class="field"><label>Preferred age</label>
-              <select><option>Any</option><option selected>Kitten (0–1 year)</option><option>Adult (1–7 years)</option><option>Senior (7+ years)</option></select></div>
+              <select id="prefAgeSelect"><option value="">Any</option><option value="kitten" selected>Kitten (0–1 year)</option><option value="adult">Adult (1–7 years)</option><option value="senior">Senior (7+ years)</option></select></div>
             <div class="field"><label>Preferred breed</label>
-              <select><option selected>Any</option><option>Domestic short hair</option><option>British Shorthair</option><option>Ragdoll</option><option>Persian</option></select></div>
+              <select id="prefBreedSelect"><option value="" selected>Any</option><option value="domestic short hair">Domestic short hair</option><option value="british shorthair">British Shorthair</option><option value="ragdoll">Ragdoll</option><option value="persian">Persian</option><option value="tabby">Tabby</option></select></div>
             <div class="field"><label>Home environment</label>
               <select><option>Optional</option><option selected>Quiet (1–2 adults)</option><option>Family with children</option><option>Already have other pets</option></select></div>
             <div class="field full"><label>Personality tags</label>
@@ -231,8 +232,8 @@
 
       <div id="savedBanner" class="saved-banner">&#x2705; Saved successfully!</div>
       <div class="form-actions">
-        <button class="btn-secondary">Reset</button>
-        <button class="btn-primary" onclick="document.getElementById('savedBanner').classList.add('show');setTimeout(function(){document.getElementById('savedBanner').classList.remove('show');},2000)">Save Changes</button>
+        <button class="btn-secondary" id="resetBtn">Reset</button>
+        <button class="btn-primary" id="saveBtn">Save Changes</button>
         <button class="btn-danger" id="logoutBtn">Log Out</button>
       </div>
     </div>
@@ -259,6 +260,7 @@
     </div>
   </aside>
 </div>
+<script src="../js/config.js"></script>
 <script>
   var hasCat = document.getElementById('hasCat');
   var catFields = document.getElementById('catFields');
@@ -271,9 +273,27 @@
   (function () {
     var user = null;
     var logoutBtn = document.getElementById('logoutBtn');
+    var saveBtn = document.getElementById('saveBtn');
+    var resetBtn = document.getElementById('resetBtn');
+    var editPhotoBtn = document.getElementById('editPhotoBtn');
+    var photoUploadInput = document.getElementById('photoUploadInput');
+    var savedBanner = document.getElementById('savedBanner');
+    var prefGenderSelect = document.getElementById('prefGenderSelect');
+    var prefAgeSelect = document.getElementById('prefAgeSelect');
+    var prefBreedSelect = document.getElementById('prefBreedSelect');
+    var accountFormElements = Array.prototype.slice.call(document.querySelectorAll('.acct-body input, .acct-body select, .acct-body textarea')).filter(function (el) {
+      return el.id !== 'photoUploadInput';
+    });
+    var currentPhotoData = '';
+    var initialSnapshot = null;
     try {
       user = JSON.parse(localStorage.getItem('catface_user') || 'null');
     } catch (e) {}
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+      alert('Please log in first');
+      window.location.href = '/pages/log-in.html';
+      return;
+    }
     var unreadCount = 0;
     try {
       var badgeCountKey = 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
@@ -287,6 +307,229 @@
         badge.textContent = String(unreadCount);
       }
     });
+
+    function getAccountStorageKey() {
+      return 'catface_account_form_v1_' + ((user && user.id) || 'guest');
+    }
+
+    function getPreferenceDraft() {
+      return {
+        preferred_gender: prefGenderSelect ? prefGenderSelect.value || null : null,
+        preferred_age: prefAgeSelect ? prefAgeSelect.value || null : null,
+        preferred_breed: prefBreedSelect ? prefBreedSelect.value || null : null
+      };
+    }
+
+    function savePreferenceDraft() {
+      try {
+        localStorage.setItem('catface_adoption_preferences_v1_' + ((user && user.id) || 'guest'), JSON.stringify(getPreferenceDraft()));
+      } catch (e) {}
+    }
+
+    function loadPreferenceDraft() {
+      try {
+        return JSON.parse(localStorage.getItem('catface_adoption_preferences_v1_' + ((user && user.id) || 'guest')) || 'null');
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function applyPreferenceData(pref) {
+      if (!pref) return;
+      if (prefGenderSelect) prefGenderSelect.value = pref.preferred_gender || '';
+      if (prefAgeSelect) prefAgeSelect.value = pref.preferred_age || '';
+      if (prefBreedSelect) prefBreedSelect.value = pref.preferred_breed || '';
+    }
+
+    function showSavedBanner(message) {
+      if (!savedBanner) return;
+      savedBanner.textContent = message || 'Saved successfully!';
+      savedBanner.classList.add('show');
+      clearTimeout(showSavedBanner._timer);
+      showSavedBanner._timer = setTimeout(function () {
+        savedBanner.classList.remove('show');
+      }, 2000);
+    }
+
+    function serializeForm() {
+      var form = {};
+      accountFormElements.forEach(function (el) {
+        var key = el.id || el.name || ('field_' + Math.random());
+        if (el.type === 'checkbox') {
+          form[key] = el.checked;
+        } else {
+          form[key] = el.value;
+        }
+      });
+      return {
+        form: form,
+        photo: currentPhotoData || ''
+      };
+    }
+
+    function applySnapshot(snapshot) {
+      if (!snapshot || !snapshot.form) return;
+      accountFormElements.forEach(function (el) {
+        var key = el.id || el.name;
+        if (!key || !(key in snapshot.form)) return;
+        if (el.type === 'checkbox') {
+          el.checked = !!snapshot.form[key];
+          el.dispatchEvent(new Event('change'));
+        } else {
+          el.value = snapshot.form[key];
+        }
+      });
+      currentPhotoData = snapshot.photo || '';
+      applyProfilePreview();
+    }
+
+    function applyAvatar(el) {
+      if (!el) return;
+      if (currentPhotoData) {
+        el.textContent = '';
+        el.style.backgroundImage = 'url("' + currentPhotoData + '")';
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+      } else {
+        el.textContent = '\u{1F464}';
+        el.style.backgroundImage = '';
+        el.style.backgroundSize = '';
+        el.style.backgroundPosition = '';
+      }
+    }
+
+    function applyProfilePreview() {
+      var nicknameInput = document.getElementById('nicknameInput');
+      var emailInput = document.getElementById('emailInput');
+      var nickname = (nicknameInput && nicknameInput.value.trim()) || ((user && (user.display_name || user.username)) || 'Guest');
+      var email = (emailInput && emailInput.value.trim()) || ((user && user.email) || '');
+      var handle = user ? ('@' + (user.username || user.id || '')) : '';
+      var heroSub = user ? (handle.replace(/^@/, '') + ' · Joined March 2026 · ' + email) : 'Log in to manage your account';
+
+      var navHeroName = document.getElementById('navHeroName');
+      var navHeroStatusText = document.getElementById('navHeroStatusText');
+      var navUserName = document.getElementById('navUserName');
+      var navUserHandle = document.getElementById('navUserHandle');
+      var acctHeroName = document.getElementById('acctHeroName');
+      var acctHeroSub = document.getElementById('acctHeroSub');
+
+      if (navHeroName) navHeroName.textContent = nickname;
+      if (navHeroStatusText) navHeroStatusText.textContent = user ? ('Logged in · ' + handle.replace(/^@/, '')) : 'Not logged in';
+      if (navUserName) navUserName.textContent = nickname;
+      if (navUserHandle) navUserHandle.textContent = user ? handle : 'Log in to continue';
+      if (acctHeroName) acctHeroName.textContent = nickname;
+      if (acctHeroSub) acctHeroSub.textContent = heroSub;
+
+      applyAvatar(document.getElementById('navHeroAvatar'));
+      applyAvatar(document.getElementById('navUserAvatar'));
+      applyAvatar(document.getElementById('acctAvatarBig'));
+    }
+
+    try {
+      var storedSnapshot = JSON.parse(localStorage.getItem(getAccountStorageKey()) || 'null');
+      if (storedSnapshot) {
+        applySnapshot(storedSnapshot);
+      } else {
+        applyProfilePreview();
+      }
+    } catch (e) {
+      applyProfilePreview();
+    }
+
+    applyPreferenceData(loadPreferenceDraft());
+
+    fetch(API_BASE_URL + '/adoption/preferences', {
+      method: 'GET',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success) return;
+        if (payload.data) {
+          applyPreferenceData(payload.data);
+          savePreferenceDraft();
+        }
+        initialSnapshot = serializeForm();
+      })
+      .catch(function () {
+        initialSnapshot = serializeForm();
+      });
+
+    initialSnapshot = serializeForm();
+
+    accountFormElements.forEach(function (el) {
+      var eventName = el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input';
+      el.addEventListener(eventName, applyProfilePreview);
+    });
+
+    if (editPhotoBtn && photoUploadInput) {
+      editPhotoBtn.addEventListener('click', function () {
+        photoUploadInput.click();
+      });
+      photoUploadInput.addEventListener('change', function () {
+        var file = photoUploadInput.files && photoUploadInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (event) {
+          currentPhotoData = String((event && event.target && event.target.result) || '');
+          applyProfilePreview();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        var preferencePromise = fetch(API_BASE_URL + '/adoption/preferences', {
+          method: 'POST',
+          headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+          body: JSON.stringify(getPreferenceDraft())
+        })
+          .then(function (res) {
+            return res.json().then(function (payload) {
+              return { ok: res.ok, payload: payload };
+            });
+          })
+          .then(function (response) {
+            var payload = response.payload || {};
+            if (!response.ok || !payload.success) {
+              throw new Error(payload.message || 'Unable to save adoption preferences.');
+            }
+            savePreferenceDraft();
+          });
+
+        try {
+          localStorage.setItem(getAccountStorageKey(), JSON.stringify(serializeForm()));
+        } catch (e) {
+          // ignore local save failures and still try server preference save
+        }
+
+        preferencePromise
+          .then(function () {
+            showSavedBanner('Saved successfully!');
+          })
+          .catch(function (error) {
+            showSavedBanner(error.message || 'Saved locally for this session.');
+          });
+      });
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        try {
+          localStorage.removeItem(getAccountStorageKey());
+          localStorage.removeItem('catface_adoption_preferences_v1_' + ((user && user.id) || 'guest'));
+        } catch (e) {}
+        currentPhotoData = initialSnapshot && initialSnapshot.photo ? initialSnapshot.photo : '';
+        applySnapshot(initialSnapshot);
+        applyProfilePreview();
+      });
+    }
 
     if (logoutBtn) {
       logoutBtn.addEventListener('click', function () {

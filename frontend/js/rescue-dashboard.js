@@ -95,6 +95,7 @@
   const dashboardRecentRecords = document.getElementById("dashboard-recent-records");
   const dashboardAttentionList = document.getElementById("dashboard-attention-list");
   const orgLogoutBtn = document.getElementById("org-logout-btn");
+  const notifAddBtn = document.getElementById("notif-add-btn");
 
   if (!catListBody || !applicationListBody || !notifList) {
     return;
@@ -2764,6 +2765,18 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
     if (!item) return;
     openThread(item.getAttribute("data-thread"));
   });
+
+  if (notifAddBtn) {
+    notifAddBtn.addEventListener("click", function () {
+      activateSection("notifications");
+      notifSearch.value = "";
+      renderNotificationList(notificationThreads);
+      closeOverlay(notifOverlay);
+      if (notifMessageInput) {
+        notifMessageInput.focus();
+      }
+    });
+  }
 
   notifSearch.addEventListener("input", function () {
     const keyword = notifSearch.value.trim().toLowerCase();

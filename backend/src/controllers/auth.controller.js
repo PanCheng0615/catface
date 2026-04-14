@@ -2,8 +2,117 @@
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 const { generateToken } = require('../utils/generateToken');
+const { runKamFaceInference, findCatFaceMatches } = require('../services/cat-face.service');
 
 const prisma = new PrismaClient();
+
+function serializeUser(user) {
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    display_name: user.display_name,
+    role: user.role
+  };
+}
+
+function getCatFaceThreshold() {
+  const threshold = Number(process.env.KAM_FACE_THRESHOLD || '0.85');
+  return Number.isFinite(threshold) ? threshold : 0.85;
+}
+
+function mapCatFaceErrorToStatus(errorCode) {
+  if (errorCode === 'RuntimeMissing' || errorCode === 'PipelineInitFailed' || errorCode === 'PythonRuntimeMissing') {
+    return 503;
+  }
+
+  if (errorCode === 'InvalidImageData' || errorCode === 'InputImageMissing') {
+    return 422;
+  }
+
+  return 500;
+}
+
+async function resolveCatFaceMatch(imageDataUrl) {
+  const inference = await runKamFaceInference(imageDataUrl);
+  const threshold = getCatFaceThreshold();
+
+  if (!inference.success) {
+    return {
+      inference,
+      threshold,
+      matchResult: null,
+      matchedRecord: null
+    };
+  }
+
+  if (!inference.face_detected) {
+    return {
+      inference,
+      threshold,
+      matchResult: {
+        bestMatch: null,
+        topMatches: [],
+        note: inference.warning || null
+      },
+      matchedRecord: null
+    };
+  }
+
+  const matchResult = await findCatFaceMatches(prisma, inference.embedding, threshold);
+  let matchedRecord = null;
+
+  if (matchResult.bestMatch && matchResult.bestMatch.cat && matchResult.bestMatch.cat.id) {
+    const matchedCat = await prisma.cat.findUnique({
+      where: { id: matchResult.bestMatch.cat.id },
+      select: {
+        id: true,
+        name: true,
+        face_code: true,
+        photo_url: true,
+        status: true,
+        owner_id: true,
+        owner: {
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            display_name: true,
+            role: true
+          }
+        }
+      }
+    });
+
+    if (matchedCat) {
+      matchedRecord = {
+        embedding_id: matchResult.bestMatch.embedding_id,
+        similarity: matchResult.bestMatch.similarity,
+        provider: matchResult.bestMatch.provider,
+        source_photo_url: matchResult.bestMatch.source_photo_url,
+        created_at: matchResult.bestMatch.created_at,
+        cat: {
+          id: matchedCat.id,
+          name: matchedCat.name,
+          face_code: matchedCat.face_code,
+          photo_url: matchedCat.photo_url,
+          status: matchedCat.status,
+          owner_id: matchedCat.owner_id,
+          owner: serializeUser(matchedCat.owner)
+        }
+      };
+    }
+  }
+
+  return {
+    inference,
+    threshold,
+    matchResult,
+    matchedRecord
+  };
+}
 
 function slugifyName(name) {
   return String(name || 'organization')
@@ -176,13 +285,7 @@ async function login(req, res) {
       success: true,
       data: {
         token,
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          display_name: user.display_name,
-          role: user.role
-        }
+        user: serializeUser(user)
       },
       message: '登录成功'
     });
@@ -192,6 +295,176 @@ async function login(req, res) {
       success: false,
       error: 'ServerError',
       message: '服务器错误'
+    });
+  }
+}
+
+// POST /api/auth/cat-face/identify
+async function identifyCatFace(req, res) {
+  try {
+    const { image_data_url } = req.body;
+
+    if (!image_data_url) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'image_data_url is required'
+      });
+    }
+
+    const { inference, threshold, matchResult, matchedRecord } = await resolveCatFaceMatch(image_data_url);
+
+    if (!inference.success) {
+      return res.status(mapCatFaceErrorToStatus(inference.error_code)).json({
+        success: false,
+        error: inference.error_code || 'FaceInferenceFailed',
+        message: inference.message || 'Cat face identification failed',
+        data: inference
+      });
+    }
+
+    if (!inference.face_detected) {
+      return res.json({
+        success: true,
+        data: {
+          matched: false,
+          can_login: false,
+          provider: inference.provider,
+          face_detected: false,
+          suggested_face_code: null,
+          embedding: null,
+          embedding_dim: 0,
+          threshold,
+          best_match: null,
+          top_matches: [],
+          note: inference.message || null
+        },
+        message: inference.message || 'No cat face detected'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        matched: Boolean(matchedRecord),
+        can_login: Boolean(matchedRecord && matchedRecord.cat && matchedRecord.cat.owner),
+        provider: inference.provider,
+        device: inference.device,
+        face_detected: true,
+        suggested_face_code: inference.suggested_face_code,
+        embedding: inference.embedding,
+        embedding_dim: inference.embedding_dim,
+        threshold,
+        best_match: matchedRecord,
+        top_matches: matchResult.topMatches,
+        note: matchResult.note || inference.warning || null
+      },
+      message: matchedRecord ? 'Matched existing cat face' : 'No existing cat match found'
+    });
+  } catch (error) {
+    console.error('identifyCatFace auth error:', error);
+    return res.status(mapCatFaceErrorToStatus(error.code)).json({
+      success: false,
+      error: error.code || 'ServerError',
+      message: error.message || 'Cat face identification failed'
+    });
+  }
+}
+
+// POST /api/auth/cat-face/login
+async function loginWithCatFace(req, res) {
+  try {
+    const { image_data_url } = req.body;
+
+    if (!image_data_url) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'image_data_url is required'
+      });
+    }
+
+    const { inference, threshold, matchResult, matchedRecord } = await resolveCatFaceMatch(image_data_url);
+
+    if (!inference.success) {
+      return res.status(mapCatFaceErrorToStatus(inference.error_code)).json({
+        success: false,
+        error: inference.error_code || 'FaceInferenceFailed',
+        message: inference.message || 'Cat face login failed',
+        data: inference
+      });
+    }
+
+    if (!inference.face_detected) {
+      return res.status(401).json({
+        success: false,
+        error: 'CatFaceNotDetected',
+        message: inference.message || 'No cat face detected in the uploaded image.',
+        data: {
+          matched: false,
+          can_login: false,
+          face_detected: false,
+          suggested_face_code: null,
+          threshold
+        }
+      });
+    }
+
+    if (!matchedRecord) {
+      return res.status(401).json({
+        success: false,
+        error: 'CatFaceNotMatched',
+        message: 'No saved cat profile matches this photo yet.',
+        data: {
+          matched: false,
+          can_login: false,
+          face_detected: true,
+          suggested_face_code: inference.suggested_face_code,
+          threshold,
+          top_matches: matchResult.topMatches
+        }
+      });
+    }
+
+    if (!matchedRecord.cat || !matchedRecord.cat.owner) {
+      return res.status(409).json({
+        success: false,
+        error: 'CatOwnerNotLinked',
+        message: 'This cat is recognized, but it is not linked to a user account yet.',
+        data: {
+          matched: true,
+          can_login: false,
+          face_detected: true,
+          suggested_face_code: inference.suggested_face_code,
+          threshold,
+          best_match: matchedRecord
+        }
+      });
+    }
+
+    const owner = matchedRecord.cat.owner;
+    const token = generateToken({ id: owner.id, role: owner.role });
+
+    return res.json({
+      success: true,
+      data: {
+        token,
+        user: serializeUser(owner),
+        login_method: 'cat_face',
+        matched_cat: matchedRecord.cat,
+        similarity: matchedRecord.similarity,
+        suggested_face_code: inference.suggested_face_code,
+        embedding_dim: inference.embedding_dim,
+        threshold
+      },
+      message: 'Cat face login successful'
+    });
+  } catch (error) {
+    console.error('loginWithCatFace error:', error);
+    return res.status(mapCatFaceErrorToStatus(error.code)).json({
+      success: false,
+      error: error.code || 'ServerError',
+      message: error.message || 'Cat face login failed'
     });
   }
 }
@@ -274,4 +547,11 @@ async function orgLogin(req, res) {
   }
 }
 
-module.exports = { register, login, orgLogin, ensureRescueStaffUserForOrganization };
+module.exports = {
+  register,
+  login,
+  identifyCatFace,
+  loginWithCatFace,
+  orgLogin,
+  ensureRescueStaffUserForOrganization
+};

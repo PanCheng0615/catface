@@ -56,6 +56,8 @@
     .pref-select { border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 12px; font: inherit; font-size: 13px; background: #fff; color: var(--text); outline: none; }
     .btn-submit { width: 100%; padding: 14px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 15px; font-weight: 800; border: none; transition: background .15s, transform .12s; }
     .btn-submit:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .btn-secondary { width: 100%; padding: 14px; border-radius: 99px; background: var(--brand-light); color: var(--brand); font-size: 15px; font-weight: 800; border: 1.5px solid rgba(200,112,42,.18); text-align: center; display: inline-flex; align-items: center; justify-content: center; transition: background .15s, transform .12s, border-color .15s; }
+    .btn-secondary:hover { background: #f8e7c7; border-color: rgba(200,112,42,.28); text-decoration: none; transform: translateY(-1px); }
     .terms { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
     .divider { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 13px; }
     .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
@@ -64,6 +66,8 @@
     .status-msg.error { background: #fef2f2; color: #dc2626; display: block; }
     .forgot-link { font-size: 13px; color: var(--text-muted); text-align: right; }
     .forgot-link a { color: var(--brand); }
+    .org-entry { text-align: center; font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .org-entry a { font-weight: 700; }
   </style>
 </head>
 <body>
@@ -108,11 +112,13 @@
         <label for="login-pw">Password</label>
         <input id="login-pw" type="password" placeholder="Enter your password">
       </div>
-      <div class="forgot-link"><a href="#">Forgot password?</a></div>
+      <div class="forgot-link"><a href="mailto:rescue@catface.local?subject=CatFace%20Password%20Reset">Forgot password?</a></div>
       <div id="login-status" class="status-msg"></div>
       <button class="btn-submit" id="login-btn">Log In</button>
+      <a class="btn-secondary" href="/pages/cat-face-login.html">Log In with Cat Face ID</a>
+      <div class="org-entry">Are you a rescue organization? <a href="/pages/org-login.html">Log in here</a></div>
       <div class="divider">or</div>
-      <div style="text-align:center;font-size:14px;color:var(--text-muted);">Don't have an account? <a href="#" onclick="switchTab('signup')">Sign up</a></div>
+      <div style="text-align:center;font-size:14px;color:var(--text-muted);">Don't have an account? <a href="javascript:void(0)" onclick="switchTab('signup')">Sign up</a></div>
     </div>
 
     <!-- Sign Up Form -->
@@ -150,11 +156,11 @@
         </div>
       </div>
       <div class="terms">
-        <label><input type="checkbox" id="reg-agree"> I have read and agree to the <a href="#">User Agreement</a>, <a href="#">Privacy Policy</a>, and <a href="#">Children/Teen Personal Information Protection Rules</a>.</label>
+        <label><input type="checkbox" id="reg-agree"> I have read and agree to the <a href="mailto:rescue@catface.local?subject=CatFace%20User%20Agreement">User Agreement</a>, <a href="mailto:rescue@catface.local?subject=CatFace%20Privacy%20Policy">Privacy Policy</a>, and <a href="mailto:rescue@catface.local?subject=CatFace%20Children%20Teen%20Policy">Children/Teen Personal Information Protection Rules</a>.</label>
       </div>
       <div id="signup-status" class="status-msg"></div>
       <button class="btn-submit" id="signup-btn">Sign Up</button>
-      <div style="text-align:center;font-size:14px;color:var(--text-muted);">Already have an account? <a href="#" onclick="switchTab('login')">Log in</a></div>
+      <div style="text-align:center;font-size:14px;color:var(--text-muted);">Already have an account? <a href="javascript:void(0)" onclick="switchTab('login')">Log in</a></div>
     </div>
   </div>
 </div>

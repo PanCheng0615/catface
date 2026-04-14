@@ -2,6 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const { scoreCatForUser, normalizeText, getWeights, updateWeights } = require('../utils/adoptionRecommendScore');
 
 const prisma = new PrismaClient();
+const hasAdoptionSwipeStore = Boolean(prisma.adoptionSwipe);
 
 const catCardInclude = {
   tags: true,
@@ -12,6 +13,14 @@ const catCardInclude = {
 // 请求体字段与 AdoptionSwipe 模型一致：cat_id、liked（user_id 由服务端从 token 写入）
 async function recordSwipe(req, res) {
   try {
+    if (!hasAdoptionSwipeStore) {
+      return res.status(503).json({
+        success: false,
+        error: 'SwipeStoreUnavailable',
+        message: 'Swipe actions are not available in the current database schema'
+      });
+    }
+
     const { cat_id, liked } = req.body;
 
     if (!cat_id) {
@@ -84,12 +93,14 @@ async function getFeed(req, res) {
       where: { user_id: userId }
     });
 
-    const likedSwipes = await prisma.adoptionSwipe.findMany({
-      where: { user_id: userId, liked: true },
-      include: {
-        cat: { include: { tags: true } }
-      }
-    });
+    const likedSwipes = hasAdoptionSwipeStore
+      ? await prisma.adoptionSwipe.findMany({
+          where: { user_id: userId, liked: true },
+          include: {
+            cat: { include: { tags: true } }
+          }
+        })
+      : [];
 
     const likedBreedSet = new Set();
     const likedTagSet = new Set();
@@ -105,10 +116,12 @@ async function getFeed(req, res) {
       }
     }
 
-    const allSwipes = await prisma.adoptionSwipe.findMany({
-      where: { user_id: userId },
-      select: { cat_id: true }
-    });
+    const allSwipes = hasAdoptionSwipeStore
+      ? await prisma.adoptionSwipe.findMany({
+          where: { user_id: userId },
+          select: { cat_id: true }
+        })
+      : [];
     const swipedCatIds = allSwipes.map((s) => s.cat_id);
 
     const where = {
@@ -166,6 +179,14 @@ async function getFeed(req, res) {
 // 修改态度：再次 POST /api/adoption/swipe，body 传同一 cat_id 与新的 liked（upsert），推荐打分会自动按最新 liked 计算
 async function getSwipes(req, res) {
   try {
+    if (!hasAdoptionSwipeStore) {
+      return res.json({
+        success: true,
+        data: [],
+        message: 'Swipe history is unavailable in the current database schema'
+      });
+    }
+
     const rows = await prisma.adoptionSwipe.findMany({
       where: { user_id: req.user.id },
       include: { cat: { include: catCardInclude } },
@@ -190,6 +211,14 @@ async function getSwipes(req, res) {
 // GET /api/adoption/liked
 async function getLiked(req, res) {
   try {
+    if (!hasAdoptionSwipeStore) {
+      return res.json({
+        success: true,
+        data: [],
+        message: 'Liked cats are unavailable in the current database schema'
+      });
+    }
+
     const rows = await prisma.adoptionSwipe.findMany({
       where: { user_id: req.user.id, liked: true },
       include: { cat: { include: catCardInclude } },
@@ -213,10 +242,32 @@ async function getLiked(req, res) {
   }
 }
 
+// GET /api/adoption/preferences
+async function getPreferences(req, res) {
+  try {
+    const pref = await prisma.adopterPreference.findUnique({
+      where: { user_id: req.user.id }
+    });
+
+    return res.json({
+      success: true,
+      data: pref || null,
+      message: pref ? '领养偏好获取成功' : '暂无已保存的领养偏好'
+    });
+  } catch (error) {
+    console.error('getPreferences error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
 // POST /api/adoption/preferences
 async function setPreferences(req, res) {
   try {
-    const { preferred_age, preferred_gender, preferred_breed, preferred_color } = req.body;
+    const { preferred_age, preferred_gender, preferred_breed } = req.body;
 
     const pref = await prisma.adopterPreference.upsert({
       where: { user_id: req.user.id },
@@ -224,14 +275,12 @@ async function setPreferences(req, res) {
         user_id: req.user.id,
         preferred_age: preferred_age ?? null,
         preferred_gender: preferred_gender ?? null,
-        preferred_breed: preferred_breed ?? null,
-        preferred_color: preferred_color ?? null
+        preferred_breed: preferred_breed ?? null
       },
       update: {
         preferred_age: preferred_age ?? undefined,
         preferred_gender: preferred_gender ?? undefined,
-        preferred_breed: preferred_breed ?? undefined,
-        preferred_color: preferred_color ?? undefined
+        preferred_breed: preferred_breed ?? undefined
       }
     });
 
@@ -453,6 +502,7 @@ module.exports = {
   getFeed,
   getSwipes,
   getLiked,
+  getPreferences,
   setPreferences,
   createApplication,
   cancelApplication,

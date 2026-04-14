@@ -19,7 +19,7 @@ function getThreshold() {
 }
 
 function mapInferenceErrorToStatus(errorCode) {
-  if (errorCode === 'RuntimeMissing' || errorCode === 'PipelineInitFailed') {
+  if (errorCode === 'RuntimeMissing' || errorCode === 'PipelineInitFailed' || errorCode === 'PythonRuntimeMissing') {
     return 503;
   }
 

@@ -29,3 +29,15 @@ function getAuthHeaders() {
     Authorization: token ? "Bearer " + token : ""
   };
 }
+
+function requireLoginForNavigation(targetPath, message) {
+  if (isLoggedIn()) {
+    if (typeof window !== "undefined" && targetPath) window.location.href = targetPath;
+    return true;
+  }
+  if (typeof window !== "undefined") {
+    window.alert(message || "Please log in first");
+    window.location.href = "/pages/log-in.html";
+  }
+  return false;
+}

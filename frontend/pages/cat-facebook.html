@@ -117,11 +117,6 @@
     /* RIGHT PANEL */
     .right-panel { padding: 20px 0 20px 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; scrollbar-width: none; }
     .right-panel::-webkit-scrollbar { display: none; }
-    .rp-search { position: relative; }
-    .rp-search-input { width: 100%; padding: 10px 16px 10px 38px; border: 1.5px solid var(--border); border-radius: 99px; background: var(--surface); font-size: 14px; outline: none; color: var(--text); transition: border-color .15s; font-family: inherit; }
-    .rp-search-input:focus { border-color: var(--accent); }
-    .rp-search-input::placeholder { color: var(--text-muted); }
-    .rp-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; }
     .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
     .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
     .rp-login { background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%); border-radius: 18px; padding: 18px; color: #fff; }
@@ -431,6 +426,9 @@
       grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr);
       min-height: 360px;
     }
+    .post-modal-body.no-image {
+      grid-template-columns: minmax(0, 1fr);
+    }
     @media (max-width: 900px) {
       .post-modal-body {
         grid-template-columns: minmax(0, 1fr);
@@ -452,11 +450,17 @@
       height: 100%;
       object-fit: cover;
     }
+    .post-modal-body.no-image .post-modal-image {
+      display: none;
+    }
     .post-modal-right {
       display: flex;
       flex-direction: column;
       border-left: 1px solid #f3f3f3;
       background: #fff;
+    }
+    .post-modal-body.no-image .post-modal-right {
+      border-left: none;
     }
     @media (max-width: 900px) {
       .post-modal-right {
@@ -599,24 +603,24 @@
       <div class="nav-hero-profile">
         <div class="nav-hero-avatar">&#x1F464;</div>
         <div>
-          <div class="nav-hero-name">Demo User</div>
+          <div class="nav-hero-name">Guest</div>
           <div class="nav-hero-status" onclick="location.href='/pages/log-in.html'">
-            <span class="status-dot"></span> Logged in · LV001
+            <span class="status-dot"></span> Not logged in
           </div>
         </div>
       </div>
     </div>
     <div class="nav-section">
       <div class="nav-link active"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
-      <div class="nav-link" onclick="location.href='/pages/adoption.html'"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
-      <div class="nav-link" onclick="location.href='/pages/notifications.html'"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
-      <div class="nav-link" onclick="location.href='/pages/account.html'"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/notifications.html', 'Please log in first')"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
       <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
     </div>
     <button type="button" class="btn-new-post" id="btnCreatePost">+ New Post</button>
-    <div class="nav-user" onclick="location.href='/pages/account.html'">
+    <div class="nav-user" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')">
       <div class="nav-avatar">&#x1F464;</div>
-      <div class="nav-user-info"><div class="u-name">Demo User</div><div class="u-handle">@LV001</div></div>
+      <div class="nav-user-info"><div class="u-name">Guest</div><div class="u-handle">Log in to continue</div></div>
       <span class="nav-user-more">&#x2026;</span>
     </div>
   <a href="/pages/log-in.html" class="login-btn" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)" tabindex="-1" aria-hidden="true">Log in</a>
@@ -677,27 +681,26 @@
   </div><!-- end .center -->
 
   <aside class="right-panel">
-    <div class="rp-search"><span class="rp-search-icon">&#x1F50D;</span><input class="rp-search-input" type="text" placeholder="Search CatFace…"></div>
     <div class="rp-login">
       <h3>&#x1F44B; Welcome back!</h3>
-      <p>You're logged in as Demo User. Explore the community, manage your cats, and find your perfect match.</p>
-      <button class="btn-login-white" onclick="location.href='/pages/account.html'">Go to My Account</button>
+      <p>Log in to post, follow other cats, and keep your community activity synced across pages.</p>
+      <button class="btn-login-white" id="communityLoginCta" onclick="location.href='/pages/log-in.html'">Log In</button>
     </div>
     <div class="rp-card">
       <div class="rp-card-title">&#x1F525; Trending Today</div>
-      <div class="trend-row"><img class="trend-img" src="https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=100&q=80" alt="Mochi"><div class="trend-info"><div class="trend-title">Forever home found!</div><div class="trend-meta">by Mochi · Adoption</div></div><span class="trend-num">&#x2665; 15k</span></div>
-      <div class="trend-row"><img class="trend-img" src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100&q=80" alt="Simba"><div class="trend-info"><div class="trend-title">Coffee art by Simba</div><div class="trend-meta">by Simba · Funny</div></div><span class="trend-num">&#x2665; 7.2k</span></div>
-      <div class="trend-row"><img class="trend-img" src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=100&q=80" alt="Luna"><div class="trend-info"><div class="trend-title">Sunbathing with Luna</div><div class="trend-meta">by Luna · Cute</div></div><span class="trend-num">&#x2665; 2.1k</span></div>
-      <div class="trend-row"><img class="trend-img" src="../assets/community/luno.png" alt="Luno"><div class="trend-info"><div class="trend-title">UM rescue kittens</div><div class="trend-meta">Luno · University of Macau</div></div><span class="trend-num">&#x2665; 612</span></div>
+      <div class="trend-row" data-profile-story="mochi" data-profile-name="Mochi"><img class="trend-img" src="https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=100&q=80" alt="Mochi"><div class="trend-info"><div class="trend-title">Forever home found!</div><div class="trend-meta">by Mochi · Adoption</div></div><span class="trend-num">&#x2665; 15k</span></div>
+      <div class="trend-row" data-profile-story="simba" data-profile-name="Simba"><img class="trend-img" src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100&q=80" alt="Simba"><div class="trend-info"><div class="trend-title">Coffee art by Simba</div><div class="trend-meta">by Simba · Funny</div></div><span class="trend-num">&#x2665; 7.2k</span></div>
+      <div class="trend-row" data-profile-story="luna" data-profile-name="Luna"><img class="trend-img" src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=100&q=80" alt="Luna"><div class="trend-info"><div class="trend-title">Sunbathing with Luna</div><div class="trend-meta">by Luna · Cute</div></div><span class="trend-num">&#x2665; 2.1k</span></div>
+      <div class="trend-row" data-profile-story="luno" data-profile-name="Luno"><img class="trend-img" src="../assets/community/luno.png" alt="Luno"><div class="trend-info"><div class="trend-title">UM rescue kittens</div><div class="trend-meta">Luno · University of Macau</div></div><span class="trend-num">&#x2665; 612</span></div>
     </div>
     <div class="rp-card">
       <div class="rp-card-title">&#x1F43E; Cats to Follow</div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/gege.png" alt="格格"></div><div class="follow-info"><div class="follow-name">格格 Gege</div><div class="follow-sub">UM · 3 mo · gentle</div></div><button class="follow-btn">Follow</button></div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/luno.png" alt="Luno"></div><div class="follow-info"><div class="follow-name">Luno</div><div class="follow-sub">UM · heterochromia &#x2728;</div></div><button class="follow-btn">Follow</button></div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/spider-cat.png" alt="蜘蛛貓"></div><div class="follow-info"><div class="follow-name">蜘蛛貓</div><div class="follow-sub">UM · curious observer</div></div><button class="follow-btn">Follow</button></div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/tantou.png" alt="探頭仔"></div><div class="follow-info"><div class="follow-name">探頭仔</div><div class="follow-sub">UM · playful kitten</div></div><button class="follow-btn">Follow</button></div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/maojin.png" alt="毛巾仔"></div><div class="follow-info"><div class="follow-name">毛巾仔</div><div class="follow-sub">UM · towel nap expert</div></div><button class="follow-btn">Follow</button></div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/cesuo.png" alt="廁所仔"></div><div class="follow-info"><div class="follow-name">廁所仔</div><div class="follow-sub">UM · outgoing &amp; cuddly</div></div><button class="follow-btn">Follow</button></div>
+      <div class="follow-row" data-profile-story="gege" data-profile-name="格格 Gege" data-author-username="gege_um"><div class="follow-avatar"><img src="../assets/community/gege.png" alt="格格"></div><div class="follow-info"><div class="follow-name">格格 Gege</div><div class="follow-sub">UM · 3 mo · gentle</div></div><button class="follow-btn" type="button">Follow</button></div>
+      <div class="follow-row" data-profile-story="luno" data-profile-name="Luno" data-author-username="luno_um"><div class="follow-avatar"><img src="../assets/community/luno.png" alt="Luno"></div><div class="follow-info"><div class="follow-name">Luno</div><div class="follow-sub">UM · heterochromia &#x2728;</div></div><button class="follow-btn" type="button">Follow</button></div>
+      <div class="follow-row" data-profile-story="spidercat" data-profile-name="蜘蛛貓" data-author-username="spider_cat_um"><div class="follow-avatar"><img src="../assets/community/spider-cat.png" alt="蜘蛛貓"></div><div class="follow-info"><div class="follow-name">蜘蛛貓</div><div class="follow-sub">UM · curious observer</div></div><button class="follow-btn" type="button">Follow</button></div>
+      <div class="follow-row" data-profile-story="tantou" data-profile-name="探頭仔" data-author-username="tantou_um"><div class="follow-avatar"><img src="../assets/community/tantou.png" alt="探頭仔"></div><div class="follow-info"><div class="follow-name">探頭仔</div><div class="follow-sub">UM · playful kitten</div></div><button class="follow-btn" type="button">Follow</button></div>
+      <div class="follow-row" data-profile-story="maojin" data-profile-name="毛巾仔" data-author-username="maojin_um"><div class="follow-avatar"><img src="../assets/community/maojin.png" alt="毛巾仔"></div><div class="follow-info"><div class="follow-name">毛巾仔</div><div class="follow-sub">UM · towel nap expert</div></div><button class="follow-btn" type="button">Follow</button></div>
+      <div class="follow-row" data-profile-story="cesuo" data-profile-name="廁所仔" data-author-username="cesuo_um"><div class="follow-avatar"><img src="../assets/community/cesuo.png" alt="廁所仔"></div><div class="follow-info"><div class="follow-name">廁所仔</div><div class="follow-sub">UM · outgoing &amp; cuddly</div></div><button class="follow-btn" type="button">Follow</button></div>
     </div>
   </aside>
 </div>
@@ -794,6 +797,27 @@
           badge.textContent = String(unreadCount);
         }
       });
+
+      var heroName = document.querySelector('.nav-hero-name');
+      var heroStatus = document.querySelector('.nav-hero-status');
+      var navName = document.querySelector('.u-name');
+      var navHandle = document.querySelector('.u-handle');
+      var loginCta = document.getElementById('communityLoginCta');
+      var loginCtaText = user
+        ? "You're logged in as " + (user.display_name || user.username || 'User') + ". Explore the community, manage your cats, and find your perfect match."
+        : 'Log in to post, follow other cats, and keep your community activity synced across pages.';
+      var loginCardText = document.querySelector('.rp-login p');
+      if (heroName) heroName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+      if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> ' + (user ? ('Logged in · ' + (user.username || '')) : 'Not logged in');
+      if (navName) navName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+      if (navHandle) navHandle.textContent = user ? ('@' + (user.username || '')) : 'Log in to continue';
+      if (loginCardText) loginCardText.textContent = loginCtaText;
+      if (loginCta) {
+        loginCta.textContent = user ? 'Go to My Account' : 'Log In';
+        loginCta.onclick = function () {
+          window.location.href = user ? '/pages/account.html' : '/pages/log-in.html';
+        };
+      }
     })();
   </script>
 </body>

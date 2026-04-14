@@ -208,22 +208,22 @@
       <div class="nav-hero-profile">
         <div class="nav-hero-avatar">&#x1F464;</div>
         <div>
-          <div class="nav-hero-name">Demo User</div>
-          <div class="nav-hero-status"><span class="status-dot"></span> Logged in · LV001</div>
+          <div class="nav-hero-name">Guest</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Not logged in</div>
         </div>
       </div>
     </div>
     <div class="nav-section">
       <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
-      <div class="nav-link" onclick="location.href='/pages/adoption.html'"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
       <div class="nav-link active"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" id="notifNavBadge" style="display:none;"></span></div>
-      <div class="nav-link" onclick="location.href='/pages/account.html'"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
       <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
     </div>
     <button class="btn-new-post" onclick="location.href='/pages/cat-facebook.html'">+ New Post</button>
-    <div class="nav-user" onclick="location.href='/pages/account.html'">
+    <div class="nav-user" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')">
       <div class="nav-avatar">&#x1F464;</div>
-      <div style="flex:1;min-width:0;"><div class="u-name">Demo User</div><div class="u-handle">@LV001</div></div>
+      <div style="flex:1;min-width:0;"><div class="u-name">Guest</div><div class="u-handle">Log in to continue</div></div>
       <span class="nav-user-more">&#x2026;</span>
     </div>
   </nav>
@@ -311,6 +311,12 @@
     } catch (e) {
       return null;
     }
+  }
+
+  if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+    alert('Please log in first');
+    window.location.href = '/pages/log-in.html';
+    return;
   }
 
   function getReadStorageKey() {
@@ -765,15 +771,14 @@
 
   (function syncUserUi() {
     var user = loadUser();
-    if (!user) return;
     var heroName = document.querySelector('.nav-hero-name');
     var heroStatus = document.querySelector('.nav-hero-status');
     var navName = document.querySelector('.u-name');
     var navHandle = document.querySelector('.u-handle');
-    if (heroName) heroName.textContent = user.display_name || user.username || 'User';
-    if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> Logged in · ' + escapeHtml(user.username || '');
-    if (navName) navName.textContent = user.display_name || user.username || 'User';
-    if (navHandle) navHandle.textContent = formatHandle(user.username);
+    if (heroName) heroName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+    if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> ' + (user ? ('Logged in · ' + escapeHtml(user.username || '')) : 'Not logged in');
+    if (navName) navName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+    if (navHandle) navHandle.textContent = user ? formatHandle(user.username) : 'Log in to continue';
   })();
 
   Promise.all([

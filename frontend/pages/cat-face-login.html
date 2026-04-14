@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CatFace · Cat Face Login</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4;
+      --success-bg: #ecfdf3; --success-text: #027a48;
+      --error-bg: #fef2f2; --error-text: #dc2626;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--brand); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button { font: inherit; cursor: pointer; }
+    .page {
+      width: min(960px, 100%);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,.14);
+      min-height: 580px;
+      background: var(--surface);
+    }
+    @media (max-width: 720px) {
+      .page { grid-template-columns: 1fr; }
+      .page-left { display: none; }
+    }
+    .page-left {
+      background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 60%, #F0C888 100%);
+      padding: 40px 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-left::after {
+      content: '🐾';
+      position: absolute;
+      right: -8px;
+      bottom: 16px;
+      font-size: 160px;
+      opacity: .12;
+      line-height: 1;
+    }
+    .logo-area { display: flex; align-items: center; gap: 10px; }
+    .logo-mark { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,.25); display: grid; place-items: center; font-size: 20px; }
+    .logo-text { font-size: 20px; font-weight: 900; letter-spacing: -.5px; }
+    .left-body h2 { font-size: 30px; font-weight: 900; line-height: 1.2; margin-bottom: 16px; }
+    .feature-list { display: flex; flex-direction: column; gap: 12px; }
+    .feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.5; opacity: .94; }
+    .feature-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+    .left-footer { font-size: 12px; opacity: .75; }
+    .page-right {
+      padding: 40px 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+    }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+    .back-link:hover { color: var(--brand); text-decoration: none; }
+    .title-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .form-title { font-size: 28px; font-weight: 900; line-height: 1.15; }
+    .form-sub { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+    .upload-card {
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      background: var(--bg);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .preview-box {
+      min-height: 210px;
+      border: 1.5px dashed var(--border);
+      border-radius: 16px;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      padding: 16px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .preview-box img {
+      max-width: 100%;
+      max-height: 260px;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+    .upload-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 14px;
+      border-radius: 99px;
+      background: var(--brand-light);
+      border: 1.5px solid rgba(200,112,42,.18);
+      color: var(--brand);
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .upload-btn input { display: none; }
+    .status-msg {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      display: none;
+      line-height: 1.5;
+    }
+    .status-msg.success { background: var(--success-bg); color: var(--success-text); display: block; }
+    .status-msg.error { background: var(--error-bg); color: var(--error-text); display: block; }
+    .status-msg.info { background: var(--brand-light); color: var(--text-sub); display: block; }
+    .result-card {
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      background: #fff;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .result-row { display: flex; justify-content: space-between; gap: 14px; font-size: 14px; }
+    .result-label { color: var(--text-muted); font-weight: 700; }
+    .result-value { color: var(--text); font-weight: 800; text-align: right; word-break: break-word; }
+    .hint-box {
+      background: var(--bg);
+      border-radius: 16px;
+      padding: 14px 16px;
+      color: var(--text-sub);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .actions { display: flex; flex-direction: column; gap: 10px; }
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      border-radius: 99px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      border: none;
+      transition: background .15s, transform .12s;
+    }
+    .btn-primary:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .btn-primary:disabled { background: #d8b28a; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      width: 100%;
+      padding: 14px;
+      border-radius: 99px;
+      background: transparent;
+      color: var(--brand);
+      font-size: 15px;
+      font-weight: 800;
+      border: 1.5px solid rgba(200,112,42,.18);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="page-left">
+      <div class="logo-area">
+        <div class="logo-mark">&#x1F431;</div>
+        <span class="logo-text">CatFace</span>
+      </div>
+      <div class="left-body">
+        <h2>Log in with your cat's face</h2>
+        <div class="feature-list">
+          <div class="feature-item"><span class="feature-icon">&#x1F4F7;</span><span>Upload a clear front-facing cat photo to identify the cat profile.</span></div>
+          <div class="feature-item"><span class="feature-icon">&#x1F50D;</span><span>We compare the uploaded face against saved cat embeddings already stored in the system.</span></div>
+          <div class="feature-item"><span class="feature-icon">&#x1F511;</span><span>If the matched cat profile is already linked to a user owner account, this page can log that user in directly.</span></div>
+        </div>
+      </div>
+      <div class="left-footer">CatFace · Cat Face Login Preview</div>
+    </div>
+
+    <div class="page-right">
+      <a class="back-link" href="/pages/log-in.html">&#x2190; Back to Log In</a>
+      <div class="title-wrap">
+        <div class="form-title">Cat Face Login</div>
+      <div class="form-sub">Upload your cat's photo to identify the cat profile and try signing in through the linked owner account.</div>
+      </div>
+
+      <div class="upload-card">
+        <div class="preview-box" id="face-preview-box">
+          <span id="face-preview-placeholder">Upload a clear cat face photo to start recognition.</span>
+          <img id="face-preview-image" src="" alt="Cat face preview" hidden>
+        </div>
+        <label class="upload-btn" for="face-login-input">
+          Upload Cat Photo
+          <input id="face-login-input" type="file" accept="image/*">
+        </label>
+      </div>
+
+      <div id="face-login-status" class="status-msg info">Upload a clear front-facing cat photo to begin recognition.</div>
+
+      <div class="result-card">
+        <div class="result-row">
+          <span class="result-label">Recognition result</span>
+          <span class="result-value" id="face-login-result">Waiting for upload</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Face code</span>
+          <span class="result-value" id="face-login-code">-</span>
+        </div>
+      </div>
+
+      <div class="hint-box">
+        Cat-face login only works when the recognized cat already has a saved face embedding and is linked to a user account as its owner. If the system finds the cat but no owner is linked yet, you will see a helpful message instead of being signed in.
+      </div>
+
+      <div class="actions">
+        <button class="btn-primary" id="face-login-action" type="button" disabled>Log In with Cat Face ID</button>
+        <button class="btn-secondary" id="face-login-fallback" type="button">Use Email and Password Instead</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script>
+    (function () {
+      var input = document.getElementById('face-login-input');
+      var previewImage = document.getElementById('face-preview-image');
+      var previewPlaceholder = document.getElementById('face-preview-placeholder');
+      var status = document.getElementById('face-login-status');
+      var result = document.getElementById('face-login-result');
+      var code = document.getElementById('face-login-code');
+      var actionBtn = document.getElementById('face-login-action');
+      var fallbackBtn = document.getElementById('face-login-fallback');
+      var currentImageDataUrl = '';
+      var canLogin = false;
+
+      function setStatus(message, type) {
+        status.textContent = message || '';
+        status.className = 'status-msg' + (type ? ' ' + type : '');
+      }
+
+      function saveAuth(data) {
+        if (typeof setToken === 'function' && data && data.token) {
+          setToken(data.token);
+        }
+
+        if (data && data.user) {
+          try {
+            localStorage.setItem('catface_user', JSON.stringify(data.user));
+          } catch (e) {}
+        }
+      }
+
+      input.addEventListener('change', function (event) {
+        var file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        var reader = new FileReader();
+        reader.onload = function (loadEvent) {
+          currentImageDataUrl = loadEvent.target.result;
+          canLogin = false;
+          previewImage.src = loadEvent.target.result;
+          previewImage.hidden = false;
+          previewPlaceholder.hidden = true;
+          result.textContent = 'Analyzing cat face...';
+          code.textContent = '-';
+          actionBtn.disabled = true;
+          setStatus('Analyzing the uploaded cat face...', 'info');
+
+          fetch(API_BASE_URL + '/auth/cat-face/identify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_data_url: currentImageDataUrl })
+          })
+            .then(function (res) {
+              return res.json().then(function (payload) {
+                return { ok: res.ok, payload: payload };
+              });
+            })
+            .then(function (response) {
+              var payload = response.payload || {};
+              var data = payload.data || {};
+              var matchedFaceCode = data.best_match && data.best_match.cat && data.best_match.cat.face_code
+                ? data.best_match.cat.face_code
+                : (data.suggested_face_code || '');
+
+              if (!response.ok || !payload.success) {
+                throw new Error(payload.message || 'Cat face identification failed.');
+              }
+
+              code.textContent = matchedFaceCode || '-';
+
+              if (data.face_detected === false) {
+                result.textContent = 'No cat face detected';
+                setStatus('No clear cat face was detected. Please upload a clearer photo.', 'error');
+                actionBtn.disabled = true;
+                return;
+              }
+
+              if (data.matched && data.can_login) {
+                canLogin = true;
+                result.textContent = 'Matched existing cat profile';
+                actionBtn.disabled = false;
+                setStatus('Cat profile recognized. You can continue and log in with the linked owner account.', 'success');
+                return;
+              }
+
+              if (data.matched) {
+                result.textContent = 'Cat recognized, but owner account not linked';
+                setStatus('This cat exists in the system, but it is not linked to a user owner account yet.', 'error');
+                actionBtn.disabled = true;
+                return;
+              }
+
+              result.textContent = 'No existing cat match found';
+              setStatus('This cat face is not linked to any saved cat profile yet, so cat-face login is unavailable.', 'error');
+              actionBtn.disabled = true;
+            })
+            .catch(function (error) {
+              result.textContent = 'Recognition failed';
+              code.textContent = '-';
+              actionBtn.disabled = true;
+              setStatus(error.message || 'Cat face identification failed.', 'error');
+            });
+        };
+        reader.readAsDataURL(file);
+      });
+
+      actionBtn.addEventListener('click', function () {
+        if (!currentImageDataUrl || !canLogin) {
+          setStatus('Please upload a recognized cat photo first.', 'error');
+          return;
+        }
+
+        actionBtn.disabled = true;
+        setStatus('Signing in with cat face...', 'info');
+
+        fetch(API_BASE_URL + '/auth/cat-face/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image_data_url: currentImageDataUrl })
+        })
+          .then(function (res) {
+            return res.json().then(function (payload) {
+              return { ok: res.ok, payload: payload };
+            });
+          })
+          .then(function (response) {
+            var payload = response.payload || {};
+
+            if (!response.ok || !payload.success || !payload.data) {
+              throw new Error(payload.message || 'Cat face login failed.');
+            }
+
+            saveAuth(payload.data);
+            setStatus('Cat face login successful! Redirecting...', 'success');
+            setTimeout(function () {
+              window.location.href = '/pages/cat-facebook.html?feed=recommended';
+            }, 700);
+          })
+          .catch(function (error) {
+            actionBtn.disabled = false;
+            setStatus(error.message || 'Cat face login failed.', 'error');
+          });
+      });
+
+      fallbackBtn.addEventListener('click', function () {
+        window.location.href = '/pages/log-in.html';
+      });
+    })();
+  </script>
+</body>
+</html>

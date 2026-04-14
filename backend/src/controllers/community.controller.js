@@ -213,6 +213,7 @@ function mapPostToFeed(post, currentUserId, followingSet) {
     id: post.id,
     author: authorName,
     authorId: author.id,
+    authorUsername: author.username || '',
     authorAvatar: author.avatar_url || '',
     authorInitial: authorName.charAt(0).toUpperCase(),
     image: post.image_url || '',

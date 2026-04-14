@@ -3,187 +3,97 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Organization Log In · CatFace</title>
+  <title>CatFace · Organization Log In</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: radial-gradient(circle at top left, #eef2ff 0%, #ffffff 45%, #f8fafc 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      color: #1f2937;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4;
     }
-    a {
-      color: #2563eb;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    .shell {
-      width: min(980px, 100%);
-      background: #fff;
-      border-radius: 28px;
-      overflow: hidden;
-      box-shadow: 0 24px 60px rgba(15, 23, 42, .14);
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
-    }
-    .main {
-      padding: 30px 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-    .side {
-      padding: 30px 24px;
-      background: linear-gradient(180deg, #2563eb 0%, #3b82f6 52%, #93c5fd 100%);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: #64748b;
-    }
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 20px;
-      font-weight: 800;
-      color: #1d4ed8;
-    }
-    .brand-mark {
-      width: 40px;
-      height: 40px;
-      border-radius: 14px;
-      display: grid;
-      place-items: center;
-      color: #fff;
-      background: linear-gradient(135deg, #2563eb, #60a5fa);
-      font-size: 15px;
-      font-weight: 800;
-    }
-    .heading h1 {
-      margin: 0;
-      font-size: 30px;
-      line-height: 1.15;
-    }
-    .heading p {
-      margin: 8px 0 0;
-      color: #64748b;
-      line-height: 1.6;
-    }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .field label {
-      font-size: 14px;
-      font-weight: 700;
-      color: #334155;
-    }
-    .field input {
-      width: 100%;
-      height: 52px;
-      border-radius: 16px;
-      border: 1px solid #dbe4f0;
-      background: #f8fafc;
-      padding: 0 16px;
-      font-size: 15px;
-      color: #0f172a;
-      outline: none;
-    }
-    .field input:focus {
-      border-color: #93c5fd;
-      background: #fff;
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, .12);
-    }
-    .status {
-      min-height: 22px;
-      font-size: 14px;
-      color: #2563eb;
-    }
-    .status.error {
-      color: #dc2626;
-    }
-    .btn-primary {
-      width: 100%;
-      height: 52px;
-      border: none;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #2563eb, #3b82f6);
-      color: #fff;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 12px 24px rgba(37, 99, 235, .22);
-    }
-    .btn-primary:disabled {
-      cursor: not-allowed;
-      opacity: .72;
-    }
-    .meta-note {
-      color: #64748b;
-      font-size: 13px;
-      line-height: 1.6;
-    }
-    .side h2 {
-      margin: 0;
-      font-size: 24px;
-      line-height: 1.25;
-    }
-    .side p {
-      margin: 0;
-      line-height: 1.7;
-      color: rgba(255, 255, 255, .92);
-    }
-    .cred-card {
-      margin-top: auto;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, .14);
-      border: 1px solid rgba(255, 255, 255, .22);
-      padding: 18px;
-      backdrop-filter: blur(8px);
-    }
-    .cred-card h3 {
-      margin: 0 0 10px;
-      font-size: 16px;
-    }
-    .cred-card p {
-      font-size: 14px;
-    }
-    @media (max-width: 860px) {
-      .shell {
-        grid-template-columns: 1fr;
-      }
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; -webkit-font-smoothing: antialiased; }
+    a { color: var(--brand); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button { font: inherit; cursor: pointer; }
+
+    .page { width: min(960px,100%); display: grid; grid-template-columns: 1fr 1fr; border-radius: 28px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.14); min-height: 580px; }
+    @media (max-width: 680px) { .page { grid-template-columns: 1fr; } .page-left { display: none; } }
+
+    .page-left { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 60%, #F0C888 100%); padding: 40px 36px; display: flex; flex-direction: column; justify-content: space-between; color: #fff; position: relative; overflow: hidden; }
+    .page-left::after { content: '🐱'; position: absolute; right: -10px; bottom: 20px; font-size: 160px; opacity: .12; line-height: 1; }
+    .logo-area { display: flex; align-items: center; gap: 10px; }
+    .logo-mark { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,.25); display: grid; place-items: center; font-size: 20px; }
+    .logo-text { font-size: 20px; font-weight: 900; letter-spacing: -.5px; }
+    .left-body h2 { font-size: 30px; font-weight: 900; line-height: 1.2; margin-bottom: 16px; }
+    .feature-list { display: flex; flex-direction: column; gap: 12px; }
+    .feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.5; opacity: .92; }
+    .feature-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+    .cred-card { margin-top: 18px; border-radius: 18px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.24); padding: 18px; backdrop-filter: blur(8px); }
+    .cred-card h3 { font-size: 16px; margin-bottom: 10px; }
+    .cred-card p { font-size: 14px; line-height: 1.7; color: rgba(255,255,255,.94); }
+    .left-footer { font-size: 12px; opacity: .75; }
+
+    .page-right { background: var(--surface); padding: 40px 36px; display: flex; flex-direction: column; justify-content: center; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+    .back-link:hover { color: var(--brand); text-decoration: none; }
+    .tab-bar { display: flex; border-bottom: 1.5px solid var(--border); margin-bottom: 28px; }
+    .tab { flex: 1; text-align: center; padding: 12px 0; font-size: 15px; font-weight: 700; color: var(--text-muted); border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; }
+    .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .form-panel { display: flex; flex-direction: column; gap: 16px; }
+    .form-title { font-size: 22px; font-weight: 800; }
+    .form-sub { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 13px; font-weight: 700; color: var(--text-sub); }
+    .field input { border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 14px; font: inherit; font-size: 14px; color: var(--text); background: var(--bg); outline: none; transition: border-color .15s, background .15s; }
+    .field input:focus { border-color: var(--accent); background: #fff; }
+    .field input::placeholder { color: var(--text-muted); }
+    .status-msg { padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; display: none; }
+    .status-msg.success { background: #ecfdf3; color: #027a48; display: block; }
+    .status-msg.error { background: #fef2f2; color: #dc2626; display: block; }
+    .btn-submit { width: 100%; padding: 14px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 15px; font-weight: 800; border: none; transition: background .15s, transform .12s; }
+    .btn-submit:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: .72; cursor: not-allowed; transform: none; }
+    .meta-note { color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+    .switch-note { text-align: center; font-size: 14px; color: var(--text-muted); }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <section class="main">
-      <a class="back-link" href="index.html">← Back to Main Page</a>
-      <div class="brand">
-        <span class="brand-mark">ID</span>
-        <span>CatFace Rescue</span>
+  <div class="page">
+    <div class="page-left">
+      <div class="logo-area">
+        <div class="logo-mark">&#x1F431;</div>
+        <span class="logo-text">CatFace</span>
       </div>
-      <div class="heading">
-        <h1>Organization Log In</h1>
-        <p>Use your rescue organization account to enter the dashboard, manage cats, and run cat-face identification.</p>
+      <div class="left-body">
+        <h2>Rescue workspace for organization teams</h2>
+        <div class="feature-list">
+          <div class="feature-item"><span class="feature-icon">&#x1F4CB;</span><span>Manage rescue cats, profiles, and adoption records in one dashboard</span></div>
+          <div class="feature-item"><span class="feature-icon">&#x1F4E8;</span><span>Review adoption applications and follow up with adopters</span></div>
+          <div class="feature-item"><span class="feature-icon">&#x1F691;</span><span>Coordinate rescue activity and monitor organization operations</span></div>
+          <div class="feature-item"><span class="feature-icon">&#x1F63A;</span><span>Run Cat Face ID workflows with an authenticated organization session</span></div>
+        </div>
+        <div class="cred-card">
+          <h3>Existing organization account</h3>
+          <p>Email: <strong>rescue@catface-seed.com</strong></p>
+          <p>Password: <strong>seed1234</strong></p>
+        </div>
+      </div>
+      <div class="left-footer">CatFace · Rescue Dashboard Access</div>
+    </div>
+
+    <div class="page-right">
+      <a class="back-link" href="/pages/log-in.html">&#x2190; Back to User Login</a>
+      <div class="tab-bar">
+        <div class="tab active">Organization Log In</div>
       </div>
 
-      <form id="org-login-form">
+      <form class="form-panel" id="org-login-form">
+        <div>
+          <div class="form-title">Organization access</div>
+          <div class="form-sub">Use your rescue organization account to enter the dashboard and manage cats.</div>
+        </div>
+
         <div class="field">
           <label for="org-email">Organization Email</label>
           <input id="org-email" type="email" autocomplete="email" placeholder="Enter organization email" required>
@@ -194,25 +104,12 @@
           <input id="org-password" type="password" autocomplete="current-password" placeholder="Enter password" required>
         </div>
 
-        <div class="status" id="org-login-status"></div>
-        <button class="btn-primary" type="submit" id="org-login-submit">Log in to Rescue Dashboard</button>
+        <div class="meta-note">After login, this page stores the organization session in your browser and redirects to `rescue-dashboard.html`.</div>
+        <div class="status-msg" id="org-login-status"></div>
+        <button class="btn-submit" type="submit" id="org-login-submit">Log in to Rescue Dashboard</button>
+        <div class="switch-note">Want the normal member page? <a href="/pages/log-in.html">Go to user login</a></div>
       </form>
-
-      <p class="meta-note">After login, this page stores the organization session in your browser and redirects to `rescue-dashboard.html`.</p>
-    </section>
-
-    <aside class="side">
-      <div>
-        <h2>Rescue Workspace</h2>
-        <p>Review applications, update cat records, and run Cat Face ID from the rescue dashboard with an organization session.</p>
-      </div>
-
-      <div class="cred-card">
-        <h3>Existing organization account</h3>
-        <p>Email: <strong>rescue@catface.local</strong></p>
-        <p>Password: <strong>1234</strong></p>
-      </div>
-    </aside>
+    </div>
   </div>
 
   <script>
@@ -225,7 +122,7 @@
 
       function setStatus(message, isError) {
         status.textContent = message || "";
-        status.classList.toggle("error", Boolean(isError));
+        status.className = "status-msg" + (message ? (isError ? " error" : " success") : "");
       }
 
       form.addEventListener("submit", async function (event) {
