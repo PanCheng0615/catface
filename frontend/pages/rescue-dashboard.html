@@ -422,6 +422,62 @@
       color: #667085;
       line-height: 1.5;
     }
+    .field-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .field-label-row label {
+      margin: 0;
+    }
+    .secondary-btn:disabled,
+    .action-btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+    .suggestion-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .suggestion-status {
+      font-size: 12px;
+      color: #667085;
+      line-height: 1.5;
+    }
+    .suggestion-status.error {
+      color: #b42318;
+    }
+    .suggestion-chip-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .suggestion-chip {
+      border: 1px solid #bfdbfe;
+      border-radius: 999px;
+      padding: 7px 12px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .suggestion-chip.selected {
+      border-color: #1d4ed8;
+      background: #dbeafe;
+      color: #1e3a8a;
+    }
+    .suggestion-chip:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
     .photo-upload-card {
       border: 1px solid #edf0f4;
       border-radius: 18px;
@@ -1414,8 +1470,16 @@
                 <input id="cat-health" type="text" placeholder="Vaccinated / neutered / allergy info">
               </div>
               <div class="field full">
-                <label for="cat-personality">Personality Tags</label>
+                <div class="field-label-row">
+                  <label for="cat-personality">Personality Tags</label>
+                  <button class="secondary-btn" type="button" id="cat-suggest-tags-btn">Suggest Tags</button>
+                </div>
                 <input id="cat-personality" type="text" placeholder="Example: calm, playful, good for first-time owners">
+                <div class="field-note">Use Health Summary and Rescue Notes to generate suggested tags, then click a suggestion to add it here.</div>
+                <div class="suggestion-tools">
+                  <div class="suggestion-status" id="cat-tag-suggestion-status">No tag suggestions yet.</div>
+                </div>
+                <div class="suggestion-chip-list" id="cat-tag-suggestion-list" hidden></div>
               </div>
               <div class="field full">
                 <label for="cat-notes">Rescue Notes</label>

@@ -26,6 +26,9 @@
   const catLocationInput = document.getElementById("cat-location");
   const catHealthInput = document.getElementById("cat-health");
   const catPersonalityInput = document.getElementById("cat-personality");
+  const catSuggestTagsBtn = document.getElementById("cat-suggest-tags-btn");
+  const catTagSuggestionStatus = document.getElementById("cat-tag-suggestion-status");
+  const catTagSuggestionList = document.getElementById("cat-tag-suggestion-list");
   const catNotesInput = document.getElementById("cat-notes");
   const catPhotoInput = document.getElementById("cat-photo-input");
   const catPhotoPreview = document.getElementById("cat-photo-preview");
@@ -113,7 +116,8 @@
     pendingImages: [],
     currentGeneratedFaceId: "",
     currentGeneratedEmbedding: null,
-    currentCatPhoto: ""
+    currentCatPhoto: "",
+    suggestedCatTags: []
   };
 
   function getAuthToken() {
@@ -222,6 +226,9 @@
         if (line.indexOf("性格:") === 0) result.personality = line.replace("性格:", "").trim();
         if (line.indexOf("健康:") === 0) result.health = line.replace("健康:", "").trim();
         if (line.indexOf("備註:") === 0) result.notes = line.replace("備註:", "").trim();
+        if (line.indexOf("Personality:") === 0) result.personality = line.replace("Personality:", "").trim();
+        if (line.indexOf("Health:") === 0) result.health = line.replace("Health:", "").trim();
+        if (line.indexOf("Notes:") === 0) result.notes = line.replace("Notes:", "").trim();
       });
 
     return result;
@@ -267,6 +274,115 @@
     addCatToggleBtn.textContent = isOpen ? "Hide Form" : "Add New Cat";
   }
 
+  function parseTagInput(value) {
+    const unique = [];
+
+    String(value || "")
+      .split(",")
+      .map(function (tag) {
+        return tag.trim();
+      })
+      .filter(Boolean)
+      .forEach(function (tag) {
+        if (!unique.includes(tag)) {
+          unique.push(tag);
+        }
+      });
+
+    return unique;
+  }
+
+  function writeTagInput(tags) {
+    catPersonalityInput.value = tags.join(", ");
+  }
+
+  function setTagSuggestionStatus(message, isError) {
+    if (!catTagSuggestionStatus) return;
+    catTagSuggestionStatus.textContent = message || "";
+    catTagSuggestionStatus.classList.toggle("error", Boolean(isError));
+  }
+
+  function renderTagSuggestions() {
+    if (!catTagSuggestionList) return;
+
+    const selectedTags = parseTagInput(catPersonalityInput.value);
+    const suggestedTags = Array.isArray(state.suggestedCatTags) ? state.suggestedCatTags : [];
+
+    if (!suggestedTags.length) {
+      catTagSuggestionList.innerHTML = "";
+      catTagSuggestionList.hidden = true;
+      return;
+    }
+
+    catTagSuggestionList.hidden = false;
+    catTagSuggestionList.innerHTML = suggestedTags.map(function (tag) {
+      const selected = selectedTags.includes(tag);
+      return "<button class=\"suggestion-chip" + (selected ? " selected" : "") + "\" type=\"button\" data-suggested-tag=\"" + escapeHtml(tag) + "\">" + escapeHtml(tag) + "</button>";
+    }).join("");
+  }
+
+  function resetTagSuggestions() {
+    state.suggestedCatTags = [];
+    renderTagSuggestions();
+    setTagSuggestionStatus("No tag suggestions yet.", false);
+  }
+
+  function updateSuggestionStatusFromResult(result) {
+    const messageParts = [];
+
+    if (result && result.explanation) {
+      messageParts.push(result.explanation);
+    }
+
+    if (result && Array.isArray(result.keywords) && result.keywords.length) {
+      messageParts.push("Keywords: " + result.keywords.join(", "));
+    }
+
+    setTagSuggestionStatus(messageParts.join(" "), false);
+  }
+
+  function requestTagSuggestions() {
+    const payload = {
+      personality: catPersonalityInput.value.trim(),
+      health: catHealthInput.value.trim(),
+      notes: catNotesInput.value.trim(),
+      limit: 5
+    };
+
+    if (!payload.personality && !payload.health && !payload.notes) {
+      window.alert("Add Health Summary, Rescue Notes, or a longer personality description first.");
+      return;
+    }
+
+    catSuggestTagsBtn.disabled = true;
+    setTagSuggestionStatus("Generating tag suggestions...", false);
+
+    api("/rescue/cats/tag-suggestions", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }).then(function (result) {
+      state.suggestedCatTags = Array.isArray(result.suggested_tags)
+        ? result.suggested_tags.map(function (item) {
+            return item.tag;
+          }).filter(Boolean)
+        : [];
+
+      renderTagSuggestions();
+
+      if (!state.suggestedCatTags.length) {
+        setTagSuggestionStatus("No matching tags found. Try adding more rescue details.", false);
+        return;
+      }
+
+      updateSuggestionStatusFromResult(result);
+    }).catch(function (error) {
+      resetTagSuggestions();
+      setTagSuggestionStatus(error.message || "Unable to generate tag suggestions.", true);
+    }).finally(function () {
+      catSuggestTagsBtn.disabled = false;
+    });
+  }
+
   function resetCatForm() {
     state.editingCatId = null;
     state.currentGeneratedEmbedding = null;
@@ -285,6 +401,7 @@
     catHealthInput.value = "";
     catPersonalityInput.value = "";
     catNotesInput.value = "";
+    resetTagSuggestions();
     state.currentCatPhoto = "";
     catPhotoInput.value = "";
     catPhotoPreview.src = "";
@@ -399,6 +516,7 @@
     catHealthInput.value = splitDescription(cat.description).health || "";
     catPersonalityInput.value = view.tags.join(", ");
     catNotesInput.value = splitDescription(cat.description).notes || "";
+    resetTagSuggestions();
     state.currentGeneratedEmbedding = null;
     setPhotoPreview(cat.photo_url || "");
     setCatFormOpen(true);
@@ -916,6 +1034,7 @@
   }
 
   function saveCatForm() {
+    const tagValues = parseTagInput(catPersonalityInput.value);
     const payload = {
       name: catNameInput.value.trim(),
       display_id: catIdInput.value.trim() || undefined,
@@ -928,9 +1047,7 @@
       personality: catPersonalityInput.value.trim(),
       notes: catNotesInput.value.trim(),
       photo_url: state.currentCatPhoto || undefined,
-      tags: catPersonalityInput.value.split(",").map(function (tag) {
-        return tag.trim();
-      }).filter(Boolean)
+      tags: tagValues
     };
 
     if (!payload.name) {
@@ -1073,6 +1190,7 @@
   });
 
   catFormSaveBtn.addEventListener("click", saveCatForm);
+  catSuggestTagsBtn.addEventListener("click", requestTagSuggestions);
   openFaceIdBtn.addEventListener("click", openFaceRecognitionModal);
   faceIdCloseBtn.addEventListener("click", closeFaceRecognitionModal);
   faceIdCancelBtn.addEventListener("click", closeFaceRecognitionModal);
@@ -1133,6 +1251,23 @@
     if (!state.currentGeneratedFaceId) return;
     catIdInput.value = state.currentGeneratedFaceId;
     closeFaceRecognitionModal();
+  });
+
+  catPersonalityInput.addEventListener("input", renderTagSuggestions);
+
+  catTagSuggestionList.addEventListener("click", function (event) {
+    const button = event.target.closest("[data-suggested-tag]");
+    if (!button) return;
+
+    const tag = button.getAttribute("data-suggested-tag");
+    const tags = parseTagInput(catPersonalityInput.value);
+
+    if (!tags.includes(tag)) {
+      tags.push(tag);
+      writeTagInput(tags);
+    }
+
+    renderTagSuggestions();
   });
 
   catListBody.addEventListener("click", function (event) {
