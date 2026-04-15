@@ -77,6 +77,7 @@ let pendingPostToOpen = "";
   const closePostOverlayBtn = document.getElementById("closePostOverlay");
   const quickComposer = document.querySelector(".composer-input");
   const quickComposerSubmit = document.querySelector(".composer-submit");
+  const storiesTrack = document.querySelector(".stories-track");
 
   function formatLikes(num) {
     const n = Number(num) || 0;
@@ -752,45 +753,90 @@ let pendingPostToOpen = "";
     navigateToAuthor(post, author);
   }
 
-  document.querySelectorAll(".story[data-user]").forEach(function (storyEl) {
-    storyEl.addEventListener("click", function () {
-      const key = storyEl.getAttribute("data-user") || "";
-      const nameEl = storyEl.querySelector(".story-name");
-      const name = nameEl ? nameEl.textContent.trim() : key;
-      const href = storyEl.getAttribute("data-story-href");
-      if (href) {
-        try {
-          window.localStorage.setItem("catface_last_story_profile", key);
-          window.localStorage.removeItem("catface_last_author_id");
-          window.localStorage.setItem("catface_last_author_name", name);
-        } catch (e) {}
-        window.location.href = href;
-        return;
-      }
-      openStoryProfile(key, name);
+  function ensureStoryA11y() {
+    if (!storiesTrack) return;
+    storiesTrack.querySelectorAll(".story").forEach(function (storyEl) {
+      if (storyEl.classList.contains("story-add")) return;
+      if (!storyEl.hasAttribute("tabindex")) storyEl.setAttribute("tabindex", "0");
+      storyEl.setAttribute("role", "button");
     });
-    storyEl.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        const key = storyEl.getAttribute("data-user") || "";
-        const nameEl = storyEl.querySelector(".story-name");
-        const name = nameEl ? nameEl.textContent.trim() : key;
-        const href = storyEl.getAttribute("data-story-href");
-        if (href) {
-          try {
-            window.localStorage.setItem("catface_last_story_profile", key);
-            window.localStorage.removeItem("catface_last_author_id");
-            window.localStorage.setItem("catface_last_author_name", name);
-          } catch (e) {}
-          window.location.href = href;
-          return;
-        }
-        openStoryProfile(key, name);
-      }
+  }
+
+  function activateStory(storyEl) {
+    if (!storyEl || storyEl.classList.contains("story-add")) return;
+    const authorId = String(storyEl.getAttribute("data-author-id") || "").trim();
+    const nameEl = storyEl.querySelector(".story-name");
+    const name = nameEl ? nameEl.textContent.trim() : "";
+    if (authorId) {
+      navigateToAuthor({ author: name || "User", authorId: authorId }, name || "User");
+      return;
+    }
+    const key = storyEl.getAttribute("data-user") || "";
+    const href = storyEl.getAttribute("data-story-href");
+    if (href) {
+      try {
+        window.localStorage.setItem("catface_last_story_profile", key);
+        window.localStorage.removeItem("catface_last_author_id");
+        window.localStorage.setItem("catface_last_author_name", name || key);
+      } catch (e) {}
+      window.location.href = href;
+      return;
+    }
+    openStoryProfile(key, name || key);
+  }
+
+  if (storiesTrack) {
+    storiesTrack.addEventListener("click", function (e) {
+      const storyEl = e.target && e.target.closest ? e.target.closest(".story") : null;
+      if (!storyEl || !storiesTrack.contains(storyEl)) return;
+      activateStory(storyEl);
     });
-    if (!storyEl.hasAttribute("tabindex")) storyEl.setAttribute("tabindex", "0");
-    storyEl.setAttribute("role", "button");
-  });
+    storiesTrack.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const storyEl = e.target && e.target.closest ? e.target.closest(".story") : null;
+      if (!storyEl || !storiesTrack.contains(storyEl)) return;
+      e.preventDefault();
+      activateStory(storyEl);
+    });
+  }
+  ensureStoryA11y();
+
+  function loadFollowedStories() {
+    if (!storiesTrack || !getToken()) return;
+    fetch(API_BASE_URL + "/users/follows?type=following", {
+      method: "GET",
+      headers: getAuthHeaders()
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        const payload = response.payload || {};
+        if (!response.ok || !payload.success || !Array.isArray(payload.data)) return;
+        const following = payload.data;
+        const yourStoryHtml =
+          '<div class="story story-add" role="button" tabindex="0" onclick="document.getElementById(\'btnCreatePost\').click()"><div class="story-ring"><div class="story-inner">+</div></div><span class="story-name">Your story</span></div>';
+        const followHtml = following.slice(0, 12).map(function (user) {
+          const display = (user && (user.display_name || user.username)) ? (user.display_name || user.username) : "User";
+          const avatar = user && user.avatar_url ? String(user.avatar_url) : "";
+          const id = user && user.id ? String(user.id) : "";
+          const avatarInner = avatar
+            ? '<img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(display) + '">'
+            : '<span style="font-size:20px;color:var(--brand);font-weight:800;">' + escapeHtml(display.charAt(0).toUpperCase()) + "</span>";
+          return (
+            '<div class="story" data-author-id="' + escapeHtml(id) + '">' +
+              '<div class="story-ring"><div class="story-inner">' + avatarInner + "</div></div>" +
+              '<span class="story-name">' + escapeHtml(display) + "</span>" +
+            "</div>"
+          );
+        }).join("");
+        storiesTrack.innerHTML = yourStoryHtml + followHtml;
+        ensureStoryA11y();
+      })
+      .catch(function () {});
+  }
 
   function renderFeed() {
     feedEl.innerHTML = "";
@@ -969,6 +1015,7 @@ let pendingPostToOpen = "";
   renderTrendingPanel();
   bindSidebarProfileCards();
   bindSidebarFollowActions();
+  loadFollowedStories();
 })();
 
 (function () {
