@@ -360,6 +360,47 @@ async function setPreferences(req, res) {
   }
 }
 
+// GET /api/adoption/preference-tags
+// 标签来源：数据库中的 cat_tags.tag + adopter_preferences.personality_tags（去重后返回）
+async function getPreferenceTags(req, res) {
+  try {
+    const catTagRows = await prisma.catTag.findMany({
+      select: { tag: true },
+      orderBy: { tag: 'asc' }
+    });
+
+    const prefRows = await prisma.adopterPreference.findMany({
+      select: { personality_tags: true }
+    });
+
+    const merged = new Set();
+    (catTagRows || []).forEach((row) => {
+      const tag = row && row.tag ? String(row.tag).trim() : '';
+      if (tag) merged.add(tag);
+    });
+    (prefRows || []).forEach((row) => {
+      const list = Array.isArray(row && row.personality_tags) ? row.personality_tags : [];
+      list.forEach((item) => {
+        const tag = String(item || '').trim();
+        if (tag) merged.add(tag);
+      });
+    });
+
+    return res.json({
+      success: true,
+      data: Array.from(merged),
+      message: '标签列表获取成功'
+    });
+  } catch (error) {
+    console.error('getPreferenceTags error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
 // POST /api/adoption/applications
 // 请求体字段与 AdoptionApplication 一致：cat_id、message（可选）
 async function createApplication(req, res) {
@@ -564,6 +605,7 @@ module.exports = {
   getSwipes,
   getLiked,
   getPreferences,
+  getPreferenceTags,
   setPreferences,
   createApplication,
   cancelApplication,

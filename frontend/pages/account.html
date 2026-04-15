@@ -73,6 +73,36 @@
     .field textarea { min-height: 80px; resize: vertical; }
     .tags-row { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
     .tags-row label { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .tag-selector-btn {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-sub);
+      font-size: 14px;
+      font-weight: 700;
+      text-align: left;
+    }
+    .tag-selected-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--brand-light);
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(200,112,42,.25);
+    }
+    .tag-chip-empty {
+      font-size: 12px;
+      color: var(--text-muted);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      width: 100%;
+    }
     .form-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; padding-top: 4px; }
     .btn-primary { padding: 10px 22px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: background .15s; }
     .btn-primary:hover { background: var(--brand-hover); }
@@ -100,6 +130,76 @@
     .rp-link-label { flex: 1; font-size: 14px; font-weight: 600; color: var(--text-sub); }
     .rp-link-arrow { color: var(--text-muted); font-size: 16px; }
     .rp-info-block { padding: 14px 18px; font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17,24,39,.52);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 120;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-card {
+      width: min(760px, 100%);
+      max-height: 84vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 60px rgba(0,0,0,.2);
+    }
+    .modal-head {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border-bottom: 1px solid var(--border-light);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .modal-title { font-size: 16px; font-weight: 800; }
+    .modal-close {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      font-size: 18px;
+      line-height: 1;
+      color: var(--text-sub);
+    }
+    .modal-body { padding: 14px 16px; }
+    .modal-tag-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+    }
+    .modal-tag-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-2);
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+    .modal-foot {
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      border-top: 1px solid var(--border-light);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
   </style>
 </head>
 <body>
@@ -179,13 +279,8 @@
             <div class="field"><label>Home environment</label>
               <select id="prefHomeEnvironmentSelect"><option value="">Optional</option><option>Quiet (1–2 adults)</option><option>Family with children</option><option>Already have other pets</option></select></div>
             <div class="field full"><label>Personality tags</label>
-              <div class="tags-row">
-                <label><input type="checkbox" id="prefTagPlayful"> Playful / Active</label>
-                <label><input type="checkbox" id="prefTagGentle"> Gentle / Calm</label>
-                <label><input type="checkbox" id="prefTagGoodWithKids"> Good with kids</label>
-                <label><input type="checkbox" id="prefTagFirstTime"> Good for first-time owners</label>
-                <label><input type="checkbox" id="prefTagSpecialNeeds"> OK with special needs</label>
-              </div>
+              <button class="tag-selector-btn" type="button" id="openTagModalBtn">Select personality tags...</button>
+              <div class="tag-selected-list" id="selectedTagList"></div>
             </div>
           </div>
         </div>
@@ -261,6 +356,22 @@
     </div>
   </aside>
 </div>
+<div class="modal-overlay" id="tagModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="modal-title">Select Personality Tags</div>
+      <button class="modal-close" type="button" id="tagModalCloseBtn">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div id="tagModalHint" style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Tags are loaded from database.</div>
+      <div class="modal-tag-grid" id="tagModalGrid"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" type="button" id="tagModalCancelBtn">Cancel</button>
+      <button class="btn-primary" type="button" id="tagModalConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
 <script src="../js/config.js"></script>
 <script>
   var hasCat = document.getElementById('hasCat');
@@ -292,13 +403,19 @@
     var catAllergiesInput = document.getElementById('catAllergiesInput');
     var catIdFieldInput = document.getElementById('catIdFieldInput');
     var catNotesInput = document.getElementById('catNotesInput');
-    var prefTagPlayful = document.getElementById('prefTagPlayful');
-    var prefTagGentle = document.getElementById('prefTagGentle');
-    var prefTagGoodWithKids = document.getElementById('prefTagGoodWithKids');
-    var prefTagFirstTime = document.getElementById('prefTagFirstTime');
-    var prefTagSpecialNeeds = document.getElementById('prefTagSpecialNeeds');
+    var openTagModalBtn = document.getElementById('openTagModalBtn');
+    var selectedTagList = document.getElementById('selectedTagList');
+    var tagModal = document.getElementById('tagModal');
+    var tagModalGrid = document.getElementById('tagModalGrid');
+    var tagModalHint = document.getElementById('tagModalHint');
+    var tagModalCloseBtn = document.getElementById('tagModalCloseBtn');
+    var tagModalCancelBtn = document.getElementById('tagModalCancelBtn');
+    var tagModalConfirmBtn = document.getElementById('tagModalConfirmBtn');
     var myCatLockHint = document.getElementById('myCatLockHint');
     var ownedCat = null;
+    var selectedPreferenceTags = [];
+    var availablePreferenceTags = [];
+    var modalDraftTags = [];
     var accountFormElements = Array.prototype.slice.call(document.querySelectorAll('.acct-body input, .acct-body select, .acct-body textarea')).filter(function (el) {
       return el.id !== 'photoUploadInput';
     });
@@ -326,23 +443,26 @@
       }
     });
 
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function getAccountStorageKey() {
       return 'catface_account_form_v1_' + ((user && user.id) || 'guest');
     }
 
     function getPreferenceDraft() {
-      var personalityTags = [];
-      if (prefTagPlayful && prefTagPlayful.checked) personalityTags.push('playful_active');
-      if (prefTagGentle && prefTagGentle.checked) personalityTags.push('gentle_calm');
-      if (prefTagGoodWithKids && prefTagGoodWithKids.checked) personalityTags.push('good_with_kids');
-      if (prefTagFirstTime && prefTagFirstTime.checked) personalityTags.push('first_time_owner');
-      if (prefTagSpecialNeeds && prefTagSpecialNeeds.checked) personalityTags.push('special_needs');
       return {
         preferred_gender: prefGenderSelect ? prefGenderSelect.value || null : null,
         preferred_age: prefAgeSelect ? prefAgeSelect.value || null : null,
         preferred_breed: prefBreedSelect ? prefBreedSelect.value || null : null,
         home_environment: prefHomeEnvironmentSelect ? prefHomeEnvironmentSelect.value || null : null,
-        personality_tags: personalityTags
+        personality_tags: selectedPreferenceTags.slice()
       };
     }
 
@@ -365,12 +485,99 @@
       if (prefAgeSelect) prefAgeSelect.value = (pref && pref.preferred_age) || '';
       if (prefBreedSelect) prefBreedSelect.value = (pref && pref.preferred_breed) || '';
       if (prefHomeEnvironmentSelect) prefHomeEnvironmentSelect.value = (pref && pref.home_environment) || '';
-      var tagList = Array.isArray(pref && pref.personality_tags) ? pref.personality_tags : [];
-      if (prefTagPlayful) prefTagPlayful.checked = tagList.indexOf('playful_active') >= 0;
-      if (prefTagGentle) prefTagGentle.checked = tagList.indexOf('gentle_calm') >= 0;
-      if (prefTagGoodWithKids) prefTagGoodWithKids.checked = tagList.indexOf('good_with_kids') >= 0;
-      if (prefTagFirstTime) prefTagFirstTime.checked = tagList.indexOf('first_time_owner') >= 0;
-      if (prefTagSpecialNeeds) prefTagSpecialNeeds.checked = tagList.indexOf('special_needs') >= 0;
+      selectedPreferenceTags = Array.isArray(pref && pref.personality_tags)
+        ? pref.personality_tags.map(function (item) { return String(item || '').trim(); }).filter(Boolean)
+        : [];
+      selectedPreferenceTags.forEach(function (tag) {
+        if (availablePreferenceTags.indexOf(tag) === -1) availablePreferenceTags.push(tag);
+      });
+      renderSelectedPreferenceTags();
+    }
+
+    function renderSelectedPreferenceTags() {
+      if (!selectedTagList) return;
+      if (!selectedPreferenceTags.length) {
+        selectedTagList.innerHTML = '<div class="tag-chip-empty">No tags selected.</div>';
+      } else {
+        selectedTagList.innerHTML = selectedPreferenceTags.map(function (tag) {
+          return '<span class="tag-chip">' + escapeHtml(tag) + '</span>';
+        }).join('');
+      }
+      if (openTagModalBtn) {
+        openTagModalBtn.textContent = selectedPreferenceTags.length
+          ? ('Selected ' + selectedPreferenceTags.length + ' tag(s)')
+          : 'Select personality tags...';
+      }
+    }
+
+    function renderTagModalGrid() {
+      if (!tagModalGrid) return;
+      if (!availablePreferenceTags.length) {
+        tagModalGrid.innerHTML = '<div class="tag-chip-empty">No tags found in database yet.</div>';
+        return;
+      }
+      tagModalGrid.innerHTML = availablePreferenceTags.map(function (tag) {
+        var checked = modalDraftTags.indexOf(tag) >= 0 ? ' checked' : '';
+        return (
+          '<label class="modal-tag-item">' +
+            '<input type="checkbox" data-pref-tag="' + escapeHtml(tag) + '"' + checked + '>' +
+            '<span>' + escapeHtml(tag) + '</span>' +
+          '</label>'
+        );
+      }).join('');
+      tagModalGrid.querySelectorAll('input[data-pref-tag]').forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+          var tag = checkbox.getAttribute('data-pref-tag');
+          if (!tag) return;
+          if (checkbox.checked) {
+            if (modalDraftTags.indexOf(tag) === -1) modalDraftTags.push(tag);
+          } else {
+            modalDraftTags = modalDraftTags.filter(function (item) { return item !== tag; });
+          }
+        });
+      });
+    }
+
+    function openPreferenceTagModal() {
+      if (!tagModal) return;
+      modalDraftTags = selectedPreferenceTags.slice();
+      renderTagModalGrid();
+      tagModal.classList.add('open');
+    }
+
+    function closePreferenceTagModal() {
+      if (!tagModal) return;
+      tagModal.classList.remove('open');
+    }
+
+    function loadPreferenceTagOptions() {
+      return fetch(API_BASE_URL + '/adoption/preference-tags', {
+        method: 'GET',
+        headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+      })
+        .then(function (res) {
+          return res.json().then(function (payload) {
+            return { ok: res.ok, payload: payload };
+          });
+        })
+        .then(function (response) {
+          var payload = response.payload || {};
+          if (!response.ok || !payload.success || !Array.isArray(payload.data)) {
+            throw new Error(payload.message || 'Unable to load tags from database.');
+          }
+          availablePreferenceTags = payload.data
+            .map(function (item) { return String(item || '').trim(); })
+            .filter(Boolean);
+          selectedPreferenceTags.forEach(function (tag) {
+            if (availablePreferenceTags.indexOf(tag) === -1) availablePreferenceTags.push(tag);
+          });
+          if (tagModalHint) tagModalHint.textContent = 'Tags are loaded from database.';
+          renderSelectedPreferenceTags();
+        })
+        .catch(function (error) {
+          if (tagModalHint) tagModalHint.textContent = error.message || 'Unable to load tags from database.';
+          renderSelectedPreferenceTags();
+        });
     }
 
     function setHasCatFieldsEnabled(enabled) {
@@ -626,6 +833,7 @@
     refreshMyCatLockHint();
 
     applyPreferenceData(loadPreferenceDraft());
+    loadPreferenceTagOptions();
     syncCurrentUserFromServer().then(function () {
       return loadOwnedCat();
     });
@@ -651,6 +859,33 @@
       .catch(function () {
         initialSnapshot = serializeForm();
       });
+
+    if (openTagModalBtn) {
+      openTagModalBtn.addEventListener('click', function () {
+        openPreferenceTagModal();
+      });
+    }
+    if (tagModalCloseBtn) {
+      tagModalCloseBtn.addEventListener('click', closePreferenceTagModal);
+    }
+    if (tagModalCancelBtn) {
+      tagModalCancelBtn.addEventListener('click', closePreferenceTagModal);
+    }
+    if (tagModalConfirmBtn) {
+      tagModalConfirmBtn.addEventListener('click', function () {
+        selectedPreferenceTags = modalDraftTags
+          .map(function (item) { return String(item || '').trim(); })
+          .filter(Boolean);
+        renderSelectedPreferenceTags();
+        savePreferenceDraft();
+        closePreferenceTagModal();
+      });
+    }
+    if (tagModal) {
+      tagModal.addEventListener('click', function (event) {
+        if (event.target === tagModal) closePreferenceTagModal();
+      });
+    }
 
     initialSnapshot = serializeForm();
 
@@ -810,6 +1045,7 @@
         currentPhotoData = initialSnapshot && initialSnapshot.photo ? initialSnapshot.photo : '';
         applySnapshot(initialSnapshot);
         applyAccountIdentityFields();
+        applyPreferenceData(loadPreferenceDraft());
         applyProfilePreview();
         refreshMyCatLockHint();
       });
