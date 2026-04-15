@@ -1,0 +1,48 @@
+# macOS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Python virtual environments
+.venv/
+venv/
+env/
+**/.venv/
+**/venv/
+backend/.venv-catface-id/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Large model weights and binary ML artifacts
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.bin
+*.safetensors
+*.joblib
+*.pkl
+
+# Local data / generated assets
+*.part
+*.tmp
+*.temp
+backend/.venv-catface-id/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/

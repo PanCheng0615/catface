@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CatFace · Chat</title>
+  <style>
+    :root {
+      --brand: #C8702A;
+      --brand-hover: #A85820;
+      --brand-light: #FDF0D8;
+      --accent: #E8B050;
+      --bg: #F7F2EC;
+      --surface: #FFFFFF;
+      --surface-2: #FDFAF6;
+      --text: #18100A;
+      --text-sub: #6B4E2A;
+      --text-muted: #A87848;
+      --border: #EAD9C4;
+      --border-light: #F3E8D8;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+      --shadow-md: 0 8px 24px rgba(0,0,0,.08);
+      --radius-xl: 22px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .layout {
+      max-width: 1280px;
+      min-height: 100vh;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 252px 320px minmax(0, 1fr);
+    }
+
+    .left-nav {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav-hero {
+      background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 100%);
+      padding: 18px 16px 16px;
+      color: #fff;
+    }
+
+    .nav-hero-logo {
+      font-size: 13px;
+      font-weight: 800;
+      opacity: .82;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .nav-hero-name {
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .nav-hero-status {
+      font-size: 12px;
+      opacity: .8;
+      margin-top: 4px;
+    }
+
+    .nav-section {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+
+    .nav-link:hover {
+      background: var(--brand-light);
+      color: var(--brand);
+    }
+
+    .nav-link.active {
+      background: var(--brand-light);
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    .n-icon {
+      width: 24px;
+      text-align: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .n-label {
+      flex: 1;
+    }
+
+    .n-badge {
+      background: #E05B73;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 99px;
+      display: none;
+    }
+
+    .nav-user {
+      margin-top: auto;
+      border-top: 1px solid var(--border-light);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .nav-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--brand-light);
+      color: var(--brand);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .nav-user-name {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .nav-user-handle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .threads-panel {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-head {
+      padding: 20px 18px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .panel-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .panel-subtitle {
+      margin-top: 6px;
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .thread-list {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .thread-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+      padding: 12px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, transform .12s;
+    }
+
+    .thread-item:hover {
+      border-color: var(--brand);
+      transform: translateY(-1px);
+    }
+
+    .thread-item.active {
+      background: var(--brand-light);
+      border-color: var(--brand);
+    }
+
+    .thread-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .thread-meta {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .thread-snippet {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+
+    .chat-panel {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, #fff 0%, #fffaf3 100%);
+    }
+
+    .chat-head {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.9);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .chat-head-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chat-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0;
+    }
+
+    .chat-subtitle {
+      margin-top: 6px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .chat-meta {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    .chat-body {
+      flex: 1;
+      padding: 18px 22px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .chat-empty {
+      margin: auto;
+      max-width: 420px;
+      text-align: center;
+      color: var(--text-muted);
+      line-height: 1.7;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px 22px;
+      background: rgba(255,255,255,.68);
+    }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      max-width: min(78%, 560px);
+      gap: 8px;
+    }
+
+    .msg.mine {
+      align-self: flex-end;
+    }
+
+    .msg.other {
+      align-self: flex-start;
+    }
+
+    .msg-bubble {
+      border-radius: 16px;
+      padding: 12px 14px;
+      line-height: 1.6;
+      font-size: 14px;
+      box-shadow: var(--shadow-sm);
+      word-break: break-word;
+    }
+
+    .msg.mine .msg-bubble {
+      background: var(--brand);
+      color: #fff;
+      border-bottom-right-radius: 6px;
+    }
+
+    .msg.other .msg-bubble {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 6px;
+    }
+
+    .msg-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+    }
+
+    .msg-images img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      display: block;
+    }
+
+    .msg-time {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 0 4px;
+    }
+
+    .composer {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 16px 18px 18px;
+    }
+
+    .composer-tools {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .composer-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .attachment-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      cursor: pointer;
+      color: var(--text-sub);
+      background: var(--surface-2);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .attachment-input {
+      display: none;
+    }
+
+    .attachment-preview {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .attachment-item {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .attachment-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .attachment-remove {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(24,16,10,.7);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .composer-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .composer-input {
+      flex: 1;
+      min-height: 96px;
+      resize: vertical;
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 14px;
+      font: inherit;
+      line-height: 1.6;
+      outline: none;
+      background: var(--surface-2);
+    }
+
+    .composer-input:focus {
+      border-color: var(--brand);
+      background: #fff;
+    }
+
+    .send-btn {
+      padding: 12px 20px;
+      border-radius: 99px;
+      border: none;
+      background: var(--brand);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .send-btn:hover {
+      background: var(--brand-hover);
+    }
+
+    .send-btn:disabled {
+      opacity: .5;
+      cursor: default;
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 252px minmax(0, 1fr);
+      }
+
+      .threads-panel {
+        display: none;
+      }
+    }
+
+    @media (max-width: 780px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .left-nav {
+        display: none;
+      }
+
+      .msg {
+        max-width: 92%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <nav class="left-nav">
+      <div class="nav-hero">
+        <div class="nav-hero-logo">CatFace</div>
+        <div class="nav-hero-name" id="navHeroName">Chat</div>
+        <div class="nav-hero-status" id="navHeroStatus">Stay connected with rescue organizations</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+        <div class="nav-link" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+        <div class="nav-link" onclick="requireLoginForNavigation('/pages/notifications.html', 'Please log in first')"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge></span></div>
+        <div class="nav-link" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+        <div class="nav-link active"><span class="n-icon">&#x1F4E8;</span><span class="n-label">Chat</span></div>
+      </div>
+      <div class="nav-user" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')">
+        <div class="nav-avatar" id="navAvatar">U</div>
+        <div>
+          <div class="nav-user-name" id="navUserName">User</div>
+          <div class="nav-user-handle" id="navUserHandle">@user</div>
+        </div>
+      </div>
+    </nav>
+
+    <aside class="threads-panel">
+      <div class="panel-head">
+        <h1 class="panel-title">Organization Chat</h1>
+        <div class="panel-subtitle">This page opens your direct conversation with the rescue organization. If you came from Adoption or a profile, the matching chat will be prepared automatically.</div>
+      </div>
+      <div class="thread-list" id="conversationList">
+        <div class="thread-item">
+          <div class="thread-name">Loading conversations...</div>
+          <div class="thread-meta">Please wait</div>
+          <div class="thread-snippet">Fetching your latest rescue chat history.</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="chat-panel">
+      <div class="chat-head">
+        <div class="chat-head-top">
+          <a href="javascript:void(0)" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')" style="text-decoration:none;color:var(--brand);font-weight:700;">&larr; Back to Adoption</a>
+        </div>
+        <h2 class="chat-title" id="chatTitle">Direct rescue chat</h2>
+        <div class="chat-subtitle" id="chatSubtitle">Your messages with the rescue organization will appear here.</div>
+        <div class="chat-meta" id="chatMeta"></div>
+      </div>
+
+      <div class="chat-body" id="chatBody">
+        <div class="chat-empty" id="chatEmptyState">
+          Open chat from a cat profile, adoption application, or organization profile to enter the direct conversation with that rescue organization.
+        </div>
+      </div>
+
+      <form class="composer" id="chatForm">
+        <div class="composer-tools">
+          <div class="composer-hint">You can send text and up to 3 image attachments in one message.</div>
+          <label class="attachment-label" for="attachmentInput">
+            <span>&#x1F4F7;</span>
+            <span>Add images</span>
+          </label>
+          <input class="attachment-input" id="attachmentInput" type="file" accept="image/*" multiple>
+        </div>
+        <div class="attachment-preview" id="attachmentPreview"></div>
+        <div class="composer-row">
+          <textarea class="composer-input" id="messageInput" placeholder="Type your message to the rescue organization..."></textarea>
+          <button class="send-btn" id="sendBtn" type="submit">Send</button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/adoption-chat.js"></script>
+</body>
+</html>

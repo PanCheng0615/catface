@@ -3,562 +3,1071 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Account · CatFace</title>
+  <title>CatFace · My Account</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: radial-gradient(circle at top left, #ffe6eb 0%, #fafafa 40%, #f3f4ff 100%);
-      display: flex;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF; --surface-2: #FDFAF6;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4; --border-light: #F3E8D8; --like-color: #E05B73;
+      --radius-lg: 16px; --radius-md: 12px; --radius-sm: 8px;
+    }
+    html { scrollbar-gutter: stable; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; height: 100vh; }
+
+    /* LEFT NAV */
+    .left-nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; background: var(--surface); border-right: 1px solid var(--border); }
+    .left-nav::-webkit-scrollbar { display: none; }
+    .nav-hero { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 100%); padding: 18px 16px 16px; position: relative; overflow: hidden; flex-shrink: 0; }
+    .nav-hero::after { content: '🐱'; position: absolute; right: 10px; top: 8px; font-size: 48px; opacity: .15; line-height: 1; pointer-events: none; }
+    .nav-hero-logo { font-size: 13px; font-weight: 800; letter-spacing: .5px; color: rgba(255,255,255,.75); text-transform: uppercase; margin-bottom: 12px; }
+    .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
+    .nav-hero-avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.22); border: 2.5px solid rgba(255,255,255,.55); color: #fff; display: grid; place-items: center; font-size: 19px; flex-shrink: 0; }
+    .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
+    .nav-hero-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; cursor: pointer; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #86EFAC; flex-shrink: 0; }
+    .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--text-sub); transition: background .15s, color .15s; cursor: pointer; }
+    .nav-link:hover { background: var(--brand-light); color: var(--brand); }
+    .nav-link.active { background: var(--brand-light); color: var(--brand); font-weight: 700; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; }
+    .n-label { flex: 1; }
+    .n-badge { background: var(--like-color); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px; }
+    .n-soon { font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--bg); padding: 2px 7px; border-radius: 99px; }
+    .btn-new-post { margin: 14px 10px 0; padding: 12px 0; border-radius: 12px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; transition: background .15s, transform .12s; }
+    .btn-new-post:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .nav-user { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--border-light); cursor: pointer; transition: background .15s; }
+    .nav-user:hover { background: var(--surface-2); }
+    .nav-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--brand-light); border: 2px solid var(--border); color: var(--brand); display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .u-handle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .nav-user-more { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
+
+    /* CENTER */
+    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; height: 100vh; overflow-y: auto; scrollbar-gutter: stable; }
+    .center-header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); padding: 16px 20px; }
+    .center-header h2 { font-size: 18px; font-weight: 800; }
+    .center-header p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .acct-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .acct-profile-hero { background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%); border-radius: 20px; padding: 22px; color: #fff; display: flex; align-items: center; gap: 16px; }
+    .acct-avatar-big { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,.25); border: 3px solid rgba(255,255,255,.6); display: grid; place-items: center; font-size: 28px; flex-shrink: 0; }
+    .acct-hero-name { font-size: 20px; font-weight: 800; }
+    .acct-hero-sub { font-size: 13px; opacity: .9; margin-top: 4px; }
+    .acct-hero-edit { margin-left: auto; padding: 8px 18px; border-radius: 99px; background: rgba(255,255,255,.22); border: 1.5px solid rgba(255,255,255,.5); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; }
+    .acct-hero-edit:hover { background: rgba(255,255,255,.35); }
+    .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .section-card-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+    .section-card-title { font-size: 15px; font-weight: 700; }
+    .section-card-pill { padding: 4px 10px; border-radius: 99px; background: var(--brand-light); color: var(--brand); font-size: 11px; font-weight: 700; }
+    .section-card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+    .field input, .field select, .field textarea { border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; font: inherit; font-size: 14px; background: var(--surface-2); color: var(--text); outline: none; transition: border-color .15s; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); background: #fff; }
+    .field textarea { min-height: 80px; resize: vertical; }
+    .tags-row { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+    .tags-row label { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .tag-selector-btn {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-sub);
+      font-size: 14px;
+      font-weight: 700;
+      text-align: left;
+    }
+    .tag-selected-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--brand-light);
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(200,112,42,.25);
+    }
+    .tag-chip-empty {
+      font-size: 12px;
+      color: var(--text-muted);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      width: 100%;
+    }
+    .form-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; padding-top: 4px; }
+    .btn-primary { padding: 10px 22px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: background .15s; }
+    .btn-primary:hover { background: var(--brand-hover); }
+    .btn-secondary { padding: 10px 18px; border-radius: 99px; background: var(--surface-2); color: var(--text-sub); font-size: 14px; font-weight: 700; border: 1px solid var(--border); cursor: pointer; }
+    .btn-danger { padding: 10px 18px; border-radius: 99px; background: #18100A; color: #fff; font-size: 14px; font-weight: 700; border: none; cursor: pointer; }
+    .health-entry { display: flex; align-items: center; gap: 14px; background: var(--brand-light); border: 1px solid var(--accent); border-radius: 14px; padding: 14px 16px; }
+    .health-entry-icon { font-size: 26px; }
+    .health-entry-info { flex: 1; }
+    .health-entry-info h4 { font-size: 14px; font-weight: 700; }
+    .health-entry-info p { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .health-entry-btn { padding: 9px 18px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 13px; font-weight: 700; border: none; cursor: pointer; white-space: nowrap; transition: background .15s; }
+    .health-entry-btn:hover { background: var(--brand-hover); }
+    .saved-banner { display: none; padding: 12px 16px; background: #ecfdf3; color: #027a48; border-radius: 12px; font-size: 14px; font-weight: 700; }
+    .saved-banner.show { display: block; }
+
+    /* RIGHT PANEL */
+    .right-panel { padding: 20px 0 20px 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; scrollbar-width: none; }
+    .right-panel::-webkit-scrollbar { display: none; }
+    .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+    .rp-link-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+    .rp-link-row:last-child { border-bottom: none; }
+    .rp-link-row:hover { background: var(--bg); }
+    .rp-link-icon { font-size: 20px; width: 36px; height: 36px; border-radius: 10px; background: var(--brand-light); display: grid; place-items: center; flex-shrink: 0; }
+    .rp-link-label { flex: 1; font-size: 14px; font-weight: 600; color: var(--text-sub); }
+    .rp-link-arrow { color: var(--text-muted); font-size: 16px; }
+    .rp-info-block { padding: 14px 18px; font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17,24,39,.52);
+      display: none;
       align-items: center;
       justify-content: center;
-      padding: 24px;
-      color: #222;
+      z-index: 120;
+      padding: 20px;
     }
-    a { color: #2f6feb; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    h1, h2, h3, p { margin: 0; }
-    button, input, textarea, select { font: inherit; }
-
-    .shell {
-      width: min(1080px, 100%);
+    .modal-overlay.open { display: flex; }
+    .modal-card {
+      width: min(760px, 100%);
+      max-height: 84vh;
+      overflow: auto;
       background: #fff;
-      border-radius: 24px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.12);
-      display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-      overflow: hidden;
-    }
-    @media (max-width: 920px) {
-      .shell { grid-template-columns: minmax(0, 1fr); }
-    }
-    .left { padding: 26px 26px 22px; }
-    .right {
-      background: radial-gradient(circle at top, #ff2442 0%, #ff7a66 45%, #ffc1a6 100%);
-      color: #fff;
-      padding: 26px 24px 22px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 14px;
-    }
-
-    .top-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .back-link {
-      font-size: 13px;
-      color: #666;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .logo {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 800;
-      color: #ff2442;
-      font-size: 18px;
-      margin-top: 8px;
-    }
-    .logo-mark {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      background: #ff2442;
-      color: #fff;
-      display: grid;
-      place-items: center;
-      font-size: 16px;
-    }
-
-    .title {
-      margin-top: 12px;
-      font-size: 22px;
-      font-weight: 800;
-    }
-    .sub {
-      margin-top: 6px;
-      font-size: 13px;
-      color: #666;
-      line-height: 1.5;
-    }
-
-    .section {
-      margin-top: 14px;
-      border: 1px solid #f1f1f1;
       border-radius: 18px;
-      padding: 14px 14px 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 60px rgba(0,0,0,.2);
+    }
+    .modal-head {
+      position: sticky;
+      top: 0;
       background: #fff;
-    }
-    .section-head {
+      border-bottom: 1px solid var(--border-light);
+      padding: 14px 16px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-    .section h2 { font-size: 15px; }
-    .pill {
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: #f5f5f5;
-      font-size: 12px;
-      color: #666;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      justify-content: space-between;
       gap: 12px;
     }
-    @media (max-width: 720px) {
-      .grid { grid-template-columns: 1fr; }
+    .modal-title { font-size: 16px; font-weight: 800; }
+    .modal-close {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      font-size: 18px;
+      line-height: 1;
+      color: var(--text-sub);
     }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+    .modal-body { padding: 14px 16px; }
+    .modal-tag-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
     }
-    .field.full { grid-column: 1 / -1; }
-    .label {
+    .modal-tag-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-2);
       font-size: 13px;
-      font-weight: 600;
-      color: #374151;
+      color: var(--text-sub);
     }
-    .input, .select, .textarea {
-      width: 100%;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 10px 12px;
-      background: #fafafa;
-      outline: none;
-      color: #111827;
-      font-size: 14px;
-    }
-    .textarea { min-height: 92px; resize: vertical; background: #fff; }
-    .input:focus, .select:focus, .textarea:focus {
-      border-color: #ffd0d7;
+    .modal-foot {
+      position: sticky;
+      bottom: 0;
       background: #fff;
-    }
-
-    .tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      font-size: 13px;
-      color: #444;
-      margin-top: 2px;
-    }
-    .tags label { cursor: pointer; }
-
-    .actions {
-      margin-top: 12px;
+      border-top: 1px solid var(--border-light);
+      padding: 12px 16px;
       display: flex;
       justify-content: flex-end;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
+      gap: 8px;
     }
-    .btn {
-      border-radius: 999px;
-      padding: 10px 16px;
-      border: none;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 700;
-    }
-    .btn-primary {
-      background: #ff2442;
-      color: #fff;
-      box-shadow: 0 10px 24px rgba(255,36,66,.22);
-    }
-    .btn-primary:hover { background: #e61e3a; }
-    .btn-secondary {
-      background: #f5f5f5;
-      color: #444;
-    }
-    .btn-danger {
-      background: #111827;
-      color: #fff;
-    }
-    .btn-link {
-      background: transparent;
-      color: #2f6feb;
-      font-weight: 700;
-      padding: 0;
-    }
-
-    .banner {
-      display: none;
-      margin-top: 12px;
-      border-radius: 16px;
-      padding: 12px 14px;
-      background: #ecfdf3;
-      color: #027a48;
-      font-weight: 700;
-      line-height: 1.5;
-      font-size: 13px;
-    }
-    .banner.show { display: block; }
-
-    .right h2 { margin: 0 0 6px; font-size: 20px; }
-    .right p { margin: 0; font-size: 13px; line-height: 1.6; opacity: .95; }
-    .right-list { margin-top: 12px; padding-left: 18px; font-size: 13px; line-height: 1.8; }
-    .right-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-    .right a { color: #fff; text-decoration: underline; }
-    .small-note { font-size: 12px; opacity: .92; }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <section class="left">
-      <div class="top-row">
-        <a href="index.html" class="back-link">← Back to Home</a>
-        <a href="log-in.html" class="back-link">Log in / Sign up</a>
-      </div>
-
-      <div class="logo">
-        <span class="logo-mark">🐱</span>
-        <span>CatFace</span>
-      </div>
-
-      <h1 class="title">My Account</h1>
-      <p class="sub">Manage your profile, adoption preferences, and your cat’s information.</p>
-
-      <div class="section" aria-label="User profile">
-        <div class="section-head">
-          <h2>Profile</h2>
-          <span class="pill" id="loginStatus">Not logged in</span>
-        </div>
-        <div class="grid">
-          <div class="field">
-            <div class="label">Nickname</div>
-            <input class="input" id="uName" type="text" placeholder="Enter nickname">
-          </div>
-          <div class="field">
-            <div class="label">Email</div>
-            <input class="input" id="uEmail" type="email" placeholder="Enter email">
-          </div>
+<div class="layout">
+  <!-- LEFT NAV -->
+  <nav class="left-nav">
+    <div class="nav-hero">
+      <div class="nav-hero-logo">CatFace</div>
+      <div class="nav-hero-profile">
+        <div class="nav-hero-avatar" id="navHeroAvatar">&#x1F464;</div>
+        <div>
+          <div class="nav-hero-name" id="navHeroName">Guest</div>
+          <div class="nav-hero-status"><span class="status-dot"></span><span id="navHeroStatusText">Not logged in</span></div>
         </div>
       </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/notifications.html', 'Please log in first')"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
+      <div class="nav-link active"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
+    </div>
+    <button class="btn-new-post" onclick="location.href='/pages/cat-facebook.html'">+ New Post</button>
+    <div class="nav-user" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')">
+      <div class="nav-avatar" id="navUserAvatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name" id="navUserName">Guest</div><div class="u-handle" id="navUserHandle">Log in to continue</div></div>
+      <span class="nav-user-more">&#x2026;</span>
+    </div>
+  </nav>
 
-      <div class="section" aria-label="Adoption preferences">
-        <div class="section-head">
-          <h2>Adoption preferences</h2>
-          <span class="pill">Used for matching</span>
+  <!-- CENTER -->
+  <div class="center">
+    <div class="center-header">
+      <h2>&#x1F464; My Account</h2>
+      <p>Manage your profile, preferences, and your cat's information</p>
+    </div>
+    <div class="acct-body">
+      <div class="acct-profile-hero">
+        <div class="acct-avatar-big" id="acctAvatarBig">&#x1F464;</div>
+        <div>
+          <div class="acct-hero-name" id="acctHeroName">Guest</div>
+          <div class="acct-hero-sub" id="acctHeroSub">Log in to manage your account</div>
         </div>
-        <div class="grid">
-          <div class="field">
-            <div class="label">Preferred gender</div>
-            <select class="select" id="prefGender">
-              <option value="">Any</option>
-              <option value="female">Female</option>
-              <option value="male">Male</option>
-              <option value="no-preference">No preference</option>
-            </select>
+        <button class="acct-hero-edit" id="editPhotoBtn">Edit Photo</button>
+        <input type="file" id="photoUploadInput" accept="image/*" style="display:none;">
+      </div>
+
+      <!-- Profile Section -->
+      <div class="section-card">
+        <div class="section-card-head">
+          <span class="section-card-title">Profile</span>
+          <span class="section-card-pill">Logged in</span>
+        </div>
+        <div class="section-card-body">
+          <div class="form-grid">
+            <div class="field"><label>Nickname</label><input type="text" id="nicknameInput" value="Demo User" placeholder="Enter nickname"></div>
+            <div class="field"><label>Email</label><input type="email" id="emailInput" value="demo@catface.app" placeholder="Enter email"></div>
           </div>
-          <div class="field">
-            <div class="label">Preferred age</div>
-            <select class="select" id="prefAge">
-              <option value="">Any</option>
-              <option value="kitten">Kitten (0–1 year)</option>
-              <option value="adult">Adult (1–7 years)</option>
-              <option value="senior">Senior (7+ years)</option>
-            </select>
-          </div>
-          <div class="field">
-            <div class="label">Preferred breed</div>
-            <select class="select" id="prefBreed">
-              <option value="">Any</option>
-              <option value="domestic-short-hair">Domestic short hair</option>
-              <option value="british-shorthair">British Shorthair</option>
-              <option value="ragdoll">Ragdoll</option>
-              <option value="persian">Persian</option>
-              <option value="american-shorthair">American Shorthair</option>
-              <option value="mix">Mixed / Rescue cat</option>
-            </select>
-          </div>
-          <div class="field">
-            <div class="label">Home environment</div>
-            <select class="select" id="prefHome">
-              <option value="">Optional</option>
-              <option value="quiet">Quiet (1–2 adults)</option>
-              <option value="family-kids">Family with children</option>
-              <option value="other-pets">Already have other pets</option>
-              <option value="first-time">First-time cat owner</option>
-            </select>
-          </div>
-          <div class="field full">
-            <div class="label">Personality tags (multiple)</div>
-            <div class="tags">
-              <label><input type="checkbox" id="tagPlayful"> Playful / Active</label>
-              <label><input type="checkbox" id="tagGentle"> Gentle / Calm</label>
-              <label><input type="checkbox" id="tagKid"> Good with kids</label>
-              <label><input type="checkbox" id="tagBeginner"> Good for first-time owners</label>
-              <label><input type="checkbox" id="tagSpecial"> OK with special needs</label>
+        </div>
+      </div>
+
+      <!-- Adoption Preferences -->
+      <div class="section-card">
+        <div class="section-card-head">
+          <span class="section-card-title">Adoption Preferences</span>
+          <span class="section-card-pill">Used for matching</span>
+        </div>
+        <div class="section-card-body">
+          <div class="form-grid">
+            <div class="field"><label>Preferred gender</label>
+              <select id="prefGenderSelect"><option value="">Any</option><option value="female">Female</option><option value="male">Male</option><option value="no_preference">No preference</option></select></div>
+            <div class="field"><label>Preferred age</label>
+              <select id="prefAgeSelect"><option value="">Any</option><option value="kitten">Kitten (0–1 year)</option><option value="adult">Adult (1–7 years)</option><option value="senior">Senior (7+ years)</option></select></div>
+            <div class="field"><label>Preferred breed</label>
+              <select id="prefBreedSelect"><option value="">Any</option><option value="domestic short hair">Domestic short hair</option><option value="british shorthair">British Shorthair</option><option value="ragdoll">Ragdoll</option><option value="persian">Persian</option><option value="tabby">Tabby</option></select></div>
+            <div class="field"><label>Home environment</label>
+              <select id="prefHomeEnvironmentSelect"><option value="">Optional</option><option>Quiet (1–2 adults)</option><option>Family with children</option><option>Already have other pets</option></select></div>
+            <div class="field full"><label>Personality tags</label>
+              <button class="tag-selector-btn" type="button" id="openTagModalBtn">Select personality tags...</button>
+              <div class="tag-selected-list" id="selectedTagList"></div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="section" aria-label="My cat info">
-        <div class="section-head">
-          <h2>My cat</h2>
-          <span class="pill">For adopters / owners</span>
+      <!-- My Cat -->
+      <div class="section-card">
+        <div class="section-card-head">
+          <span class="section-card-title">My Cat</span>
+          <span class="section-card-pill">For owners</span>
         </div>
-        <div class="grid">
-          <div class="field full">
-            <label class="label" style="display:flex; align-items:center; gap:8px;">
-              <input type="checkbox" id="hasCat">
-              I have adopted a cat / I already have a cat
-            </label>
-          </div>
-          <div class="field">
-            <div class="label">Cat ID</div>
-            <input class="input" id="catId" type="text" placeholder="Auto generated after sign up" readonly>
-          </div>
-          <div class="field">
-            <div class="label">Cat name</div>
-            <input class="input" id="catName" type="text" placeholder="Enter cat name">
-          </div>
-          <div class="field">
-            <div class="label">Breed</div>
-            <input class="input" id="catBreed" type="text" placeholder="e.g. Domestic shorthair">
-          </div>
-          <div class="field">
-            <div class="label">Gender</div>
-            <select class="select" id="catGender">
-              <option value="">Not specified</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Unknown">Unknown</option>
-            </select>
-          </div>
-          <div class="field">
-            <div class="label">Birthday</div>
-            <input class="input" id="catBirthday" type="date">
-          </div>
-          <div class="field">
-            <div class="label">Spay/Neuter</div>
-            <select class="select" id="catNeuter">
-              <option value="">Not specified</option>
-              <option value="Completed">Completed</option>
-              <option value="Not Yet">Not Yet</option>
-            </select>
-          </div>
-          <div class="field">
-            <div class="label">Vaccination</div>
-            <input class="input" id="catVaccination" type="text" placeholder="e.g. Rabies + FVRCP">
-          </div>
-          <div class="field">
-            <div class="label">Allergies</div>
-            <input class="input" id="catAllergies" type="text" placeholder="Optional">
-          </div>
-          <div class="field full">
-            <div class="label">Notes</div>
-            <textarea class="textarea" id="catNotes" placeholder="Any notes about your cat..."></textarea>
+        <div class="section-card-body">
+          <div class="field full"><label style="display:flex;align-items:center;gap:8px;font-size:14px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--text-sub);"><input type="checkbox" id="hasCat"> I have adopted a cat / I already own a cat</label></div>
+          <div class="field full" id="myCatLockHint" style="font-size:12px;color:var(--text-muted);line-height:1.6;"></div>
+          <div class="form-grid" id="catFields" style="opacity:.5;pointer-events:none;">
+            <div class="field"><label>Cat name</label><input type="text" id="catNameInput" placeholder="Enter cat name"></div>
+            <div class="field"><label>Breed</label><input type="text" id="catBreedInput" placeholder="e.g. Domestic shorthair"></div>
+            <div class="field"><label>Gender</label>
+              <select id="catGenderInput"><option value="">Not specified</option><option value="male">Male</option><option value="female">Female</option><option value="unknown">Unknown</option></select></div>
+            <div class="field"><label>Birthday</label><input type="date" id="catBirthdayInput"></div>
+            <div class="field"><label>Spay / Neuter</label>
+              <select id="catNeuterInput"><option value="">Not specified</option><option value="completed">Completed</option><option value="not_yet">Not yet</option></select></div>
+            <div class="field"><label>Vaccination</label><input type="text" id="catVaccinationInput" placeholder="e.g. Rabies + FVRCP"></div>
+            <div class="field"><label>Allergies</label><input type="text" id="catAllergiesInput" placeholder="Optional"></div>
+            <div class="field"><label>Cat ID</label><input type="text" id="catIdFieldInput" placeholder="Auto-generated" readonly style="opacity:.6;"></div>
+            <div class="field full"><label>Notes</label><textarea id="catNotesInput" placeholder="Any notes about your cat..."></textarea></div>
           </div>
         </div>
       </div>
 
-      <div class="actions">
-        <button class="btn btn-secondary" type="button" id="resetBtn">Reset</button>
-        <button class="btn btn-primary" type="button" id="saveBtn">Save changes</button>
-        <button class="btn btn-danger" type="button" id="logoutBtn">Log out</button>
-      </div>
-      <div class="banner" id="savedBanner">Saved successfully.</div>
-    </section>
-
-    <aside class="right" aria-label="Quick links">
-      <div>
-        <h2>Quick actions</h2>
-        <p>Jump to key features:</p>
-        <div class="right-links">
-          <a href="index.html">Community</a>
-          <a href="adoption.html">Adoption</a>
-          <a href="health.html">Health</a>
-          <a href="cat-facebook.html">Post</a>
+      <!-- Health Entry -->
+      <div class="section-card">
+        <div class="section-card-head"><span class="section-card-title">Health</span></div>
+        <div class="section-card-body">
+          <div class="health-entry">
+            <div class="health-entry-icon">&#x1FA7A;</div>
+            <div class="health-entry-info">
+              <h4>Cat Health Records</h4>
+              <p>View and manage medical data, vaccination history, and share records with clinics.</p>
+            </div>
+            <button class="health-entry-btn" onclick="requireLoginForNavigation('/pages/health.html', 'Please log in first')">Go to Health &#x2192;</button>
+          </div>
         </div>
-        <ul class="right-list">
-          <li>Update your adoption preferences to improve matching.</li>
-          <li>If you have a cat, keep your cat ID and health info updated.</li>
-          <li>You can share health data with clinics on the Health page.</li>
-        </ul>
       </div>
-      <div class="small-note">Data is stored locally in your browser (`localStorage`).</div>
-    </aside>
+
+      <div id="savedBanner" class="saved-banner">&#x2705; Saved successfully!</div>
+      <div class="form-actions">
+        <button class="btn-secondary" id="resetBtn">Reset</button>
+        <button class="btn-primary" id="saveBtn">Save Changes</button>
+        <button class="btn-danger" id="logoutBtn">Log Out</button>
+      </div>
+    </div>
   </div>
 
-  <script>
-    (function () {
-      var USER_KEY = "catface_user";
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+    <div class="rp-card">
+      <div class="rp-card-title">&#x26A1; Quick Actions</div>
+      <div class="rp-link-row" onclick="location.href='/pages/cat-facebook.html'"><div class="rp-link-icon">&#x1F4AC;</div><span class="rp-link-label">Community Feed</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><div class="rp-link-icon">&#x1F431;</div><span class="rp-link-label">Adoption</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/health.html', 'Please log in first')"><div class="rp-link-icon">&#x1FA7A;</div><span class="rp-link-label">Health Records</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/cat-profile.html', 'Please log in first')"><div class="rp-link-icon">&#x1F4CB;</div><span class="rp-link-label">My Cat Profile</span><span class="rp-link-arrow">&#x203A;</span></div>
+    </div>
+    <div class="rp-card">
+      <div class="rp-card-title">&#x1F4A1; Tips</div>
+      <div class="rp-info-block">
+        <p>&#x2022; Update your adoption preferences to improve cat matching.</p>
+        <br>
+        <p>&#x2022; Keep your cat's health records up to date and share them with your vet on the Health page.</p>
+        <br>
+        <p>&#x2022; Your data is saved locally in your browser.</p>
+      </div>
+    </div>
+  </aside>
+</div>
+<div class="modal-overlay" id="tagModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="modal-title">Select Personality Tags</div>
+      <button class="modal-close" type="button" id="tagModalCloseBtn">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div id="tagModalHint" style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Tags are loaded from database.</div>
+      <div class="modal-tag-grid" id="tagModalGrid"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" type="button" id="tagModalCancelBtn">Cancel</button>
+      <button class="btn-primary" type="button" id="tagModalConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+<script src="../js/config.js"></script>
+<script>
+  var hasCat = document.getElementById('hasCat');
+  var catFields = document.getElementById('catFields');
+  hasCat.addEventListener('change', function(){
+    catFields.style.opacity = this.checked ? '1' : '.5';
+    catFields.style.pointerEvents = this.checked ? '' : 'none';
+  });
+</script>
+<script>
+  (function () {
+    var user = null;
+    var logoutBtn = document.getElementById('logoutBtn');
+    var saveBtn = document.getElementById('saveBtn');
+    var resetBtn = document.getElementById('resetBtn');
+    var editPhotoBtn = document.getElementById('editPhotoBtn');
+    var photoUploadInput = document.getElementById('photoUploadInput');
+    var savedBanner = document.getElementById('savedBanner');
+    var prefGenderSelect = document.getElementById('prefGenderSelect');
+    var prefAgeSelect = document.getElementById('prefAgeSelect');
+    var prefBreedSelect = document.getElementById('prefBreedSelect');
+    var prefHomeEnvironmentSelect = document.getElementById('prefHomeEnvironmentSelect');
+    var catNameInput = document.getElementById('catNameInput');
+    var catBreedInput = document.getElementById('catBreedInput');
+    var catGenderInput = document.getElementById('catGenderInput');
+    var catBirthdayInput = document.getElementById('catBirthdayInput');
+    var catNeuterInput = document.getElementById('catNeuterInput');
+    var catVaccinationInput = document.getElementById('catVaccinationInput');
+    var catAllergiesInput = document.getElementById('catAllergiesInput');
+    var catIdFieldInput = document.getElementById('catIdFieldInput');
+    var catNotesInput = document.getElementById('catNotesInput');
+    var openTagModalBtn = document.getElementById('openTagModalBtn');
+    var selectedTagList = document.getElementById('selectedTagList');
+    var tagModal = document.getElementById('tagModal');
+    var tagModalGrid = document.getElementById('tagModalGrid');
+    var tagModalHint = document.getElementById('tagModalHint');
+    var tagModalCloseBtn = document.getElementById('tagModalCloseBtn');
+    var tagModalCancelBtn = document.getElementById('tagModalCancelBtn');
+    var tagModalConfirmBtn = document.getElementById('tagModalConfirmBtn');
+    var myCatLockHint = document.getElementById('myCatLockHint');
+    var ownedCat = null;
+    var selectedPreferenceTags = [];
+    var availablePreferenceTags = [];
+    var modalDraftTags = [];
+    var accountFormElements = Array.prototype.slice.call(document.querySelectorAll('.acct-body input, .acct-body select, .acct-body textarea')).filter(function (el) {
+      return el.id !== 'photoUploadInput';
+    });
+    var currentPhotoData = '';
+    var initialSnapshot = null;
+    try {
+      user = JSON.parse(localStorage.getItem('catface_user') || 'null');
+    } catch (e) {}
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+      alert('Please log in first');
+      window.location.href = '/pages/log-in.html';
+      return;
+    }
+    var unreadCount = 0;
+    try {
+      var badgeCountKey = 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
+      unreadCount = Math.max(0, parseInt(localStorage.getItem(badgeCountKey) || '0', 10) || 0);
+    } catch (e) {}
+    document.querySelectorAll('[data-notif-badge]').forEach(function (badge) {
+      if (unreadCount <= 0) {
+        badge.style.display = 'none';
+      } else {
+        badge.style.display = '';
+        badge.textContent = String(unreadCount);
+      }
+    });
 
-      function readUser() {
-        try {
-          var raw = window.localStorage.getItem(USER_KEY);
-          return raw ? JSON.parse(raw) : null;
-        } catch (e) {
-          return null;
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getAccountStorageKey() {
+      return 'catface_account_form_v1_' + ((user && user.id) || 'guest');
+    }
+
+    function getPreferenceDraft() {
+      return {
+        preferred_gender: prefGenderSelect ? prefGenderSelect.value || null : null,
+        preferred_age: prefAgeSelect ? prefAgeSelect.value || null : null,
+        preferred_breed: prefBreedSelect ? prefBreedSelect.value || null : null,
+        home_environment: prefHomeEnvironmentSelect ? prefHomeEnvironmentSelect.value || null : null,
+        personality_tags: selectedPreferenceTags.slice()
+      };
+    }
+
+    function savePreferenceDraft() {
+      try {
+        localStorage.setItem('catface_adoption_preferences_v1_' + ((user && user.id) || 'guest'), JSON.stringify(getPreferenceDraft()));
+      } catch (e) {}
+    }
+
+    function loadPreferenceDraft() {
+      try {
+        return JSON.parse(localStorage.getItem('catface_adoption_preferences_v1_' + ((user && user.id) || 'guest')) || 'null');
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function applyPreferenceData(pref) {
+      if (prefGenderSelect) prefGenderSelect.value = (pref && pref.preferred_gender) || '';
+      if (prefAgeSelect) prefAgeSelect.value = (pref && pref.preferred_age) || '';
+      if (prefBreedSelect) prefBreedSelect.value = (pref && pref.preferred_breed) || '';
+      if (prefHomeEnvironmentSelect) prefHomeEnvironmentSelect.value = (pref && pref.home_environment) || '';
+      selectedPreferenceTags = Array.isArray(pref && pref.personality_tags)
+        ? pref.personality_tags.map(function (item) { return String(item || '').trim(); }).filter(Boolean)
+        : [];
+      selectedPreferenceTags.forEach(function (tag) {
+        if (availablePreferenceTags.indexOf(tag) === -1) availablePreferenceTags.push(tag);
+      });
+      renderSelectedPreferenceTags();
+    }
+
+    function renderSelectedPreferenceTags() {
+      if (!selectedTagList) return;
+      if (!selectedPreferenceTags.length) {
+        selectedTagList.innerHTML = '<div class="tag-chip-empty">No tags selected.</div>';
+      } else {
+        selectedTagList.innerHTML = selectedPreferenceTags.map(function (tag) {
+          return '<span class="tag-chip">' + escapeHtml(tag) + '</span>';
+        }).join('');
+      }
+      if (openTagModalBtn) {
+        openTagModalBtn.textContent = selectedPreferenceTags.length
+          ? ('Selected ' + selectedPreferenceTags.length + ' tag(s)')
+          : 'Select personality tags...';
+      }
+    }
+
+    function renderTagModalGrid() {
+      if (!tagModalGrid) return;
+      if (!availablePreferenceTags.length) {
+        tagModalGrid.innerHTML = '<div class="tag-chip-empty">No tags found in database yet.</div>';
+        return;
+      }
+      tagModalGrid.innerHTML = availablePreferenceTags.map(function (tag) {
+        var checked = modalDraftTags.indexOf(tag) >= 0 ? ' checked' : '';
+        return (
+          '<label class="modal-tag-item">' +
+            '<input type="checkbox" data-pref-tag="' + escapeHtml(tag) + '"' + checked + '>' +
+            '<span>' + escapeHtml(tag) + '</span>' +
+          '</label>'
+        );
+      }).join('');
+      tagModalGrid.querySelectorAll('input[data-pref-tag]').forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+          var tag = checkbox.getAttribute('data-pref-tag');
+          if (!tag) return;
+          if (checkbox.checked) {
+            if (modalDraftTags.indexOf(tag) === -1) modalDraftTags.push(tag);
+          } else {
+            modalDraftTags = modalDraftTags.filter(function (item) { return item !== tag; });
+          }
+        });
+      });
+    }
+
+    function openPreferenceTagModal() {
+      if (!tagModal) return;
+      modalDraftTags = selectedPreferenceTags.slice();
+      renderTagModalGrid();
+      tagModal.classList.add('open');
+    }
+
+    function closePreferenceTagModal() {
+      if (!tagModal) return;
+      tagModal.classList.remove('open');
+    }
+
+    function loadPreferenceTagOptions() {
+      return fetch(API_BASE_URL + '/adoption/preference-tags', {
+        method: 'GET',
+        headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+      })
+        .then(function (res) {
+          return res.json().then(function (payload) {
+            return { ok: res.ok, payload: payload };
+          });
+        })
+        .then(function (response) {
+          var payload = response.payload || {};
+          if (!response.ok || !payload.success || !Array.isArray(payload.data)) {
+            throw new Error(payload.message || 'Unable to load tags from database.');
+          }
+          availablePreferenceTags = payload.data
+            .map(function (item) { return String(item || '').trim(); })
+            .filter(Boolean);
+          selectedPreferenceTags.forEach(function (tag) {
+            if (availablePreferenceTags.indexOf(tag) === -1) availablePreferenceTags.push(tag);
+          });
+          if (tagModalHint) tagModalHint.textContent = 'Tags are loaded from database.';
+          renderSelectedPreferenceTags();
+        })
+        .catch(function (error) {
+          if (tagModalHint) tagModalHint.textContent = error.message || 'Unable to load tags from database.';
+          renderSelectedPreferenceTags();
+        });
+    }
+
+    function setHasCatFieldsEnabled(enabled) {
+      if (hasCat) {
+        hasCat.checked = !!enabled;
+        hasCat.disabled = !enabled;
+      }
+      if (catFields) {
+        catFields.style.opacity = enabled ? '1' : '.5';
+        catFields.style.pointerEvents = enabled ? '' : 'none';
+      }
+    }
+
+    function refreshMyCatLockHint() {
+      if (!myCatLockHint) return;
+      if (ownedCat) {
+        myCatLockHint.textContent = 'Cat profile linked from database. You can edit the linked profile fields below.';
+        return;
+      }
+      if (user && user.has_cat === false) {
+        myCatLockHint.textContent = 'You registered as "I want to adopt". My Cat stays locked until one adoption application is approved.';
+        return;
+      }
+      myCatLockHint.textContent = 'No linked cat profile found yet. This section unlocks automatically after your cat profile is linked.';
+    }
+
+    function clearCatProfileFields() {
+      if (catNameInput) catNameInput.value = '';
+      if (catBreedInput) catBreedInput.value = '';
+      if (catGenderInput) catGenderInput.value = '';
+      if (catBirthdayInput) catBirthdayInput.value = '';
+      if (catNeuterInput) catNeuterInput.value = '';
+      if (catVaccinationInput) catVaccinationInput.value = '';
+      if (catAllergiesInput) catAllergiesInput.value = '';
+      if (catIdFieldInput) catIdFieldInput.value = '';
+      if (catNotesInput) catNotesInput.value = '';
+    }
+
+    function formatDateInputValue(value) {
+      if (!value) return '';
+      var date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return date.toISOString().slice(0, 10);
+    }
+
+    function applyOwnedCat(cat) {
+      ownedCat = cat || null;
+      if (!cat) {
+        clearCatProfileFields();
+        setHasCatFieldsEnabled(false);
+        refreshMyCatLockHint();
+        return;
+      }
+
+      setHasCatFieldsEnabled(true);
+      if (catNameInput) catNameInput.value = cat.name || '';
+      if (catBreedInput) catBreedInput.value = cat.breed || '';
+      if (catGenderInput) catGenderInput.value = cat.gender || '';
+      if (catBirthdayInput) catBirthdayInput.value = formatDateInputValue(cat.intake_date);
+      if (catNeuterInput) {
+        if (cat.is_neutered === true) {
+          catNeuterInput.value = 'completed';
+        } else if (cat.is_neutered === false) {
+          catNeuterInput.value = 'not_yet';
+        } else {
+          catNeuterInput.value = '';
         }
       }
-      function writeUser(user) {
-        try {
-          window.localStorage.setItem(USER_KEY, JSON.stringify(user));
-        } catch (e) {}
+      if (catVaccinationInput) {
+        if (cat.is_vaccinated === true) {
+          catVaccinationInput.value = 'Completed';
+        } else if (cat.is_vaccinated === false) {
+          catVaccinationInput.value = 'Not yet';
+        } else {
+          catVaccinationInput.value = '';
+        }
       }
-      function clearUser() {
-        try {
-          window.localStorage.removeItem(USER_KEY);
-        } catch (e) {}
-      }
+      if (catAllergiesInput) catAllergiesInput.value = '';
+      if (catIdFieldInput) catIdFieldInput.value = cat.face_code || cat.id || '';
+      if (catNotesInput) catNotesInput.value = cat.description || '';
+      refreshMyCatLockHint();
+    }
 
-      var loginStatus = document.getElementById("loginStatus");
-      var savedBanner = document.getElementById("savedBanner");
+    function loadOwnedCat() {
+      return fetch(API_BASE_URL + '/cats', {
+        method: 'GET',
+        headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+      })
+        .then(function (res) {
+          return res.json().then(function (payload) {
+            return { ok: res.ok, payload: payload };
+          });
+        })
+        .then(function (response) {
+          var payload = response.payload || {};
+          if (!response.ok || !payload.success || !Array.isArray(payload.data)) {
+            applyOwnedCat(null);
+            return null;
+          }
 
-      var uName = document.getElementById("uName");
-      var uEmail = document.getElementById("uEmail");
+          var ownedCat = payload.data.find(function (cat) {
+            return cat && user && cat.owner_id === user.id;
+          }) || null;
 
-      var prefGender = document.getElementById("prefGender");
-      var prefAge = document.getElementById("prefAge");
-      var prefBreed = document.getElementById("prefBreed");
-      var prefHome = document.getElementById("prefHome");
-      var tagPlayful = document.getElementById("tagPlayful");
-      var tagGentle = document.getElementById("tagGentle");
-      var tagKid = document.getElementById("tagKid");
-      var tagBeginner = document.getElementById("tagBeginner");
-      var tagSpecial = document.getElementById("tagSpecial");
-
-      var hasCat = document.getElementById("hasCat");
-      var catId = document.getElementById("catId");
-      var catName = document.getElementById("catName");
-      var catBreed = document.getElementById("catBreed");
-      var catGender = document.getElementById("catGender");
-      var catBirthday = document.getElementById("catBirthday");
-      var catNeuter = document.getElementById("catNeuter");
-      var catVaccination = document.getElementById("catVaccination");
-      var catAllergies = document.getElementById("catAllergies");
-      var catNotes = document.getElementById("catNotes");
-
-      var resetBtn = document.getElementById("resetBtn");
-      var saveBtn = document.getElementById("saveBtn");
-      var logoutBtn = document.getElementById("logoutBtn");
-
-      function getTagsFromUI() {
-        var tags = [];
-        if (tagPlayful.checked) tags.push("playful");
-        if (tagGentle.checked) tags.push("gentle");
-        if (tagKid.checked) tags.push("good-with-kids");
-        if (tagBeginner.checked) tags.push("beginner-friendly");
-        if (tagSpecial.checked) tags.push("special-needs-ok");
-        return tags;
-      }
-      function setTagsToUI(tags) {
-        var set = new Set(Array.isArray(tags) ? tags : []);
-        tagPlayful.checked = set.has("playful");
-        tagGentle.checked = set.has("gentle");
-        tagKid.checked = set.has("good-with-kids");
-        tagBeginner.checked = set.has("beginner-friendly");
-        tagSpecial.checked = set.has("special-needs-ok");
-      }
-
-      function applyCatEnabledState() {
-        var enabled = !!hasCat.checked;
-        [
-          catId, catName, catBreed, catGender, catBirthday,
-          catNeuter, catVaccination, catAllergies, catNotes
-        ].forEach(function (el) {
-          el.disabled = !enabled;
-          el.style.opacity = enabled ? "" : "0.6";
+          applyOwnedCat(ownedCat);
+          return ownedCat;
+        })
+        .catch(function () {
+          applyOwnedCat(null);
+          return null;
         });
-      }
+    }
 
-      function loadToUI() {
-        savedBanner.classList.remove("show");
-        var user = readUser();
-        if (!user) user = {};
+    function syncCurrentUserFromServer() {
+      return fetch(API_BASE_URL + '/users/me', {
+        method: 'GET',
+        headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+      })
+        .then(function (res) {
+          return res.json().then(function (payload) {
+            return { ok: res.ok, payload: payload };
+          });
+        })
+        .then(function (response) {
+          var payload = response.payload || {};
+          if (!response.ok || !payload.success || !payload.data) return null;
+          user = payload.data;
+          try {
+            localStorage.setItem('catface_user', JSON.stringify(user));
+          } catch (e) {}
+          applyAccountIdentityFields();
+          applyProfilePreview();
+          refreshMyCatLockHint();
+          return user;
+        })
+        .catch(function () {
+          return null;
+        });
+    }
 
-        var isLoggedIn = !!user.email;
-        loginStatus.textContent = isLoggedIn ? "Logged in" : "Not logged in";
+    function showSavedBanner(message) {
+      if (!savedBanner) return;
+      savedBanner.textContent = message || 'Saved successfully!';
+      savedBanner.classList.add('show');
+      clearTimeout(showSavedBanner._timer);
+      showSavedBanner._timer = setTimeout(function () {
+        savedBanner.classList.remove('show');
+      }, 2000);
+    }
 
-        uName.value = user.name || "";
-        uEmail.value = user.email || "";
-
-        var pref = user.preferences || {};
-        prefGender.value = pref.gender || "";
-        prefAge.value = pref.age || "";
-        prefBreed.value = pref.breed || "";
-        prefHome.value = pref.home || "";
-        setTagsToUI(pref.tags || []);
-
-        var cat = user.myCat || {};
-        hasCat.checked = !!cat.hasCat;
-        catId.value = cat.catId || "";
-        catName.value = cat.name || "";
-        catBreed.value = cat.breed || "";
-        catGender.value = cat.gender || "";
-        catBirthday.value = cat.birthday || "";
-        catNeuter.value = cat.neuter || "";
-        catVaccination.value = cat.vaccination || "";
-        catAllergies.value = cat.allergies || "";
-        catNotes.value = cat.notes || "";
-
-        applyCatEnabledState();
-      }
-
-      function saveFromUI() {
-        var current = readUser() || {};
-        current.name = uName.value.trim();
-        current.email = uEmail.value.trim();
-        current.preferences = {
-          gender: prefGender.value,
-          age: prefAge.value,
-          breed: prefBreed.value,
-          home: prefHome.value,
-          tags: getTagsFromUI()
-        };
-        current.myCat = {
-          hasCat: !!hasCat.checked,
-          catId: catId.value.trim(),
-          name: catName.value.trim(),
-          breed: catBreed.value.trim(),
-          gender: catGender.value,
-          birthday: catBirthday.value,
-          neuter: catNeuter.value,
-          vaccination: catVaccination.value.trim(),
-          allergies: catAllergies.value.trim(),
-          notes: catNotes.value.trim()
-        };
-
-        writeUser(current);
-        savedBanner.classList.add("show");
-        window.setTimeout(function () {
-          savedBanner.classList.remove("show");
-        }, 2200);
-      }
-
-      hasCat.addEventListener("change", function () {
-        applyCatEnabledState();
+    function serializeForm() {
+      var form = {};
+      accountFormElements.forEach(function (el) {
+        var key = el.id || el.name || ('field_' + Math.random());
+        if (el.type === 'checkbox') {
+          form[key] = el.checked;
+        } else {
+          form[key] = el.value;
+        }
       });
-      resetBtn.addEventListener("click", loadToUI);
-      saveBtn.addEventListener("click", saveFromUI);
-      logoutBtn.addEventListener("click", function () {
-        if (!confirm("Log out now?")) return;
-        clearUser();
-        loadToUI();
-        alert("Logged out.");
+      return {
+        form: form,
+        photo: currentPhotoData || ''
+      };
+    }
+
+    function getAccountIdentity() {
+      return {
+        nickname: (user && (user.display_name || user.username || user.email)) || '',
+        email: (user && user.email) || ''
+      };
+    }
+
+    function applyAccountIdentityFields() {
+      var nicknameInput = document.getElementById('nicknameInput');
+      var emailInput = document.getElementById('emailInput');
+      var identity = getAccountIdentity();
+      if (nicknameInput) nicknameInput.value = identity.nickname;
+      if (emailInput) emailInput.value = identity.email;
+    }
+
+    function applySnapshot(snapshot) {
+      if (!snapshot || !snapshot.form) return;
+      accountFormElements.forEach(function (el) {
+        var key = el.id || el.name;
+        if (key === 'nicknameInput' || key === 'emailInput') return;
+        if (!key || !(key in snapshot.form)) return;
+        if (el.type === 'checkbox') {
+          el.checked = !!snapshot.form[key];
+          el.dispatchEvent(new Event('change'));
+        } else {
+          el.value = snapshot.form[key];
+        }
+      });
+      currentPhotoData = snapshot.photo || '';
+      applyProfilePreview();
+    }
+
+    function applyAvatar(el) {
+      if (!el) return;
+      if (currentPhotoData) {
+        el.textContent = '';
+        el.style.backgroundImage = 'url("' + currentPhotoData + '")';
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+      } else {
+        el.textContent = '\u{1F464}';
+        el.style.backgroundImage = '';
+        el.style.backgroundSize = '';
+        el.style.backgroundPosition = '';
+      }
+    }
+
+    function applyProfilePreview() {
+      var nicknameInput = document.getElementById('nicknameInput');
+      var emailInput = document.getElementById('emailInput');
+      var nickname = (nicknameInput && nicknameInput.value.trim()) || ((user && (user.display_name || user.username)) || 'Guest');
+      var email = (emailInput && emailInput.value.trim()) || ((user && user.email) || '');
+      var handle = user ? ('@' + (user.username || user.id || '')) : '';
+      var heroSub = user ? (handle.replace(/^@/, '') + ' · Joined March 2026 · ' + email) : 'Log in to manage your account';
+
+      var navHeroName = document.getElementById('navHeroName');
+      var navHeroStatusText = document.getElementById('navHeroStatusText');
+      var navUserName = document.getElementById('navUserName');
+      var navUserHandle = document.getElementById('navUserHandle');
+      var acctHeroName = document.getElementById('acctHeroName');
+      var acctHeroSub = document.getElementById('acctHeroSub');
+
+      if (navHeroName) navHeroName.textContent = nickname;
+      if (navHeroStatusText) navHeroStatusText.textContent = user ? ('Logged in · ' + handle.replace(/^@/, '')) : 'Not logged in';
+      if (navUserName) navUserName.textContent = nickname;
+      if (navUserHandle) navUserHandle.textContent = user ? handle : 'Log in to continue';
+      if (acctHeroName) acctHeroName.textContent = nickname;
+      if (acctHeroSub) acctHeroSub.textContent = heroSub;
+
+      applyAvatar(document.getElementById('navHeroAvatar'));
+      applyAvatar(document.getElementById('navUserAvatar'));
+      applyAvatar(document.getElementById('acctAvatarBig'));
+    }
+
+    try {
+      var storedSnapshot = JSON.parse(localStorage.getItem(getAccountStorageKey()) || 'null');
+      if (storedSnapshot) {
+        applySnapshot(storedSnapshot);
+      }
+    } catch (e) {
+      // ignore invalid local snapshot and continue with account identity
+    }
+    applyAccountIdentityFields();
+    applyProfilePreview();
+    clearCatProfileFields();
+    setHasCatFieldsEnabled(false);
+    refreshMyCatLockHint();
+
+    applyPreferenceData(loadPreferenceDraft());
+    loadPreferenceTagOptions();
+    syncCurrentUserFromServer().then(function () {
+      return loadOwnedCat();
+    });
+
+    fetch(API_BASE_URL + '/adoption/preferences', {
+      method: 'GET',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success) return;
+        if (payload.data) {
+          applyPreferenceData(payload.data);
+          savePreferenceDraft();
+        }
+        initialSnapshot = serializeForm();
+      })
+      .catch(function () {
+        initialSnapshot = serializeForm();
       });
 
-      loadToUI();
-    })();
-  </script>
+    if (openTagModalBtn) {
+      openTagModalBtn.addEventListener('click', function () {
+        openPreferenceTagModal();
+      });
+    }
+    if (tagModalCloseBtn) {
+      tagModalCloseBtn.addEventListener('click', closePreferenceTagModal);
+    }
+    if (tagModalCancelBtn) {
+      tagModalCancelBtn.addEventListener('click', closePreferenceTagModal);
+    }
+    if (tagModalConfirmBtn) {
+      tagModalConfirmBtn.addEventListener('click', function () {
+        selectedPreferenceTags = modalDraftTags
+          .map(function (item) { return String(item || '').trim(); })
+          .filter(Boolean);
+        renderSelectedPreferenceTags();
+        savePreferenceDraft();
+        closePreferenceTagModal();
+      });
+    }
+    if (tagModal) {
+      tagModal.addEventListener('click', function (event) {
+        if (event.target === tagModal) closePreferenceTagModal();
+      });
+    }
+
+    initialSnapshot = serializeForm();
+
+    accountFormElements.forEach(function (el) {
+      var eventName = el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input';
+      el.addEventListener(eventName, applyProfilePreview);
+    });
+
+    if (editPhotoBtn && photoUploadInput) {
+      editPhotoBtn.addEventListener('click', function () {
+        photoUploadInput.click();
+      });
+      photoUploadInput.addEventListener('change', function () {
+        var file = photoUploadInput.files && photoUploadInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (event) {
+          currentPhotoData = String((event && event.target && event.target.result) || '');
+          applyProfilePreview();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        var preferencePromise = fetch(API_BASE_URL + '/adoption/preferences', {
+          method: 'POST',
+          headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+          body: JSON.stringify(getPreferenceDraft())
+        })
+          .then(function (res) {
+            return res.json().then(function (payload) {
+              return { ok: res.ok, payload: payload };
+            });
+          })
+          .then(function (response) {
+            var payload = response.payload || {};
+            if (!response.ok || !payload.success) {
+              throw new Error(payload.message || 'Unable to save adoption preferences.');
+            }
+            savePreferenceDraft();
+          });
+
+        var profilePromise = fetch(API_BASE_URL + '/users/me', {
+          method: 'PUT',
+          headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            display_name: (document.getElementById('nicknameInput') && document.getElementById('nicknameInput').value.trim()) || undefined,
+            has_cat: Boolean(ownedCat)
+          })
+        }).then(function (res) {
+          return res.json().then(function (payload) {
+            return { ok: res.ok, payload: payload };
+          });
+        }).then(function (response) {
+          var payload = response.payload || {};
+          if (!response.ok || !payload.success || !payload.data) {
+            throw new Error(payload.message || 'Unable to save profile.');
+          }
+          user = payload.data;
+          try {
+            localStorage.setItem('catface_user', JSON.stringify(user));
+          } catch (e) {}
+        });
+
+        var hasCatChecked = !!(hasCat && hasCat.checked);
+        var catPromise = Promise.resolve();
+        if (ownedCat && ownedCat.id) {
+          if (!hasCatChecked) {
+            catPromise = fetch(API_BASE_URL + '/cats/' + encodeURIComponent(ownedCat.id), {
+              method: 'PUT',
+              headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                owner_id: null
+              })
+            }).then(function (res) {
+              return res.json().then(function (payload) {
+                return { ok: res.ok, payload: payload };
+              });
+            }).then(function (response) {
+              var payload = response.payload || {};
+              if (!response.ok || !payload.success) {
+                throw new Error(payload.message || 'Unable to unlink cat profile.');
+              }
+              applyOwnedCat(null);
+            });
+          } else {
+            var vaccinationRaw = (catVaccinationInput && catVaccinationInput.value || '').trim().toLowerCase();
+            var vaccinationValue = null;
+            if (vaccinationRaw === 'completed' || vaccinationRaw === 'yes' || vaccinationRaw === 'done' || vaccinationRaw === 'true' || vaccinationRaw === '1') {
+              vaccinationValue = true;
+            } else if (vaccinationRaw === 'not yet' || vaccinationRaw === 'no' || vaccinationRaw === 'pending' || vaccinationRaw === 'false' || vaccinationRaw === '0') {
+              vaccinationValue = false;
+            }
+
+            catPromise = fetch(API_BASE_URL + '/cats/' + encodeURIComponent(ownedCat.id), {
+              method: 'PUT',
+              headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: (catNameInput && catNameInput.value.trim()) || ownedCat.name,
+                breed: catBreedInput ? (catBreedInput.value.trim() || null) : null,
+                gender: catGenderInput ? (catGenderInput.value || null) : null,
+                is_neutered: catNeuterInput ? (catNeuterInput.value === 'completed' ? true : (catNeuterInput.value === 'not_yet' ? false : null)) : null,
+                is_vaccinated: vaccinationValue,
+                intake_date: catBirthdayInput ? (catBirthdayInput.value || null) : null,
+                face_code: catIdFieldInput ? (catIdFieldInput.value.trim() || null) : null,
+                description: catNotesInput ? (catNotesInput.value.trim() || null) : null,
+                owner_id: user && user.id ? user.id : ownedCat.owner_id
+              })
+            }).then(function (res) {
+              return res.json().then(function (payload) {
+                return { ok: res.ok, payload: payload };
+              });
+            }).then(function (response) {
+              var payload = response.payload || {};
+              if (!response.ok || !payload.success || !payload.data) {
+                throw new Error(payload.message || 'Unable to save cat profile.');
+              }
+              applyOwnedCat(payload.data);
+            });
+          }
+        } else if (hasCatChecked) {
+          catPromise = Promise.reject(new Error('No linked cat profile found in database. Please bind/adopt a cat first.'));
+        }
+
+        try {
+          var nicknameInput = document.getElementById('nicknameInput');
+          if (user) {
+            user.display_name = nicknameInput && nicknameInput.value.trim()
+              ? nicknameInput.value.trim()
+              : (user.display_name || user.username || '');
+            user.has_cat = Boolean(ownedCat);
+            localStorage.setItem('catface_user', JSON.stringify(user));
+          }
+          localStorage.setItem(getAccountStorageKey(), JSON.stringify(serializeForm()));
+        } catch (e) {
+          // ignore local save failures and still try server preference save
+        }
+
+        Promise.all([preferencePromise, profilePromise, catPromise])
+          .then(function () {
+            showSavedBanner('Saved successfully!');
+          })
+          .catch(function (error) {
+            showSavedBanner(error.message || 'Saved locally for this session.');
+          });
+      });
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        try {
+          localStorage.removeItem(getAccountStorageKey());
+          localStorage.removeItem('catface_adoption_preferences_v1_' + ((user && user.id) || 'guest'));
+        } catch (e) {}
+        currentPhotoData = initialSnapshot && initialSnapshot.photo ? initialSnapshot.photo : '';
+        applySnapshot(initialSnapshot);
+        applyAccountIdentityFields();
+        applyPreferenceData(loadPreferenceDraft());
+        applyProfilePreview();
+        refreshMyCatLockHint();
+      });
+    }
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', function () {
+        try {
+          var userId = user && user.id ? String(user.id) : 'guest';
+          localStorage.removeItem('catface_token');
+          localStorage.removeItem('catface_user');
+          localStorage.removeItem('catface_last_story_profile');
+          localStorage.removeItem('catface_last_author_id');
+          localStorage.removeItem('catface_preferred_feed');
+          localStorage.removeItem('catface_open_create_modal');
+          localStorage.removeItem('catface_notifications_badge_count_v1_' + userId);
+          localStorage.removeItem('catface_notifications_read_v2_' + userId);
+        } catch (e) {}
+        window.location.href = '/pages/log-in.html';
+      });
+    }
+  })();
+</script>
 </body>
 </html>

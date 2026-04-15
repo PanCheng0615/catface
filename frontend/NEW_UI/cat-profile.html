@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CatFace · Cat Profile</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF; --surface-2: #FDFAF6;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4; --border-light: #F3E8D8; --like-color: #E05B73;
+      --radius-lg: 16px; --radius-md: 12px; --radius-sm: 8px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; } button { font: inherit; cursor: pointer; }
+    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+
+    /* LEFT NAV */
+    .left-nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; background: var(--surface); border-right: 1px solid var(--border); }
+    .left-nav::-webkit-scrollbar { display: none; }
+    .nav-hero { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 100%); padding: 18px 16px 16px; position: relative; overflow: hidden; flex-shrink: 0; }
+    .nav-hero::after { content: '🐱'; position: absolute; right: 10px; top: 8px; font-size: 48px; opacity: .15; line-height: 1; pointer-events: none; }
+    .nav-hero-logo { font-size: 13px; font-weight: 800; letter-spacing: .5px; color: rgba(255,255,255,.75); text-transform: uppercase; margin-bottom: 12px; }
+    .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
+    .nav-hero-avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.22); border: 2.5px solid rgba(255,255,255,.55); color: #fff; display: grid; place-items: center; font-size: 19px; flex-shrink: 0; }
+    .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
+    .nav-hero-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; cursor: pointer; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #86EFAC; flex-shrink: 0; }
+    .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--text-sub); transition: background .15s, color .15s; cursor: pointer; }
+    .nav-link:hover { background: var(--brand-light); color: var(--brand); }
+    .nav-link.active { background: var(--brand-light); color: var(--brand); font-weight: 700; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; } .n-label { flex: 1; }
+    .n-badge { background: var(--like-color); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px; }
+    .n-soon { font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--bg); padding: 2px 7px; border-radius: 99px; }
+    .btn-new-post { margin: 14px 10px 0; padding: 12px 0; border-radius: 12px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; transition: background .15s, transform .12s; }
+    .btn-new-post:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .nav-user { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--border-light); cursor: pointer; transition: background .15s; }
+    .nav-user:hover { background: var(--surface-2); }
+    .nav-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--brand-light); border: 2px solid var(--border); color: var(--brand); display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); } .u-handle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .nav-user-more { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
+
+    /* CENTER */
+    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; overflow-y: auto; }
+    .profile-cover { position: relative; width: 100%; height: 200px; background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%); overflow: hidden; }
+    .profile-cover img { width: 100%; height: 100%; object-fit: cover; opacity: .7; }
+    .profile-cover-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,.5) 100%); }
+    .profile-cover-back { position: absolute; top: 14px; left: 16px; padding: 8px 14px; border-radius: 99px; background: rgba(0,0,0,.35); color: #fff; font-size: 13px; font-weight: 700; border: 1px solid rgba(255,255,255,.3); cursor: pointer; transition: background .15s; }
+    .profile-cover-back:hover { background: rgba(0,0,0,.55); }
+    .profile-main-info { padding: 0 20px 0; margin-top: -40px; position: relative; z-index: 2; }
+    .profile-avatar-wrap { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+    .profile-avatar { width: 80px; height: 80px; border-radius: 50%; border: 4px solid var(--surface); overflow: hidden; background: var(--brand-light); display: grid; place-items: center; font-size: 36px; flex-shrink: 0; }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-actions-row { display: flex; gap: 8px; align-items: center; padding-bottom: 4px; }
+    .btn-follow { padding: 9px 20px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: background .15s; }
+    .btn-follow:hover { background: var(--brand-hover); }
+    .btn-message { padding: 9px 16px; border-radius: 99px; background: none; border: 1.5px solid var(--border); color: var(--text-sub); font-size: 14px; font-weight: 700; cursor: pointer; transition: border-color .15s; }
+    .btn-message:hover { border-color: var(--brand); color: var(--brand); }
+    .profile-name-section { padding: 14px 20px 0; }
+    .profile-name { font-size: 22px; font-weight: 900; }
+    .profile-handle { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+    .profile-bio { font-size: 14px; line-height: 1.6; color: var(--text-sub); margin-top: 10px; }
+    .profile-stats { display: flex; gap: 20px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-light); }
+    .profile-stat { text-align: center; cursor: pointer; }
+    .profile-stat-num { font-size: 18px; font-weight: 800; color: var(--text); }
+    .profile-stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .profile-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding: 0 20px; }
+    .profile-tag { padding: 5px 12px; border-radius: 99px; background: var(--brand-light); color: var(--brand); font-size: 12px; font-weight: 700; border: 1px solid var(--accent); }
+
+    /* Tab bar */
+    .profile-tabs { display: flex; border-bottom: 1.5px solid var(--border); margin-top: 16px; }
+    .ptab { flex: 1; text-align: center; padding: 13px 0; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; transition: color .2s, border-color .2s; margin-bottom: -1.5px; }
+    .ptab.active { color: var(--brand); border-bottom-color: var(--brand); }
+
+    /* Posts tab */
+    .post-card { padding: 16px 20px 14px; border-bottom: 1px solid var(--border-light); display: flex; gap: 12px; transition: background .15s; }
+    .post-card:hover { background: var(--surface-2); }
+    .post-body { flex: 1; }
+    .post-text { font-size: 15px; line-height: 1.7; color: var(--text); margin-bottom: 10px; }
+    .post-img { width: 100%; max-width: 100%; height: auto; border-radius: var(--radius-lg); object-fit: contain; background: var(--bg); margin-bottom: 12px; border: 1px solid var(--border-light); display: block; }
+    .post-time { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+    .post-actions { display: flex; gap: 4px; margin: 0 -6px; }
+    .act { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text-muted); background: none; border: none; padding: 6px 10px; border-radius: 99px; transition: background .15s, color .15s; cursor: pointer; }
+    .act:hover { background: var(--brand-light); color: var(--brand); }
+    .act.liked { color: var(--like-color); }
+    .act .ai { font-size: 17px; }
+    .act-spacer { margin-left: auto; }
+
+    /* About tab */
+    .about-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .info-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .info-card-head { padding: 13px 16px 11px; font-size: 14px; font-weight: 700; border-bottom: 1px solid var(--border-light); }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border-light); }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: 13px; color: var(--text-muted); }
+    .info-value { font-size: 13px; font-weight: 700; color: var(--text); text-align: right; }
+
+    /* RIGHT PANEL */
+    .right-panel { padding: 20px 0 20px 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; scrollbar-width: none; }
+    .right-panel::-webkit-scrollbar { display: none; }
+    .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+    .similar-row { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+    .similar-row:last-child { border-bottom: none; }
+    .similar-row:hover { background: var(--bg); }
+    .similar-img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: var(--brand-light); }
+    .similar-info { flex: 1; }
+    .similar-name { font-size: 13px; font-weight: 700; }
+    .similar-sub { font-size: 12px; color: var(--text-muted); }
+    .follow-btn { flex-shrink: 0; padding: 5px 12px; border-radius: 99px; border: 1.5px solid var(--brand); color: var(--brand); background: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s; }
+    .follow-btn:hover { background: var(--brand); color: #fff; }
+    .adopt-cta { background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%); border-radius: 18px; padding: 18px; color: #fff; }
+    .adopt-cta h3 { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+    .adopt-cta p { font-size: 13px; line-height: 1.5; opacity: .9; margin-bottom: 14px; }
+    .adopt-cta-btn { width: 100%; padding: 10px; border-radius: 99px; background: #fff; color: var(--brand); font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: box-shadow .15s; }
+    .adopt-cta-btn:hover { box-shadow: 0 4px 14px rgba(0,0,0,.15); }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <!-- LEFT NAV -->
+  <nav class="left-nav">
+    <div class="nav-hero">
+      <div class="nav-hero-logo">CatFace</div>
+      <div class="nav-hero-profile">
+        <div class="nav-hero-avatar">&#x1F464;</div>
+        <div>
+          <div class="nav-hero-name">Demo User</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Logged in · LV001</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-link" onclick="location.href='index.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+      <div class="nav-link" onclick="location.href='adoption.html'"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="location.href='notifications.html'"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge">3</span></div>
+      <div class="nav-link" onclick="location.href='account.html'"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
+    </div>
+    <button class="btn-new-post" onclick="location.href='index.html'">+ New Post</button>
+    <div class="nav-user" onclick="location.href='account.html'">
+      <div class="nav-avatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name">Demo User</div><div class="u-handle">@LV001</div></div>
+      <span class="nav-user-more">&#x2026;</span>
+    </div>
+  </nav>
+
+  <!-- CENTER -->
+  <div class="center">
+    <!-- Cover photo -->
+    <div class="profile-cover">
+      <img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=800&q=80" alt="Nala cover">
+      <div class="profile-cover-overlay"></div>
+      <button class="profile-cover-back" onclick="history.back()">&#x2190; Back</button>
+    </div>
+
+    <!-- Avatar & actions -->
+    <div class="profile-main-info">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=160&q=80" alt="Nala"></div>
+        <div class="profile-actions-row">
+          <button class="btn-follow" id="followBtn">Follow</button>
+          <button class="btn-message">Message</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Name & bio -->
+    <div class="profile-name-section">
+      <div class="profile-name">Nala</div>
+      <div class="profile-handle">@nala_kitten · CAT-007</div>
+      <div class="profile-bio">Just turned 3 months old! &#x1F382; Still learning to walk gracefully… My human says I've grown so much. I love sunny spots and attacking feather toys. &#x1F415;&#x200D;&#x1F9BA;</div>
+      <div class="profile-stats">
+        <div class="profile-stat"><div class="profile-stat-num">24</div><div class="profile-stat-label">Posts</div></div>
+        <div class="profile-stat"><div class="profile-stat-num">3,412</div><div class="profile-stat-label">Followers</div></div>
+        <div class="profile-stat"><div class="profile-stat-num">142</div><div class="profile-stat-label">Following</div></div>
+      </div>
+    </div>
+
+    <div class="profile-tags">
+      <span class="profile-tag">&#x1F476; Kitten</span>
+      <span class="profile-tag">&#x1F497; Cute</span>
+      <span class="profile-tag">&#x1F3E0; Available for adoption</span>
+      <span class="profile-tag">&#x2B50; Featured</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="profile-tabs">
+      <div class="ptab active" id="tab-posts">Posts</div>
+      <div class="ptab" id="tab-about">About</div>
+      <div class="ptab" id="tab-photos">Photos</div>
+    </div>
+
+    <!-- Posts tab content -->
+    <div id="content-posts">
+      <div class="post-card">
+        <div class="post-body">
+          <div class="post-time">2 days ago</div>
+          <p class="post-text">I just turned 3 months old today! &#x1F382; My human says I've grown so much she can barely believe it. I'm still figuring out this whole "walking gracefully" thing…</p>
+          <img class="post-img" src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=640&q=80" alt="Nala">
+          <div class="post-actions">
+            <button class="act liked"><span class="ai">&#x2665;</span> 3,412</button>
+            <button class="act"><span class="ai">&#x1F4AC;</span> 178</button>
+            <button class="act"><span class="ai">&#x1F501;</span> 640</button>
+            <button class="act act-spacer"><span class="ai">&#x1F516;</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="post-card">
+        <div class="post-body">
+          <div class="post-time">1 week ago</div>
+          <p class="post-text">Discovered the sunbeam by the window today. This is my spot now. Humans may not enter. &#x2600;&#xFE0F;&#x1F431;</p>
+          <img class="post-img" src="https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=640&q=80" alt="">
+          <div class="post-actions">
+            <button class="act"><span class="ai">&#x2661;</span> 891</button>
+            <button class="act"><span class="ai">&#x1F4AC;</span> 42</button>
+            <button class="act"><span class="ai">&#x1F501;</span> 180</button>
+            <button class="act act-spacer"><span class="ai">&#x1F516;</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="post-card">
+        <div class="post-body">
+          <div class="post-time">2 weeks ago</div>
+          <p class="post-text">My first vaccination done! &#x1F4AA; The vet said I was the bravest little patient all day. I did not cry (much). I expect extra treats for this heroic act.</p>
+          <div class="post-actions">
+            <button class="act"><span class="ai">&#x2661;</span> 1,204</button>
+            <button class="act"><span class="ai">&#x1F4AC;</span> 67</button>
+            <button class="act"><span class="ai">&#x1F501;</span> 308</button>
+            <button class="act act-spacer"><span class="ai">&#x1F516;</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- About tab content -->
+    <div id="content-about" style="display:none;">
+      <div class="about-body">
+        <div class="info-card">
+          <div class="info-card-head">&#x1F4CB; Basic Information</div>
+          <div class="info-row"><span class="info-label">Cat ID</span><span class="info-value">CAT-007</span></div>
+          <div class="info-row"><span class="info-label">Name</span><span class="info-value">Nala</span></div>
+          <div class="info-row"><span class="info-label">Breed</span><span class="info-value">Domestic Shorthair</span></div>
+          <div class="info-row"><span class="info-label">Gender</span><span class="info-value">Female</span></div>
+          <div class="info-row"><span class="info-label">Age</span><span class="info-value">3 months</span></div>
+          <div class="info-row"><span class="info-label">Birthday</span><span class="info-value">Dec 24, 2025</span></div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-head">&#x1FA7A; Health Status</div>
+          <div class="info-row"><span class="info-label">Neutered</span><span class="info-value">Not yet (too young)</span></div>
+          <div class="info-row"><span class="info-label">Vaccination</span><span class="info-value">First dose completed</span></div>
+          <div class="info-row"><span class="info-label">Allergies</span><span class="info-value">None known</span></div>
+          <div class="info-row"><span class="info-label">Adoption Status</span><span class="info-value" style="color:#22c55e;">Available &#x2705;</span></div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-head">&#x1F3E0; Rescue Info</div>
+          <div class="info-row"><span class="info-label">Rescue Org</span><span class="info-value">XX Kitten Foster Network</span></div>
+          <div class="info-row"><span class="info-label">Found at</span><span class="info-value">Residential area</span></div>
+          <div class="info-row"><span class="info-label">Intake date</span><span class="info-value">Dec 26, 2025</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photos tab content -->
+    <div id="content-photos" style="display:none;padding:16px;display:none;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
+        <img src="https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
+        <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
+        <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
+        <img src="https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
+        <img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=300&q=80" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+    <div class="adopt-cta">
+      <h3>&#x1F3E0; Interested in adopting Nala?</h3>
+      <p>She's available and waiting for her forever home. Contact the rescue organization to begin the process.</p>
+      <button class="adopt-cta-btn" onclick="location.href='adoption.html'">Start Adoption Process</button>
+    </div>
+    <div class="rp-card">
+      <div class="rp-card-title">&#x1F43E; Similar Cats</div>
+      <div class="similar-row"><img class="similar-img" src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=80&q=80" alt="Tiger"><div class="similar-info"><div class="similar-name">Tiger</div><div class="similar-sub">6 months · Tabby · Available</div></div><button class="follow-btn">Follow</button></div>
+      <div class="similar-row"><img class="similar-img" src="https://images.unsplash.com/photo-1517331156700-3c241d2b4d83?w=80&q=80" alt="Snow"><div class="similar-info"><div class="similar-name">Snow</div><div class="similar-sub">1 month · Persian mix · Available</div></div><button class="follow-btn">Follow</button></div>
+      <div class="similar-row"><img class="similar-img" src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=80&q=80" alt="Orange"><div class="similar-info"><div class="similar-name">Orange</div><div class="similar-sub">1 year · Friendly · Available</div></div><button class="follow-btn">Follow</button></div>
+    </div>
+  </aside>
+</div>
+
+<script>
+  // Tab switching
+  var tabs = {posts:'content-posts', about:'content-about', photos:'content-photos'};
+  document.querySelectorAll('.ptab').forEach(function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.ptab').forEach(function(x){x.classList.remove('active')});
+      this.classList.add('active');
+      var key = this.id.replace('tab-','');
+      Object.keys(tabs).forEach(function(k){ document.getElementById(tabs[k]).style.display = k===key?'':'none'; });
+    });
+  });
+
+  // Follow button
+  document.getElementById('followBtn').onclick = function(){
+    if(this.textContent==='Follow'){this.textContent='Following';this.style.background='var(--brand-hover)';}
+    else{this.textContent='Follow';this.style.background='';}
+  };
+
+  // Like buttons
+  document.querySelectorAll('.act').forEach(function(b){
+    var ai=b.querySelector('.ai');
+    if(ai&&(ai.textContent==='♡'||ai.innerHTML==='&#x2661;')){
+      b.addEventListener('click',function(){this.classList.toggle('liked');});
+    }
+  });
+
+  // Follow similar
+  document.querySelectorAll('.follow-btn').forEach(function(b){b.addEventListener('click',function(){if(this.textContent==='Follow'){this.textContent='Following';this.style.background='var(--brand)';this.style.color='#fff';}else{this.textContent='Follow';this.style.background='';this.style.color='';}})}); 
+</script>
+</body>
+</html>

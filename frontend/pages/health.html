@@ -3,939 +3,848 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Health Management — Cat Platform</title>
+  <title>Health Records - CatFace</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: #f6f7fb;
-      color: #222;
-      padding: 24px 18px 40px;
+    :root {
+      --bg:         #faf6ef;
+      --surface:    #ffffff;
+      --border:     #ede5d8;
+      --border-lt:  #f5efe4;
+      --text:       #1a1208;
+      --muted:      #8b7355;
+      --primary:    #c8821a;
+      --primary-lt: #fef3e2;
+      --primary-dk: #a86915;
+      --green:      #2e9e6b;
+      --green-lt:   #e9faf2;
+      --red:        #e05252;
+      --red-lt:     #fef2f2;
+      --orange:     #e07b20;
+      --orange-lt:  #fff7ed;
+      --purple:     #7c5cbf;
+      --purple-lt:  #f5f2ff;
+      --blue:       #3b7dd8;
+      --blue-lt:    #eff5ff;
+      --teal:       #0e8a8a;
+      --teal-lt:    #e6fafa;
+      --shadow:     0 2px 12px rgba(100,60,0,.09);
+      --shadow-lg:  0 8px 32px rgba(100,60,0,.12);
+      --r-xl: 20px;
+      --r-lg: 16px;
+      --r-md: 12px;
+      --r-sm: 8px;
+      --sidebar-w: 220px;
+      --header-h: 60px;
     }
-    a { color: #2f6feb; text-decoration: none; }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scrollbar-gutter: stable; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                   "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--primary); text-decoration: none; }
     a:hover { text-decoration: underline; }
-    h1, h2, h3, h4, p { margin: 0; }
     button, input, textarea, select { font: inherit; }
 
-    .page {
-      max-width: 1180px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+    /* Legacy top bar (hidden) */
+    .top-bar {
+      display: none;
     }
-    .breadcrumb {
-      font-size: 14px;
-      color: #555;
+    .logo {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 20px; font-weight: 800; color: var(--primary);
+      text-decoration: none; white-space: nowrap;
     }
-    .hero {
-      background: #fff;
-      border-radius: 24px;
-      padding: 28px;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
-    }
-    .hero-copy {
-      max-width: 760px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .eyebrow {
-      display: inline-flex;
-      width: fit-content;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: #eef4ff;
-      color: #2f6feb;
-      font-size: 13px;
-      font-weight: 700;
-    }
-    .hero h1 { font-size: 30px; }
-    .hero-copy p {
-      color: #666;
-      line-height: 1.65;
-    }
-    .section {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+    .logo span { font-size: 22px; }
+    .top-bar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .page-badge {
+      background: var(--primary-lt); color: var(--primary);
+      padding: 5px 14px; border-radius: 999px;
+      font-size: 13px; font-weight: 700;
+      border: 1px solid rgba(200,130,26,.2);
     }
 
-    .content {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+    /* Legacy sidebar (hidden) */
+    .sidebar {
+      display: none;
     }
-    .panel {
-      background: #fff;
-      border-radius: 24px;
-      padding: 22px;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, .06);
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
+    .sidebar-nav { list-style: none; }
+    .sidebar-nav a {
+      display: flex; align-items: center; gap: 11px;
+      padding: 11px 20px; color: #5c4520;
+      font-size: 14px; font-weight: 500;
+      transition: background .15s, color .15s; text-decoration: none;
     }
-    .panel-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      flex-wrap: wrap;
+    .sidebar-nav a:hover { background: var(--primary-lt); color: var(--primary); text-decoration: none; }
+    .sidebar-nav a.active { background: var(--primary-lt); color: var(--primary); font-weight: 700; }
+    .nav-icon { font-size: 18px; width: 22px; text-align: center; }
+    .sidebar-divider { height: 1px; background: var(--border-lt); margin: 10px 16px; }
+    .sidebar-bottom { padding: 12px 16px; margin-top: auto; }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: var(--r-lg);
+      background: var(--bg); border: 1px solid var(--border);
     }
-    .panel-head p {
-      color: #666;
-      line-height: 1.6;
-      max-width: 720px;
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary-lt); display: flex; align-items: center;
+      justify-content: center; font-size: 18px; flex-shrink: 0;
+      border: 2px solid var(--border);
     }
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 7px 12px;
-      border-radius: 999px;
-      background: #ecfdf3;
-      color: #027a48;
-      font-size: 12px;
-      font-weight: 700;
+    .user-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .user-role { font-size: 11px; color: var(--muted); }
+
+    /* Main column */
+    .main {
+      margin: 0;
+      padding: 20px;
+      min-height: auto;
     }
 
-    .record-grid {
-      display: grid;
-      grid-template-columns: 220px minmax(0, 1fr);
-      border: 1px solid #dfe3ea;
-      border-radius: 20px;
+    /* Toast / status */
+    #status-msg {
+      display: none;
+      position: fixed;
+      top: calc(var(--header-h) + 16px);
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: var(--r-lg);
+      font-size: 13px; font-weight: 700;
+      z-index: 999;
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Page nav row */
+    .page-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
+    }
+    .page-title { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+
+    /* Tabs */
+    .tabs {
+      display: flex; gap: 3px;
+      background: var(--border-lt);
+      padding: 4px; border-radius: var(--r-md);
+    }
+    .tab-btn {
+      padding: 8px 18px; border-radius: var(--r-sm);
+      border: none; font-size: 13px; font-weight: 600;
+      cursor: pointer; background: transparent; color: var(--muted);
+      transition: all .15s; white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: var(--surface); color: var(--primary);
+      box-shadow: 0 2px 8px rgba(100,60,0,.1);
+      font-weight: 700;
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: flex; flex-direction: column; gap: 14px; }
+
+    /* Health passport hero */
+    .passport {
+      background: linear-gradient(135deg, #5c3608 0%, #a86915 50%, #c8821a 100%);
+      border-radius: var(--r-xl);
+      padding: 28px 28px 24px;
+      color: #fff;
+      position: relative; overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .passport::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,.07); border-radius: 50%;
+    }
+    .passport::after {
+      content: ''; position: absolute; bottom: -60px; right: 80px;
+      width: 140px; height: 140px;
+      background: rgba(255,255,255,.04); border-radius: 50%;
+    }
+    .passport-top {
+      display: flex; align-items: flex-start; gap: 20px;
+      margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .passport-avatar {
+      width: 68px; height: 68px; border-radius: 50%;
+      background: rgba(255,255,255,.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 34px; flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,.3);
+    }
+    .passport-info h1 { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+    .passport-info .meta { font-size: 13px; opacity: .75; }
+    .passport-badges { display: flex; gap: 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+    .pbadge {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 10px 14px; border-radius: 14px;
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+      min-width: 80px; gap: 2px; backdrop-filter: blur(6px);
+    }
+    .pbadge .pb-icon  { font-size: 20px; }
+    .pbadge .pb-label { font-size: 11px; font-weight: 700; opacity: .85; }
+    .pbadge .pb-date  { font-size: 11px; opacity: .65; }
+    .pbadge.ok   { border-color: rgba(52,211,153,.5);  background: rgba(52,211,153,.15); }
+    .pbadge.warn { border-color: rgba(251,191,36,.5);  background: rgba(251,191,36,.12); }
+    .pbadge.none { border-color: rgba(255,255,255,.1); background: rgba(0,0,0,.1); }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border-radius: var(--r-xl);
+      box-shadow: var(--shadow);
       overflow: hidden;
     }
-    .record-title {
-      grid-column: 1 / -1;
-      text-align: center;
-      padding: 14px 16px;
-      font-size: 22px;
-      font-weight: 700;
-      border-bottom: 1px solid #dfe3ea;
-      background: #fafbfd;
+    .card-body { padding: 20px 22px; }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px; padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border-lt);
     }
-    .record-label,
-    .record-value {
-      min-height: 72px;
-      padding: 14px 16px;
-      border-bottom: 1px solid #dfe3ea;
+    .section-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+    /* ── chip ── */
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .chip-blue   { background: var(--blue-lt);   color: var(--blue);   }
+    .chip-green  { background: var(--green-lt);  color: var(--green);  }
+    .chip-red    { background: var(--red-lt);    color: var(--red);    }
+    .chip-gray   { background: #f5efe4;          color: #7a5c2e;       }
+    .chip-orange { background: var(--orange-lt); color: var(--orange); }
+    .chip-purple { background: var(--purple-lt); color: var(--purple); }
+    .chip-teal   { background: var(--teal-lt);   color: var(--teal);   }
+    .chip-warm   { background: var(--primary-lt); color: var(--primary); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: none; border-radius: var(--r-md);
+      padding: 9px 16px; cursor: pointer;
+      font-size: 13px; font-weight: 700;
+      transition: filter .15s, transform .1s; text-decoration: none;
     }
-    .record-label {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      font-weight: 600;
-      background: #fff;
+    .btn:hover { filter: brightness(.93); text-decoration: none; }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 16px rgba(200,130,26,.28); }
+    .btn-ghost   { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger  { background: var(--red-lt); color: var(--red); border: 1px solid #fecaca; }
+    .btn-blue    { background: var(--blue-lt); color: var(--blue); border: 1px solid #bfdbfe; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: var(--r-sm); }
+
+    /* Record list items */
+    .rec-card {
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      background: var(--surface);
+      margin-bottom: 10px;
+      transition: box-shadow .15s;
     }
-    .record-value {
-      background: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
+    .rec-card:last-child { margin-bottom: 0; }
+    .rec-card:hover { box-shadow: var(--shadow); }
+    .rec-card-bar  { height: 4px; }
+    .rec-card-body { padding: 15px 18px; }
+    .rec-card-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 8px; flex-wrap: wrap; margin-bottom: 8px;
     }
-    .record-grid > :nth-last-child(-n + 2) {
-      border-bottom: none;
+    .rec-type-row  { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .rec-date      { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .rec-desc      { font-size: 13px; color: #5c4520; line-height: 1.6; margin-bottom: 8px; white-space: pre-wrap; word-break: break-word; }
+    .rec-meta      { display: flex; flex-wrap: wrap; gap: 6px; }
+    .rec-actions   { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border-lt); }
+    .reminder-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 8px;
+      font-size: 12px; font-weight: 600;
+      background: var(--orange-lt); color: #92400e; border: 1px solid #fde68a;
     }
-    .inline-options {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
-    .inline-options label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .text-input,
-    .date-input,
-    .text-area {
-      width: 100%;
-      border: 1px solid #cfd6df;
-      border-radius: 14px;
-      padding: 12px 14px;
-      background: #fff;
-      color: #111827;
-    }
-    .text-area {
-      min-height: 94px;
-      resize: vertical;
-    }
-    .report-row {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
-      width: 100%;
-    }
-    .report-link {
-      font-weight: 600;
-    }
-    .file-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 38px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #eef4ff;
-      color: #2f6feb;
-      font-size: 13px;
-    }
-    .upload-btn,
-    .save-btn,
-    .cancel-btn {
-      border: none;
-      border-radius: 16px;
-      padding: 12px 20px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .upload-btn,
-    .save-btn {
-      background: #ff5a76;
-      color: #fff;
-      box-shadow: 0 10px 24px rgba(255,90,118,.22);
-    }
-    .cancel-btn {
-      background: #f3f4f6;
-      color: #333;
-    }
-    .panel-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .share-banner {
-      border-radius: 18px;
-      padding: 14px 16px;
-      background: #fff7ed;
-      color: #9a3412;
-      line-height: 1.6;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      border: 1px solid #fed7aa;
-    }
-    .share-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .share-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: #7c2d12;
-    }
-    .mini-btn {
-      border: none;
-      border-radius: 999px;
-      padding: 10px 14px;
-      cursor: pointer;
-      font-weight: 600;
-      background: #ff5a76;
-      color: #fff;
-      box-shadow: 0 10px 24px rgba(255,90,118,.18);
-    }
-    .mini-btn.secondary {
-      background: #fff;
-      color: #9a3412;
-      border: 1px solid #fed7aa;
-      box-shadow: none;
-    }
-    .muted {
-      color: #666;
-      line-height: 1.6;
-    }
-    .hidden-input {
-      display: none;
-    }
-    .info-banner {
-      border-radius: 18px;
-      padding: 14px 16px;
-      background: #eff6ff;
-      color: #1d4ed8;
-      line-height: 1.6;
-      display: none;
-    }
-    .info-banner.show {
-      display: block;
-    }
-    .summary-list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px 18px;
-      padding: 2px 4px 0;
-    }
-    .summary-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .summary-item strong {
-      font-size: 13px;
-      color: #374151;
-    }
-    .summary-item span,
-    .summary-item a {
-      color: #1f2937;
-      line-height: 1.5;
-      word-break: break-word;
-    }
-    .editor-layout {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .editor-card {
-      border: 1px solid #dfe3ea;
-      border-radius: 20px;
-      background: #fff;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .editor-card.full {
-      grid-column: 1 / -1;
-    }
-    .editor-card h3 {
-      font-size: 18px;
-    }
-    .editor-card p {
-      color: #666;
-      line-height: 1.55;
-      font-size: 14px;
-    }
-    .field-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .field-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .field-row label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #374151;
-    }
-    .choice-pills {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .choice-pills label {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border: 1px solid #d8dee7;
-      border-radius: 999px;
-      background: #fafbfc;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    .subtle-note {
-      font-size: 13px;
-      color: #6b7280;
-      line-height: 1.55;
-    }
-    .hidden-section {
-      display: none;
-    }
-    .hidden-section.show {
-      display: block;
-    }
-    .editor-layout.hidden-section.show {
-      display: grid;
-    }
-    .display-card {
-      border: 1px solid #dfe3ea;
-      border-radius: 20px;
-      background: #fafbfd;
-      padding: 18px;
-    }
-    .display-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .display-card h3 {
-      margin-bottom: 12px;
-      font-size: 18px;
-    }
-    .display-card p {
-      color: #666;
-      line-height: 1.55;
-      font-size: 14px;
-      margin-bottom: 14px;
-    }
-    footer {
-      padding-left: 12px;
-      font-size: 14px;
+    .clinic-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 8px;
+      font-size: 12px; font-weight: 700;
+      background: var(--green-lt); color: #065f46; border: 1px solid #a7f3d0;
     }
 
-    @media (max-width: 960px) {
-      .record-grid {
-        grid-template-columns: 1fr;
-      }
-      .record-title {
-        font-size: 18px;
-      }
-      .record-label {
-        justify-content: flex-start;
-        text-align: left;
-      }
-      .summary-list {
-        grid-template-columns: 1fr;
-      }
+    /* Forms */
+    .form-card {
+      background: #fffaf4;
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 20px;
+      margin-bottom: 4px;
+    }
+    .form-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+    .form-grid.wide { grid-template-columns: 1fr; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .field input, .field select, .field textarea {
+      border: 1px solid var(--border); border-radius: var(--r-md);
+      padding: 10px 13px; background: var(--surface);
+      color: var(--text); font-size: 13px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(200,130,26,.12);
+    }
+    .field textarea { min-height: 88px; resize: vertical; }
+    select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b7355' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+
+    /* Permission rows */
+    .perm-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border: 1px solid var(--border);
+      border-radius: var(--r-md); background: var(--surface);
+      gap: 10px; flex-wrap: wrap;
+    }
+    .perm-avatar {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: var(--primary-lt); display: flex; align-items: center;
+      justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+
+    /* Empty states */
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty-icon  { font-size: 40px; margin-bottom: 10px; opacity: .6; }
+    .empty-state p { font-size: 13px; line-height: 1.7; }
+
+    /* Info callouts */
+    .info-bar {
+      font-size: 13px; color: var(--muted);
+      padding: 10px 14px; border-radius: var(--r-md);
+      border-left: 3px solid var(--primary);
+      background: var(--primary-lt);
+      margin-bottom: 16px;
+    }
+    .info-bar-green {
+      border-left-color: var(--green);
+      background: var(--green-lt);
+      color: #065f46;
+    }
+
+    /* Site-wide three-column layout */
+    .layout {
+      display: grid;
+      grid-template-columns: 252px minmax(0,1fr) 308px;
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: 100vh;
+      height: 100vh;
+    }
+    .left-nav {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: none;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+    }
+    .left-nav::-webkit-scrollbar { display: none; }
+    .nav-hero {
+      background: linear-gradient(160deg, #C8702A 0%, #E8B050 100%);
+      padding: 18px 16px 16px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .nav-hero::after {
+      content: '🐱';
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      font-size: 48px;
+      opacity: .15;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .nav-hero-logo {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      color: rgba(255,255,255,.75);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
+    .nav-hero-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.22);
+      border: 2.5px solid rgba(255,255,255,.55);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 19px;
+      flex-shrink: 0;
+    }
+    .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
+    .nav-hero-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: rgba(255,255,255,.75);
+      margin-top: 3px;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #86EFAC;
+      flex-shrink: 0;
+    }
+    .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6B4E2A;
+      transition: background .15s, color .15s;
+      cursor: pointer;
+    }
+    .nav-link:hover { background: #FDF0D8; color: #C8702A; text-decoration: none; }
+    .nav-link.active { background: #FDF0D8; color: #C8702A; font-weight: 700; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; }
+    .n-label { flex: 1; }
+    .n-badge {
+      background: #E05B73;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 99px;
+    }
+    .n-soon {
+      font-size: 10px;
+      font-weight: 600;
+      color: #A87848;
+      background: var(--bg);
+      padding: 2px 7px;
+      border-radius: 99px;
+    }
+    .btn-new-post {
+      margin: 14px 10px 0;
+      padding: 12px 0;
+      border-radius: 12px;
+      background: #C8702A;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      transition: background .15s, transform .12s;
+    }
+    .btn-new-post:hover { background: #A85820; transform: translateY(-1px); }
+    .nav-user {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-top: 1px solid var(--border-lt);
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .nav-user:hover { background: #FDFAF6; }
+    .nav-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary-lt);
+      border: 2px solid var(--border);
+      color: var(--primary);
+      display: grid;
+      place-items: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .u-handle { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .nav-user-more { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+
+    .center {
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      min-height: 100vh;
+      height: 100vh;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+    }
+    .center-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+    }
+    .center-header h2 { font-size: 18px; font-weight: 800; }
+    .center-header p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+    .right-panel {
+      padding: 20px 0 20px 20px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      scrollbar-width: none;
+    }
+    .right-panel::-webkit-scrollbar { display: none; }
+    .rp-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .rp-card-title {
+      font-size: 17px;
+      font-weight: 800;
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .rp-link-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background .12s;
+    }
+    .rp-link-row:last-child { border-bottom: none; }
+    .rp-link-row:hover { background: var(--bg); }
+    .rp-link-icon {
+      font-size: 20px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary-lt);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .rp-link-label { flex: 1; font-size: 14px; font-weight: 600; color: #6B4E2A; }
+    .rp-link-arrow { color: var(--muted); font-size: 16px; }
+    .rp-info-block { padding: 14px 18px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 252px minmax(0,1fr); }
+      .right-panel { display: none; }
+    }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .left-nav { display: none; }
+    }
+    @media (max-width: 640px) {
+      .passport-top { flex-direction: column; }
+      .form-grid { grid-template-columns: 1fr; }
+      .tabs { overflow-x: auto; }
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="index.html">← Back to Main</a>
-    </nav>
-
-    <header class="hero">
-      <div class="hero-copy">
-        <div class="eyebrow">Cat Health Data</div>
-        <h1>Medical Data Integration and Health Management</h1>
-        <p>
-          This page only contains two parts: user-uploaded cat health data and medical institution health records.
-          Users can fill in vaccination, allergy, and recent examination information, while official health records are uploaded by medical institutions and shown here for reference.
-        </p>
+  <div class="layout">
+  <nav class="left-nav">
+    <div class="nav-hero">
+      <div class="nav-hero-logo">CatFace</div>
+      <div class="nav-hero-profile">
+        <div class="nav-hero-avatar">&#x1F464;</div>
+        <div>
+          <div class="nav-hero-name">Guest</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Not logged in</div>
+        </div>
       </div>
-    </header>
+    </div>
+    <div class="nav-section">
+      <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/notifications.html', 'Please log in first')"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
+      <div class="nav-link active" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
+    </div>
+    <button class="btn-new-post" onclick="location.href='/pages/cat-facebook.html'">+ New Post</button>
+    <div class="nav-user" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')">
+      <div class="nav-avatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name">Guest</div><div class="u-handle">Log in to continue</div></div>
+      <span class="nav-user-more">&#x2026;</span>
+    </div>
+  </nav>
 
-    <section class="section" aria-label="User health data upload">
-      <div class="content">
-        <section class="panel">
-          <div class="panel-head">
-            <div>
-              <h2>Cat Health Record</h2>
-              <p>
-                Review your cat's current health information first. If you need to update it, click edit and then save your changes.
-              </p>
-            </div>
-            <span class="status-pill">User Input</span>
-          </div>
+  <div class="center">
+    <div class="center-header">
+      <h2>&#x1FA7A; Health Records</h2>
+      <p>Manage your cat's health history, clinic reports, and sharing permissions</p>
+    </div>
+    <main class="main">
 
-          <div class="share-banner" aria-label="Share data with clinic">
-            <div>
-              <strong>Share with clinic</strong>
-              <div style="font-size:13px; color:#7c2d12;">
-                After you confirm sharing, partner clinics can view your latest data for a specific cat and upload a verified report.
-              </div>
-              <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; font-size:13px;">
-                <label style="display:flex; align-items:center; gap:6px;">
-                  <span>Cat ID</span>
-                  <input id="share-cat-id" type="text" style="border-radius:12px; border:1px solid #e5e7eb; padding:6px 10px; min-width:160px;" placeholder="e.g. CAT-2026-002">
-                </label>
-                <label style="display:flex; align-items:center; gap:6px;">
-                  <span>Clinic</span>
-                  <select id="share-clinic-id" style="border-radius:12px; border:1px solid #e5e7eb; padding:6px 10px; min-width:160px;">
-                    <option value="clinic-a">Clinic A</option>
-                    <option value="clinic-b">Clinic B</option>
-                    <option value="clinic-c">Clinic C</option>
-                  </select>
-                </label>
-              </div>
-            </div>
-            <div class="share-actions">
-              <label class="share-toggle">
-                <input type="checkbox" id="share-with-clinic">
-                Share data with clinic
-              </label>
-              <button class="mini-btn" type="button" id="share-now-btn">Confirm Share</button>
-            </div>
-          </div>
+    <!-- Status messages -->
+    <div id="status-msg"></div>
 
-          <div class="display-grid" id="user-display-grid">
-            <article class="display-card">
-              <h3>Basic Information</h3>
-              <p>This bar contains the cat profile details maintained by the owner.</p>
-              <div class="summary-list">
-                <div class="summary-item">
-                  <strong>Cat Name</strong>
-                  <span id="user-output-name">Tiger</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Gender</strong>
-                  <span id="user-output-gender">Male</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Birthday</strong>
-                  <span id="user-output-birthday">2024-02-14</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Hobbies</strong>
-                  <span id="user-output-hobbies">Chasing feather toys, window watching</span>
-                </div>
-              </div>
-            </article>
+    <!-- Page title row + tabs -->
+    <div class="page-nav">
+      <div class="page-title">🐾 Health Records</div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('records')">📋 Health Records</button>
+        <button class="tab-btn" onclick="switchTab('clinic')">🏥 Clinic Reports</button>
+        <button class="tab-btn" onclick="switchTab('share')">🔑 Sharing Permissions</button>
+      </div>
+    </div>
 
-            <article class="display-card">
-              <h3>Health Record</h3>
-              <p>This bar contains the health information that the owner can update directly.</p>
-              <div class="summary-list">
-                <div class="summary-item">
-                  <strong>Spay/Neuter Status</strong>
-                  <span id="user-output-neuter">Completed</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Vaccination</strong>
-                  <span id="user-output-vaccination">Rabies Vaccine</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Allergies</strong>
-                  <span id="user-output-allergies">Grain allergy</span>
-                </div>
-                <div class="summary-item">
-                  <strong>Recent Medical Examination Report</strong>
-                  <span><span id="user-output-date">2026-02-24</span> · <a href="#" id="user-output-report-link">Go to Report</a></span>
-                </div>
-                <div class="summary-item" style="grid-column: 1 / -1;">
-                  <strong>Owner Notes</strong>
-                  <span id="user-output-notes">Appetite normal, litter box routine stable, and no unusual behavior observed this week.</span>
-                </div>
-              </div>
-            </article>
-          </div>
+    <!-- Health passport card -->
+    <div class="passport">
+      <div class="passport-top" style="position:relative;z-index:1;">
+        <div class="passport-avatar">🐱</div>
+        <div class="passport-info">
+          <h1 id="passport-name">- Health Passport</h1>
+          <p class="meta" id="passport-meta">Load a cat ID to view records</p>
+        </div>
+      </div>
+      <div class="passport-badges" id="passport-badges">
+        <div class="pbadge none"><span class="pb-icon">💉</span><span class="pb-label">Vaccines</span><span class="pb-date">Not recorded</span></div>
+        <div class="pbadge none"><span class="pb-icon">🐛</span><span class="pb-label">Deworming</span><span class="pb-date">Not recorded</span></div>
+        <div class="pbadge none"><span class="pb-icon">✂️</span><span class="pb-label">Spay/Neuter</span><span class="pb-date">Not recorded</span></div>
+        <div class="pbadge none"><span class="pb-icon">⚖️</span><span class="pb-label">Weight</span><span class="pb-date">- kg</span></div>
+      </div>
+    </div>
 
-          <div class="editor-layout hidden-section" id="user-editor">
-            <article class="editor-card">
-              <div>
-                <h3>Basic Information</h3>
-                <p>Edit your cat's profile details such as name, gender, birthday, and favorite activities.</p>
-              </div>
+    <!-- Tab 1: health records -->
+    <div id="tab-records" class="tab-pane active">
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">
+            📋 My Health Records
+            <span class="chip chip-gray" id="owner-count">0 records</span>
+          </span>
+          <button class="btn btn-primary btn-sm" id="toggle-add-btn">+ Add Record</button>
+        </div>
 
-              <div class="field-stack">
-                <div class="field-row">
-                  <label for="user-cat-name">Cat Name</label>
-                  <input class="text-input" id="user-cat-name" type="text" value="Tiger" placeholder="Enter cat name">
-                </div>
-
-                <div class="field-row">
-                  <label for="user-cat-gender">Gender</label>
-                  <select class="text-input" id="user-cat-gender">
-                    <option value="Male" selected>Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Unknown">Unknown</option>
-                  </select>
-                </div>
-
-                <div class="field-row">
-                  <label for="user-cat-birthday">Birthday</label>
-                  <input class="date-input" id="user-cat-birthday" type="date" value="2024-02-14">
-                </div>
-
-                <div class="field-row">
-                  <label for="user-cat-hobbies">Hobbies</label>
-                  <input class="text-input" id="user-cat-hobbies" type="text" value="Chasing feather toys, window watching" placeholder="Enter hobbies">
-                </div>
-              </div>
-            </article>
-
-            <article class="editor-card">
-              <div>
-                <h3>Health Record</h3>
-                <p>Update the health information you know directly as the owner.</p>
-              </div>
-
-              <div class="field-stack">
-                <div class="field-row">
-                  <label>Spay/Neuter Status</label>
-                  <div class="choice-pills">
-                    <label><input type="radio" name="user-neuter" value="Completed" checked> Completed</label>
-                    <label><input type="radio" name="user-neuter" value="Not Yet"> Not Yet</label>
+        <!-- Add record form -->
+        <div id="add-record-section" style="display:none;">
+          <div style="padding:18px 22px 0;">
+            <div class="form-card">
+              <h3>🗂 Add Health Record</h3>
+              <form id="add-record-form">
+                <div class="form-grid">
+                  <div class="field">
+                    <label>Record Type *</label>
+                    <select id="rec-type" required>
+                      <option value="vaccine">💉 Vaccination</option>
+                      <option value="deworming">🐛 Deworming</option>
+                      <option value="checkup">🩺 General Checkup</option>
+                      <option value="treatment">💊 Treatment</option>
+                      <option value="surgery">✂️ Surgery</option>
+                      <option value="other">📋 Other</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>Visit Date *</label>
+                    <input id="rec-date" type="date" required>
+                  </div>
+                  <div class="field">
+                    <label>Next Reminder Date</label>
+                    <input id="rec-next" type="date">
+                  </div>
+                  <div class="field">
+                    <label>Weight (kg)</label>
+                    <input id="rec-weight" type="number" step="0.01" min="0" placeholder="e.g. 4.20">
+                  </div>
+                  <div class="field">
+                    <label>Veterinarian</label>
+                    <input id="rec-vet" type="text" placeholder="e.g. Dr. Alex Wong">
+                  </div>
+                  <div class="field">
+                    <label>Clinic</label>
+                    <input id="rec-clinic" type="text" placeholder="e.g. Happy Cat Animal Clinic">
                   </div>
                 </div>
-
-                <div class="field-row">
-                  <label for="user-vaccination">Vaccination</label>
-                  <input class="text-input" id="user-vaccination" type="text" value="Rabies Vaccine" placeholder="Enter vaccination info">
-                </div>
-
-                <div class="field-row">
-                  <label for="user-allergies">Allergies</label>
-                  <input class="text-input" id="user-allergies" type="text" value="Grain allergy" placeholder="Enter allergy info">
-                </div>
-              </div>
-            </article>
-
-            <article class="editor-card">
-              <div>
-                <h3>Recent Medical Check</h3>
-                <p>Record the date of the latest examination and keep the report link for quick reference.</p>
-              </div>
-
-              <div class="field-stack">
-                <div class="field-row">
-                  <label for="user-report-date">Recent examination date</label>
-                  <input class="date-input" id="user-report-date" type="date" value="2026-02-24">
-                </div>
-
-                <div class="field-row">
-                  <label>Medical report</label>
-                  <div class="report-row">
-                    <a class="report-link" id="user-report-link" href="#">Go to Report</a>
-                    <span class="file-pill">Self-updated</span>
+                <div class="form-grid wide" style="margin-top:12px;">
+                  <div class="field">
+                    <label>Description / Notes *</label>
+                    <textarea id="rec-desc" placeholder="e.g. Completed the first FVRCP dose. Observed for 30 minutes after vaccination with no abnormal reaction." required></textarea>
                   </div>
-                  <div class="subtle-note">Users can maintain the check date here, while the official record below remains clinic-managed.</div>
+                  <div class="field">
+                    <label>Attachment (image or PDF, max 10 MB)</label>
+                    <input id="rec-file" type="file" accept="image/*,application/pdf"
+                      style="border:1px solid var(--border);border-radius:var(--r-md);padding:9px 12px;background:var(--surface);font-size:13px;cursor:pointer;width:100%;">
+                    <div id="rec-file-preview" style="display:none;margin-top:8px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);"></div>
+                    <div id="rec-upload-status" style="display:none;font-size:13px;color:var(--muted);margin-top:4px;"></div>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn btn-ghost" id="cancel-add-btn">Cancel</button>
+                  <button type="submit" class="btn btn-primary" id="rec-submit-btn">Save Record</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Record list -->
+        <div id="owner-records-list" style="padding:16px 22px;">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>Load a cat ID to view records</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: clinic-certified reports -->
+    <div id="tab-clinic" class="tab-pane">
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">
+            🏥 Certified Clinic Reports
+            <span class="chip chip-green" id="clinic-count">0 records</span>
+          </span>
+          <span class="chip chip-teal">Read only · Uploaded by clinics</span>
+        </div>
+        <div class="card-body">
+          <div class="info-bar info-bar-green">
+            ✅ The reports below are uploaded by partner clinics and treated as certified records. To add a new report, please use the Clinic Portal.
+          </div>
+          <div id="clinic-records-list">
+            <div class="empty-state">
+              <div class="empty-icon">🏥</div>
+              <p>Load a cat ID to view records</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: sharing permissions -->
+    <div id="tab-share" class="tab-pane">
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">🔑 Clinic Permission Management</span>
+        </div>
+        <div class="card-body">
+          <div class="info-bar">
+            After permission is granted, clinics can view your cat's health records in the Clinic Portal and upload certified reports.
+          </div>
+          <div id="share-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;">
+            <div class="empty-state" style="padding:20px;">
+              <div class="empty-icon" style="font-size:28px;">🔑</div>
+              <p>Load records first</p>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--border-lt);padding-top:20px;">
+            <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text);">Add Permission</h3>
+            <form id="share-form">
+              <div class="form-grid">
+                <div class="field" style="grid-column:1/-1;">
+                  <label>Clinic Organization ID (UUID)</label>
+                  <input id="share-org-id" type="text" placeholder="Get the clinic ID from GET /api/organizations">
+                </div>
+                <div class="field">
+                  <label>Permission Status</label>
+                  <select id="share-allowed">
+                    <option value="true">✅ Allow access</option>
+                    <option value="false">❌ Revoke access</option>
+                  </select>
                 </div>
               </div>
-            </article>
-
-            <article class="editor-card">
-              <div>
-                <h3>Owner Notes</h3>
-                <p>Add daily observations that are useful for long-term care but do not belong to the official clinic record.</p>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Permission</button>
               </div>
-
-              <div class="field-row">
-                <label for="user-owner-notes">Current condition or observations</label>
-                <textarea class="text-area" id="user-owner-notes" placeholder="Example: Appetite is normal, energy level is stable, and no unusual behavior was noticed.">Appetite normal, litter box routine stable, and no unusual behavior observed this week.</textarea>
-              </div>
-            </article>
+            </form>
           </div>
-
-          <div class="panel-actions">
-            <button class="cancel-btn" id="user-edit-btn" type="button">Edit</button>
-            <button class="cancel-btn hidden-section" id="user-cancel-btn" type="button">Cancel</button>
-            <button class="upload-btn hidden-section" id="user-save-btn" type="button">Save Changes</button>
-          </div>
-
-          <div class="info-banner" id="user-banner">
-            Health information updated successfully.
-          </div>
-        </section>
+        </div>
       </div>
-    </section>
+    </div>
 
-    <section class="section" aria-label="Official health record by medical institution">
-      <div class="content">
-        <section class="panel">
-          <div class="panel-head">
-            <div>
-              <h2>Official Health Record from Medical Institution</h2>
-              <p>
-                This section is uploaded and maintained by partner clinics or veterinary institutions. Users can view the
-                latest official record here, but cannot edit or upload this information themselves.
-              </p>
-            </div>
-            <span class="status-pill">Clinic Uploaded</span>
-          </div>
-
-          <div class="record-grid">
-            <div class="record-title">Official Health Record</div>
-
-            <div class="record-label">Cat Name</div>
-            <div class="record-value">
-              Tiger
-            </div>
-
-            <div class="record-label">Cat ID</div>
-            <div class="record-value">
-              CAT-2026-002
-            </div>
-
-            <div class="record-label">Spay/Neuter Status</div>
-            <div class="record-value">
-              Completed
-            </div>
-
-            <div class="record-label">Vaccination</div>
-            <div class="record-value">
-              Rabies Vaccine
-            </div>
-
-            <div class="record-label">Allergies</div>
-            <div class="record-value">
-              Grain allergy
-            </div>
-
-            <div class="record-label">Recent Medical Examination Report</div>
-            <div class="record-value">
-              <div class="report-row">
-                <span>2026-02-24</span>
-                <a class="report-link" id="official-report-link" href="#">Go to Report</a>
-                <span class="file-pill">Clinic Verified</span>
-              </div>
-            </div>
-
-            <div class="record-label">Other Health Data</div>
-            <div class="record-value">
-              Weight stable, appetite normal, no abnormal findings in recent check.
-            </div>
-          </div>
-
-          <div class="info-banner" id="official-banner">
-            <div class="summary-list">
-              <div class="summary-item">
-                <strong>Cat Name</strong>
-                <span id="official-output-cat-name">Tiger</span>
-              </div>
-              <div class="summary-item">
-                <strong>Cat ID</strong>
-                <span id="official-output-cat-id">CAT-2026-002</span>
-              </div>
-              <div class="summary-item">
-                <strong>Spay/Neuter Status</strong>
-                <span id="official-output-neuter">Completed</span>
-              </div>
-              <div class="summary-item">
-                <strong>Vaccination</strong>
-                <span id="official-output-vaccination">Rabies Vaccine</span>
-              </div>
-              <div class="summary-item">
-                <strong>Allergies</strong>
-                <span id="official-output-allergies">Grain allergy</span>
-              </div>
-              <div class="summary-item">
-                <strong>Recent Medical Examination Report</strong>
-                <span><span id="official-output-date">2026-02-24</span> · <a href="#" id="official-output-report-link">Go to Report</a></span>
-              </div>
-              <div class="summary-item" style="grid-column: 1 / -1;">
-                <strong>Other Health Data</strong>
-                <span id="official-output-other">Weight stable, appetite normal, no abnormal findings in recent check.</span>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </section>
-
-    <footer><a href="index.html">Back to Main</a></footer>
+    </main>
   </div>
 
+  <aside class="right-panel">
+    <div class="rp-card">
+      <div class="rp-card-title">Quick Actions</div>
+      <div class="rp-link-row" onclick="location.href='/pages/cat-facebook.html'"><div class="rp-link-icon">&#x1F4AC;</div><span class="rp-link-label">Community Feed</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><div class="rp-link-icon">&#x1F431;</div><span class="rp-link-label">Adoption</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')"><div class="rp-link-icon">&#x1FA7A;</div><span class="rp-link-label">Back to Account</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="location.href='/pages/clinic-portal.html'"><div class="rp-link-icon">&#x1F3E5;</div><span class="rp-link-label">Clinic Portal</span><span class="rp-link-arrow">&#x203A;</span></div>
+    </div>
+    <div class="rp-card">
+      <div class="rp-card-title">Tips</div>
+      <div class="rp-info-block">
+        <p>Keep your vaccination, deworming, and checkup records here so your account and health pages feel like one continuous workflow.</p>
+      </div>
+    </div>
+  </aside>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/health.js"></script>
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + name).classList.add('active');
+      const idx = ['records', 'clinic', 'share'].indexOf(name);
+      document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+    }
+  </script>
   <script>
     (function () {
-      const SHARE_KEY = "catface_health_share_enabled";
-      const USER_HEALTH_KEY = "catface_health_user_record";
-      const OFFICIAL_HEALTH_KEY = "catface_health_official_record";
+      if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+        alert('Please log in first');
+        window.location.href = '/pages/log-in.html';
+        return;
+      }
 
-      const userVaccination = document.getElementById("user-vaccination");
-      const userAllergies = document.getElementById("user-allergies");
-      const userReportDate = document.getElementById("user-report-date");
-      const userOwnerNotes = document.getElementById("user-owner-notes");
-      const userCatName = document.getElementById("user-cat-name");
-      const userCatGender = document.getElementById("user-cat-gender");
-      const userCatBirthday = document.getElementById("user-cat-birthday");
-      const userCatHobbies = document.getElementById("user-cat-hobbies");
-      const userDisplayGrid = document.getElementById("user-display-grid");
-      const userEditor = document.getElementById("user-editor");
-      const userEditBtn = document.getElementById("user-edit-btn");
-      const userCancelBtn = document.getElementById("user-cancel-btn");
-      const userSaveBtn = document.getElementById("user-save-btn");
-      const userBanner = document.getElementById("user-banner");
+      var user = null;
+      try {
+        user = JSON.parse(localStorage.getItem('catface_user') || 'null');
+      } catch (e) {}
+      var heroName = document.querySelector('.nav-hero-name');
+      var heroStatus = document.querySelector('.nav-hero-status');
+      var navName = document.querySelector('.u-name');
+      var navHandle = document.querySelector('.u-handle');
+      if (heroName) heroName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+      if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> ' + (user ? ('Logged in · ' + (user.username || '')) : 'Not logged in');
+      if (navName) navName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+      if (navHandle) navHandle.textContent = user ? (user.username ? '@' + user.username : '') : 'Log in to continue';
 
-      const userOutputName = document.getElementById("user-output-name");
-      const userOutputGender = document.getElementById("user-output-gender");
-      const userOutputBirthday = document.getElementById("user-output-birthday");
-      const userOutputHobbies = document.getElementById("user-output-hobbies");
-      const userOutputNeuter = document.getElementById("user-output-neuter");
-      const userOutputVaccination = document.getElementById("user-output-vaccination");
-      const userOutputAllergies = document.getElementById("user-output-allergies");
-      const userOutputDate = document.getElementById("user-output-date");
-      const userOutputNotes = document.getElementById("user-output-notes");
-
-      const shareToggle = document.getElementById("share-with-clinic");
-      const shareNowBtn = document.getElementById("share-now-btn");
-      const shareCatIdInput = document.getElementById("share-cat-id");
-      const shareClinicIdSelect = document.getElementById("share-clinic-id");
-
-      const officialOutputCatName = document.getElementById("official-output-cat-name");
-      const officialOutputCatId = document.getElementById("official-output-cat-id");
-      const officialOutputNeuter = document.getElementById("official-output-neuter");
-      const officialOutputVaccination = document.getElementById("official-output-vaccination");
-      const officialOutputAllergies = document.getElementById("official-output-allergies");
-      const officialOutputDate = document.getElementById("official-output-date");
-      const officialOutputOther = document.getElementById("official-output-other");
-      const officialOutputReportLink = document.getElementById("official-output-report-link");
-
-      function safeRead(key) {
-        try {
-          const raw = window.localStorage.getItem(key);
-          return raw ? JSON.parse(raw) : null;
-        } catch (e) {
-          return null;
+      var unreadCount = 0;
+      try {
+        var badgeCountKey = 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
+        unreadCount = Math.max(0, parseInt(localStorage.getItem(badgeCountKey) || '0', 10) || 0);
+      } catch (e) {
+        unreadCount = 0;
+      }
+      document.querySelectorAll('[data-notif-badge]').forEach(function (badge) {
+        if (unreadCount <= 0) {
+          badge.style.display = 'none';
+        } else {
+          badge.style.display = '';
+          badge.textContent = String(unreadCount);
         }
-      }
-      function safeWrite(key, value) {
-        try {
-          window.localStorage.setItem(key, JSON.stringify(value));
-        } catch (e) {}
-      }
-      function safeReadBool(key, fallback) {
-        try {
-          const raw = window.localStorage.getItem(key);
-          if (raw == null) return fallback;
-          return raw === "1";
-        } catch (e) {
-          return fallback;
-        }
-      }
-      function safeWriteBool(key, value) {
-        try {
-          window.localStorage.setItem(key, value ? "1" : "0");
-        } catch (e) {}
-      }
-      const userState = {
-        catId: "CAT-2026-002",
-        clinicId: "",
-        name: "Tiger",
-        gender: "Male",
-        birthday: "2024-02-14",
-        hobbies: "Chasing feather toys, window watching",
-        neuter: "Completed",
-        vaccination: "Rabies Vaccine",
-        allergies: "Grain allergy",
-        reportDate: "2026-02-24",
-        ownerNotes: "Appetite normal, litter box routine stable, and no unusual behavior observed this week."
-      };
-
-      // Load user health state from localStorage (if exists)
-      const storedUser = safeRead(USER_HEALTH_KEY);
-      if (storedUser && typeof storedUser === "object") {
-        Object.assign(userState, storedUser);
-      }
-
-      function getRadioValue(name) {
-        const checked = document.querySelector('input[name="' + name + '"]:checked');
-        return checked ? checked.value : "";
-      }
-
-      function renderUserState() {
-        if (shareCatIdInput) shareCatIdInput.value = userState.catId || "";
-        if (shareClinicIdSelect && userState.clinicId) {
-          shareClinicIdSelect.value = userState.clinicId;
-        }
-        userOutputName.textContent = userState.name || "Not specified";
-        userOutputGender.textContent = userState.gender || "Not specified";
-        userOutputBirthday.textContent = userState.birthday || "Not specified";
-        userOutputHobbies.textContent = userState.hobbies || "Not specified";
-        userOutputNeuter.textContent = userState.neuter || "Not specified";
-        userOutputVaccination.textContent = userState.vaccination || "Not specified";
-        userOutputAllergies.textContent = userState.allergies || "Not specified";
-        userOutputDate.textContent = userState.reportDate || "Not selected";
-        userOutputNotes.textContent = userState.ownerNotes || "No owner notes added.";
-
-        userCatName.value = userState.name;
-        userCatGender.value = userState.gender;
-        userCatBirthday.value = userState.birthday;
-        userCatHobbies.value = userState.hobbies;
-        const neuterInput = document.querySelector('input[name="user-neuter"][value="' + userState.neuter + '"]');
-        if (neuterInput) neuterInput.checked = true;
-        userVaccination.value = userState.vaccination;
-        userAllergies.value = userState.allergies;
-        userReportDate.value = userState.reportDate;
-        userOwnerNotes.value = userState.ownerNotes;
-      }
-
-      function renderOfficialFromStorage() {
-        const official = safeRead(OFFICIAL_HEALTH_KEY);
-        if (!official || typeof official !== "object") return;
-        if (officialOutputCatName && official.catName) officialOutputCatName.textContent = official.catName;
-        if (officialOutputCatId && official.catId) officialOutputCatId.textContent = official.catId;
-        if (officialOutputNeuter && official.neuter) officialOutputNeuter.textContent = official.neuter;
-        if (officialOutputVaccination && official.vaccination) officialOutputVaccination.textContent = official.vaccination;
-        if (officialOutputAllergies && official.allergies) officialOutputAllergies.textContent = official.allergies;
-        if (officialOutputDate && official.reportDate) officialOutputDate.textContent = official.reportDate;
-        if (officialOutputOther && official.other) officialOutputOther.textContent = official.other;
-        if (officialOutputReportLink && official.reportUrl) officialOutputReportLink.href = official.reportUrl;
-      }
-
-      function setUserEditMode(isEditing) {
-        userDisplayGrid.classList.toggle("hidden-section", isEditing);
-        userEditor.classList.toggle("show", isEditing);
-        userEditBtn.classList.toggle("hidden-section", isEditing);
-        userCancelBtn.classList.toggle("show", isEditing);
-        userSaveBtn.classList.toggle("show", isEditing);
-      }
-
-      userEditBtn.addEventListener("click", function () {
-        userBanner.classList.remove("show");
-        renderUserState();
-        setUserEditMode(true);
       });
-
-      userCancelBtn.addEventListener("click", function () {
-        renderUserState();
-        userBanner.classList.remove("show");
-        setUserEditMode(false);
-      });
-
-      userSaveBtn.addEventListener("click", function () {
-        userState.name = userCatName.value.trim() || "Not specified";
-        userState.gender = userCatGender.value || "Not specified";
-        userState.birthday = userCatBirthday.value || "Not specified";
-        userState.hobbies = userCatHobbies.value.trim() || "Not specified";
-        userState.neuter = getRadioValue("user-neuter") || "Not specified";
-        userState.vaccination = userVaccination.value.trim() || "Not specified";
-        userState.allergies = userAllergies.value.trim() || "Not specified";
-        userState.reportDate = userReportDate.value || "Not selected";
-        userState.ownerNotes = userOwnerNotes.value.trim() || "No owner notes added.";
-        safeWrite(USER_HEALTH_KEY, userState);
-        renderUserState();
-        userBanner.classList.add("show");
-        setUserEditMode(false);
-      });
-
-      // Share to clinic controls
-      const initialShare = safeReadBool(SHARE_KEY, false);
-      if (shareToggle) shareToggle.checked = initialShare;
-
-      if (shareToggle) {
-        shareToggle.addEventListener("change", function () {
-          safeWriteBool(SHARE_KEY, shareToggle.checked);
-        });
-      }
-
-      if (shareNowBtn) {
-        shareNowBtn.addEventListener("click", function () {
-          if (!shareToggle || !shareToggle.checked) {
-            alert("Please enable 'Share data with clinic' first.");
-            return;
-          }
-          const catId = shareCatIdInput ? shareCatIdInput.value.trim() : "";
-          const clinicId = shareClinicIdSelect ? shareClinicIdSelect.value : "";
-          if (!catId) {
-            alert("Please enter Cat ID before sharing.");
-            if (shareCatIdInput) shareCatIdInput.focus();
-            return;
-          }
-          if (!clinicId) {
-            alert("Please select which clinic can access this data.");
-            if (shareClinicIdSelect) shareClinicIdSelect.focus();
-            return;
-          }
-          userState.catId = catId;
-          userState.clinicId = clinicId;
-          safeWrite(USER_HEALTH_KEY, userState);
-          alert("Shared successfully. Clinics can now view the latest data for this cat.");
-        });
-      }
-
-      renderUserState();
-      setUserEditMode(false);
-      document.getElementById("official-banner").classList.add("show");
-      renderOfficialFromStorage();
     })();
   </script>
 </body>
