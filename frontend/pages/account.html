@@ -118,13 +118,13 @@
     </div>
     <div class="nav-section">
       <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
-      <div class="nav-link" onclick="location.href='/pages/adoption.html'"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
-      <div class="nav-link" onclick="location.href='/pages/notifications.html'"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/notifications.html', 'Please log in first')"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
       <div class="nav-link active"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
       <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
     </div>
     <button class="btn-new-post" onclick="location.href='/pages/cat-facebook.html'">+ New Post</button>
-    <div class="nav-user">
+    <div class="nav-user" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')">
       <div class="nav-avatar" id="navUserAvatar">&#x1F464;</div>
       <div style="flex:1;min-width:0;"><div class="u-name" id="navUserName">Guest</div><div class="u-handle" id="navUserHandle">Log in to continue</div></div>
       <span class="nav-user-more">&#x2026;</span>
@@ -171,20 +171,20 @@
         <div class="section-card-body">
           <div class="form-grid">
             <div class="field"><label>Preferred gender</label>
-              <select id="prefGenderSelect"><option value="">Any</option><option value="female">Female</option><option value="male" selected>Male</option><option value="no_preference">No preference</option></select></div>
+              <select id="prefGenderSelect"><option value="">Any</option><option value="female">Female</option><option value="male">Male</option><option value="no_preference">No preference</option></select></div>
             <div class="field"><label>Preferred age</label>
-              <select id="prefAgeSelect"><option value="">Any</option><option value="kitten" selected>Kitten (0–1 year)</option><option value="adult">Adult (1–7 years)</option><option value="senior">Senior (7+ years)</option></select></div>
+              <select id="prefAgeSelect"><option value="">Any</option><option value="kitten">Kitten (0–1 year)</option><option value="adult">Adult (1–7 years)</option><option value="senior">Senior (7+ years)</option></select></div>
             <div class="field"><label>Preferred breed</label>
-              <select id="prefBreedSelect"><option value="" selected>Any</option><option value="domestic short hair">Domestic short hair</option><option value="british shorthair">British Shorthair</option><option value="ragdoll">Ragdoll</option><option value="persian">Persian</option><option value="tabby">Tabby</option></select></div>
+              <select id="prefBreedSelect"><option value="">Any</option><option value="domestic short hair">Domestic short hair</option><option value="british shorthair">British Shorthair</option><option value="ragdoll">Ragdoll</option><option value="persian">Persian</option><option value="tabby">Tabby</option></select></div>
             <div class="field"><label>Home environment</label>
-              <select><option>Optional</option><option selected>Quiet (1–2 adults)</option><option>Family with children</option><option>Already have other pets</option></select></div>
+              <select id="prefHomeEnvironmentSelect"><option value="">Optional</option><option>Quiet (1–2 adults)</option><option>Family with children</option><option>Already have other pets</option></select></div>
             <div class="field full"><label>Personality tags</label>
               <div class="tags-row">
-                <label><input type="checkbox" checked> Playful / Active</label>
-                <label><input type="checkbox"> Gentle / Calm</label>
-                <label><input type="checkbox"> Good with kids</label>
-                <label><input type="checkbox" checked> Good for first-time owners</label>
-                <label><input type="checkbox"> OK with special needs</label>
+                <label><input type="checkbox" id="prefTagPlayful"> Playful / Active</label>
+                <label><input type="checkbox" id="prefTagGentle"> Gentle / Calm</label>
+                <label><input type="checkbox" id="prefTagGoodWithKids"> Good with kids</label>
+                <label><input type="checkbox" id="prefTagFirstTime"> Good for first-time owners</label>
+                <label><input type="checkbox" id="prefTagSpecialNeeds"> OK with special needs</label>
               </div>
             </div>
           </div>
@@ -199,18 +199,19 @@
         </div>
         <div class="section-card-body">
           <div class="field full"><label style="display:flex;align-items:center;gap:8px;font-size:14px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--text-sub);"><input type="checkbox" id="hasCat"> I have adopted a cat / I already own a cat</label></div>
+          <div class="field full" id="myCatLockHint" style="font-size:12px;color:var(--text-muted);line-height:1.6;"></div>
           <div class="form-grid" id="catFields" style="opacity:.5;pointer-events:none;">
-            <div class="field"><label>Cat name</label><input type="text" placeholder="Enter cat name"></div>
-            <div class="field"><label>Breed</label><input type="text" placeholder="e.g. Domestic shorthair"></div>
+            <div class="field"><label>Cat name</label><input type="text" id="catNameInput" placeholder="Enter cat name"></div>
+            <div class="field"><label>Breed</label><input type="text" id="catBreedInput" placeholder="e.g. Domestic shorthair"></div>
             <div class="field"><label>Gender</label>
-              <select><option>Not specified</option><option>Male</option><option>Female</option></select></div>
-            <div class="field"><label>Birthday</label><input type="date"></div>
+              <select id="catGenderInput"><option value="">Not specified</option><option value="male">Male</option><option value="female">Female</option><option value="unknown">Unknown</option></select></div>
+            <div class="field"><label>Birthday</label><input type="date" id="catBirthdayInput"></div>
             <div class="field"><label>Spay / Neuter</label>
-              <select><option>Not specified</option><option>Completed</option><option>Not yet</option></select></div>
-            <div class="field"><label>Vaccination</label><input type="text" placeholder="e.g. Rabies + FVRCP"></div>
-            <div class="field"><label>Allergies</label><input type="text" placeholder="Optional"></div>
-            <div class="field"><label>Cat ID</label><input type="text" placeholder="Auto-generated" readonly style="opacity:.6;"></div>
-            <div class="field full"><label>Notes</label><textarea placeholder="Any notes about your cat..."></textarea></div>
+              <select id="catNeuterInput"><option value="">Not specified</option><option value="completed">Completed</option><option value="not_yet">Not yet</option></select></div>
+            <div class="field"><label>Vaccination</label><input type="text" id="catVaccinationInput" placeholder="e.g. Rabies + FVRCP"></div>
+            <div class="field"><label>Allergies</label><input type="text" id="catAllergiesInput" placeholder="Optional"></div>
+            <div class="field"><label>Cat ID</label><input type="text" id="catIdFieldInput" placeholder="Auto-generated" readonly style="opacity:.6;"></div>
+            <div class="field full"><label>Notes</label><textarea id="catNotesInput" placeholder="Any notes about your cat..."></textarea></div>
           </div>
         </div>
       </div>
@@ -225,7 +226,7 @@
               <h4>Cat Health Records</h4>
               <p>View and manage medical data, vaccination history, and share records with clinics.</p>
             </div>
-            <button class="health-entry-btn" onclick="location.href='/pages/health.html'">Go to Health &#x2192;</button>
+            <button class="health-entry-btn" onclick="requireLoginForNavigation('/pages/health.html', 'Please log in first')">Go to Health &#x2192;</button>
           </div>
         </div>
       </div>
@@ -244,9 +245,9 @@
     <div class="rp-card">
       <div class="rp-card-title">&#x26A1; Quick Actions</div>
       <div class="rp-link-row" onclick="location.href='/pages/cat-facebook.html'"><div class="rp-link-icon">&#x1F4AC;</div><span class="rp-link-label">Community Feed</span><span class="rp-link-arrow">&#x203A;</span></div>
-      <div class="rp-link-row" onclick="location.href='/pages/adoption.html'"><div class="rp-link-icon">&#x1F431;</div><span class="rp-link-label">Adoption</span><span class="rp-link-arrow">&#x203A;</span></div>
-      <div class="rp-link-row" onclick="location.href='/pages/health.html'"><div class="rp-link-icon">&#x1FA7A;</div><span class="rp-link-label">Health Records</span><span class="rp-link-arrow">&#x203A;</span></div>
-      <div class="rp-link-row" onclick="location.href='/pages/cat-profile.html'"><div class="rp-link-icon">&#x1F4CB;</div><span class="rp-link-label">My Cat Profile</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><div class="rp-link-icon">&#x1F431;</div><span class="rp-link-label">Adoption</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/health.html', 'Please log in first')"><div class="rp-link-icon">&#x1FA7A;</div><span class="rp-link-label">Health Records</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/cat-profile.html', 'Please log in first')"><div class="rp-link-icon">&#x1F4CB;</div><span class="rp-link-label">My Cat Profile</span><span class="rp-link-arrow">&#x203A;</span></div>
     </div>
     <div class="rp-card">
       <div class="rp-card-title">&#x1F4A1; Tips</div>
@@ -281,6 +282,23 @@
     var prefGenderSelect = document.getElementById('prefGenderSelect');
     var prefAgeSelect = document.getElementById('prefAgeSelect');
     var prefBreedSelect = document.getElementById('prefBreedSelect');
+    var prefHomeEnvironmentSelect = document.getElementById('prefHomeEnvironmentSelect');
+    var catNameInput = document.getElementById('catNameInput');
+    var catBreedInput = document.getElementById('catBreedInput');
+    var catGenderInput = document.getElementById('catGenderInput');
+    var catBirthdayInput = document.getElementById('catBirthdayInput');
+    var catNeuterInput = document.getElementById('catNeuterInput');
+    var catVaccinationInput = document.getElementById('catVaccinationInput');
+    var catAllergiesInput = document.getElementById('catAllergiesInput');
+    var catIdFieldInput = document.getElementById('catIdFieldInput');
+    var catNotesInput = document.getElementById('catNotesInput');
+    var prefTagPlayful = document.getElementById('prefTagPlayful');
+    var prefTagGentle = document.getElementById('prefTagGentle');
+    var prefTagGoodWithKids = document.getElementById('prefTagGoodWithKids');
+    var prefTagFirstTime = document.getElementById('prefTagFirstTime');
+    var prefTagSpecialNeeds = document.getElementById('prefTagSpecialNeeds');
+    var myCatLockHint = document.getElementById('myCatLockHint');
+    var ownedCat = null;
     var accountFormElements = Array.prototype.slice.call(document.querySelectorAll('.acct-body input, .acct-body select, .acct-body textarea')).filter(function (el) {
       return el.id !== 'photoUploadInput';
     });
@@ -313,10 +331,18 @@
     }
 
     function getPreferenceDraft() {
+      var personalityTags = [];
+      if (prefTagPlayful && prefTagPlayful.checked) personalityTags.push('playful_active');
+      if (prefTagGentle && prefTagGentle.checked) personalityTags.push('gentle_calm');
+      if (prefTagGoodWithKids && prefTagGoodWithKids.checked) personalityTags.push('good_with_kids');
+      if (prefTagFirstTime && prefTagFirstTime.checked) personalityTags.push('first_time_owner');
+      if (prefTagSpecialNeeds && prefTagSpecialNeeds.checked) personalityTags.push('special_needs');
       return {
         preferred_gender: prefGenderSelect ? prefGenderSelect.value || null : null,
         preferred_age: prefAgeSelect ? prefAgeSelect.value || null : null,
-        preferred_breed: prefBreedSelect ? prefBreedSelect.value || null : null
+        preferred_breed: prefBreedSelect ? prefBreedSelect.value || null : null,
+        home_environment: prefHomeEnvironmentSelect ? prefHomeEnvironmentSelect.value || null : null,
+        personality_tags: personalityTags
       };
     }
 
@@ -335,10 +361,154 @@
     }
 
     function applyPreferenceData(pref) {
-      if (!pref) return;
-      if (prefGenderSelect) prefGenderSelect.value = pref.preferred_gender || '';
-      if (prefAgeSelect) prefAgeSelect.value = pref.preferred_age || '';
-      if (prefBreedSelect) prefBreedSelect.value = pref.preferred_breed || '';
+      if (prefGenderSelect) prefGenderSelect.value = (pref && pref.preferred_gender) || '';
+      if (prefAgeSelect) prefAgeSelect.value = (pref && pref.preferred_age) || '';
+      if (prefBreedSelect) prefBreedSelect.value = (pref && pref.preferred_breed) || '';
+      if (prefHomeEnvironmentSelect) prefHomeEnvironmentSelect.value = (pref && pref.home_environment) || '';
+      var tagList = Array.isArray(pref && pref.personality_tags) ? pref.personality_tags : [];
+      if (prefTagPlayful) prefTagPlayful.checked = tagList.indexOf('playful_active') >= 0;
+      if (prefTagGentle) prefTagGentle.checked = tagList.indexOf('gentle_calm') >= 0;
+      if (prefTagGoodWithKids) prefTagGoodWithKids.checked = tagList.indexOf('good_with_kids') >= 0;
+      if (prefTagFirstTime) prefTagFirstTime.checked = tagList.indexOf('first_time_owner') >= 0;
+      if (prefTagSpecialNeeds) prefTagSpecialNeeds.checked = tagList.indexOf('special_needs') >= 0;
+    }
+
+    function setHasCatFieldsEnabled(enabled) {
+      if (hasCat) {
+        hasCat.checked = !!enabled;
+        hasCat.disabled = !enabled;
+      }
+      if (catFields) {
+        catFields.style.opacity = enabled ? '1' : '.5';
+        catFields.style.pointerEvents = enabled ? '' : 'none';
+      }
+    }
+
+    function refreshMyCatLockHint() {
+      if (!myCatLockHint) return;
+      if (ownedCat) {
+        myCatLockHint.textContent = 'Cat profile linked from database. You can edit the linked profile fields below.';
+        return;
+      }
+      if (user && user.has_cat === false) {
+        myCatLockHint.textContent = 'You registered as "I want to adopt". My Cat stays locked until one adoption application is approved.';
+        return;
+      }
+      myCatLockHint.textContent = 'No linked cat profile found yet. This section unlocks automatically after your cat profile is linked.';
+    }
+
+    function clearCatProfileFields() {
+      if (catNameInput) catNameInput.value = '';
+      if (catBreedInput) catBreedInput.value = '';
+      if (catGenderInput) catGenderInput.value = '';
+      if (catBirthdayInput) catBirthdayInput.value = '';
+      if (catNeuterInput) catNeuterInput.value = '';
+      if (catVaccinationInput) catVaccinationInput.value = '';
+      if (catAllergiesInput) catAllergiesInput.value = '';
+      if (catIdFieldInput) catIdFieldInput.value = '';
+      if (catNotesInput) catNotesInput.value = '';
+    }
+
+    function formatDateInputValue(value) {
+      if (!value) return '';
+      var date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return date.toISOString().slice(0, 10);
+    }
+
+    function applyOwnedCat(cat) {
+      ownedCat = cat || null;
+      if (!cat) {
+        clearCatProfileFields();
+        setHasCatFieldsEnabled(false);
+        refreshMyCatLockHint();
+        return;
+      }
+
+      setHasCatFieldsEnabled(true);
+      if (catNameInput) catNameInput.value = cat.name || '';
+      if (catBreedInput) catBreedInput.value = cat.breed || '';
+      if (catGenderInput) catGenderInput.value = cat.gender || '';
+      if (catBirthdayInput) catBirthdayInput.value = formatDateInputValue(cat.intake_date);
+      if (catNeuterInput) {
+        if (cat.is_neutered === true) {
+          catNeuterInput.value = 'completed';
+        } else if (cat.is_neutered === false) {
+          catNeuterInput.value = 'not_yet';
+        } else {
+          catNeuterInput.value = '';
+        }
+      }
+      if (catVaccinationInput) {
+        if (cat.is_vaccinated === true) {
+          catVaccinationInput.value = 'Completed';
+        } else if (cat.is_vaccinated === false) {
+          catVaccinationInput.value = 'Not yet';
+        } else {
+          catVaccinationInput.value = '';
+        }
+      }
+      if (catAllergiesInput) catAllergiesInput.value = '';
+      if (catIdFieldInput) catIdFieldInput.value = cat.face_code || cat.id || '';
+      if (catNotesInput) catNotesInput.value = cat.description || '';
+      refreshMyCatLockHint();
+    }
+
+    function loadOwnedCat() {
+      return fetch(API_BASE_URL + '/cats', {
+        method: 'GET',
+        headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+      })
+        .then(function (res) {
+          return res.json().then(function (payload) {
+            return { ok: res.ok, payload: payload };
+          });
+        })
+        .then(function (response) {
+          var payload = response.payload || {};
+          if (!response.ok || !payload.success || !Array.isArray(payload.data)) {
+            applyOwnedCat(null);
+            return null;
+          }
+
+          var ownedCat = payload.data.find(function (cat) {
+            return cat && user && cat.owner_id === user.id;
+          }) || null;
+
+          applyOwnedCat(ownedCat);
+          return ownedCat;
+        })
+        .catch(function () {
+          applyOwnedCat(null);
+          return null;
+        });
+    }
+
+    function syncCurrentUserFromServer() {
+      return fetch(API_BASE_URL + '/users/me', {
+        method: 'GET',
+        headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+      })
+        .then(function (res) {
+          return res.json().then(function (payload) {
+            return { ok: res.ok, payload: payload };
+          });
+        })
+        .then(function (response) {
+          var payload = response.payload || {};
+          if (!response.ok || !payload.success || !payload.data) return null;
+          user = payload.data;
+          try {
+            localStorage.setItem('catface_user', JSON.stringify(user));
+          } catch (e) {}
+          applyAccountIdentityFields();
+          applyProfilePreview();
+          refreshMyCatLockHint();
+          return user;
+        })
+        .catch(function () {
+          return null;
+        });
     }
 
     function showSavedBanner(message) {
@@ -367,10 +537,26 @@
       };
     }
 
+    function getAccountIdentity() {
+      return {
+        nickname: (user && (user.display_name || user.username || user.email)) || '',
+        email: (user && user.email) || ''
+      };
+    }
+
+    function applyAccountIdentityFields() {
+      var nicknameInput = document.getElementById('nicknameInput');
+      var emailInput = document.getElementById('emailInput');
+      var identity = getAccountIdentity();
+      if (nicknameInput) nicknameInput.value = identity.nickname;
+      if (emailInput) emailInput.value = identity.email;
+    }
+
     function applySnapshot(snapshot) {
       if (!snapshot || !snapshot.form) return;
       accountFormElements.forEach(function (el) {
         var key = el.id || el.name;
+        if (key === 'nicknameInput' || key === 'emailInput') return;
         if (!key || !(key in snapshot.form)) return;
         if (el.type === 'checkbox') {
           el.checked = !!snapshot.form[key];
@@ -429,14 +615,20 @@
       var storedSnapshot = JSON.parse(localStorage.getItem(getAccountStorageKey()) || 'null');
       if (storedSnapshot) {
         applySnapshot(storedSnapshot);
-      } else {
-        applyProfilePreview();
       }
     } catch (e) {
-      applyProfilePreview();
+      // ignore invalid local snapshot and continue with account identity
     }
+    applyAccountIdentityFields();
+    applyProfilePreview();
+    clearCatProfileFields();
+    setHasCatFieldsEnabled(false);
+    refreshMyCatLockHint();
 
     applyPreferenceData(loadPreferenceDraft());
+    syncCurrentUserFromServer().then(function () {
+      return loadOwnedCat();
+    });
 
     fetch(API_BASE_URL + '/adoption/preferences', {
       method: 'GET',
@@ -503,13 +695,103 @@
             savePreferenceDraft();
           });
 
+        var profilePromise = fetch(API_BASE_URL + '/users/me', {
+          method: 'PUT',
+          headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            display_name: (document.getElementById('nicknameInput') && document.getElementById('nicknameInput').value.trim()) || undefined,
+            has_cat: Boolean(ownedCat)
+          })
+        }).then(function (res) {
+          return res.json().then(function (payload) {
+            return { ok: res.ok, payload: payload };
+          });
+        }).then(function (response) {
+          var payload = response.payload || {};
+          if (!response.ok || !payload.success || !payload.data) {
+            throw new Error(payload.message || 'Unable to save profile.');
+          }
+          user = payload.data;
+          try {
+            localStorage.setItem('catface_user', JSON.stringify(user));
+          } catch (e) {}
+        });
+
+        var hasCatChecked = !!(hasCat && hasCat.checked);
+        var catPromise = Promise.resolve();
+        if (ownedCat && ownedCat.id) {
+          if (!hasCatChecked) {
+            catPromise = fetch(API_BASE_URL + '/cats/' + encodeURIComponent(ownedCat.id), {
+              method: 'PUT',
+              headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                owner_id: null
+              })
+            }).then(function (res) {
+              return res.json().then(function (payload) {
+                return { ok: res.ok, payload: payload };
+              });
+            }).then(function (response) {
+              var payload = response.payload || {};
+              if (!response.ok || !payload.success) {
+                throw new Error(payload.message || 'Unable to unlink cat profile.');
+              }
+              applyOwnedCat(null);
+            });
+          } else {
+            var vaccinationRaw = (catVaccinationInput && catVaccinationInput.value || '').trim().toLowerCase();
+            var vaccinationValue = null;
+            if (vaccinationRaw === 'completed' || vaccinationRaw === 'yes' || vaccinationRaw === 'done' || vaccinationRaw === 'true' || vaccinationRaw === '1') {
+              vaccinationValue = true;
+            } else if (vaccinationRaw === 'not yet' || vaccinationRaw === 'no' || vaccinationRaw === 'pending' || vaccinationRaw === 'false' || vaccinationRaw === '0') {
+              vaccinationValue = false;
+            }
+
+            catPromise = fetch(API_BASE_URL + '/cats/' + encodeURIComponent(ownedCat.id), {
+              method: 'PUT',
+              headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: (catNameInput && catNameInput.value.trim()) || ownedCat.name,
+                breed: catBreedInput ? (catBreedInput.value.trim() || null) : null,
+                gender: catGenderInput ? (catGenderInput.value || null) : null,
+                is_neutered: catNeuterInput ? (catNeuterInput.value === 'completed' ? true : (catNeuterInput.value === 'not_yet' ? false : null)) : null,
+                is_vaccinated: vaccinationValue,
+                intake_date: catBirthdayInput ? (catBirthdayInput.value || null) : null,
+                face_code: catIdFieldInput ? (catIdFieldInput.value.trim() || null) : null,
+                description: catNotesInput ? (catNotesInput.value.trim() || null) : null,
+                owner_id: user && user.id ? user.id : ownedCat.owner_id
+              })
+            }).then(function (res) {
+              return res.json().then(function (payload) {
+                return { ok: res.ok, payload: payload };
+              });
+            }).then(function (response) {
+              var payload = response.payload || {};
+              if (!response.ok || !payload.success || !payload.data) {
+                throw new Error(payload.message || 'Unable to save cat profile.');
+              }
+              applyOwnedCat(payload.data);
+            });
+          }
+        } else if (hasCatChecked) {
+          catPromise = Promise.reject(new Error('No linked cat profile found in database. Please bind/adopt a cat first.'));
+        }
+
         try {
+          var nicknameInput = document.getElementById('nicknameInput');
+          if (user) {
+            user.display_name = nicknameInput && nicknameInput.value.trim()
+              ? nicknameInput.value.trim()
+              : (user.display_name || user.username || '');
+            user.has_cat = Boolean(ownedCat);
+            localStorage.setItem('catface_user', JSON.stringify(user));
+          }
           localStorage.setItem(getAccountStorageKey(), JSON.stringify(serializeForm()));
         } catch (e) {
           // ignore local save failures and still try server preference save
         }
 
-        preferencePromise
+        Promise.all([preferencePromise, profilePromise, catPromise])
           .then(function () {
             showSavedBanner('Saved successfully!');
           })
@@ -527,7 +809,9 @@
         } catch (e) {}
         currentPhotoData = initialSnapshot && initialSnapshot.photo ? initialSnapshot.photo : '';
         applySnapshot(initialSnapshot);
+        applyAccountIdentityFields();
         applyProfilePreview();
+        refreshMyCatLockHint();
       });
     }
 

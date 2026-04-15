@@ -793,7 +793,14 @@ async function reviewApplication(req, res) {
     if (status === 'approved') {
       await prisma.cat.update({
         where: { id: updatedApplication.cat_id },
-        data: { status: 'adopted' }
+        data: {
+          status: 'adopted',
+          owner_id: updatedApplication.user_id
+        }
+      });
+      await prisma.user.update({
+        where: { id: updatedApplication.user_id },
+        data: { has_cat: true }
       });
     }
 
@@ -820,6 +827,7 @@ async function getAnalytics(req, res) {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const catWhere = scope.isAdmin ? undefined : { org_id: scope.organizationId };
+    const availableCatWhere = { status: 'available' };
     const applicationWhere = scope.isAdmin
       ? undefined
       : {
@@ -833,6 +841,7 @@ async function getAnalytics(req, res) {
 
     const [
       cats,
+      availableCatCount,
       applications,
       conversations
     ] = await Promise.all([
@@ -844,6 +853,9 @@ async function getAnalytics(req, res) {
           status: true,
           created_at: true
         }
+      }),
+      prisma.cat.count({
+        where: availableCatWhere
       }),
       prisma.adoptionApplication.findMany({
         where: applicationWhere,
@@ -900,7 +912,7 @@ async function getAnalytics(req, res) {
     const pendingApplications = applications.filter((item) => item.status === 'pending').length;
     const approvedApplications = applications.filter((item) => item.status === 'approved').length;
     const rejectedApplications = applications.filter((item) => item.status === 'rejected').length;
-    const availableCats = cats.filter((item) => item.status === 'available').length;
+    const availableCats = availableCatCount;
     const activeConversations = conversations.length;
     const monthlyApprovedApplications = applications.filter((item) => {
       return item.status === 'approved' && item.updated_at >= monthStart;

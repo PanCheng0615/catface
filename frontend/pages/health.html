@@ -56,7 +56,7 @@
     a:hover { text-decoration: underline; }
     button, input, textarea, select { font: inherit; }
 
-    /* ── 旧布局（停用） ── */
+    /* Legacy top bar (hidden) */
     .top-bar {
       display: none;
     }
@@ -74,7 +74,7 @@
       border: 1px solid rgba(200,130,26,.2);
     }
 
-    /* ── 侧边栏 ── */
+    /* Legacy sidebar (hidden) */
     .sidebar {
       display: none;
     }
@@ -104,14 +104,14 @@
     .user-name { font-size: 13px; font-weight: 700; color: var(--text); }
     .user-role { font-size: 11px; color: var(--muted); }
 
-    /* ── 主内容 ── */
+    /* Main column */
     .main {
       margin: 0;
       padding: 20px;
       min-height: auto;
     }
 
-    /* ── 状态消息 ── */
+    /* Toast / status */
     #status-msg {
       display: none;
       position: fixed;
@@ -124,14 +124,14 @@
       box-shadow: var(--shadow-lg);
     }
 
-    /* ── 顶部导航行 ── */
+    /* Page nav row */
     .page-nav {
       display: flex; align-items: center; justify-content: space-between;
       flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
     }
     .page-title { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
 
-    /* ── 标签页 ── */
+    /* Tabs */
     .tabs {
       display: flex; gap: 3px;
       background: var(--border-lt);
@@ -151,7 +151,7 @@
     .tab-pane { display: none; }
     .tab-pane.active { display: flex; flex-direction: column; gap: 14px; }
 
-    /* ── 健康护照 ── */
+    /* Health passport hero */
     .passport {
       background: linear-gradient(135deg, #5c3608 0%, #a86915 50%, #c8821a 100%);
       border-radius: var(--r-xl);
@@ -197,7 +197,7 @@
     .pbadge.warn { border-color: rgba(251,191,36,.5);  background: rgba(251,191,36,.12); }
     .pbadge.none { border-color: rgba(255,255,255,.1); background: rgba(0,0,0,.1); }
 
-    /* ── 卡片 ── */
+    /* Cards */
     .card {
       background: var(--surface);
       border-radius: var(--r-xl);
@@ -223,7 +223,7 @@
     .chip-teal   { background: var(--teal-lt);   color: var(--teal);   }
     .chip-warm   { background: var(--primary-lt); color: var(--primary); }
 
-    /* ── 按钮 ── */
+    /* Buttons */
     .btn {
       display: inline-flex; align-items: center; gap: 6px;
       border: none; border-radius: var(--r-md);
@@ -239,7 +239,7 @@
     .btn-blue    { background: var(--blue-lt); color: var(--blue); border: 1px solid #bfdbfe; }
     .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: var(--r-sm); }
 
-    /* ── 证书记录卡 ── */
+    /* Record list items */
     .rec-card {
       border: 1px solid var(--border);
       border-radius: var(--r-lg);
@@ -274,7 +274,7 @@
       background: var(--green-lt); color: #065f46; border: 1px solid #a7f3d0;
     }
 
-    /* ── 表单 ── */
+    /* Forms */
     .form-card {
       background: #fffaf4;
       border: 1px solid var(--border);
@@ -301,7 +301,7 @@
     select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b7355' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
     .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 
-    /* ── 授权项 ── */
+    /* Permission rows */
     .perm-item {
       display: flex; align-items: center; justify-content: space-between;
       padding: 12px 16px; border: 1px solid var(--border);
@@ -314,12 +314,12 @@
       justify-content: center; font-size: 18px; flex-shrink: 0;
     }
 
-    /* ── 空态 ── */
+    /* Empty states */
     .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
     .empty-icon  { font-size: 40px; margin-bottom: 10px; opacity: .6; }
     .empty-state p { font-size: 13px; line-height: 1.7; }
 
-    /* ── 信息提示条 ── */
+    /* Info callouts */
     .info-bar {
       font-size: 13px; color: var(--muted);
       padding: 10px 14px; border-radius: var(--r-md);
@@ -333,7 +333,7 @@
       color: #065f46;
     }
 
-    /* ── 主站统一布局 ── */
+    /* Site-wide three-column layout */
     .layout {
       display: grid;
       grid-template-columns: 252px minmax(0,1fr) 308px;
@@ -600,10 +600,10 @@
     </div>
     <main class="main">
 
-    <!-- 状态消息 -->
+    <!-- Status messages -->
     <div id="status-msg"></div>
 
-    <!-- 导航行：标题 + 标签页 -->
+    <!-- Page title row + tabs -->
     <div class="page-nav">
       <div class="page-title">🐾 Health Records</div>
       <div class="tabs">
@@ -613,7 +613,7 @@
       </div>
     </div>
 
-    <!-- 健康护照卡 -->
+    <!-- Health passport card -->
     <div class="passport">
       <div class="passport-top" style="position:relative;z-index:1;">
         <div class="passport-avatar">🐱</div>
@@ -630,7 +630,7 @@
       </div>
     </div>
 
-    <!-- ── Tab 1：健康記錄 ── -->
+    <!-- Tab 1: health records -->
     <div id="tab-records" class="tab-pane active">
       <div class="card">
         <div class="section-header">
@@ -641,7 +641,7 @@
           <button class="btn btn-primary btn-sm" id="toggle-add-btn">+ Add Record</button>
         </div>
 
-        <!-- 新增表单 -->
+        <!-- Add record form -->
         <div id="add-record-section" style="display:none;">
           <div style="padding:18px 22px 0;">
             <div class="form-card">
@@ -702,7 +702,7 @@
           </div>
         </div>
 
-        <!-- 记录列表 -->
+        <!-- Record list -->
         <div id="owner-records-list" style="padding:16px 22px;">
           <div class="empty-state">
             <div class="empty-icon">📋</div>
@@ -712,7 +712,7 @@
       </div>
     </div>
 
-    <!-- ── Tab 2：診所認證 ── -->
+    <!-- Tab 2: clinic-certified reports -->
     <div id="tab-clinic" class="tab-pane">
       <div class="card">
         <div class="section-header">
@@ -736,7 +736,7 @@
       </div>
     </div>
 
-    <!-- ── Tab 3：授權管理 ── -->
+    <!-- Tab 3: sharing permissions -->
     <div id="tab-share" class="tab-pane">
       <div class="card">
         <div class="section-header">
@@ -811,6 +811,12 @@
   </script>
   <script>
     (function () {
+      if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+        alert('Please log in first');
+        window.location.href = '/pages/log-in.html';
+        return;
+      }
+
       var user = null;
       try {
         user = JSON.parse(localStorage.getItem('catface_user') || 'null');

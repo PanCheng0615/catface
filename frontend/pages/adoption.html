@@ -14,10 +14,10 @@
       --radius-lg: 16px; --radius-md: 12px; --radius-sm: 8px;
     }
     html { scrollbar-gutter: stable; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow: hidden; -webkit-font-smoothing: antialiased; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; overflow-y: auto; -webkit-font-smoothing: antialiased; }
     a { color: inherit; text-decoration: none; }
     button { font: inherit; cursor: pointer; }
-    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; height: 100vh; }
+    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
 
     /* LEFT NAV */
     .left-nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; background: var(--surface); border-right: 1px solid var(--border); }
@@ -48,7 +48,7 @@
     .nav-user-more { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
 
     /* CENTER */
-    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; height: 100vh; display: flex; flex-direction: column; overflow-y: auto; scrollbar-gutter: stable; }
+    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; display: flex; flex-direction: column; }
     .center-header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); padding: 16px 20px; }
     .center-header h2 { font-size: 18px; font-weight: 800; }
     .center-header p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
@@ -112,8 +112,7 @@
     .liked-item-btn:hover { background: var(--brand); color: #fff; }
 
     /* RIGHT PANEL */
-    .right-panel { padding: 20px 0 20px 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; scrollbar-width: none; }
-    .right-panel::-webkit-scrollbar { display: none; }
+    .right-panel { padding: 20px 8px 28px 20px; display: flex; flex-direction: column; gap: 18px; }
     .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
     .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
     .rp-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); transition: background .15s; }
@@ -266,11 +265,6 @@
         </div>
       </div>
     </div>
-    <div class="rescue-card">
-      <span class="rescue-icon">&#x1F691;</span>
-      <div><div class="rescue-title">Rescue Dashboard</div><div class="rescue-sub">2 strays reported nearby</div></div>
-      <span class="rescue-arrow">&#x203A;</span>
-    </div>
   </aside>
 </div>
 
@@ -308,6 +302,12 @@
 <script src="../js/config.js"></script>
 <script>
 (function(){
+  if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+    alert('Please log in first');
+    window.location.href = '/pages/log-in.html';
+    return;
+  }
+
   function resolveCatImg(src) {
     if (!src) return '';
     if (/^(https?:)?\/\//i.test(src) || src.indexOf('../') === 0) return src;
@@ -337,6 +337,7 @@
   var openLikedCatsBtn = document.getElementById('openLikedCatsBtn');
   var openPreferencesBtn = document.getElementById('openPreferencesBtn');
   var applications = [];
+  var likedSecondFetchScheduled = false;
 
   function escapeHtml(value) {
     return String(value || '')
@@ -369,6 +370,80 @@
     } catch (e) {
       liked = [];
     }
+  }
+
+  function recordSwipeOnServer(catId, likedBool) {
+    if (!catId || catId === 'loading' || catId === 'empty' || catId === 'error') return;
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) return;
+    fetch(API_BASE_URL + '/adoption/swipe', {
+      method: 'POST',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cat_id: catId, liked: Boolean(likedBool) })
+    }).catch(function () {});
+  }
+
+  function mergeCatsFromApiList(list, indexOffset) {
+    if (!Array.isArray(list)) return;
+    list.forEach(function (cat, idx) {
+      if (!cat || !cat.id) return;
+      var mapped = mapCat(cat, (indexOffset || 0) + idx);
+      cats[mapped.id] = mapped;
+    });
+  }
+
+  function mergeLocalLikesIntoServer(serverIds) {
+    var set = {};
+    (serverIds || []).forEach(function (id) { set[id] = true; });
+    try {
+      var local = JSON.parse(localStorage.getItem(getLikedStorageKey()) || '[]');
+      if (!Array.isArray(local)) return;
+      local.forEach(function (id) {
+        if (!id || set[id]) return;
+        recordSwipeOnServer(id, true);
+      });
+    } catch (e) {}
+  }
+
+  function loadLikedFromServer() {
+    fetch(API_BASE_URL + '/adoption/liked', {
+      method: 'GET',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success) return;
+        var list = Array.isArray(payload.data) ? payload.data : [];
+        mergeCatsFromApiList(list, catOrder.length);
+        var serverIds = list.map(function (c) { return c.id; }).filter(Boolean);
+        liked = serverIds.slice();
+
+        var hadLocalOnly = false;
+        try {
+          var local = JSON.parse(localStorage.getItem(getLikedStorageKey()) || '[]');
+          if (Array.isArray(local)) {
+            hadLocalOnly = local.some(function (id) {
+              return id && serverIds.indexOf(id) === -1;
+            });
+          }
+        } catch (e) {}
+
+        mergeLocalLikesIntoServer(serverIds);
+        persistLiked();
+        renderLiked();
+
+        if (hadLocalOnly && !likedSecondFetchScheduled) {
+          likedSecondFetchScheduled = true;
+          setTimeout(function () {
+            loadLikedFromServer();
+          }, 900);
+        }
+      })
+      .catch(function () {});
   }
 
   function formatAge(ageMonths) {
@@ -503,6 +578,47 @@
     return 'Pending review';
   }
 
+  function hasApplicationForCat(catId) {
+    if (!catId) return false;
+    return applications.some(function (application) {
+      return application && application.cat && application.cat.id === catId;
+    });
+  }
+
+  function scrollToApplications(catId) {
+    if (applicationList && typeof applicationList.scrollIntoView === 'function') {
+      applicationList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (!catId) return;
+    window.setTimeout(function () {
+      var target = applicationList && applicationList.querySelector('[data-application-cat="' + catId.replace(/"/g, '\\"') + '"]');
+      if (target && typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 160);
+  }
+
+  function openRescueChat(catId) {
+    if (!catId) return Promise.resolve();
+    return fetch(API_BASE_URL + '/chat/conversations', {
+      method: 'POST',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cat_id: catId })
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success || !payload.data || !payload.data.id) {
+          throw new Error(payload.message || 'Unable to open rescue chat.');
+        }
+        window.location.href = '/pages/chat.html?conversation=' + encodeURIComponent(payload.data.id);
+      });
+  }
+
   function renderApplications() {
     if (!applications.length) {
       applicationList.innerHTML = '<div class="app-empty">No adoption applications yet. Open a cat profile and click "Apply to Adopt" to start one.</div>';
@@ -518,7 +634,7 @@
         : (application.status === 'approved' ? 'Great news! This application has been approved.' : '');
 
       return [
-        '<div class="app-item" data-application-id="' + escapeHtml(application.id) + '">',
+        '<div class="app-item" data-application-id="' + escapeHtml(application.id) + '" data-application-cat="' + escapeHtml(cat.id || '') + '">',
         '  <div class="app-item-head">',
         '    <div class="app-item-name">' + escapeHtml(cat.name || 'Unknown cat') + '</div>',
         '    <span class="status-chip ' + escapeHtml(application.status || 'pending') + '">' + escapeHtml(formatApplicationStatus(application.status)) + '</span>',
@@ -528,6 +644,7 @@
         reviewedNote ? '  <div class="app-item-sub">' + escapeHtml(reviewedNote) + '</div>' : '',
         '  <div class="app-item-actions">',
         '    <button class="liked-item-btn" type="button" data-open-application-cat="' + escapeHtml(cat.id || '') + '">View Cat</button>',
+        (cat.id ? '    <button class="liked-item-btn" type="button" data-open-application-chat="' + escapeHtml(cat.id) + '">Contact Rescue</button>' : ''),
         canCancel ? '    <button class="liked-item-btn" type="button" data-cancel-application="' + escapeHtml(application.id) + '">Cancel Request</button>' : '',
         '  </div>',
         '</div>'
@@ -598,6 +715,7 @@
         renderDeck();
         renderRecentlyAvailable();
         renderLiked();
+        loadLikedFromServer();
       })
       .catch(function (error) {
         stack.innerHTML = [
@@ -631,6 +749,7 @@
     animating = true;
     var id = card.dataset.id;
     if(dir==='right'){ addLiked(id); showToast(id); }
+    recordSwipeOnServer(id, dir === 'right');
     card.classList.add(dir==='right'?'swipe-right':'swipe-left');
     card.addEventListener('transitionend',function h(){
       card.removeEventListener('transitionend',h);
@@ -693,7 +812,17 @@
     try {
       window.localStorage.setItem('catface_contact_rescue_cat', active);
     } catch (e) {}
-    alert('Please submit an adoption request for ' + cats[active].name + ' first. After that, you can track the application in "My Applications" and continue with the rescue follow-up process.');
+    var hasApplied = hasApplicationForCat(active);
+    modal.classList.remove('open');
+    openRescueChat(active)
+      .then(function () {
+        if (!hasApplied) {
+          alert('You can chat with rescue first. To proceed with adoption review, please also submit "Apply to Adopt" for ' + cats[active].name + '.');
+        }
+      })
+      .catch(function (error) {
+        alert(error.message || 'Unable to open rescue chat.');
+      });
   };
   document.getElementById('applyBtn').onclick=function(){
     if (!active || !cats[active]) return;
@@ -705,6 +834,8 @@
     try {
       window.localStorage.setItem('catface_pending_adoption_cat', active);
     } catch (e) {}
+    var applyBtn = document.getElementById('applyBtn');
+    if (applyBtn) applyBtn.disabled = true;
     fetch(API_BASE_URL + '/adoption/applications', {
       method: 'POST',
       headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
@@ -721,14 +852,22 @@
       .then(function (response) {
         var payload = response.payload || {};
         if (!response.ok || !payload.success) {
+          if (response.ok === false && payload && payload.error === 'ValidationError') {
+            loadApplications();
+            scrollToApplications(active);
+          }
           throw new Error(payload.message || 'Unable to submit adoption request.');
         }
         alert('Application submitted for ' + cats[active].name + '. You can now track it in "My Applications".');
         modal.classList.remove('open');
         loadApplications();
+        scrollToApplications(active);
       })
       .catch(function (error) {
         alert(error.message || 'Unable to submit adoption request.');
+      })
+      .finally(function () {
+        if (applyBtn) applyBtn.disabled = false;
       });
   };
 
@@ -751,6 +890,14 @@
     var openBtn = e.target.closest('[data-open-application-cat]');
     if (openBtn) {
       openProfile(openBtn.getAttribute('data-open-application-cat'));
+      return;
+    }
+
+    var chatBtn = e.target.closest('[data-open-application-chat]');
+    if (chatBtn) {
+      openRescueChat(chatBtn.getAttribute('data-open-application-chat')).catch(function (error) {
+        alert(error.message || 'Unable to open rescue chat.');
+      });
       return;
     }
 

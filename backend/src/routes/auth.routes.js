@@ -6,8 +6,11 @@ const {
   login,
   identifyCatFace,
   loginWithCatFace,
+  bindCatFaceOwner,
+  enrollCatWithFace,
   orgLogin
 } = require('../controllers/auth.controller');
+const { protect } = require('../middleware/auth');
 
 // 注册
 router.post('/register', register);
@@ -18,6 +21,8 @@ router.post('/login', login);
 // 猫脸识别登录
 router.post('/cat-face/identify', identifyCatFace);
 router.post('/cat-face/login', loginWithCatFace);
+router.post('/cat-face/bind-owner', protect, bindCatFaceOwner);
+router.post('/cat-face/enroll-cat', protect, enrollCatWithFace);
 
 // 机构登录
 router.post('/org/login', orgLogin);

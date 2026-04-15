@@ -1,4 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
+const {
+  loadReadSet,
+  markAsRead
+} = require('../services/notification-read-state.service');
 
 const prisma = new PrismaClient();
 
@@ -15,6 +19,7 @@ function makeNotification(item, overrides) {
     actor_username: '',
     target_user_id: '',
     target_username: '',
+    conversation_id: '',
     post_id: '',
     post_preview: '',
     comment_text: '',
@@ -38,10 +43,6 @@ function formatTime(date) {
   return `${y}-${m}-${day} ${hh}:${mm}`;
 }
 
-async function loadReadSet(userId, notificationIds) {
-  return new Set();
-}
-
 async function getNotifications(req, res) {
   try {
     const userId = req.user && req.user.id;
@@ -54,12 +55,12 @@ async function getNotifications(req, res) {
     }
 
     const type = String(req.query.type || 'all').toLowerCase();
-    const allowedTypes = new Set(['all', 'likes', 'comments', 'follows']);
+    const allowedTypes = new Set(['all', 'likes', 'comments', 'follows', 'chat']);
     if (!allowedTypes.has(type)) {
       return res.status(422).json({
         success: false,
         error: 'ValidationError',
-        message: 'type 参数仅支持 all/likes/comments/follows'
+        message: 'type 参数仅支持 all/likes/comments/follows/chat'
       });
     }
 
@@ -292,6 +293,94 @@ async function getNotifications(req, res) {
       );
     }
 
+    if (type === 'all' || type === 'chat') {
+      const chatMessages = await prisma.message.findMany({
+        where: {
+          sender_id: { not: userId },
+          conversation: {
+            OR: [
+              { user_id: userId },
+              { org_id: userId }
+            ]
+          }
+        },
+        orderBy: { created_at: 'desc' },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              username: true,
+              display_name: true,
+              avatar_url: true,
+              role: true
+            }
+          },
+          conversation: {
+            select: {
+              id: true,
+              user_id: true,
+              org_id: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  display_name: true,
+                  avatar_url: true
+                }
+              },
+              org: {
+                select: {
+                  id: true,
+                  username: true,
+                  display_name: true,
+                  avatar_url: true
+                }
+              }
+            }
+          }
+        },
+        take: 50
+      });
+
+      list = list.concat(
+        chatMessages.map((message) => {
+          const senderName = formatDisplayName(message.sender);
+          const counterpart =
+            message.conversation.user_id === userId
+              ? message.conversation.org
+              : message.conversation.user;
+          const counterpartName = formatDisplayName(counterpart);
+          const preview = message.content === '[attachment]'
+            ? 'sent an attachment'
+            : (message.content || '').slice(0, 120);
+
+          return makeNotification(
+            {
+              id: 'chat_' + message.id,
+              type: 'chat',
+              title: senderName,
+              detail: counterpartName
+                ? 'sent a message in your conversation with ' + counterpartName
+                : 'sent you a new message',
+              category: 'Chat',
+              time: formatTime(message.created_at),
+              created_at: message.created_at.toISOString(),
+              avatar_url: (message.sender && message.sender.avatar_url) || '',
+              snippet: preview
+            },
+            {
+              actor_id: message.sender_id,
+              actor_username: (message.sender && message.sender.username) || '',
+              target_user_id: counterpart && counterpart.id ? counterpart.id : '',
+              target_username: counterpart && counterpart.username ? counterpart.username : '',
+              conversation_id: message.conversation_id,
+              comment_text: preview
+            }
+          );
+        })
+      );
+    }
+
     if (type === 'all' && list.length) {
       list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
@@ -326,10 +415,22 @@ async function getNotifications(req, res) {
 
 async function markNotificationsRead(req, res) {
   try {
+    const userId = req.user && req.user.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: '请先登录'
+      });
+    }
+
+    const ids = Array.isArray(req.body && req.body.ids) ? req.body.ids : [];
+    const count = await markAsRead(userId, ids);
+
     return res.json({
       success: true,
-      data: { count: 0 },
-      message: '当前版本未持久化已读状态'
+      data: { count },
+      message: '已更新通知已读状态'
     });
   } catch (error) {
     console.error('markNotificationsRead error:', error);

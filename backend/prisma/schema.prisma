@@ -21,6 +21,7 @@ model User {
   password     String
   username     String   @unique
   display_name String?
+  has_cat      Boolean  @default(false)
   avatar_url   String?
   bio          String?
   role         Role     @default(user)
@@ -42,6 +43,7 @@ model User {
   conversations_as_org     Conversation[]          @relation("org_conversations") // 以机构账号身份参与的对话
   sent_messages            Message[] // 该用户发送的消息
   reviewed_applications    AdoptionApplication[]   @relation("reviewer") // 该用户（机构工作人员）审核过的申请
+  adoption_swipes         AdoptionSwipe[] // 领养页滑动记录（喜欢 / 跳过）
 
   @@map("users")
 }
@@ -185,8 +187,24 @@ model Cat {
   owner_health_records     OwnerHealthRecord[] // 猫主人记录的健康档案
   clinic_reports           ClinicHealthReport[] // 诊所上传的官方健康报告
   health_share_permissions HealthSharePermission[] // 健康数据共享授权记录
+  adoption_swipes           AdoptionSwipe[] // 领养页滑动记录
 
   @@map("cats")
+}
+
+// 领养推荐页：用户对某只猫的滑动结果（与 migration adoption_swipes 一致，无 updated_at 列）
+model AdoptionSwipe {
+  id         String   @id @default(uuid())
+  user_id    String
+  cat_id     String
+  liked      Boolean
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, cat_id])
+  @@map("adoption_swipes")
 }
 
 // 猫咪性别枚举
@@ -267,6 +285,8 @@ model AdopterPreference {
   preferred_age    String?
   preferred_gender String?
   preferred_breed  String?
+  home_environment String?
+  personality_tags Json?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 

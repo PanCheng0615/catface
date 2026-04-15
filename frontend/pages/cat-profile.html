@@ -213,6 +213,9 @@
           <div class="info-row"><span class="info-label">Username</span><span class="info-value" id="aboutUsername">@loading</span></div>
           <div class="info-row"><span class="info-label">Profile type</span><span class="info-value" id="aboutProfileType">Community member</span></div>
           <div class="info-row"><span class="info-label">Status</span><span class="info-value" id="aboutStatus">Active</span></div>
+          <div class="info-row"><span class="info-label">Profile source</span><span class="info-value" id="aboutSource">CatFace community</span></div>
+          <div class="info-row"><span class="info-label">Last viewed</span><span class="info-value" id="aboutLastViewed">Just now</span></div>
+          <div class="info-row"><span class="info-label">Story profile</span><span class="info-value" id="aboutStoryFlag">No</span></div>
         </div>
         <div class="info-card">
           <div class="info-card-head">&#x1FA7A; Activity Overview</div>
@@ -220,12 +223,6 @@
           <div class="info-row"><span class="info-label">Followers</span><span class="info-value" id="aboutFollowersCount">0</span></div>
           <div class="info-row"><span class="info-label">Following</span><span class="info-value" id="aboutFollowingCount">0</span></div>
           <div class="info-row"><span class="info-label">Bio</span><span class="info-value" id="aboutBioSummary">CatFace member</span></div>
-        </div>
-        <div class="info-card">
-          <div class="info-card-head">&#x1F3E0; Notes</div>
-          <div class="info-row"><span class="info-label">Profile source</span><span class="info-value" id="aboutSource">CatFace community</span></div>
-          <div class="info-row"><span class="info-label">Last viewed</span><span class="info-value" id="aboutLastViewed">Just now</span></div>
-          <div class="info-row"><span class="info-label">Story profile</span><span class="info-value" id="aboutStoryFlag">No</span></div>
         </div>
       </div>
     </div>
@@ -243,7 +240,7 @@
     <div class="adopt-cta">
       <h3 id="adoptCtaTitle">&#x1F464; View this profile</h3>
       <p id="adoptCtaText">Explore this CatFace member's profile and recent posts.</p>
-      <button class="adopt-cta-btn" id="adoptCtaBtn" onclick="location.href='/pages/community.html'">Open Community</button>
+      <button class="adopt-cta-btn" id="adoptCtaBtn" onclick="location.href='/pages/cat-facebook.html'">Open Community</button>
     </div>
     <div class="rp-card">
       <div class="rp-card-title">&#x1F43E; Similar Cats</div>
@@ -287,7 +284,8 @@
     var adoptCtaBtn = document.getElementById('adoptCtaBtn');
     var state = {
       profile: null,
-      targetUserId: null
+      targetUserId: null,
+      postActionPending: false
     };
     var STORY_PROFILES = {
       luna: {
@@ -431,7 +429,7 @@
     }
 
     function requireLogin() {
-      if (typeof getToken === 'function' && getToken()) return true;
+      if (typeof isLoggedIn === 'function' && isLoggedIn()) return true;
       alert('Please log in first.');
       window.location.href = '/pages/log-in.html';
       return false;
@@ -501,20 +499,96 @@
         return;
       }
       profilePostsList.innerHTML = posts.map(function (post) {
+        var canInteract = !!post.id;
+        var likeClass = post.liked ? 'act liked' : 'act';
         return (
-          '<div class="post-card">' +
+          '<div class="post-card" data-post-open="' + escapeHtml(post.id || '') + '">' +
             '<div class="post-body">' +
               '<div class="post-time">' + escapeHtml(formatTime(post.created_at)) + '</div>' +
               '<p class="post-text">' + escapeHtml(post.content || '') + '</p>' +
               (post.image_url ? '<img class="post-img" src="' + escapeHtml(post.image_url) + '" alt="">' : '') +
               '<div class="post-actions">' +
-                '<button class="act"><span class="ai">&#x2665;</span> ' + escapeHtml(formatCount(post.likes)) + '</button>' +
-                '<button class="act"><span class="ai">&#x1F4AC;</span> ' + escapeHtml(formatCount(post.comments)) + '</button>' +
+                '<button class="' + likeClass + '" type="button" data-post-like="' + escapeHtml(post.id || '') + '"' + (canInteract ? '' : ' disabled') + '><span class="ai">&#x2665;</span> ' + escapeHtml(formatCount(post.likes)) + '</button>' +
+                '<button class="act" type="button" data-post-comment="' + escapeHtml(post.id || '') + '"' + (canInteract ? '' : ' disabled') + '><span class="ai">&#x1F4AC;</span> ' + escapeHtml(formatCount(post.comments)) + '</button>' +
               '</div>' +
             '</div>' +
           '</div>'
         );
       }).join('');
+    }
+
+    function openProfilePost(postId) {
+      if (!postId) return;
+      window.location.href = '/pages/cat-facebook.html?post=' + encodeURIComponent(postId);
+    }
+
+    function updatePostInState(postId, updater) {
+      if (!state.profile || !Array.isArray(state.profile.posts)) return;
+      state.profile.posts = state.profile.posts.map(function (post) {
+        if (!post || post.id !== postId) return post;
+        return updater(post);
+      });
+      applyProfile(state.profile);
+    }
+
+    function toggleProfilePostLike(postId) {
+      if (!postId || state.postActionPending) return;
+      if (!requireLogin()) return;
+      if (!state.targetUserId) return;
+      state.postActionPending = true;
+      fetchJson(
+        API_BASE_URL + '/users/' + encodeURIComponent(state.targetUserId) + '/profile/posts/' + encodeURIComponent(postId) + '/like',
+        {
+        method: 'POST',
+        headers: getAuthHeaders()
+      }).then(function (result) {
+        if (!result || !result.success || !result.data) {
+          alert((result && result.message) || 'Unable to update like.');
+          return;
+        }
+        updatePostInState(postId, function (post) {
+          return Object.assign({}, post, {
+            liked: !!result.data.liked,
+            likes: Number(result.data.likes || 0)
+          });
+        });
+      }).catch(function () {
+        alert('Network error, please try again.');
+      }).finally(function () {
+        state.postActionPending = false;
+      });
+    }
+
+    function addProfilePostComment(postId) {
+      if (!postId || state.postActionPending) return;
+      if (!requireLogin()) return;
+      if (!state.targetUserId) return;
+      var content = window.prompt('Write a comment:');
+      if (content == null) return;
+      var text = String(content).trim();
+      if (!text) return;
+      state.postActionPending = true;
+      fetchJson(
+        API_BASE_URL + '/users/' + encodeURIComponent(state.targetUserId) + '/profile/posts/' + encodeURIComponent(postId) + '/comments',
+        {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ content: text })
+      }).then(function (result) {
+        if (!result || !result.success) {
+          alert((result && result.message) || 'Unable to add comment.');
+          return;
+        }
+        updatePostInState(postId, function (post) {
+          return Object.assign({}, post, {
+            comments: Number(post.comments || 0) + 1
+          });
+        });
+      }).catch(function () {
+        alert('Network error, please try again.');
+      }).finally(function () {
+        state.postActionPending = false;
+      });
     }
 
     function renderTags(profile) {
@@ -576,6 +650,24 @@
       renderPhotos(profile);
     }
 
+    function openMessageFlow() {
+      if (!state.profile) return;
+      if (!requireLogin()) return;
+      if (state.profile.is_self) {
+        alert('You are viewing your own profile.');
+        return;
+      }
+      if (state.profile.is_story_profile) {
+        alert('Story profiles do not support direct chat.');
+        return;
+      }
+      if (!state.profile.can_message || !state.profile.message_target_user_id) {
+        alert('Direct chat is currently available for rescue or clinic staff accounts only.');
+        return;
+      }
+      window.location.href = '/pages/chat.html?org=' + encodeURIComponent(state.profile.message_target_user_id);
+    }
+
     function fetchJson(url, options) {
       return fetch(url, options).then(function (res) {
         if (res.status === 401) {
@@ -587,7 +679,6 @@
     }
 
     function loadProfile() {
-      if (!requireLogin()) return;
       var storyKey = getStoryKey();
       if (storyKey && STORY_PROFILES[storyKey]) {
         try {
@@ -603,7 +694,14 @@
         return;
       }
       state.targetUserId = getTargetUserId();
-      if (!state.targetUserId) return;
+      if (!state.targetUserId) {
+        var currentUser = loadCurrentUser();
+        state.targetUserId = currentUser && currentUser.id ? String(currentUser.id) : '';
+      }
+      if (!state.targetUserId) {
+        window.location.href = '/pages/log-in.html';
+        return;
+      }
       if (profilePostsList) {
         profilePostsList.innerHTML =
           '<div class="post-card"><div class="post-body"><div class="post-time">Loading...</div><p class="post-text">Fetching profile.</p></div></div>';
@@ -668,7 +766,34 @@
 
     if (messageBtn) {
       messageBtn.addEventListener('click', function () {
-        alert('Messaging is not wired on this profile page yet.');
+        openMessageFlow();
+      });
+    }
+
+    if (profilePostsList) {
+      profilePostsList.addEventListener('click', function (event) {
+        var likeButton = event.target.closest('[data-post-like]');
+        if (likeButton) {
+          var likePostId = likeButton.getAttribute('data-post-like');
+          if (!likePostId) return;
+          toggleProfilePostLike(likePostId);
+          return;
+        }
+
+        var commentButton = event.target.closest('[data-post-comment]');
+        if (commentButton) {
+          var commentPostId = commentButton.getAttribute('data-post-comment');
+          if (!commentPostId) return;
+          addProfilePostComment(commentPostId);
+          return;
+        }
+
+        var postCard = event.target.closest('[data-post-open]');
+        if (postCard) {
+          var openPostId = postCard.getAttribute('data-post-open');
+          if (!openPostId) return;
+          openProfilePost(openPostId);
+        }
       });
     }
 

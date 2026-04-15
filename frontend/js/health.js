@@ -7,7 +7,7 @@
   let catId  = params.get('catId')  || localStorage.getItem('catface_test_catId')  || '';
   let userId = params.get('userId') || localStorage.getItem('catface_test_userId') || '';
 
-  // ── DOM ──
+  // DOM references
   const catIdDisplay     = document.getElementById('current-cat-id');
   const ownerList        = document.getElementById('owner-records-list');
   const clinicList       = document.getElementById('clinic-records-list');
@@ -24,7 +24,7 @@
   const toggleAddBtn     = document.getElementById('toggle-add-btn');
   const cancelAddBtn     = document.getElementById('cancel-add-btn');
 
-  // ── 颜色映射 ──
+  // Record type → badge colors / labels
   const TYPE_COLOR = {
     vaccine:    { bar: '#3b82f6', chip: 'chip-blue',   icon: '💉', label: 'Vaccination' },
     deworming:  { bar: '#10b981', chip: 'chip-green',  icon: '🐛', label: 'Deworming' },
@@ -54,7 +54,7 @@
     showStatus._t = setTimeout(() => { statusMsg.style.display = 'none'; }, 4000);
   }
 
-  // ── 健康护照 ──
+  // Health passport hero (summary badges)
   function updatePassport(ownerRecords, clinicReports) {
     const nameEl   = document.getElementById('passport-name');
     const metaEl   = document.getElementById('passport-meta');
@@ -70,12 +70,12 @@
                               .find(r => daysUntil(r.next_due_date) >= 0);
 
     if (nameEl) nameEl.textContent = catId ? 'Health Passport' : '- Health Passport';
-    // 優先顯示 face_code，無則顯示 id 前 8 位，兩者皆無則提示載入
+    // Prefer face_code; else short cat id; else prompt to load a cat
     const catLabel = window._catFaceCode
       ? `Code: ${window._catFaceCode}`
       : catId ? `ID: ${catId.slice(0,8)}...` : '';
     if (metaEl) metaEl.textContent = catId
-      ? `${catLabel}  ·  ${all.length} records total`
+      ? `${catLabel} · ${all.length} records total`
       : 'Load a cat ID to view records';
 
     if (!badgesEl) return;
@@ -97,7 +97,7 @@
     badgesEl.innerHTML = html;
   }
 
-  // ── 渲染主人记录 ──
+  // Owner-entered health records
   function renderOwnerRecords(records) {
     if (!ownerList) return;
     if (ownerCount) ownerCount.textContent = records.length + ' records';
@@ -143,7 +143,7 @@
     }).join('');
   }
 
-  // ── 渲染诊所认证报告 ──
+  // Clinic-certified reports
   function renderClinicReports(reports) {
     if (!clinicList) return;
     if (clinicCount) clinicCount.textContent = reports.length + ' records';
@@ -172,7 +172,7 @@
     }).join('');
   }
 
-  // ── 渲染授权列表 ──
+  // Clinic share permissions
   function renderShareList(perms) {
     if (!shareList) return;
     if (!perms.length) {
@@ -195,7 +195,7 @@
     `).join('');
   }
 
-  // ── 加载全部数据 ──
+  // Load owner records, clinic reports, and permissions
   async function loadAll() {
     if (!catId) {
       const empty = (el, msg) => el && (el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>${msg}</p></div>`);
@@ -216,7 +216,7 @@
       const ownerRecords  = body.data.owner_records    || [];
       const clinicReports = body.data.clinic_reports   || [];
       const sharePerms    = body.data.share_permissions|| [];
-      // 缓存 face_code 供护照卡展示（历史数据可能没有此字段）
+      // Cache face_code for passport header (older rows may omit it)
       window._catFaceCode = body.data.cat?.face_code || null;
 
       updatePassport(ownerRecords, clinicReports);
@@ -228,7 +228,7 @@
     }
   }
 
-  // ── 删除记录 ──
+  // Delete owner record
   window.deleteRecord = async function (recordId) {
     if (!confirm('Are you sure you want to delete this record?')) return;
     try {
@@ -242,7 +242,7 @@
     } catch { showStatus('Request failed', true); }
   };
 
-  // ── 文件选择预览 ──
+  // Attachment file preview
   const recFileInput    = document.getElementById('rec-file');
   const recFilePreview  = document.getElementById('rec-file-preview');
   const recUploadStatus = document.getElementById('rec-upload-status');
@@ -265,7 +265,7 @@
     });
   }
 
-  // ── 添加记录（支持先上传文件）──
+  // Add record (optional attachment upload first)
   if (addRecordForm) {
     addRecordForm.addEventListener('submit', async function (e) {
       e.preventDefault();
@@ -274,7 +274,7 @@
       const submitBtn = document.getElementById('rec-submit-btn');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Uploading...'; }
 
-      // 1. 如果有选文件，先上传拿到 URL
+      // If a file is selected, upload first to obtain file_url
       let fileUrl = null;
       const fileInput = document.getElementById('rec-file');
       if (fileInput && fileInput.files[0]) {
@@ -303,7 +303,7 @@
         }
       }
 
-      // 提交记录（user_id 由后端 JWT 自动取得，前端不需要传）
+      // Submit record (user_id comes from JWT on the server)
       const data = {
         record_type:   document.getElementById('rec-type').value,
         description:   document.getElementById('rec-desc').value.trim(),
@@ -339,7 +339,7 @@
     });
   }
 
-  // ── 授权设置 ──
+  // Share permission form
   if (shareForm) {
     shareForm.addEventListener('submit', async function (e) {
       e.preventDefault();
@@ -360,7 +360,7 @@
     });
   }
 
-  // ── 折叠表单 ──
+  // Toggle add-record panel
   if (toggleAddBtn && addRecordSection) {
     toggleAddBtn.addEventListener('click', function () {
       const shown = addRecordSection.style.display !== 'none';
@@ -375,7 +375,7 @@
     });
   }
 
-  // ── 测试面板 ──
+  // Dev helper: apply cat/user id from inputs
   if (testApplyBtn) {
     testApplyBtn.addEventListener('click', function () {
       const cid = testCatInput  ? testCatInput.value.trim()  : '';
@@ -389,7 +389,7 @@
     });
   }
 
-  // ── 初始化 ──
+  // Initial load
   if (testCatInput  && catId)  testCatInput.value  = catId;
   if (testUserInput && userId) testUserInput.value = userId;
   loadAll();

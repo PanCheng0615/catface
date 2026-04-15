@@ -618,7 +618,7 @@
       <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
     </div>
     <button type="button" class="btn-new-post" id="btnCreatePost">+ New Post</button>
-    <div class="nav-user" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')">
+    <div class="nav-user" id="communityNavUser">
       <div class="nav-avatar">&#x1F464;</div>
       <div class="nav-user-info"><div class="u-name">Guest</div><div class="u-handle">Log in to continue</div></div>
       <span class="nav-user-more">&#x2026;</span>
@@ -688,10 +688,9 @@
     </div>
     <div class="rp-card">
       <div class="rp-card-title">&#x1F525; Trending Today</div>
-      <div class="trend-row" data-profile-story="mochi" data-profile-name="Mochi"><img class="trend-img" src="https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=100&q=80" alt="Mochi"><div class="trend-info"><div class="trend-title">Forever home found!</div><div class="trend-meta">by Mochi · Adoption</div></div><span class="trend-num">&#x2665; 15k</span></div>
-      <div class="trend-row" data-profile-story="simba" data-profile-name="Simba"><img class="trend-img" src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100&q=80" alt="Simba"><div class="trend-info"><div class="trend-title">Coffee art by Simba</div><div class="trend-meta">by Simba · Funny</div></div><span class="trend-num">&#x2665; 7.2k</span></div>
-      <div class="trend-row" data-profile-story="luna" data-profile-name="Luna"><img class="trend-img" src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=100&q=80" alt="Luna"><div class="trend-info"><div class="trend-title">Sunbathing with Luna</div><div class="trend-meta">by Luna · Cute</div></div><span class="trend-num">&#x2665; 2.1k</span></div>
-      <div class="trend-row" data-profile-story="luno" data-profile-name="Luno"><img class="trend-img" src="../assets/community/luno.png" alt="Luno"><div class="trend-info"><div class="trend-title">UM rescue kittens</div><div class="trend-meta">Luno · University of Macau</div></div><span class="trend-num">&#x2665; 612</span></div>
+      <div id="trendingList" aria-live="polite">
+        <div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading trending posts…</div>
+      </div>
     </div>
     <div class="rp-card">
       <div class="rp-card-title">&#x1F43E; Cats to Follow</div>

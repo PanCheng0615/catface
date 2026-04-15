@@ -7,7 +7,8 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "import:adoption-history": "node scripts/importAdoptionHistory.js",
-    "seed:organization": "node scripts/seedOrganizationAccount.js"
+    "seed:organization": "node scripts/seedOrganizationAccount.js",
+    "seed:community-chat": "node scripts/seedCommunityChatNotifications.js"
   },
   "keywords": [],
   "author": "",

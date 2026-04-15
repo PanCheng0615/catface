@@ -2,7 +2,51 @@ const { PrismaClient } = require('@prisma/client');
 const { scoreCatForUser, normalizeText, getWeights, updateWeights } = require('../utils/adoptionRecommendScore');
 
 const prisma = new PrismaClient();
-const hasAdoptionSwipeStore = Boolean(prisma.adoptionSwipe);
+const hasAdoptionSwipeModel = Boolean(prisma.adoptionSwipe);
+const adopterPreferenceFieldSet = new Set(
+  (((prisma._runtimeDataModel || {}).models || {}).AdopterPreference || {}).fields
+    ? ((prisma._runtimeDataModel || {}).models.AdopterPreference.fields || []).map((field) => field.name)
+    : []
+);
+
+function hasAdopterPreferenceField(fieldName) {
+  return adopterPreferenceFieldSet.has(fieldName);
+}
+let adoptionSwipeStoreAvailability = {
+  checked_at: 0,
+  available: hasAdoptionSwipeModel
+};
+
+async function hasAdoptionSwipeStore() {
+  if (!hasAdoptionSwipeModel) return false;
+
+  const now = Date.now();
+  if (now - adoptionSwipeStoreAvailability.checked_at < 15000) {
+    return adoptionSwipeStoreAvailability.available;
+  }
+
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'adoption_swipes'
+      ) AS exists
+    `;
+    const available = Boolean(rows && rows[0] && rows[0].exists === true);
+    adoptionSwipeStoreAvailability = {
+      checked_at: now,
+      available
+    };
+    return available;
+  } catch (error) {
+    console.warn('hasAdoptionSwipeStore check failed, treating swipe store as unavailable:', error.message);
+    adoptionSwipeStoreAvailability = {
+      checked_at: now,
+      available: false
+    };
+    return false;
+  }
+}
 
 const catCardInclude = {
   tags: true,
@@ -13,7 +57,7 @@ const catCardInclude = {
 // 请求体字段与 AdoptionSwipe 模型一致：cat_id、liked（user_id 由服务端从 token 写入）
 async function recordSwipe(req, res) {
   try {
-    if (!hasAdoptionSwipeStore) {
+    if (!(await hasAdoptionSwipeStore())) {
       return res.status(503).json({
         success: false,
         error: 'SwipeStoreUnavailable',
@@ -93,7 +137,9 @@ async function getFeed(req, res) {
       where: { user_id: userId }
     });
 
-    const likedSwipes = hasAdoptionSwipeStore
+    const swipeStoreAvailable = await hasAdoptionSwipeStore();
+
+    const likedSwipes = swipeStoreAvailable
       ? await prisma.adoptionSwipe.findMany({
           where: { user_id: userId, liked: true },
           include: {
@@ -116,7 +162,7 @@ async function getFeed(req, res) {
       }
     }
 
-    const allSwipes = hasAdoptionSwipeStore
+    const allSwipes = swipeStoreAvailable
       ? await prisma.adoptionSwipe.findMany({
           where: { user_id: userId },
           select: { cat_id: true }
@@ -179,7 +225,7 @@ async function getFeed(req, res) {
 // 修改态度：再次 POST /api/adoption/swipe，body 传同一 cat_id 与新的 liked（upsert），推荐打分会自动按最新 liked 计算
 async function getSwipes(req, res) {
   try {
-    if (!hasAdoptionSwipeStore) {
+    if (!(await hasAdoptionSwipeStore())) {
       return res.json({
         success: true,
         data: [],
@@ -211,7 +257,7 @@ async function getSwipes(req, res) {
 // GET /api/adoption/liked
 async function getLiked(req, res) {
   try {
-    if (!hasAdoptionSwipeStore) {
+    if (!(await hasAdoptionSwipeStore())) {
       return res.json({
         success: true,
         data: [],
@@ -267,21 +313,36 @@ async function getPreferences(req, res) {
 // POST /api/adoption/preferences
 async function setPreferences(req, res) {
   try {
-    const { preferred_age, preferred_gender, preferred_breed } = req.body;
+    const { preferred_age, preferred_gender, preferred_breed, home_environment, personality_tags } = req.body;
+    const normalizedTags = Array.isArray(personality_tags)
+      ? personality_tags
+          .map((tag) => String(tag || '').trim())
+          .filter(Boolean)
+      : null;
+    const createData = {
+      user_id: req.user.id,
+      preferred_age: preferred_age ?? null,
+      preferred_gender: preferred_gender ?? null,
+      preferred_breed: preferred_breed ?? null
+    };
+    const updateData = {
+      preferred_age: preferred_age ?? undefined,
+      preferred_gender: preferred_gender ?? undefined,
+      preferred_breed: preferred_breed ?? undefined
+    };
+    if (hasAdopterPreferenceField('home_environment')) {
+      createData.home_environment = home_environment ?? null;
+      updateData.home_environment = home_environment ?? undefined;
+    }
+    if (hasAdopterPreferenceField('personality_tags')) {
+      createData.personality_tags = normalizedTags;
+      updateData.personality_tags = normalizedTags ?? undefined;
+    }
 
     const pref = await prisma.adopterPreference.upsert({
       where: { user_id: req.user.id },
-      create: {
-        user_id: req.user.id,
-        preferred_age: preferred_age ?? null,
-        preferred_gender: preferred_gender ?? null,
-        preferred_breed: preferred_breed ?? null
-      },
-      update: {
-        preferred_age: preferred_age ?? undefined,
-        preferred_gender: preferred_gender ?? undefined,
-        preferred_breed: preferred_breed ?? undefined
-      }
+      create: createData,
+      update: updateData
     });
 
     return res.json({

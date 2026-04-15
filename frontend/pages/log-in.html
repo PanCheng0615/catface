@@ -115,7 +115,7 @@
       <div class="forgot-link"><a href="mailto:rescue@catface.local?subject=CatFace%20Password%20Reset">Forgot password?</a></div>
       <div id="login-status" class="status-msg"></div>
       <button class="btn-submit" id="login-btn">Log In</button>
-      <a class="btn-secondary" href="/pages/cat-face-login.html">Log In with Cat Face ID</a>
+      <a class="btn-secondary" id="login-cat-face-link" href="/pages/cat-face-login.html">Log In with Cat Face ID</a>
       <div class="org-entry">Are you a rescue organization? <a href="/pages/org-login.html">Log in here</a></div>
       <div class="divider">or</div>
       <div style="text-align:center;font-size:14px;color:var(--text-muted);">Don't have an account? <a href="javascript:void(0)" onclick="switchTab('signup')">Sign up</a></div>
@@ -149,16 +149,37 @@
       <div class="pref-section" id="adopt-prefs" style="display:none;">
         <div class="pref-title">Adoption preferences (optional)</div>
         <div class="pref-grid">
-          <select class="pref-select"><option>Any gender</option><option>Female</option><option>Male</option></select>
-          <select class="pref-select"><option>Any age</option><option>Kitten (0–1 yr)</option><option>Adult</option><option>Senior</option></select>
-          <select class="pref-select"><option>Any breed</option><option>Domestic shorthair</option><option>British Shorthair</option><option>Persian</option></select>
-          <select class="pref-select"><option>Any home type</option><option>Quiet home</option><option>Family</option><option>First-time owner</option></select>
+          <select class="pref-select" id="signup-pref-gender">
+            <option value="">Any gender</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="no_preference">No preference</option>
+          </select>
+          <select class="pref-select" id="signup-pref-age">
+            <option value="">Any age</option>
+            <option value="kitten">Kitten (0–1 yr)</option>
+            <option value="adult">Adult</option>
+            <option value="senior">Senior</option>
+          </select>
+          <select class="pref-select" id="signup-pref-breed">
+            <option value="">Any breed</option>
+            <option value="domestic short hair">Domestic shorthair</option>
+            <option value="british shorthair">British Shorthair</option>
+            <option value="persian">Persian</option>
+          </select>
+          <select class="pref-select" id="signup-pref-home">
+            <option value="">Any home type</option>
+            <option value="Quiet (1–2 adults)">Quiet home</option>
+            <option value="Family with children">Family</option>
+            <option value="First-time owner">First-time owner</option>
+          </select>
         </div>
       </div>
       <div class="terms">
         <label><input type="checkbox" id="reg-agree"> I have read and agree to the <a href="mailto:rescue@catface.local?subject=CatFace%20User%20Agreement">User Agreement</a>, <a href="mailto:rescue@catface.local?subject=CatFace%20Privacy%20Policy">Privacy Policy</a>, and <a href="mailto:rescue@catface.local?subject=CatFace%20Children%20Teen%20Policy">Children/Teen Personal Information Protection Rules</a>.</label>
       </div>
       <div id="signup-status" class="status-msg"></div>
+      <a class="btn-secondary" id="signup-cat-face-enroll-btn" href="/pages/cat-face-login.html?source=owner-signup" style="margin-top:10px;">Enroll Cat Info with Cat Face ID</a>
       <button class="btn-submit" id="signup-btn">Sign Up</button>
       <div style="text-align:center;font-size:14px;color:var(--text-muted);">Already have an account? <a href="javascript:void(0)" onclick="switchTab('login')">Log in</a></div>
     </div>
@@ -167,6 +188,27 @@
 
 <script src="../js/config.js"></script>
 <script>
+  function getRedirectTarget() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var redirect = String(params.get('redirect') || '').trim();
+      if (!redirect) return '/pages/cat-facebook.html?feed=recommended';
+      if (redirect.indexOf('/pages/') === 0 || redirect.indexOf('/') === 0) return redirect;
+    } catch (e) {}
+    return '/pages/cat-facebook.html?feed=recommended';
+  }
+
+  function buildCatFaceLoginUrl(extraParams) {
+    var params = new URLSearchParams();
+    var redirect = getRedirectTarget();
+    if (redirect) params.set('redirect', redirect);
+    Object.keys(extraParams || {}).forEach(function (key) {
+      if (extraParams[key] == null || extraParams[key] === '') return;
+      params.set(key, String(extraParams[key]));
+    });
+    return '/pages/cat-face-login.html' + (params.toString() ? ('?' + params.toString()) : '');
+  }
+
   function switchTab(tab) {
     document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
     document.querySelectorAll('.form-panel').forEach(function(p){p.classList.remove('active')});
@@ -175,17 +217,57 @@
   }
   document.getElementById('tab-login').onclick = function(){ switchTab('login'); };
   document.getElementById('tab-signup').onclick = function(){ switchTab('signup'); };
+  (function syncTabFromQuery() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var tab = String(params.get('tab') || '').trim().toLowerCase();
+      if (tab === 'signup') switchTab('signup');
+    } catch (e) {}
+  })();
 
   var roleUser = document.getElementById('role-user');
   var roleAdopt = document.getElementById('role-adopt');
   var adoptPrefs = document.getElementById('adopt-prefs');
+  var signupCatFaceEnrollBtn = document.getElementById('signup-cat-face-enroll-btn');
+  var OWNER_ENROLL_KEY = 'catface_owner_signup_enroll_v1';
+  function loadOwnerEnrollDraft() {
+    try {
+      return JSON.parse(localStorage.getItem(OWNER_ENROLL_KEY) || 'null');
+    } catch (e) {
+      return null;
+    }
+  }
+  function clearOwnerEnrollDraft() {
+    try { localStorage.removeItem(OWNER_ENROLL_KEY); } catch (e) {}
+  }
+  function hasOwnerEnrollDraft() {
+    var draft = loadOwnerEnrollDraft();
+    return !!(draft && draft.image_data_url && draft.name && draft.recognition_status === 'new_cat');
+  }
+  function refreshSignupCatFaceEnrollBtn() {
+    if (!signupCatFaceEnrollBtn) return;
+    signupCatFaceEnrollBtn.style.display = roleUser.classList.contains('selected') ? '' : 'none';
+    if (roleUser.classList.contains('selected') && hasOwnerEnrollDraft()) {
+      signupCatFaceEnrollBtn.textContent = 'Cat Face Enrollment Completed';
+      signupCatFaceEnrollBtn.style.background = '#ecfdf3';
+      signupCatFaceEnrollBtn.style.color = '#027a48';
+      signupCatFaceEnrollBtn.style.borderColor = 'rgba(2,122,72,.25)';
+    } else {
+      signupCatFaceEnrollBtn.textContent = 'Enroll Cat Info with Cat Face ID';
+      signupCatFaceEnrollBtn.style.background = '';
+      signupCatFaceEnrollBtn.style.color = '';
+      signupCatFaceEnrollBtn.style.borderColor = '';
+    }
+  }
   roleUser.onclick = function(){
     roleUser.classList.add('selected'); roleAdopt.classList.remove('selected');
     adoptPrefs.style.display = 'none';
+    refreshSignupCatFaceEnrollBtn();
   };
   roleAdopt.onclick = function(){
     roleAdopt.classList.add('selected'); roleUser.classList.remove('selected');
     adoptPrefs.style.display = '';
+    refreshSignupCatFaceEnrollBtn();
   };
 
   function saveAuth(data) {
@@ -194,6 +276,38 @@
       try { localStorage.setItem("catface_user", JSON.stringify(data.user)); } catch (e) {}
     }
   }
+
+  function redirectAfterAuth() {
+    location.href = getRedirectTarget();
+  }
+
+  function saveSignupPreferenceDraftForUser(userId, pref) {
+    if (!userId || !pref) return;
+    try {
+      localStorage.setItem('catface_adoption_preferences_v1_' + String(userId), JSON.stringify(pref));
+    } catch (e) {}
+  }
+
+  function persistSignupPreferences(token, pref) {
+    if (!token || !pref) return Promise.resolve();
+    return fetch(API_BASE_URL + "/adoption/preferences", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify(pref)
+    }).then(function () {
+      return null;
+    }).catch(function () {
+      return null;
+    });
+  }
+
+  var loginCatFaceLink = document.getElementById('login-cat-face-link');
+  if (loginCatFaceLink) loginCatFaceLink.href = buildCatFaceLoginUrl();
+  if (signupCatFaceEnrollBtn) signupCatFaceEnrollBtn.href = buildCatFaceLoginUrl({ source: 'owner-signup', return_to: '/pages/log-in.html?tab=signup' });
+  refreshSignupCatFaceEnrollBtn();
 
   document.getElementById('login-btn').onclick = function(){
     var email = document.getElementById('login-email').value.trim();
@@ -216,7 +330,7 @@
         saveAuth(result.data);
         status.className='status-msg success';
         status.textContent='Login successful! Redirecting…';
-        setTimeout(function(){ location.href='/pages/cat-facebook.html?feed=recommended'; }, 600);
+        setTimeout(redirectAfterAuth, 600);
       })
       .catch(function(){
         status.className='status-msg error';
@@ -230,16 +344,27 @@
     var password = document.getElementById('reg-password').value;
     var agree = document.getElementById('reg-agree').checked;
     var status = document.getElementById('signup-status');
-    var isOwner = roleAdopt.classList.contains('selected');
+    var isOwner = roleUser.classList.contains('selected');
+    var prefGender = document.getElementById('signup-pref-gender');
+    var prefAge = document.getElementById('signup-pref-age');
+    var prefBreed = document.getElementById('signup-pref-breed');
+    var prefHome = document.getElementById('signup-pref-home');
+    var adoptionPreferences = {
+      preferred_gender: prefGender ? (prefGender.value || null) : null,
+      preferred_age: prefAge ? (prefAge.value || null) : null,
+      preferred_breed: prefBreed ? (prefBreed.value || null) : null,
+      home_environment: prefHome ? (prefHome.value || null) : null
+    };
     if (!name) { status.className='status-msg error'; status.textContent='Please enter a nickname.'; return; }
     if (!email) { status.className='status-msg error'; status.textContent='Please enter your email.'; return; }
     if (!password || password.length < 6) { status.className='status-msg error'; status.textContent='Password must be at least 6 characters.'; return; }
     if (!agree) { status.className='status-msg error'; status.textContent='Please agree to the terms.'; return; }
-    if (isOwner) {
+    if (isOwner && !hasOwnerEnrollDraft()) {
       status.className='status-msg error';
-      status.textContent='Cat-owner signup with face photo is not available in this form yet. Choose “I want to adopt” or use the legacy flow.';
+      status.textContent='Please complete Cat Face enrollment and cat info first.';
       return;
     }
+    var ownerEnrollDraft = isOwner ? loadOwnerEnrollDraft() : null;
     status.className='status-msg'; status.textContent='Creating account…';
     fetch(API_BASE_URL + "/auth/register", {
       method: "POST",
@@ -249,7 +374,10 @@
         password: password,
         username: name,
         display_name: name,
-        role: "user"
+        has_cat: isOwner,
+        role: "user",
+        adoption_preferences: !isOwner ? adoptionPreferences : null,
+        owner_cat_enrollment: isOwner ? ownerEnrollDraft : null
       })
     })
       .then(function(res){ return res.json(); })
@@ -260,9 +388,21 @@
           return;
         }
         saveAuth(result.data);
+        if (!isOwner) {
+          saveSignupPreferenceDraftForUser(result.data.user && result.data.user.id, adoptionPreferences);
+        }
         status.className='status-msg success';
-        status.textContent='Welcome to CatFace! Redirecting…';
-        setTimeout(function(){ location.href='/pages/cat-facebook.html?feed=recommended'; }, 600);
+        if (isOwner) {
+          clearOwnerEnrollDraft();
+          refreshSignupCatFaceEnrollBtn();
+          status.textContent='Owner account created successfully! Redirecting…';
+          setTimeout(redirectAfterAuth, 600);
+          return;
+        }
+        persistSignupPreferences(result.data.token, adoptionPreferences).finally(function () {
+          status.textContent='Welcome to CatFace! Redirecting…';
+          setTimeout(redirectAfterAuth, 600);
+        });
       })
       .catch(function(){
         status.className='status-msg error';

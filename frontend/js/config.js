@@ -8,18 +8,32 @@ function getToken() {
   return typeof localStorage !== "undefined" ? localStorage.getItem("catface_token") : null;
 }
 
+function getCurrentUser() {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    return JSON.parse(localStorage.getItem("catface_user") || "null");
+  } catch (e) {
+    return null;
+  }
+}
+
 function setToken(token) {
   if (typeof localStorage !== "undefined") localStorage.setItem("catface_token", token);
 }
 
 function logout() {
-  if (typeof localStorage !== "undefined") localStorage.removeItem("catface_token");
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem("catface_token");
+    localStorage.removeItem("catface_user");
+  }
   if (typeof window !== "undefined") window.location.href = "/pages/log-in.html";
 }
 
 /** Member4：社区等页面用于判断是否已登录 */
 function isLoggedIn() {
-  return !!getToken();
+  const token = getToken();
+  const user = getCurrentUser();
+  return !!(token && user && (user.id || user.username || user.email));
 }
 
 function getAuthHeaders() {

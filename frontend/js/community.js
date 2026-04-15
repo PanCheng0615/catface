@@ -1,9 +1,11 @@
 (function () {
   let posts = [];
+  let trendingById = {};
   let currentPostId = null;
   let currentFeed = "recommended";
   let feedLoadState = "loading";
   let latestFeedRequestId = 0;
+let pendingPostToOpen = "";
 
   function getCurrentUserId() {
     try {
@@ -77,8 +79,31 @@
   const quickComposerSubmit = document.querySelector(".composer-submit");
 
   function formatLikes(num) {
-    if (num >= 10000) return (num / 1000).toFixed(0) + "k";
-    return String(num);
+    const n = Number(num) || 0;
+    if (n >= 10000) return (n / 1000).toFixed(0) + "k";
+    return String(n);
+  }
+
+  function normalizeCommunityPost(p) {
+    const createdAt = p.created_at || null;
+    const likeNum = typeof p.likes === "number" ? p.likes : parseInt(String(p.likes == null ? "0" : p.likes), 10);
+    return {
+      id: p.id,
+      author: p.author || "User",
+      authorId: p.authorId || null,
+      authorUsername: p.authorUsername || "",
+      authorAvatar: p.authorAvatar || "",
+      authorInitial: (p.author && p.author.charAt(0) ? p.author.charAt(0) : "U").toUpperCase(),
+      fromApi: true,
+      followed: !!p.followed,
+      image: p.image || "",
+      text: p.text || "",
+      likes: Number.isFinite(likeNum) ? likeNum : 0,
+      liked: !!p.liked,
+      comments: Array.isArray(p.comments) ? p.comments : [],
+      created_at: createdAt,
+      time: formatPostTime(createdAt, p.time || "Just now")
+    };
   }
 
   function formatPostTime(createdAtIso, fallbackText) {
@@ -235,7 +260,13 @@
   }
 
   function openPostDetail(id) {
-    const post = posts.find(function (p) { return p.id === id; });
+    let post = posts.find(function (p) { return p.id === id; });
+    if (!post && trendingById[id]) {
+      post = normalizeCommunityPost(trendingById[id]);
+      const idx = posts.findIndex(function (p) { return p.id === post.id; });
+      if (idx === -1) posts.unshift(post);
+      else posts[idx] = post;
+    }
     if (!post) return;
     currentPostId = id;
     if (!postOverlay || !postDetailImage || !detailAuthorAvatar || !detailAuthorName || !detailTime || !detailText) return;
@@ -534,6 +565,82 @@
     buttonEl.classList.toggle("is-following", !!isFollowing);
   }
 
+  function renderTrendingPanel() {
+    const wrap = document.getElementById("trendingList");
+    if (!wrap) return;
+    wrap.innerHTML =
+      '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading trending posts…</div>';
+    fetch(API_BASE_URL + "/community/posts?feed=recommended&limit=50", {
+      method: "GET",
+      headers: typeof getAuthHeaders === "function" ? getAuthHeaders() : { "Content-Type": "application/json" }
+    })
+      .then(function (res) {
+        return res.json();
+      })
+      .then(function (result) {
+        if (!result || !result.success || !Array.isArray(result.data)) {
+          wrap.innerHTML =
+            '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Could not load trending.</div>';
+          return;
+        }
+        trendingById = {};
+        result.data.forEach(function (p) {
+          if (p && p.id) trendingById[p.id] = p;
+        });
+        if (!result.data.length) {
+          wrap.innerHTML =
+            '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">No posts to rank yet.</div>';
+          return;
+        }
+        const sorted = result.data
+          .slice()
+          .sort(function (a, b) {
+            return (Number(b.likes) || 0) - (Number(a.likes) || 0);
+          })
+          .slice(0, 5);
+        wrap.innerHTML = "";
+        sorted.forEach(function (p) {
+          const row = document.createElement("div");
+          row.className = "trend-row";
+          row.setAttribute("role", "button");
+          row.tabIndex = 0;
+          row.style.cursor = "pointer";
+          const titleText = String(p.text || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 56) || "Community post";
+          const metaLine = "by " + (p.author || "Member") + " · " + (Number(p.likes) || 0) + " likes";
+          const imgSrc = p.image || "";
+          const thumb = imgSrc
+            ? '<img class="trend-img" src="' + escapeHtml(imgSrc) + '" alt="">'
+            : '<div class="trend-img" style="display:grid;place-items:center;background:var(--brand-light);font-size:20px;">&#x1F4AC;</div>';
+          row.innerHTML =
+            thumb +
+            '<div class="trend-info"><div class="trend-title">' +
+            escapeHtml(titleText) +
+            '</div><div class="trend-meta">' +
+            escapeHtml(metaLine) +
+            '</div></div><span class="trend-num">&#x2665; ' +
+            escapeHtml(formatLikes(Number(p.likes) || 0)) +
+            "</span>";
+          row.addEventListener("click", function () {
+            if (p.id) openPostDetail(p.id);
+          });
+          row.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              if (p.id) openPostDetail(p.id);
+            }
+          });
+          wrap.appendChild(row);
+        });
+      })
+      .catch(function () {
+        wrap.innerHTML =
+          '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Could not load trending.</div>';
+      });
+  }
+
   function bindSidebarProfileCards() {
     document.querySelectorAll(".trend-row[data-profile-story]").forEach(function (rowEl) {
       rowEl.style.cursor = "pointer";
@@ -795,25 +902,7 @@
           renderFeed();
           return;
         }
-        let mappedPosts = result.data.map(function (p) {
-          const createdAt = p.created_at || null;
-          return {
-            id: p.id,
-            author: p.author || "User",
-            authorId: p.authorId || null,
-            authorAvatar: p.authorAvatar || "",
-            authorInitial: p.authorInitial || "U",
-            fromApi: true,
-            followed: !!p.followed,
-            image: p.image || "",
-            text: p.text || "",
-            likes: typeof p.likes === "number" ? p.likes : 0,
-            liked: !!p.liked,
-            comments: Array.isArray(p.comments) ? p.comments : [],
-            created_at: createdAt,
-            time: formatPostTime(createdAt, p.time || "Just now")
-          };
-        });
+        let mappedPosts = result.data.map(normalizeCommunityPost);
 
         if (feed === "followed") {
           mappedPosts = mappedPosts.filter(function (p) {
@@ -825,6 +914,16 @@
         feedLoadState = "ok";
         posts = mappedPosts;
         renderFeed();
+        if (pendingPostToOpen) {
+          const targetPost = posts.find(function (p) { return p.id === pendingPostToOpen; });
+          if (targetPost) {
+            const postId = pendingPostToOpen;
+            pendingPostToOpen = "";
+            window.setTimeout(function () {
+              openPostDetail(postId);
+            }, 0);
+          }
+        }
       })
       .catch(function () {
         if (requestId !== latestFeedRequestId || currentFeed !== feed) return;
@@ -850,6 +949,7 @@
     const params = new URLSearchParams(window.location.search);
     const compose = String(params.get("compose") || "").trim() === "1";
     const feed = String(params.get("feed") || "").trim().toLowerCase();
+    pendingPostToOpen = String(params.get("post") || "").trim();
     let forceOpenCreate = false;
     try {
       window.localStorage.removeItem("catface_preferred_feed");
@@ -866,6 +966,7 @@
   }
 
   initPageFromUrl();
+  renderTrendingPanel();
   bindSidebarProfileCards();
   bindSidebarFollowActions();
 })();
@@ -882,6 +983,7 @@
     }
   }
   const loginBtn = document.querySelector(".login-btn");
+  const navUserRow = document.getElementById("communityNavUser");
   const user = loadUser();
   if (loginBtn) {
     if (user) {
@@ -897,6 +999,15 @@
   if (user) {
     if (heroName) heroName.textContent = user.display_name || user.username || user.email || "User";
     if (heroHandle) heroHandle.textContent = user.username ? "@" + user.username : "";
+  }
+  if (navUserRow) {
+    navUserRow.addEventListener("click", function () {
+      if (user) {
+        window.location.href = "/pages/chat.html";
+        return;
+      }
+      requireLoginForNavigation("/pages/chat.html", "Please log in first");
+    });
   }
 })();
 

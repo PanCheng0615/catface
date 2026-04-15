@@ -1,6 +1,83 @@
 const { PrismaClient } = require('@prisma/client');
+const { ensureRescueStaffUserForOrganization } = require('./auth.controller');
 
 const prisma = new PrismaClient();
+
+function isOrganizationChatRole(role) {
+  return role === 'rescue_staff' || role === 'clinic_staff' || role === 'admin';
+}
+
+function buildHttpError(status, error, message) {
+  const err = new Error(message);
+  err.status = status;
+  err.code = error;
+  return err;
+}
+
+async function resolveConversationParticipants(req) {
+  if (req.user.role === 'user') {
+    const catId = typeof req.body.cat_id === 'string' ? req.body.cat_id.trim() : '';
+    const orgUserId = typeof req.body.org_id === 'string' ? req.body.org_id.trim() : '';
+
+    if (!catId && !orgUserId) {
+      throw buildHttpError(422, 'ValidationError', 'cat_id or org_id is required');
+    }
+
+    if (catId) {
+      const cat = await prisma.cat.findUnique({
+        where: { id: catId },
+        include: { organization: true }
+      });
+
+      if (!cat) {
+        throw buildHttpError(404, 'CatNotFound', 'Cat not found');
+      }
+
+      if (!cat.organization) {
+        throw buildHttpError(422, 'ChatUnavailable', 'This cat is not linked to a rescue organization yet');
+      }
+
+      const orgUser = await ensureRescueStaffUserForOrganization(cat.organization);
+      return {
+        userId: req.user.id,
+        orgId: orgUser.id
+      };
+    }
+
+    const orgUser = await prisma.user.findUnique({
+      where: { id: orgUserId },
+      select: { id: true, role: true }
+    });
+
+    if (!orgUser || !isOrganizationChatRole(orgUser.role)) {
+      throw buildHttpError(404, 'OrganizationUserNotFound', 'Organization chat account not found');
+    }
+
+    return {
+      userId: req.user.id,
+      orgId: orgUser.id
+    };
+  }
+
+  const userId = typeof req.body.user_id === 'string' ? req.body.user_id.trim() : '';
+  if (!userId) {
+    throw buildHttpError(422, 'ValidationError', 'user_id is required');
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true }
+  });
+
+  if (!user || user.role !== 'user') {
+    throw buildHttpError(404, 'UserNotFound', 'Adopter user not found');
+  }
+
+  return {
+    userId,
+    orgId: req.user.id
+  };
+}
 
 function mapAttachment(attachment) {
   return {
@@ -35,6 +112,7 @@ function mapMessage(message, currentUserId) {
 
 function mapConversation(conversation, currentUserId) {
   const latestMessage = Array.isArray(conversation.messages) ? conversation.messages[0] : null;
+  const organization = conversation.organization || null;
 
   return {
     id: conversation.id,
@@ -49,8 +127,53 @@ function mapConversation(conversation, currentUserId) {
           email: conversation.user.email
         }
       : null,
+    org: conversation.org
+      ? {
+          id: conversation.org.id,
+          username: conversation.org.username,
+          display_name: conversation.org.display_name,
+          email: conversation.org.email
+        }
+      : null,
+    organization: organization
+      ? {
+          id: organization.id,
+          name: organization.name,
+          type: organization.type,
+          logo_url: organization.logo_url
+        }
+      : null,
     latest_message: latestMessage ? mapMessage(latestMessage, currentUserId) : null
   };
+}
+
+async function enrichConversationOrganizations(conversations) {
+  if (!Array.isArray(conversations) || !conversations.length) return conversations || [];
+  const orgEmails = [...new Set(
+    conversations
+      .map((conversation) => conversation && conversation.org && conversation.org.email ? String(conversation.org.email).trim() : '')
+      .filter(Boolean)
+  )];
+  if (!orgEmails.length) return conversations;
+
+  const organizations = await prisma.organization.findMany({
+    where: { email: { in: orgEmails } },
+    select: { id: true, name: true, type: true, logo_url: true, email: true }
+  });
+  const organizationByEmail = new Map();
+  organizations.forEach((organization) => {
+    if (!organization || !organization.email) return;
+    organizationByEmail.set(String(organization.email).trim(), organization);
+  });
+
+  return conversations.map((conversation) => {
+    if (!conversation || !conversation.org || !conversation.org.email) return conversation;
+    const match = organizationByEmail.get(String(conversation.org.email).trim());
+    return {
+      ...conversation,
+      organization: match || null
+    };
+  });
 }
 
 async function getAccessibleConversation(conversationId, currentUserId) {
@@ -70,6 +193,14 @@ async function getAccessibleConversation(conversationId, currentUserId) {
           display_name: true,
           email: true
         }
+      },
+      org: {
+        select: {
+          id: true,
+          username: true,
+          display_name: true,
+          email: true
+        }
       }
     }
   });
@@ -77,43 +208,30 @@ async function getAccessibleConversation(conversationId, currentUserId) {
 
 async function createConversation(req, res) {
   try {
-    const userId = typeof req.body.user_id === 'string' ? req.body.user_id.trim() : '';
-
-    if (!userId) {
-      return res.status(422).json({
-        success: false,
-        error: 'ValidationError',
-        message: 'user_id is required'
-      });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, role: true, username: true, display_name: true, email: true }
-    });
-
-    if (!user || user.role !== 'user') {
-      return res.status(404).json({
-        success: false,
-        error: 'UserNotFound',
-        message: 'Adopter user not found'
-      });
-    }
+    const participants = await resolveConversationParticipants(req);
 
     const conversation = await prisma.conversation.upsert({
       where: {
         user_id_org_id: {
-          user_id: userId,
-          org_id: req.user.id
+          user_id: participants.userId,
+          org_id: participants.orgId
         }
       },
       update: {},
       create: {
-        user_id: userId,
-        org_id: req.user.id
+        user_id: participants.userId,
+        org_id: participants.orgId
       },
       include: {
         user: {
+          select: {
+            id: true,
+            username: true,
+            display_name: true,
+            email: true
+          }
+        },
+        org: {
           select: {
             id: true,
             username: true,
@@ -138,14 +256,23 @@ async function createConversation(req, res) {
         }
       }
     });
+    const enrichedList = await enrichConversationOrganizations([conversation]);
+    const enrichedConversation = enrichedList[0] || conversation;
 
     return res.status(201).json({
       success: true,
-      data: mapConversation(conversation, req.user.id),
+      data: mapConversation(enrichedConversation, req.user.id),
       message: 'Conversation ready'
     });
   } catch (error) {
     console.error('createConversation error:', error);
+    if (error && error.status) {
+      return res.status(error.status).json({
+        success: false,
+        error: error.code || 'RequestError',
+        message: error.message || 'Unable to create conversation'
+      });
+    }
     return res.status(500).json({
       success: false,
       error: 'ServerError',
@@ -172,6 +299,14 @@ async function getConversations(req, res) {
             email: true
           }
         },
+        org: {
+          select: {
+            id: true,
+            username: true,
+            display_name: true,
+            email: true
+          }
+        },
         messages: {
           take: 1,
           orderBy: { created_at: 'desc' },
@@ -190,10 +325,11 @@ async function getConversations(req, res) {
       },
       orderBy: { created_at: 'desc' }
     });
+    const enrichedConversations = await enrichConversationOrganizations(conversations);
 
     return res.json({
       success: true,
-      data: conversations.map((conversation) => mapConversation(conversation, req.user.id)),
+      data: enrichedConversations.map((conversation) => mapConversation(conversation, req.user.id)),
       message: 'Fetched conversations'
     });
   } catch (error) {
@@ -232,15 +368,40 @@ async function getMessages(req, res) {
       },
       orderBy: { created_at: 'asc' }
     });
+    const enrichedList = await enrichConversationOrganizations([conversation]);
+    const enrichedConversation = enrichedList[0] || conversation;
 
     return res.json({
       success: true,
       data: {
         conversation: {
-          id: conversation.id,
-          user_id: conversation.user_id,
-          org_id: conversation.org_id,
-          user: conversation.user
+          id: enrichedConversation.id,
+          user_id: enrichedConversation.user_id,
+          org_id: enrichedConversation.org_id,
+          user: enrichedConversation.user
+            ? {
+                id: enrichedConversation.user.id,
+                username: enrichedConversation.user.username,
+                display_name: enrichedConversation.user.display_name,
+                email: enrichedConversation.user.email
+              }
+            : null,
+          org: enrichedConversation.org
+            ? {
+                id: enrichedConversation.org.id,
+                username: enrichedConversation.org.username,
+                display_name: enrichedConversation.org.display_name,
+                email: enrichedConversation.org.email
+              }
+            : null,
+          organization: enrichedConversation.organization
+            ? {
+                id: enrichedConversation.organization.id,
+                name: enrichedConversation.organization.name,
+                type: enrichedConversation.organization.type,
+                logo_url: enrichedConversation.organization.logo_url
+              }
+            : null
         },
         messages: messages.map((message) => mapMessage(message, req.user.id))
       },

@@ -238,9 +238,11 @@
           <div class="summary-card" id="summaryLikes"><div class="summary-icon">&#x2665;&#xFE0F;</div><div class="summary-num" id="summaryLikesCount">0</div><div class="summary-label">Likes</div></div>
           <div class="summary-card" id="summaryComments"><div class="summary-icon">&#x1F4AC;</div><div class="summary-num" id="summaryCommentsCount">0</div><div class="summary-label">Comments</div></div>
           <div class="summary-card" id="summaryFollowers"><div class="summary-icon">&#x1F465;</div><div class="summary-num" id="summaryFollowersCount">0</div><div class="summary-label">Followers</div></div>
+          <div class="summary-card" id="summaryChat"><div class="summary-icon">&#x1F4E8;</div><div class="summary-num" id="summaryChatCount">0</div><div class="summary-label">Chat</div></div>
         </div>
         <button class="mark-btn" id="markAllReadBtn">Mark all as read</button>
         <div class="list-actions">
+          <button class="list-chip" type="button" id="viewAllActivityBtn">All activity</button>
           <button class="list-chip" type="button" id="viewFollowersBtn">View followers</button>
           <button class="list-chip" type="button" id="viewFollowingBtn">View following</button>
           <button class="list-chip" type="button" id="openFollowingFeedBtn">Open Following feed</button>
@@ -290,12 +292,14 @@
   var markAllReadBtn = document.getElementById('markAllReadBtn');
   var notifNavBadge = document.getElementById('notifNavBadge');
   var notifList = document.getElementById('notifList');
+  var viewAllActivityBtn = document.getElementById('viewAllActivityBtn');
   var viewFollowersBtn = document.getElementById('viewFollowersBtn');
   var viewFollowingBtn = document.getElementById('viewFollowingBtn');
   var openFollowingFeedBtn = document.getElementById('openFollowingFeedBtn');
   var summaryLikes = document.getElementById('summaryLikes');
   var summaryComments = document.getElementById('summaryComments');
   var summaryFollowers = document.getElementById('summaryFollowers');
+  var summaryChat = document.getElementById('summaryChat');
   var state = {
     notifications: [],
     filter: 'all',
@@ -329,32 +333,40 @@
     return 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
   }
 
-  function loadReadState() {
-    try {
-      var raw = localStorage.getItem(getReadStorageKey());
-      var parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-      return [];
-    }
+  function isRead(id) {
+    var item = state.notifications.find(function (entry) { return entry.id === id; });
+    return Boolean(item && (item.is_read || Number(item.unread_count || 0) === 0));
   }
 
-  function saveReadState(ids) {
-    try {
-      localStorage.setItem(getReadStorageKey(), JSON.stringify(ids));
-    } catch (e) {}
+  function applyReadState(ids) {
+    var set = new Set((Array.isArray(ids) ? ids : []).map(function (id) { return String(id || '').trim(); }).filter(Boolean));
+    if (!set.size) return;
+    state.notifications = state.notifications.map(function (item) {
+      if (!set.has(String(item.id || ''))) return item;
+      return Object.assign({}, item, {
+        is_read: true,
+        unread_count: 0
+      });
+    });
+  }
+
+  function markReadOnServer(ids) {
+    var normalized = (Array.isArray(ids) ? ids : [])
+      .map(function (id) { return String(id || '').trim(); })
+      .filter(Boolean);
+    if (!normalized.length || !requireLogin()) return Promise.resolve();
+    return fetchJson(API_BASE_URL + '/notifications/read', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ ids: normalized })
+    }).catch(function () {
+      return null;
+    });
   }
 
   function markRead(ids) {
-    var merged = loadReadState().slice();
-    ids.forEach(function (id) {
-      if (merged.indexOf(id) === -1) merged.push(id);
-    });
-    saveReadState(merged);
-  }
-
-  function isRead(id) {
-    return loadReadState().indexOf(id) !== -1;
+    applyReadState(ids);
+    return markReadOnServer(ids);
   }
 
   function requireLogin() {
@@ -414,7 +426,9 @@
   }
 
   function updateUnreadUi() {
-    var unreadCount = state.notifications.filter(function (item) { return !isRead(item.id); }).length;
+    var unreadCount = state.notifications.filter(function (item) {
+      return !item.is_read && Number(item.unread_count || 0) > 0;
+    }).length;
     try {
       localStorage.setItem(getBadgeCountStorageKey(), String(unreadCount));
     } catch (e) {}
@@ -436,16 +450,24 @@
   function renderSummary() {
     var likeCount = state.notifications.filter(function (item) { return item.type === 'likes'; }).length;
     var commentCount = state.notifications.filter(function (item) { return item.type === 'comments'; }).length;
+    var chatCount = state.notifications.filter(function (item) { return item.type === 'chat'; }).length;
     var followerCount = state.followers.length;
     document.getElementById('summaryLikesCount').textContent = String(likeCount);
     document.getElementById('summaryCommentsCount').textContent = String(commentCount);
     document.getElementById('summaryFollowersCount').textContent = String(followerCount);
+    document.getElementById('summaryChatCount').textContent = String(chatCount);
     document.getElementById('weekLikes').textContent = String(likeCount);
     document.getElementById('weekComments').textContent = String(commentCount);
     document.getElementById('weekFollowers').textContent = String(followerCount);
     summaryLikes.classList.toggle('is-active', state.contentMode === 'notifications' && state.filter === 'likes');
     summaryComments.classList.toggle('is-active', state.contentMode === 'notifications' && state.filter === 'comments');
     summaryFollowers.classList.toggle('is-active', state.contentMode === 'social');
+    if (summaryChat) {
+      summaryChat.classList.toggle('is-active', state.contentMode === 'notifications' && state.filter === 'chat');
+    }
+    if (viewAllActivityBtn) {
+      viewAllActivityBtn.classList.toggle('is-active', state.contentMode === 'notifications' && state.filter === 'all');
+    }
   }
 
   function renderNotificationList() {
@@ -546,16 +568,24 @@
           (item.post_preview ? '<div class="activity-preview">' + escapeHtml(item.post_preview) + '</div>' : '') +
           (item.comment_text ? '<div class="activity-preview">' + escapeHtml(item.comment_text) + '</div>' : '') +
           '<div class="activity-actions">' +
-            '<button class="primary-btn" type="button" id="openCommunityBtn">Open Community</button>' +
+            '<button class="primary-btn" type="button" id="openPrimaryTargetBtn">' + escapeHtml(item.type === 'chat' ? 'Open Chat' : 'Open Community') + '</button>' +
             (item.actor_id ? '<button class="secondary-btn" type="button" id="openActorBtn">View Profile</button>' : '') +
           '</div>' +
         '</div>' +
       '</div>';
     detailContent.appendChild(scroll);
-    var openCommunityBtn = document.getElementById('openCommunityBtn');
-    if (openCommunityBtn) {
-      openCommunityBtn.addEventListener('click', function () {
-        window.location.href = '/pages/cat-facebook.html';
+    var openPrimaryTargetBtn = document.getElementById('openPrimaryTargetBtn');
+    if (openPrimaryTargetBtn) {
+      openPrimaryTargetBtn.addEventListener('click', function () {
+        if (item.type === 'chat' && item.conversation_id) {
+          window.location.href = '/pages/chat.html?conversation=' + encodeURIComponent(item.conversation_id);
+          return;
+        }
+        var target = '/pages/cat-facebook.html';
+        if (item.post_id) {
+          target += '?post=' + encodeURIComponent(item.post_id);
+        }
+        window.location.href = target;
       });
     }
     var openActorBtn = document.getElementById('openActorBtn');
@@ -601,6 +631,12 @@
     scope.querySelectorAll('.user-follow-btn[data-user-id]').forEach(function (btn) {
       btn.addEventListener('click', function (e) {
         e.stopPropagation();
+        if (btn.hasAttribute('data-open-profile')) {
+          var profileUserId = btn.getAttribute('data-user-id');
+          var profileUser = state.followers.concat(state.following).find(function (item) { return item.id === profileUserId; });
+          if (profileUser) goToProfile(profileUser);
+          return;
+        }
         if (!requireLogin()) return;
         btn.disabled = true;
         toggleFollow(btn.getAttribute('data-user-id')).finally(function () {
@@ -660,7 +696,7 @@
             return '<div class="fr-row" data-user-id="' + escapeHtml(user.id) + '">' +
               avatarMarkup(user.avatar_url, user.display_name || user.username, 'fr-avatar') +
               '<div class="fr-info"><div class="fr-name">' + escapeHtml(user.display_name || user.username || 'User') + '</div><div class="fr-sub">' + escapeHtml(formatHandle(user.username) || 'Following') + '</div></div>' +
-              '<button class="fr-btn user-follow-btn" type="button" data-user-id="' + escapeHtml(user.id) + '">Following</button>' +
+              '<button class="fr-btn user-follow-btn" type="button" data-user-id="' + escapeHtml(user.id) + '" data-open-profile="1">View Profile</button>' +
             '</div>';
           }).join('')
         : '<div class="empty-state">You are not following anyone yet.</div>';
@@ -751,6 +787,20 @@
   if (summaryFollowers) {
     summaryFollowers.addEventListener('click', function () {
       showSocialDetail('followers');
+    });
+  }
+  if (summaryChat) {
+    summaryChat.addEventListener('click', function () {
+      state.filter = 'chat';
+      showList();
+      renderNotificationList();
+    });
+  }
+  if (viewAllActivityBtn) {
+    viewAllActivityBtn.addEventListener('click', function () {
+      state.filter = 'all';
+      showList();
+      renderNotificationList();
     });
   }
   if (viewFollowersBtn) {

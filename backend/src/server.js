@@ -20,6 +20,7 @@ const usersRouter = require('./routes/users.routes');
 const chatRouter = require('./routes/chat.routes');
 const rescueRouter = require('./routes/rescue.routes');
 const adoptionRouter = require('./routes/adoption.routes');
+const catsRouter = require('./routes/cats.routes');
 const communityRouter = require('./routes/community.routes');
 const notificationsRouter = require('./routes/notifications.routes');
 
@@ -34,6 +35,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/rescue', rescueRouter);
 app.use('/api/adoption', adoptionRouter);
+app.use('/api/cats', catsRouter);
 app.use('/api/community', communityRouter);
 app.use('/api/notifications', notificationsRouter);
 

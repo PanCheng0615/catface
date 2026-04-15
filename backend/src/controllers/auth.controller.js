@@ -5,6 +5,36 @@ const { generateToken } = require('../utils/generateToken');
 const { runKamFaceInference, findCatFaceMatches } = require('../services/cat-face.service');
 
 const prisma = new PrismaClient();
+const adopterPreferenceFieldSet = new Set(
+  (((prisma._runtimeDataModel || {}).models || {}).AdopterPreference || {}).fields
+    ? ((prisma._runtimeDataModel || {}).models.AdopterPreference.fields || []).map((field) => field.name)
+    : []
+);
+
+function hasAdopterPreferenceField(fieldName) {
+  return adopterPreferenceFieldSet.has(fieldName);
+}
+
+function normalizeCatGender(raw) {
+  if (raw == null || raw === '') return null;
+  const value = String(raw).trim().toLowerCase();
+  if (value === 'male' || value === 'female' || value === 'unknown') return value;
+  return null;
+}
+
+function normalizeNullableBoolean(raw) {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'boolean') return raw;
+  if (typeof raw === 'number') {
+    if (raw === 1) return true;
+    if (raw === 0) return false;
+  }
+  const value = String(raw).trim().toLowerCase();
+  if (!value) return null;
+  if (['true', '1', 'yes', 'completed', 'done'].includes(value)) return true;
+  if (['false', '0', 'no', 'not yet', 'not_yet', 'pending'].includes(value)) return false;
+  return null;
+}
 
 function serializeUser(user) {
   if (!user) return null;
@@ -14,6 +44,7 @@ function serializeUser(user) {
     email: user.email,
     username: user.username,
     display_name: user.display_name,
+    has_cat: Boolean(user.has_cat),
     role: user.role
   };
 }
@@ -181,7 +212,7 @@ async function ensureRescueStaffUserForOrganization(organization) {
 // POST /api/auth/register
 async function register(req, res) {
   try {
-    const { email, password, username, display_name, role } = req.body;
+    const { email, password, username, display_name, role, has_cat, adoption_preferences, owner_cat_enrollment } = req.body;
 
     if (!email || !password || !username) {
       return res.status(422).json({
@@ -203,9 +234,57 @@ async function register(req, res) {
         message: '该邮箱已注册'
       });
     }
+    const existingUsername = await prisma.user.findUnique({
+      where: { username },
+      select: { id: true }
+    });
+    if (existingUsername) {
+      return res.status(422).json({
+        success: false,
+        error: 'UsernameExists',
+        message: '该昵称已被使用，请更换一个昵称'
+      });
+    }
 
     // 加密密码
     const hashedPassword = await bcrypt.hash(password, 10);
+    const ownerSignup = Boolean(has_cat);
+    const ownerEnrollInput = owner_cat_enrollment && typeof owner_cat_enrollment === 'object'
+      ? owner_cat_enrollment
+      : null;
+
+    if (ownerSignup) {
+      if (!ownerEnrollInput || !ownerEnrollInput.image_data_url || !ownerEnrollInput.name) {
+        return res.status(422).json({
+          success: false,
+          error: 'ValidationError',
+          message: 'Owner sign-up requires completed cat-face enrollment and cat info.'
+        });
+      }
+
+      const faceCheck = await resolveCatFaceMatch(String(ownerEnrollInput.image_data_url));
+      if (!faceCheck.inference || !faceCheck.inference.success) {
+        return res.status(mapCatFaceErrorToStatus(faceCheck.inference && faceCheck.inference.error_code)).json({
+          success: false,
+          error: (faceCheck.inference && faceCheck.inference.error_code) || 'FaceInferenceFailed',
+          message: (faceCheck.inference && faceCheck.inference.message) || 'Cat face verification failed during sign-up.'
+        });
+      }
+      if (!faceCheck.inference.face_detected) {
+        return res.status(422).json({
+          success: false,
+          error: 'CatFaceNotDetected',
+          message: faceCheck.inference.message || 'No cat face detected in the uploaded image.'
+        });
+      }
+      if (faceCheck.matchedRecord && faceCheck.matchedRecord.cat) {
+        return res.status(422).json({
+          success: false,
+          error: 'CatFaceAlreadyExists',
+          message: 'This cat face already exists in database. Please use another cat face.'
+        });
+      }
+    }
 
     // 创建用户（字段名要和 Member5 的 users 表对应）
     const user = await prisma.user.create({
@@ -214,9 +293,69 @@ async function register(req, res) {
         password: hashedPassword,
         username,                         // 必填
         display_name: display_name || '', // 可选
+        has_cat: Boolean(has_cat),
         role: role || 'user'
       }
     });
+
+    if (ownerSignup && ownerEnrollInput) {
+      const requestedFaceCode = ownerEnrollInput.face_code ? String(ownerEnrollInput.face_code).trim() : '';
+      let safeFaceCode = requestedFaceCode || null;
+      if (safeFaceCode) {
+        const existingFaceCode = await prisma.cat.findUnique({
+          where: { face_code: safeFaceCode },
+          select: { id: true }
+        });
+        if (existingFaceCode) safeFaceCode = null;
+      }
+      await prisma.cat.create({
+        data: {
+          name: String(ownerEnrollInput.name || '').trim().slice(0, 120) || 'My Cat',
+          breed: ownerEnrollInput.breed ? String(ownerEnrollInput.breed).trim() : null,
+          gender: normalizeCatGender(ownerEnrollInput.gender),
+          is_neutered: normalizeNullableBoolean(ownerEnrollInput.is_neutered),
+          is_vaccinated: normalizeNullableBoolean(ownerEnrollInput.is_vaccinated),
+          intake_date: ownerEnrollInput.intake_date ? new Date(ownerEnrollInput.intake_date) : null,
+          face_code: safeFaceCode,
+          description: ownerEnrollInput.description ? String(ownerEnrollInput.description).trim() : null,
+          photo_url: String(ownerEnrollInput.image_data_url),
+          owner_id: user.id,
+          status: 'adopted'
+        }
+      });
+    }
+
+    const prefInput = adoption_preferences && typeof adoption_preferences === 'object'
+      ? adoption_preferences
+      : null;
+    const shouldSavePreferences = prefInput && (
+      prefInput.preferred_gender ||
+      prefInput.preferred_age ||
+      prefInput.preferred_breed ||
+      prefInput.home_environment ||
+      (Array.isArray(prefInput.personality_tags) && prefInput.personality_tags.length)
+    );
+    if (shouldSavePreferences) {
+      const createData = {
+        user_id: user.id,
+        preferred_gender: prefInput.preferred_gender || null,
+        preferred_age: prefInput.preferred_age || null,
+        preferred_breed: prefInput.preferred_breed || null
+      };
+      if (hasAdopterPreferenceField('home_environment')) {
+        createData.home_environment = prefInput.home_environment || null;
+      }
+      if (hasAdopterPreferenceField('personality_tags')) {
+        createData.personality_tags = Array.isArray(prefInput.personality_tags)
+          ? prefInput.personality_tags.map((item) => String(item || '').trim()).filter(Boolean)
+          : [];
+      }
+      await prisma.adopterPreference.upsert({
+        where: { user_id: user.id },
+        create: createData,
+        update: createData
+      });
+    }
 
     const token = generateToken({ id: user.id, role: user.role });
 
@@ -229,6 +368,7 @@ async function register(req, res) {
           email: user.email,
           username: user.username,
           display_name: user.display_name,
+          has_cat: Boolean(user.has_cat),
           role: user.role
         }
       },
@@ -236,6 +376,13 @@ async function register(req, res) {
     });
   } catch (error) {
     console.error('register error:', error);
+    if (error && error.code === 'P2002') {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '邮箱或昵称已存在，请更换后重试'
+      });
+    }
     return res.status(500).json({
       success: false,
       error: 'ServerError',
@@ -469,6 +616,248 @@ async function loginWithCatFace(req, res) {
   }
 }
 
+// POST /api/auth/cat-face/bind-owner
+async function bindCatFaceOwner(req, res) {
+  try {
+    const userId = req.user && req.user.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Please log in first.'
+      });
+    }
+
+    const { image_data_url } = req.body;
+    if (!image_data_url) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'image_data_url is required'
+      });
+    }
+
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        display_name: true,
+        role: true
+      }
+    });
+
+    if (!currentUser) {
+      return res.status(404).json({
+        success: false,
+        error: 'UserNotFound',
+        message: 'Current user not found'
+      });
+    }
+
+    const { inference, threshold, matchResult, matchedRecord } = await resolveCatFaceMatch(image_data_url);
+
+    if (!inference.success) {
+      return res.status(mapCatFaceErrorToStatus(inference.error_code)).json({
+        success: false,
+        error: inference.error_code || 'FaceInferenceFailed',
+        message: inference.message || 'Cat face binding failed',
+        data: inference
+      });
+    }
+
+    if (!inference.face_detected) {
+      return res.status(422).json({
+        success: false,
+        error: 'CatFaceNotDetected',
+        message: inference.message || 'No cat face detected in the uploaded image.',
+        data: {
+          matched: false,
+          can_login: false,
+          face_detected: false,
+          suggested_face_code: null,
+          threshold
+        }
+      });
+    }
+
+    if (!matchedRecord || !matchedRecord.cat) {
+      return res.status(404).json({
+        success: false,
+        error: 'CatFaceNotMatched',
+        message: 'No saved cat profile matches this photo yet.',
+        data: {
+          matched: false,
+          can_login: false,
+          face_detected: true,
+          suggested_face_code: inference.suggested_face_code,
+          threshold,
+          top_matches: matchResult ? matchResult.topMatches : []
+        }
+      });
+    }
+
+    if (matchedRecord.cat.owner && matchedRecord.cat.owner.id && matchedRecord.cat.owner.id !== userId) {
+      return res.status(409).json({
+        success: false,
+        error: 'CatOwnerAlreadyLinked',
+        message: 'This cat is already linked to another user account.',
+        data: {
+          matched: true,
+          can_login: true,
+          best_match: matchedRecord,
+          threshold
+        }
+      });
+    }
+
+    const updatedCat = await prisma.cat.update({
+      where: { id: matchedRecord.cat.id },
+      data: { owner_id: userId },
+      select: {
+        id: true,
+        name: true,
+        face_code: true,
+        photo_url: true,
+        status: true,
+        owner_id: true
+      }
+    });
+
+    const token = generateToken({ id: currentUser.id, role: currentUser.role });
+
+    return res.json({
+      success: true,
+      data: {
+        token,
+        user: serializeUser(currentUser),
+        login_method: 'cat_face_bind',
+        matched_cat: {
+          id: updatedCat.id,
+          name: updatedCat.name,
+          face_code: updatedCat.face_code,
+          photo_url: updatedCat.photo_url,
+          status: updatedCat.status,
+          owner_id: updatedCat.owner_id
+        },
+        similarity: matchedRecord.similarity,
+        suggested_face_code: inference.suggested_face_code,
+        embedding_dim: inference.embedding_dim,
+        threshold
+      },
+      message: 'Cat profile linked to the current user account'
+    });
+  } catch (error) {
+    console.error('bindCatFaceOwner error:', error);
+    return res.status(mapCatFaceErrorToStatus(error.code)).json({
+      success: false,
+      error: error.code || 'ServerError',
+      message: error.message || 'Cat face owner binding failed'
+    });
+  }
+}
+
+// POST /api/auth/cat-face/enroll-cat
+async function enrollCatWithFace(req, res) {
+  try {
+    const userId = req.user && req.user.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Please log in first.'
+      });
+    }
+
+    const {
+      image_data_url,
+      name,
+      breed,
+      gender,
+      is_neutered,
+      is_vaccinated,
+      intake_date,
+      face_code,
+      description
+    } = req.body || {};
+
+    if (!image_data_url) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'image_data_url is required'
+      });
+    }
+    if (!name || !String(name).trim()) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'cat name is required'
+      });
+    }
+
+    const faceCodeRaw = face_code ? String(face_code).trim() : '';
+    let safeFaceCode = faceCodeRaw || null;
+    if (safeFaceCode) {
+      const existingFaceCode = await prisma.cat.findUnique({
+        where: { face_code: safeFaceCode },
+        select: { id: true }
+      });
+      if (existingFaceCode) {
+        safeFaceCode = null;
+      }
+    }
+
+    const createdCat = await prisma.cat.create({
+      data: {
+        name: String(name).trim().slice(0, 120),
+        breed: breed ? String(breed).trim() : null,
+        gender: gender ? String(gender).trim().toLowerCase() : null,
+        is_neutered: is_neutered == null ? null : Boolean(is_neutered),
+        is_vaccinated: is_vaccinated == null ? null : Boolean(is_vaccinated),
+        intake_date: intake_date ? new Date(intake_date) : null,
+        face_code: safeFaceCode,
+        description: description ? String(description).trim() : null,
+        photo_url: String(image_data_url),
+        owner_id: userId,
+        status: 'adopted'
+      },
+      select: {
+        id: true,
+        name: true,
+        face_code: true,
+        breed: true,
+        gender: true,
+        is_neutered: true,
+        is_vaccinated: true,
+        intake_date: true,
+        description: true,
+        owner_id: true,
+        status: true
+      }
+    });
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { has_cat: true }
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: createdCat,
+      message: 'Cat profile enrolled successfully'
+    });
+  } catch (error) {
+    console.error('enrollCatWithFace error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: error.message || 'Cat profile enrollment failed'
+    });
+  }
+}
+
 // POST /api/auth/org/login
 async function orgLogin(req, res) {
   try {
@@ -552,6 +941,8 @@ module.exports = {
   login,
   identifyCatFace,
   loginWithCatFace,
+  bindCatFaceOwner,
+  enrollCatWithFace,
   orgLogin,
   ensureRescueStaffUserForOrganization
 };
