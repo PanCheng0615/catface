@@ -1,0 +1,57 @@
+[
+  {
+    "name": "Friendly playful cat",
+    "personality": "Very friendly, comes up to people for attention, and loves wand toys.",
+    "notes": "Approaches new people quickly and enjoys interactive play.",
+    "expected_tags": ["friendly", "playful"]
+  },
+  {
+    "name": "Shy timid cat",
+    "personality": "Shy at first, hides in a new place, and startles when the room gets loud.",
+    "notes": "Needs time to warm up and build trust.",
+    "expected_tags": ["shy", "timid"]
+  },
+  {
+    "name": "Calm cuddly cat",
+    "personality": "Calm and gentle, comfortable being held, and enjoys cuddles.",
+    "notes": "Usually quiet indoors.",
+    "expected_tags": ["calm", "cuddly"]
+  },
+  {
+    "name": "Cat and dog friendly cat",
+    "personality": "Can live with other cats and is comfortable around dogs.",
+    "notes": "Often seeks out other cats for social interaction.",
+    "expected_tags": ["cat-friendly", "dog-friendly"]
+  },
+  {
+    "name": "Food motivated vocal cat",
+    "personality": "Very food motivated, comes running at mealtime, and meows a lot.",
+    "expected_tags": ["food-motivated", "vocal"]
+  },
+  {
+    "name": "Independent calm cat",
+    "personality": "Independent, fine alone for a while, and likes quiet rest time.",
+    "expected_tags": ["independent", "calm"]
+  },
+  {
+    "name": "Needs companionship cat",
+    "personality": "Needs people around, gets anxious when left alone too long, and follows people from room to room.",
+    "expected_tags": ["needs-companionship", "affectionate"]
+  },
+  {
+    "name": "Adaptable cat",
+    "personality": "Settles in quickly, explores a new room within a day, and adjusts well to change.",
+    "expected_tags": ["adaptable"]
+  },
+  {
+    "name": "Special care cat",
+    "health": "Needs long-term medication and regular checkups.",
+    "notes": "Stable right now but care needs are higher than average.",
+    "expected_tags": ["special-care"]
+  },
+  {
+    "name": "Needs isolation cat",
+    "health": "Currently under isolation observation and cannot mix with other cats yet.",
+    "expected_tags": ["needs-isolation"]
+  }
+]

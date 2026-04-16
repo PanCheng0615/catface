@@ -6,6 +6,7 @@ const {
   generateCatFaceId,
   identifyCatFace,
   registerCatFaceEmbedding,
+  getCatTagSuggestions,
   getApplications,
   reviewApplication,
   getAnalytics
@@ -16,6 +17,7 @@ const router = express.Router();
 router.get('/cats', protect, authorize('rescue_staff', 'admin'), getCats);
 router.post('/cats', protect, authorize('rescue_staff', 'admin'), createCat);
 router.put('/cats/:id', protect, authorize('rescue_staff', 'admin'), updateCat);
+router.post('/cats/tag-suggestions', protect, authorize('rescue_staff', 'admin'), getCatTagSuggestions);
 router.post('/cat-face-id', protect, authorize('rescue_staff', 'admin'), generateCatFaceId);
 router.post('/cat-face/identify', protect, authorize('rescue_staff', 'admin'), identifyCatFace);
 router.post('/cat-face/register', protect, authorize('rescue_staff', 'admin'), registerCatFaceEmbedding);
