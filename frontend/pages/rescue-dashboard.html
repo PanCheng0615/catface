@@ -438,21 +438,6 @@
       opacity: .55;
       cursor: not-allowed;
     }
-    .suggestion-tools {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    .suggestion-status {
-      font-size: 12px;
-      color: #667085;
-      line-height: 1.5;
-    }
-    .suggestion-status.error {
-      color: #b42318;
-    }
     .suggestion-chip-list {
       display: flex;
       flex-wrap: wrap;
@@ -1475,9 +1460,6 @@
                 </div>
                 <input id="cat-personality" type="text" placeholder="Example: calm, playful, good for first-time owners">
                 <div class="field-note">Use Health Summary and Rescue Notes to generate suggested tags, then click a suggestion to add it here.</div>
-                <div class="suggestion-tools">
-                  <div class="suggestion-status" id="cat-tag-suggestion-status">No tag suggestions yet.</div>
-                </div>
                 <div class="suggestion-chip-list" id="cat-tag-suggestion-list" hidden></div>
               </div>
               <div class="field full">
@@ -1852,7 +1834,7 @@
     </div>
   </section>
 
-  <script src="../js/rescue-dashboard.js"></script>
+  <script src="../js/rescue-dashboard.js?v=20260414-tag-toggle-fix"></script>
   <script>
     (function () {
       if (window.__CATFACE_EXTERNAL_RESCUE__) return;

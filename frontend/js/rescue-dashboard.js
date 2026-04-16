@@ -27,7 +27,6 @@
   const catHealthInput = document.getElementById("cat-health");
   const catPersonalityInput = document.getElementById("cat-personality");
   const catSuggestTagsBtn = document.getElementById("cat-suggest-tags-btn");
-  const catTagSuggestionStatus = document.getElementById("cat-tag-suggestion-status");
   const catTagSuggestionList = document.getElementById("cat-tag-suggestion-list");
   const catNotesInput = document.getElementById("cat-notes");
   const catPhotoInput = document.getElementById("cat-photo-input");
@@ -118,7 +117,9 @@
     currentGeneratedFaceId: "",
     currentGeneratedEmbedding: null,
     currentCatPhoto: "",
-    suggestedCatTags: []
+    suggestedCatTags: [],
+    selectedSuggestedTags: [],
+    personalityDraftBeforeSelection: ""
   };
 
   function getAuthToken() {
@@ -297,16 +298,52 @@
     catPersonalityInput.value = tags.join(", ");
   }
 
-  function setTagSuggestionStatus(message, isError) {
-    if (!catTagSuggestionStatus) return;
-    catTagSuggestionStatus.textContent = message || "";
-    catTagSuggestionStatus.classList.toggle("error", Boolean(isError));
+  function syncPersonalityInputBySelection() {
+    const selected = Array.isArray(state.selectedSuggestedTags) ? state.selectedSuggestedTags : [];
+    if (selected.length) {
+      writeTagInput(selected);
+      catPersonalityInput.readOnly = true;
+      return;
+    }
+
+    catPersonalityInput.readOnly = false;
+    if (state.personalityDraftBeforeSelection) {
+      catPersonalityInput.value = state.personalityDraftBeforeSelection;
+    }
+  }
+
+  function clearSelectedTagsAndRestoreDraft() {
+    state.selectedSuggestedTags = [];
+    syncPersonalityInputBySelection();
+  }
+
+  function toggleSuggestedTag(tag) {
+    const selected = Array.isArray(state.selectedSuggestedTags) ? state.selectedSuggestedTags.slice() : [];
+    const index = selected.indexOf(tag);
+
+    if (index >= 0) {
+      selected.splice(index, 1);
+      state.selectedSuggestedTags = selected;
+      if (!selected.length) {
+        clearSelectedTagsAndRestoreDraft();
+      } else {
+        syncPersonalityInputBySelection();
+      }
+      return;
+    }
+
+    if (!selected.length) {
+      state.personalityDraftBeforeSelection = catPersonalityInput.value.trim();
+    }
+    selected.push(tag);
+    state.selectedSuggestedTags = selected;
+    syncPersonalityInputBySelection();
   }
 
   function renderTagSuggestions() {
     if (!catTagSuggestionList) return;
 
-    const selectedTags = parseTagInput(catPersonalityInput.value);
+    const selectedTags = Array.isArray(state.selectedSuggestedTags) ? state.selectedSuggestedTags : [];
     const suggestedTags = Array.isArray(state.suggestedCatTags) ? state.suggestedCatTags : [];
 
     if (!suggestedTags.length) {
@@ -324,27 +361,18 @@
 
   function resetTagSuggestions() {
     state.suggestedCatTags = [];
+    state.selectedSuggestedTags = [];
+    state.personalityDraftBeforeSelection = "";
+    catPersonalityInput.readOnly = false;
     renderTagSuggestions();
-    setTagSuggestionStatus("No tag suggestions yet.", false);
-  }
-
-  function updateSuggestionStatusFromResult(result) {
-    const messageParts = [];
-
-    if (result && result.explanation) {
-      messageParts.push(result.explanation);
-    }
-
-    if (result && Array.isArray(result.keywords) && result.keywords.length) {
-      messageParts.push("Keywords: " + result.keywords.join(", "));
-    }
-
-    setTagSuggestionStatus(messageParts.join(" "), false);
   }
 
   function requestTagSuggestions() {
+    const personalityForSuggestion = state.selectedSuggestedTags.length
+      ? state.personalityDraftBeforeSelection
+      : catPersonalityInput.value.trim();
     const payload = {
-      personality: catPersonalityInput.value.trim(),
+      personality: personalityForSuggestion,
       health: catHealthInput.value.trim(),
       notes: catNotesInput.value.trim(),
       limit: 5
@@ -356,7 +384,6 @@
     }
 
     catSuggestTagsBtn.disabled = true;
-    setTagSuggestionStatus("Generating tag suggestions...", false);
 
     api("/rescue/cats/tag-suggestions", {
       method: "POST",
@@ -371,14 +398,11 @@
       renderTagSuggestions();
 
       if (!state.suggestedCatTags.length) {
-        setTagSuggestionStatus("No matching tags found. Try adding more rescue details.", false);
         return;
       }
-
-      updateSuggestionStatusFromResult(result);
     }).catch(function (error) {
       resetTagSuggestions();
-      setTagSuggestionStatus(error.message || "Unable to generate tag suggestions.", true);
+      window.alert(error.message || "Unable to generate tag suggestions.");
     }).finally(function () {
       catSuggestTagsBtn.disabled = false;
     });
@@ -1035,7 +1059,12 @@
   }
 
   function saveCatForm() {
-    const tagValues = parseTagInput(catPersonalityInput.value);
+    const tagValues = state.selectedSuggestedTags.length
+      ? state.selectedSuggestedTags.slice()
+      : parseTagInput(catPersonalityInput.value);
+    const personalityValue = state.selectedSuggestedTags.length
+      ? state.personalityDraftBeforeSelection
+      : catPersonalityInput.value.trim();
     const payload = {
       name: catNameInput.value.trim(),
       display_id: catIdInput.value.trim() || undefined,
@@ -1045,7 +1074,7 @@
       status: catStatusInput.value,
       location: catLocationInput.value.trim(),
       health: catHealthInput.value.trim(),
-      personality: catPersonalityInput.value.trim(),
+      personality: personalityValue,
       notes: catNotesInput.value.trim(),
       photo_url: state.currentCatPhoto || undefined,
       tags: tagValues
@@ -1191,7 +1220,9 @@
   });
 
   catFormSaveBtn.addEventListener("click", saveCatForm);
-  catSuggestTagsBtn.addEventListener("click", requestTagSuggestions);
+  if (catSuggestTagsBtn) {
+    catSuggestTagsBtn.addEventListener("click", requestTagSuggestions);
+  }
   openFaceIdBtn.addEventListener("click", openFaceRecognitionModal);
   faceIdCloseBtn.addEventListener("click", closeFaceRecognitionModal);
   faceIdCancelBtn.addEventListener("click", closeFaceRecognitionModal);
@@ -1254,22 +1285,20 @@
     closeFaceRecognitionModal();
   });
 
-  catPersonalityInput.addEventListener("input", renderTagSuggestions);
+  if (catPersonalityInput) {
+    catPersonalityInput.addEventListener("input", renderTagSuggestions);
+  }
 
-  catTagSuggestionList.addEventListener("click", function (event) {
-    const button = event.target.closest("[data-suggested-tag]");
-    if (!button) return;
+  if (catTagSuggestionList) {
+    catTagSuggestionList.addEventListener("click", function (event) {
+      const button = event.target.closest("[data-suggested-tag]");
+      if (!button) return;
 
-    const tag = button.getAttribute("data-suggested-tag");
-    const tags = parseTagInput(catPersonalityInput.value);
-
-    if (!tags.includes(tag)) {
-      tags.push(tag);
-      writeTagInput(tags);
-    }
-
-    renderTagSuggestions();
-  });
+      const tag = button.getAttribute("data-suggested-tag");
+      toggleSuggestedTag(tag);
+      renderTagSuggestions();
+    });
+  }
 
   catListBody.addEventListener("click", function (event) {
     const profileButton = event.target.closest("[data-cat-profile]");
