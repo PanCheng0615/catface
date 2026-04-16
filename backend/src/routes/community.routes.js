@@ -19,6 +19,7 @@ function optionalAuth(req, res, next) {
 }
 
 router.get("/posts", optionalAuth, communityController.getPosts);
+router.get("/trending", optionalAuth, communityController.getTrendingPosts);
 router.post("/posts", protect, communityController.createPost);
 router.post("/posts/:id/like", protect, communityController.toggleLike);
 router.get("/posts/:id/comments", optionalAuth, communityController.getComments);

@@ -8,7 +8,8 @@
     "dev": "nodemon src/server.js",
     "import:adoption-history": "node scripts/importAdoptionHistory.js",
     "seed:organization": "node scripts/seedOrganizationAccount.js",
-    "seed:community-chat": "node scripts/seedCommunityChatNotifications.js"
+    "seed:community-chat": "node scripts/seedCommunityChatNotifications.js",
+    "rename:cat-names": "node scripts/renameCatNamesToEnglish.js"
   },
   "keywords": [],
   "author": "",

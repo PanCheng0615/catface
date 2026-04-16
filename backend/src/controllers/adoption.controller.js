@@ -254,6 +254,48 @@ async function getSwipes(req, res) {
   }
 }
 
+// DELETE /api/adoption/swipes/:catId
+async function deleteSwipe(req, res) {
+  try {
+    if (!(await hasAdoptionSwipeStore())) {
+      return res.status(503).json({
+        success: false,
+        error: 'SwipeStoreUnavailable',
+        message: 'Swipe actions are not available in the current database schema'
+      });
+    }
+
+    const catId = String(req.params.catId || '').trim();
+    if (!catId) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '缺少 catId'
+      });
+    }
+
+    await prisma.adoptionSwipe.deleteMany({
+      where: {
+        user_id: req.user.id,
+        cat_id: catId
+      }
+    });
+
+    return res.json({
+      success: true,
+      data: { cat_id: catId },
+      message: '已取消喜欢记录'
+    });
+  } catch (error) {
+    console.error('deleteSwipe error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
 // GET /api/adoption/liked
 async function getLiked(req, res) {
   try {
@@ -603,6 +645,7 @@ module.exports = {
   recordSwipe,
   getFeed,
   getSwipes,
+  deleteSwipe,
   getLiked,
   getPreferences,
   getPreferenceTags,

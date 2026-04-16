@@ -102,6 +102,9 @@
     .status-chip.approved { background: #ecfdf3; color: #027a48; }
     .status-chip.rejected { background: #fef2f2; color: #dc2626; }
     .liked-empty { font-size: 14px; color: var(--text-muted); padding: 20px 16px; border: 1.5px dashed var(--border); border-radius: 14px; text-align: center; line-height: 1.6; }
+    #likedList { max-height: 520px; overflow-y: auto; padding-right: 6px; scrollbar-gutter: stable; }
+    #likedList::-webkit-scrollbar { width: 8px; }
+    #likedList::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
     .liked-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
     .liked-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,.04); transition: box-shadow .15s; }
     .liked-item:hover { box-shadow: 0 4px 14px rgba(0,0,0,.09); }
@@ -496,6 +499,40 @@
     };
   }
 
+  function applyFeedList(data) {
+    cats = {};
+    catOrder = [];
+    data.forEach(function (cat, index) {
+      var mapped = mapCat(cat, index);
+      cats[mapped.id] = mapped;
+      catOrder.push(mapped.id);
+    });
+    if (availableCatsCount) availableCatsCount.textContent = String(catOrder.length);
+    renderDeck();
+    renderRecentlyAvailable();
+    renderLiked();
+    loadLikedFromServer();
+  }
+
+  function fetchAvailableCatsFallback() {
+    return fetch(API_BASE_URL + '/cats?status=available', {
+      method: 'GET',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || 'Unable to load available cats.');
+        }
+        return Array.isArray(payload.data) ? payload.data : [];
+      });
+  }
+
   function renderDeck() {
     if (!catOrder.length) {
       stack.innerHTML = [
@@ -568,8 +605,38 @@
     likedList.innerHTML = '<div class="liked-grid">' + liked.map(function(cid){
       var c = cats[cid];
       if (!c) return '';
-      return '<div class="liked-item"><div class="liked-item-info"><div class="liked-item-name">' + escapeHtml(c.name) + '</div><div class="liked-item-sub">' + escapeHtml(c.age + ' · ' + c.gender) + '</div></div><button class="liked-item-btn" onclick="openProfile(\'' + escapeHtml(cid) + '\')">View</button></div>';
+      return '<div class="liked-item"><div class="liked-item-info"><div class="liked-item-name">' + escapeHtml(c.name) + '</div><div class="liked-item-sub">' + escapeHtml(c.age + ' · ' + c.gender) + '</div></div><div class="liked-item-actions"><button class="liked-item-btn" onclick="openProfile(\'' + escapeHtml(cid) + '\')">View</button><button class="liked-item-btn" type="button" data-cancel-liked="' + escapeHtml(cid) + '">Cancel</button></div></div>';
     }).join('') + '</div>';
+  }
+
+  function cancelLikedCat(catId) {
+    if (!catId) return;
+    fetch(API_BASE_URL + '/adoption/swipes/' + encodeURIComponent(catId), {
+      method: 'DELETE',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || 'Unable to cancel liked cat.');
+        }
+        liked = liked.filter(function (id) { return id !== catId; });
+        persistLiked();
+        if (cats[catId] && catOrder.indexOf(catId) === -1) {
+          catOrder.unshift(catId);
+        }
+        renderDeck();
+        renderRecentlyAvailable();
+        renderLiked();
+      })
+      .catch(function (error) {
+        alert(error.message || 'Unable to cancel liked cat.');
+      });
   }
 
   function formatApplicationStatus(status) {
@@ -703,40 +770,36 @@
         if (!response.ok || !payload.success) {
           throw new Error(payload.message || 'Unable to load adoption feed.');
         }
-
-        cats = {};
-        catOrder = [];
-        data.forEach(function (cat, index) {
-          var mapped = mapCat(cat, index);
-          cats[mapped.id] = mapped;
-          catOrder.push(mapped.id);
-        });
-        if (availableCatsCount) availableCatsCount.textContent = String(catOrder.length);
-        renderDeck();
-        renderRecentlyAvailable();
-        renderLiked();
-        loadLikedFromServer();
+        if (data.length) {
+          applyFeedList(data);
+          return null;
+        }
+        return fetchAvailableCatsFallback().then(applyFeedList);
       })
       .catch(function (error) {
-        stack.innerHTML = [
-          '<div class="cat-card" data-id="error">',
-          '  <div class="card-overlay"></div>',
-          '  <div class="card-info">',
-          '    <div class="card-name">Unable to load cats</div>',
-          '    <div class="card-sub">' + escapeHtml(error.message || 'Database feed is unavailable right now.') + '</div>',
-          '    <div class="card-tags"><span class="card-tag">Retry later</span></div>',
-          '  </div>',
-          '</div>'
-        ].join('');
-        recentlyAvailableList.innerHTML = [
-          '<div class="rp-row">',
-          '  <div class="rp-row-info">',
-          '    <div class="rp-row-name">Feed unavailable</div>',
-          '    <div class="rp-row-sub">Could not load recent cats from the database.</div>',
-          '  </div>',
-          '  <span class="rp-row-badge">Error</span>',
-          '</div>'
-        ].join('');
+        fetchAvailableCatsFallback()
+          .then(applyFeedList)
+          .catch(function (fallbackError) {
+            stack.innerHTML = [
+              '<div class="cat-card" data-id="error">',
+              '  <div class="card-overlay"></div>',
+              '  <div class="card-info">',
+              '    <div class="card-name">Unable to load cats</div>',
+              '    <div class="card-sub">' + escapeHtml(fallbackError.message || error.message || 'Database feed is unavailable right now.') + '</div>',
+              '    <div class="card-tags"><span class="card-tag">Retry later</span></div>',
+              '  </div>',
+              '</div>'
+            ].join('');
+            recentlyAvailableList.innerHTML = [
+              '<div class="rp-row">',
+              '  <div class="rp-row-info">',
+              '    <div class="rp-row-name">Feed unavailable</div>',
+              '    <div class="rp-row-sub">Could not load recent cats from the database.</div>',
+              '  </div>',
+              '  <span class="rp-row-badge">Error</span>',
+              '</div>'
+            ].join('');
+          });
       });
   }
 
@@ -802,6 +865,11 @@
   };
   document.getElementById('modalClose').onclick=function(){modal.classList.remove('open');};
   modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('open');});
+  likedList.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest ? e.target.closest('[data-cancel-liked]') : null;
+    if (!btn || !likedList.contains(btn)) return;
+    cancelLikedCat(String(btn.getAttribute('data-cancel-liked') || '').trim());
+  });
   document.getElementById('contactBtn').onclick=function(){
     if (!active || !cats[active]) return;
     if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
