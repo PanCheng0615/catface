@@ -133,6 +133,9 @@
     .trend-row { display: flex; gap: 12px; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
     .trend-row:last-child { border-bottom: none; }
     .trend-row:hover { background: var(--bg); }
+    #trendingList { max-height: 520px; overflow-y: auto; }
+    #trendingList::-webkit-scrollbar { width: 8px; }
+    #trendingList::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
     .trend-img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: var(--brand-light); }
     .trend-info { flex: 1; min-width: 0; }
     .trend-title { font-size: 13px; font-weight: 600; color: var(--text); }
@@ -655,12 +658,7 @@
       <div class="stories-label">Recent Stories</div>
       <div class="stories-track">
         <div class="story story-add" role="button" tabindex="0" onclick="document.getElementById('btnCreatePost').click()"><div class="story-ring"><div class="story-inner">+</div></div><span class="story-name">Your story</span></div>
-        <div class="story" data-user="luna" data-story-href="/pages/cat-profile.html?story=luna&author=Luna"><div class="story-ring"><div class="story-inner"><img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=120&q=80" alt="Luna"></div></div><span class="story-name">Luna</span></div>
-        <div class="story" data-user="whiskers" data-story-href="/pages/cat-profile.html?story=whiskers&author=Whiskers"><div class="story-ring"><div class="story-inner"><img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=120&q=80" alt="Whiskers"></div></div><span class="story-name">Whiskers</span></div>
-        <div class="story" data-user="charlie" data-story-href="/pages/cat-profile.html?story=charlie&author=Charlie"><div class="story-ring seen"><div class="story-inner"><img src="https://images.unsplash.com/photo-1495360010541-f48722b34f7d?w=120&q=80" alt="Charlie"></div></div><span class="story-name">Charlie</span></div>
-        <div class="story" data-user="mochi" data-story-href="/pages/cat-profile.html?story=mochi&author=Mochi"><div class="story-ring"><div class="story-inner"><img src="https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=120&q=80" alt="Mochi"></div></div><span class="story-name">Mochi</span></div>
-        <div class="story" data-user="nala" data-story-href="/pages/cat-profile.html?story=nala&author=Nala"><div class="story-ring seen"><div class="story-inner"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=120&q=80" alt="Nala"></div></div><span class="story-name">Nala</span></div>
-        <div class="story" data-user="simba" data-story-href="/pages/cat-profile.html?story=simba&author=Simba"><div class="story-ring"><div class="story-inner"><img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=120&q=80" alt="Simba"></div></div><span class="story-name">Simba</span></div>
+        <div class="trend-meta" style="padding-top:18px;color:var(--text-muted);font-size:13px;">Loading stories…</div>
       </div>
     </div>
     <div class="chips-row">
@@ -687,19 +685,16 @@
       <button class="btn-login-white" id="communityLoginCta" onclick="location.href='/pages/log-in.html'">Log In</button>
     </div>
     <div class="rp-card">
-      <div class="rp-card-title">&#x1F525; Trending Today</div>
+      <div class="rp-card-title">&#x1F525; Trending This Month</div>
       <div id="trendingList" aria-live="polite">
         <div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading trending posts…</div>
       </div>
     </div>
     <div class="rp-card">
       <div class="rp-card-title">&#x1F43E; Cats to Follow</div>
-      <div class="follow-row" data-profile-story="gege" data-profile-name="格格 Gege" data-author-username="gege_um"><div class="follow-avatar"><img src="../assets/community/gege.png" alt="格格"></div><div class="follow-info"><div class="follow-name">格格 Gege</div><div class="follow-sub">UM · 3 mo · gentle</div></div><button class="follow-btn" type="button">Follow</button></div>
-      <div class="follow-row" data-profile-story="luno" data-profile-name="Luno" data-author-username="luno_um"><div class="follow-avatar"><img src="../assets/community/luno.png" alt="Luno"></div><div class="follow-info"><div class="follow-name">Luno</div><div class="follow-sub">UM · heterochromia &#x2728;</div></div><button class="follow-btn" type="button">Follow</button></div>
-      <div class="follow-row" data-profile-story="spidercat" data-profile-name="蜘蛛貓" data-author-username="spider_cat_um"><div class="follow-avatar"><img src="../assets/community/spider-cat.png" alt="蜘蛛貓"></div><div class="follow-info"><div class="follow-name">蜘蛛貓</div><div class="follow-sub">UM · curious observer</div></div><button class="follow-btn" type="button">Follow</button></div>
-      <div class="follow-row" data-profile-story="tantou" data-profile-name="探頭仔" data-author-username="tantou_um"><div class="follow-avatar"><img src="../assets/community/tantou.png" alt="探頭仔"></div><div class="follow-info"><div class="follow-name">探頭仔</div><div class="follow-sub">UM · playful kitten</div></div><button class="follow-btn" type="button">Follow</button></div>
-      <div class="follow-row" data-profile-story="maojin" data-profile-name="毛巾仔" data-author-username="maojin_um"><div class="follow-avatar"><img src="../assets/community/maojin.png" alt="毛巾仔"></div><div class="follow-info"><div class="follow-name">毛巾仔</div><div class="follow-sub">UM · towel nap expert</div></div><button class="follow-btn" type="button">Follow</button></div>
-      <div class="follow-row" data-profile-story="cesuo" data-profile-name="廁所仔" data-author-username="cesuo_um"><div class="follow-avatar"><img src="../assets/community/cesuo.png" alt="廁所仔"></div><div class="follow-info"><div class="follow-name">廁所仔</div><div class="follow-sub">UM · outgoing &amp; cuddly</div></div><button class="follow-btn" type="button">Follow</button></div>
+      <div id="followSuggestionsList" aria-live="polite">
+        <div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading suggestions…</div>
+      </div>
     </div>
   </aside>
 </div>
@@ -776,7 +771,7 @@
   </section>
 
   <script src="../js/config.js"></script>
-  <script src="../js/community.js"></script>
+  <script src="../js/community.js?v=20260416-2"></script>
   <script>
     (function () {
       var user = null;

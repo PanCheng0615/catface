@@ -7,6 +7,7 @@ const {
   updateMe,
   toggleFollow,
   getFollowNetwork,
+  getFollowSuggestions,
   getUserProfile,
   toggleProfilePostLike,
   addProfilePostComment
@@ -31,6 +32,7 @@ router.get('/me', protect, getMe);
 
 // 更新当前用户资料
 router.put('/me', protect, updateMe);
+router.get('/follow-suggestions', optionalAuth, getFollowSuggestions);
 router.get('/:id/profile', optionalAuth, getUserProfile);
 router.post('/:id/profile/posts/:postId/like', protect, toggleProfilePostLike);
 router.post('/:id/profile/posts/:postId/comments', protect, addProfilePostComment);

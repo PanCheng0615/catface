@@ -1,7 +1,24 @@
 // backend/src/controllers/users.controller.js
 const { PrismaClient } = require('@prisma/client');
+const { ensureDemoCommunityData } = require('./community.controller');
 
 const prisma = new PrismaClient();
+
+function envNumber(name, fallback) {
+  const raw = process.env[name];
+  if (raw == null || raw === '') return fallback;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+const SUGGEST_ACTIVITY_POST_WEIGHT = envNumber('FOLLOW_SUGGEST_ACTIVITY_POST_WEIGHT', 2);
+const SUGGEST_ACTIVITY_ENGAGEMENT_WEIGHT = envNumber('FOLLOW_SUGGEST_ACTIVITY_ENGAGEMENT_WEIGHT', 0.6);
+const SUGGEST_POPULARITY_FOLLOWER_WEIGHT = envNumber('FOLLOW_SUGGEST_POPULARITY_FOLLOWER_WEIGHT', 8);
+const SUGGEST_POPULARITY_POST_WEIGHT = envNumber('FOLLOW_SUGGEST_POPULARITY_POST_WEIGHT', 4);
+const SUGGEST_FRESHNESS_DAYS_CAP = envNumber('FOLLOW_SUGGEST_FRESHNESS_DAYS_CAP', 30);
+const SUGGEST_FRESHNESS_WEIGHT = envNumber('FOLLOW_SUGGEST_FRESHNESS_WEIGHT', 0.5);
+const SUGGEST_SOCIAL_MUTUAL_WEIGHT = envNumber('FOLLOW_SUGGEST_SOCIAL_MUTUAL_WEIGHT', 5);
+const SUGGEST_PROFILE_BIO_BONUS = envNumber('FOLLOW_SUGGEST_PROFILE_BIO_BONUS', 0.6);
 
 function canStartOrgChat(role) {
   return role === 'rescue_staff' || role === 'clinic_staff' || role === 'admin';
@@ -235,6 +252,175 @@ async function getFollowNetwork(req, res) {
     });
   } catch (error) {
     console.error('getFollowNetwork error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
+// GET /api/users/follow-suggestions
+async function getFollowSuggestions(req, res) {
+  try {
+    await ensureDemoCommunityData();
+
+    const viewerId = req.user && req.user.id ? req.user.id : null;
+    const rawLimit = parseInt(String(req.query.limit || '6'), 10);
+    const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(rawLimit, 20)) : 6;
+
+    let viewerFollowingIds = [];
+    let followingSet = new Set();
+    if (viewerId) {
+      const followingRows = await prisma.userFollow.findMany({
+        where: { follower_id: viewerId },
+        select: { following_id: true }
+      });
+      viewerFollowingIds = followingRows.map((row) => row.following_id);
+      followingSet = new Set(viewerFollowingIds);
+    }
+
+    const candidates = await prisma.user.findMany({
+      where: {
+        role: 'user',
+        ...(viewerId ? { id: { not: viewerId } } : {})
+      },
+      select: {
+        id: true,
+        username: true,
+        display_name: true,
+        avatar_url: true,
+        bio: true,
+        created_at: true,
+        _count: {
+          select: {
+            posts: true,
+            followers: true
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' },
+      take: 200
+    });
+
+    const filteredCandidates = candidates.filter((user) => !followingSet.has(user.id));
+    const candidateIds = filteredCandidates.map((user) => user.id);
+
+    const recentSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const recentPosts = candidateIds.length
+      ? await prisma.post.findMany({
+          where: {
+            user_id: { in: candidateIds },
+            created_at: { gte: recentSince }
+          },
+          select: {
+            user_id: true,
+            created_at: true,
+            _count: {
+              select: {
+                likes: true,
+                comments: true
+              }
+            }
+          }
+        })
+      : [];
+
+    const recentStatsMap = new Map();
+    recentPosts.forEach((post) => {
+      const key = post.user_id;
+      const current = recentStatsMap.get(key) || {
+        recent_posts: 0,
+        recent_likes: 0,
+        recent_comments: 0,
+        last_post_at: null
+      };
+      current.recent_posts += 1;
+      current.recent_likes += Number(post._count && post._count.likes) || 0;
+      current.recent_comments += Number(post._count && post._count.comments) || 0;
+      if (!current.last_post_at || new Date(post.created_at).getTime() > new Date(current.last_post_at).getTime()) {
+        current.last_post_at = post.created_at;
+      }
+      recentStatsMap.set(key, current);
+    });
+
+    const mutualRows = viewerFollowingIds.length && candidateIds.length
+      ? await prisma.userFollow.findMany({
+          where: {
+            follower_id: { in: viewerFollowingIds },
+            following_id: { in: candidateIds }
+          },
+          select: { following_id: true }
+        })
+      : [];
+
+    const mutualMap = new Map();
+    mutualRows.forEach((row) => {
+      const key = row.following_id;
+      mutualMap.set(key, (mutualMap.get(key) || 0) + 1);
+    });
+
+    const suggestions = candidates
+      .filter((user) => !followingSet.has(user.id))
+      .map((user) => {
+        const postCount = Number(user._count && user._count.posts) || 0;
+        const followerCount = Number(user._count && user._count.followers) || 0;
+        const recent = recentStatsMap.get(user.id) || {
+          recent_posts: 0,
+          recent_likes: 0,
+          recent_comments: 0,
+          last_post_at: null
+        };
+        const mutualCount = Number(mutualMap.get(user.id)) || 0;
+        const recentEngagement = recent.recent_likes + recent.recent_comments * 2;
+        const activityScore =
+          recent.recent_posts * SUGGEST_ACTIVITY_POST_WEIGHT +
+          recentEngagement * SUGGEST_ACTIVITY_ENGAGEMENT_WEIGHT;
+        const popularityScore =
+          Math.log10(followerCount + 1) * SUGGEST_POPULARITY_FOLLOWER_WEIGHT +
+          Math.log10(postCount + 1) * SUGGEST_POPULARITY_POST_WEIGHT;
+        const freshnessDays = recent.last_post_at
+          ? Math.max(0, (Date.now() - new Date(recent.last_post_at).getTime()) / (1000 * 60 * 60 * 24))
+          : 60;
+        const freshnessScore =
+          Math.max(0, SUGGEST_FRESHNESS_DAYS_CAP - freshnessDays) * SUGGEST_FRESHNESS_WEIGHT;
+        const socialScore = mutualCount * SUGGEST_SOCIAL_MUTUAL_WEIGHT;
+        const profileScore = String(user.bio || '').trim() ? SUGGEST_PROFILE_BIO_BONUS : 0;
+        const score = activityScore + popularityScore + freshnessScore + socialScore + profileScore;
+        return {
+          ...mapUserSummary(user),
+          posts_count: postCount,
+          followers_count: followerCount,
+          mutual_count: mutualCount,
+          recent_posts_count: recent.recent_posts,
+          recent_engagement: recentEngagement,
+          is_following: false,
+          score
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map((item) => ({
+        id: item.id,
+        username: item.username,
+        display_name: item.display_name || item.username || 'User',
+        avatar_url: item.avatar_url || '',
+        bio: item.bio || '',
+        posts_count: item.posts_count,
+        followers_count: item.followers_count,
+        mutual_count: item.mutual_count,
+        recent_posts_count: item.recent_posts_count,
+        recent_engagement: item.recent_engagement,
+        is_following: item.is_following
+      }));
+
+    return res.json({
+      success: true,
+      data: suggestions,
+      message: '操作成功'
+    });
+  } catch (error) {
+    console.error('getFollowSuggestions error:', error);
     return res.status(500).json({
       success: false,
       error: 'ServerError',
@@ -480,6 +666,7 @@ module.exports = {
   updateMe,
   toggleFollow,
   getFollowNetwork,
+  getFollowSuggestions,
   getUserProfile,
   toggleProfilePostLike,
   addProfilePostComment

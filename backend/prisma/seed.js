@@ -62,69 +62,69 @@ function inferColorFromBreed(breed) {
 // ─── 猫咪原始数据（来自 Excel）────────────────────────────
 
 const CATS_2ND = [
-  ['墨水',          1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    ['可爱', '淘气'],           ''],
-  ['墨纸',          1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    ['可爱', '淘气'],           ''],
-  ['墨布',          1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['豆豆',          0,    'M', '5个月',   'tabby', '已完成', 'N/A',    'N/A',    ['爱说话', '乖巧', '粘人'], ''],
-  ['臭臭',          1,    'M', '2岁',     'black', '已完成', 'N/A',    'N/A',    ['安静', '害羞', '慢热'],   ''],
-  ['小笨笨',        0,    'M', '5个月',   'tabby', '已完成', 'N/A',    'N/A',    ['温顺', '乖巧', '爱吃'],   ''],
-  ['招想',          0,    'F', '2岁',     'orange_white', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['Inky',          1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    ['可爱', '淘气'],           ''],
+  ['Paper',         1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    ['可爱', '淘气'],           ''],
+  ['Canvas',        1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['Dodo',          0,    'M', '5个月',   'tabby', '已完成', 'N/A',    'N/A',    ['爱说话', '乖巧', '粘人'], ''],
+  ['Coco',          1,    'M', '2岁',     'black', '已完成', 'N/A',    'N/A',    ['安静', '害羞', '慢热'],   ''],
+  ['Bobo',          0,    'M', '5个月',   'tabby', '已完成', 'N/A',    'N/A',    ['温顺', '乖巧', '爱吃'],   ''],
+  ['Zaza',          0,    'F', '2岁',     'orange_white', '已完成', 'N/A',    'N/A',    [],                       ''],
 ];
 const CATS_3RD = [
-  ['刷碟猫',        '0*', 'F', '1岁5个月','orange_white', '已完成', 'N/A',    '已完成', [],                       ''],
-  ['厕所仔(Lucky)', 1,    'M', '6个月',   'orange_white', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['洗手盆子',      1,    'M', '4个月',   'tabby', '已完成', 'N/A',    'N/A',    ['异瞳'],                 ''],
+  ['Dishy',         '0*', 'F', '1岁5个月','orange_white', '已完成', 'N/A',    '已完成', [],                       ''],
+  ['Lucky',         1,    'M', '6个月',   'orange_white', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['Basin',         1,    'M', '4个月',   'tabby', '已完成', 'N/A',    'N/A',    ['异瞳'],                 ''],
   ['Kiwi',          1,    'F', '4个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['毛巾仔',        1,    'M', '4个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['格格',          1,    'F', '3个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['Towel Boy',     1,    'M', '4个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['Gege',          1,    'F', '3个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
   ['Luno',          '0*', 'M', '3个月',   'orange_white', '已完成', 'N/A',    'N/A',    ['半异瞳'],               ''],
-  ['探职仔(汤圆)',  1,    'M', '3个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['豆豆',          0,    'M', '9个月',   'tabby', '已完成', '已完成', '已完成', [],                       '第二次来'],
-  ['招想',          0,    'F', '2岁6个月','orange_white', '已完成', '已完成', '已完成', [],                       '第二次来'],
-  ['大B',           1,    'X', '3周',     'tabby', 'N/A',    'N/A',    'N/A',    [],                       ''],
-  ['细B',           1,    'X', '3周',     'tabby', 'N/A',    'N/A',    'N/A',    [],                       ''],
-  ['大小B姊姊',     0,    'F', '8个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['虎纹仔(Yomi)', 1,    'M', '1个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['小橘(Pika)',   1,    'F', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['白果',          0,    'M', '1岁',     'orange_white', '已完成', '已完成', '已完成', [],                       ''],
-  ['大佬',          0,    'M', '1岁',     'orange_white', '已完成', '已完成', '已完成', [],                       ''],
+  ['Tangyuan',      1,    'M', '3个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['Dodo',          0,    'M', '9个月',   'tabby', '已完成', '已完成', '已完成', [],                       '第二次来'],
+  ['Zaza',          0,    'F', '2岁6个月','orange_white', '已完成', '已完成', '已完成', [],                       '第二次来'],
+  ['Big B',         1,    'X', '3周',     'tabby', 'N/A',    'N/A',    'N/A',    [],                       ''],
+  ['Little B',      1,    'X', '3周',     'tabby', 'N/A',    'N/A',    'N/A',    [],                       ''],
+  ['Big Sis B',     0,    'F', '8个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['Yomi',          1,    'M', '1个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['Pika',          1,    'F', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
+  ['Ginkgo',        0,    'M', '1岁',     'orange_white', '已完成', '已完成', '已完成', [],                       ''],
+  ['Boss',          0,    'M', '1岁',     'orange_white', '已完成', '已完成', '已完成', [],                       ''],
 ];
 const CATS_4TH = [
-  ['果妹',          1,    'F', '6个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],  '2026.1提前上架'],
-  ['救命',          0,    'F', '6个月',   'tabby', '已完成', 'N/A',    'N/A',    [],  ''],
-  ['起司',          0,    'M', '6个月',   'tabby', '已完成', 'N/A',    'N/A',    [],  ''],
-  ['乌云踏雪',      1,    'M', '7个月',   'tabby', '已完成', '已完成', 'N/A',    [],  ''],
-  ['乌云燕雪',      1,    'M', '7个月',   'tabby', '已完成', '已完成', 'N/A',    [],  ''],
-  ['赤绒趴雪',      0,    'M', '7个月',   'orange_tabby', '已完成', '已完成', 'N/A',    [],  ''],
-  ['小橘',          1,    'M', '6个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],  ''],
+  ['Fruity',        1,    'F', '6个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],  '2026.1提前上架'],
+  ['Rescue',        0,    'F', '6个月',   'tabby', '已完成', 'N/A',    'N/A',    [],  ''],
+  ['Cheese',        0,    'M', '6个月',   'tabby', '已完成', 'N/A',    'N/A',    [],  ''],
+  ['Cloudstep',     1,    'M', '7个月',   'tabby', '已完成', '已完成', 'N/A',    [],  ''],
+  ['Cloudwing',     1,    'M', '7个月',   'tabby', '已完成', '已完成', 'N/A',    [],  ''],
+  ['Rustysnow',     0,    'M', '7个月',   'orange_tabby', '已完成', '已完成', 'N/A',    [],  ''],
+  ['Little Orange', 1,    'M', '6个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],  ''],
 ];
 
 // ─── 测试用户（偏好多样，覆盖推荐算法各场景）────────────────
 
 const TEST_USERS = [
-  { email: 'alice@test.com',  username: 'alice',  display_name: '小艾',   role: 'user',
+  { email: 'alice@test.com',  username: 'alice',  display_name: 'Alice',   role: 'user',
     pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: 'orange_tabby' } },
-  { email: 'bob@test.com',    username: 'bob',    display_name: '阿伯',   role: 'user',
+  { email: 'bob@test.com',    username: 'bob',    display_name: 'Bob',   role: 'user',
     pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: 'tabby' } },
-  { email: 'carol@test.com',  username: 'carol',  display_name: '小玲',   role: 'user',
+  { email: 'carol@test.com',  username: 'carol',  display_name: 'Carol',   role: 'user',
     pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: null } },
-  { email: 'david@test.com',  username: 'david',  display_name: '大卫',   role: 'user',
+  { email: 'david@test.com',  username: 'david',  display_name: 'David',   role: 'user',
     pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: 'orange_white' } },
   { email: 'emma@test.com',   username: 'emma',   display_name: 'Emma',  role: 'user',
     pref: { preferred_age: 'kitten', preferred_gender: 'male',          preferred_breed: 'orange_tabby' } },
-  { email: 'frank@test.com',  username: 'frank',  display_name: '法兰克', role: 'user',
+  { email: 'frank@test.com',  username: 'frank',  display_name: 'Frank', role: 'user',
     pref: { preferred_age: 'senior', preferred_gender: 'no_preference', preferred_breed: 'black' } },
-  { email: 'grace@test.com',  username: 'grace',  display_name: '阿雅',   role: 'user',
+  { email: 'grace@test.com',  username: 'grace',  display_name: 'Grace',   role: 'user',
     pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: 'tabby' } },
-  { email: 'henry@test.com',  username: 'henry',  display_name: '阿亨',   role: 'user',
+  { email: 'henry@test.com',  username: 'henry',  display_name: 'Henry',   role: 'user',
     pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: null } },
-  { email: 'iris@test.com',   username: 'iris',   display_name: '小欣',   role: 'user',
+  { email: 'iris@test.com',   username: 'iris',   display_name: 'Iris',   role: 'user',
     pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: 'orange_white' } },
-  { email: 'jack@test.com',   username: 'jack',   display_name: '小杰',   role: 'user',
+  { email: 'jack@test.com',   username: 'jack',   display_name: 'Jack',   role: 'user',
     pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: 'tabby' } },
   // 机构工作人员账号（供 Member 6 聊天测试用）
-  { email: 'staff@rescue.com', username: 'rescue_staff', display_name: '救助站小陈', role: 'rescue_staff', pref: null },
-  { email: 'vet@clinic.com',   username: 'clinic_vet',   display_name: '林医生',     role: 'clinic_staff', pref: null },
+  { email: 'staff@rescue.com', username: 'rescue_staff', display_name: 'Rescue Staff Chen', role: 'rescue_staff', pref: null },
+  { email: 'vet@clinic.com',   username: 'clinic_vet',   display_name: 'Dr. Lin',     role: 'clinic_staff', pref: null },
 ];
 
 // ─── 社区帖子内容 ─────────────────────────────────────────
@@ -155,23 +155,36 @@ async function main() {
   console.log('📦 [1/10] 创建机构...');
   const rescueOrg = await prisma.organization.upsert({
     where:  { email: 'rescue@catface-seed.com' },
-    update: {},
+    update: {
+      name: 'Stray Cat Rescue Association (Test)',
+      phone: '0900000000',
+      address: 'Daan District, Taipei',
+      is_verified: true,
+      description: 'Public-interest rescue organization focused on stray cat shelter and adoption.'
+    },
     create: {
-      name: '流浪猫救助协会（测试）', type: 'rescue',
+      name: 'Stray Cat Rescue Association (Test)', type: 'rescue',
       email: 'rescue@catface-seed.com', password: await bcrypt.hash('seed1234', 10),
-      phone: '0900000000', address: '台北市大安区', is_verified: true,
-      description: '专注于流浪猫收容与送养的公益机构'
+      phone: '0900000000', address: 'Daan District, Taipei', is_verified: true,
+      description: 'Public-interest rescue organization focused on stray cat shelter and adoption.'
     }
   });
   const clinicOrg = await prisma.organization.upsert({
     where:  { email: 'clinic@catface-seed.com' },
-    update: {},
-    create: {
-      name: '爱心动物诊所（测试）', type: 'clinic',
-      email: 'clinic@catface-seed.com', password: await bcrypt.hash('seed1234', 10),
-      phone: '0911111111', address: '台北市信义区', is_verified: true,
+    update: {
+      name: 'Kind Animal Clinic (Test)',
+      phone: '0911111111',
+      address: 'Xinyi District, Taipei',
+      is_verified: true,
       license_number: 'VET-2024-0001',
-      description: '提供猫咪专业健康检查与疫苗接种服务'
+      description: 'Provides professional health checks and vaccination services for cats.'
+    },
+    create: {
+      name: 'Kind Animal Clinic (Test)', type: 'clinic',
+      email: 'clinic@catface-seed.com', password: await bcrypt.hash('seed1234', 10),
+      phone: '0911111111', address: 'Xinyi District, Taipei', is_verified: true,
+      license_number: 'VET-2024-0001',
+      description: 'Provides professional health checks and vaccination services for cats.'
     }
   });
   console.log(`   ✅ 救助机构 ${rescueOrg.id.slice(0,8)}… | 诊所 ${clinicOrg.id.slice(0,8)}…`);

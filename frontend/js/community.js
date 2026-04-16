@@ -3,6 +3,7 @@
   let trendingById = {};
   let currentPostId = null;
   let currentFeed = "recommended";
+  let activeChipFilter = "all";
   let feedLoadState = "loading";
   let latestFeedRequestId = 0;
 let pendingPostToOpen = "";
@@ -78,11 +79,84 @@ let pendingPostToOpen = "";
   const quickComposer = document.querySelector(".composer-input");
   const quickComposerSubmit = document.querySelector(".composer-submit");
   const storiesTrack = document.querySelector(".stories-track");
+  const followSuggestionsList = document.getElementById("followSuggestionsList");
+  const chipsRow = document.querySelector(".chips-row");
+
+  const CHIP_KEYWORDS = {
+    all: [],
+    cute: ["cute", "gentle", "sweet", "adorable", "shy", "friendly", "cuddly"],
+    handsome: ["handsome", "majestic", "elegant", "gentleman"],
+    playful: ["playful", "active", "curious", "energy", "quick", "exploring"],
+    lazy: ["lazy", "nap", "napping", "sleep", "chill", "quiet"],
+    fluffy: ["fluffy", "soft", "fur", "furry", "towel"],
+    kittens: ["kitten", "kittens", "2 months", "3 months", "4 months", "5 months"],
+    senior: ["senior", "old", "8 years", "9 years", "10 years", "11 years", "12 years"],
+    majestic: ["majestic", "graceful", "queen", "king", "royal"],
+    derpy: ["derpy", "goofy", "silly", "funny", "clumsy"]
+  };
 
   function formatLikes(num) {
     const n = Number(num) || 0;
     if (n >= 10000) return (n / 1000).toFixed(0) + "k";
     return String(n);
+  }
+
+  function normalizeChipLabel(chipText) {
+    return String(chipText || "")
+      .replace(/[^\w\s]/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  function getChipFilterKeyFromElement(chipEl) {
+    if (!chipEl) return "all";
+    const label = normalizeChipLabel(chipEl.textContent || "");
+    if (!label) return "all";
+    const key = label.split(/\s+/)[0];
+    return CHIP_KEYWORDS[key] ? key : "all";
+  }
+
+  function filterPostsByActiveChip(list) {
+    if (!Array.isArray(list) || !list.length) return [];
+    if (activeChipFilter === "all") return list.slice();
+    const keywords = CHIP_KEYWORDS[activeChipFilter] || [];
+    if (!keywords.length) return list.slice();
+    return list.filter(function (post) {
+      const source = String((post && post.text) || "").toLowerCase();
+      return keywords.some(function (kw) { return source.indexOf(kw) !== -1; });
+    });
+  }
+
+  function updateChipStyles() {
+    if (!chipsRow) return;
+    chipsRow.querySelectorAll(".chip").forEach(function (chip) {
+      const key = getChipFilterKeyFromElement(chip);
+      chip.classList.toggle("active", key === activeChipFilter);
+      chip.setAttribute("role", "button");
+      chip.setAttribute("tabindex", "0");
+      chip.setAttribute("aria-pressed", key === activeChipFilter ? "true" : "false");
+    });
+  }
+
+  function bindChipFilters() {
+    if (!chipsRow) return;
+    chipsRow.addEventListener("click", function (e) {
+      const chip = e.target && e.target.closest ? e.target.closest(".chip") : null;
+      if (!chip) return;
+      activeChipFilter = getChipFilterKeyFromElement(chip);
+      updateChipStyles();
+      renderFeed();
+    });
+    chipsRow.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const chip = e.target && e.target.closest ? e.target.closest(".chip") : null;
+      if (!chip) return;
+      e.preventDefault();
+      activeChipFilter = getChipFilterKeyFromElement(chip);
+      updateChipStyles();
+      renderFeed();
+    });
+    updateChipStyles();
   }
 
   function normalizeCommunityPost(p) {
@@ -537,33 +611,53 @@ let pendingPostToOpen = "";
       "&author=" + encodeURIComponent(author);
   }
 
-  function buildAuthorLookup(authorRows) {
-    const byUsername = new Map();
-    const byDisplayName = new Map();
-    authorRows.forEach(function (row) {
-      if (!row || !row.id) return;
-      if (row.username) byUsername.set(String(row.username).toLowerCase(), row);
-      if (row.displayName) byDisplayName.set(String(row.displayName).toLowerCase(), row);
-    });
-    return {
-      byUsername: byUsername,
-      byDisplayName: byDisplayName
-    };
-  }
-
-  function resolveFollowAuthor(rowEl, lookup) {
-    if (!rowEl || !lookup) return null;
-    const username = String(rowEl.getAttribute("data-author-username") || "").trim().toLowerCase();
-    const displayName = String(rowEl.getAttribute("data-profile-name") || "").trim().toLowerCase();
-    if (username && lookup.byUsername.has(username)) return lookup.byUsername.get(username);
-    if (displayName && lookup.byDisplayName.has(displayName)) return lookup.byDisplayName.get(displayName);
-    return null;
-  }
-
   function updateSidebarFollowButtonState(buttonEl, isFollowing) {
     if (!buttonEl) return;
     buttonEl.textContent = isFollowing ? "Following" : "Follow";
     buttonEl.classList.toggle("is-following", !!isFollowing);
+  }
+
+  function buildFollowSubtitle(author) {
+    const mutualCount = Number(author && author.mutual_count) || 0;
+    const recentPostsCount = Number(author && author.recent_posts_count) || 0;
+    const recentEngagement = Number(author && author.recent_engagement) || 0;
+    if (mutualCount > 0) {
+      return mutualCount + " mutual connections · " + recentPostsCount + " recent posts";
+    }
+    const bio = String((author && author.bio) || "").trim().replace(/\s+/g, " ");
+    if (bio) return bio.slice(0, 48);
+    const postsCount = Number(author && author.posts_count) || 0;
+    const followerCount = Number(author && author.followers_count) || 0;
+    return postsCount + " posts · " + followerCount + " followers · " + recentEngagement + " hot";
+  }
+
+  function renderFollowSuggestions(authors) {
+    if (!followSuggestionsList) return;
+    const list = Array.isArray(authors) ? authors : [];
+    if (!list.length) {
+      followSuggestionsList.innerHTML =
+        '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">No suggestions yet.</div>';
+      return;
+    }
+    followSuggestionsList.innerHTML = list.map(function (author) {
+      const id = String((author && author.id) || "");
+      const name = String((author && (author.display_name || author.username)) || "User");
+      const avatar = String((author && author.avatar_url) || "");
+      const subtitle = buildFollowSubtitle(author);
+      const avatarHtml = avatar
+        ? '<img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(name) + '">'
+        : '<span style="font-size:18px;color:var(--brand);font-weight:800;">' + escapeHtml(name.charAt(0).toUpperCase()) + "</span>";
+      return (
+        '<div class="follow-row" data-author-id="' + escapeHtml(id) + '" data-profile-name="' + escapeHtml(name) + '">' +
+          '<div class="follow-avatar">' + avatarHtml + "</div>" +
+          '<div class="follow-info">' +
+            '<div class="follow-name">' + escapeHtml(name) + "</div>" +
+            '<div class="follow-sub">' + escapeHtml(subtitle) + "</div>" +
+          "</div>" +
+          '<button class="follow-btn" type="button">Follow</button>' +
+        "</div>"
+      );
+    }).join("");
   }
 
   function renderTrendingPanel() {
@@ -571,7 +665,7 @@ let pendingPostToOpen = "";
     if (!wrap) return;
     wrap.innerHTML =
       '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading trending posts…</div>';
-    fetch(API_BASE_URL + "/community/posts?feed=recommended&limit=50", {
+    fetch(API_BASE_URL + "/community/trending?limit=10", {
       method: "GET",
       headers: typeof getAuthHeaders === "function" ? getAuthHeaders() : { "Content-Type": "application/json" }
     })
@@ -590,17 +684,11 @@ let pendingPostToOpen = "";
         });
         if (!result.data.length) {
           wrap.innerHTML =
-            '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">No posts to rank yet.</div>';
+            '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">No posts from the past 30 days yet.</div>';
           return;
         }
-        const sorted = result.data
-          .slice()
-          .sort(function (a, b) {
-            return (Number(b.likes) || 0) - (Number(a.likes) || 0);
-          })
-          .slice(0, 5);
         wrap.innerHTML = "";
-        sorted.forEach(function (p) {
+        result.data.forEach(function (p, idx) {
           const row = document.createElement("div");
           row.className = "trend-row";
           row.setAttribute("role", "button");
@@ -610,7 +698,10 @@ let pendingPostToOpen = "";
             .replace(/\s+/g, " ")
             .trim()
             .slice(0, 56) || "Community post";
-          const metaLine = "by " + (p.author || "Member") + " · " + (Number(p.likes) || 0) + " likes";
+          const likesCount = Number(p.likes) || 0;
+          const commentsCount = Number(p.comments_count) || 0;
+          const metaLine = "by " + (p.author || "Member") + " · ❤ " + likesCount + " · 💬 " + commentsCount;
+          const rankLabel = "#" + String(idx + 1);
           const imgSrc = p.image || "";
           const thumb = imgSrc
             ? '<img class="trend-img" src="' + escapeHtml(imgSrc) + '" alt="">'
@@ -621,8 +712,8 @@ let pendingPostToOpen = "";
             escapeHtml(titleText) +
             '</div><div class="trend-meta">' +
             escapeHtml(metaLine) +
-            '</div></div><span class="trend-num">&#x2665; ' +
-            escapeHtml(formatLikes(Number(p.likes) || 0)) +
+            '</div></div><span class="trend-num">' +
+            escapeHtml(rankLabel) +
             "</span>";
           row.addEventListener("click", function () {
             if (p.id) openPostDetail(p.id);
@@ -656,96 +747,88 @@ let pendingPostToOpen = "";
       }
     });
 
-    document.querySelectorAll(".follow-row[data-profile-story]").forEach(function (rowEl) {
-      const avatarEl = rowEl.querySelector(".follow-avatar");
-      if (avatarEl) {
-        avatarEl.style.cursor = "pointer";
-        avatarEl.addEventListener("click", function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          openStoryProfile(rowEl.getAttribute("data-profile-story"), rowEl.getAttribute("data-profile-name"));
-        });
-      }
-    });
+    if (followSuggestionsList) {
+      followSuggestionsList.addEventListener("click", function (e) {
+        const rowEl = e.target && e.target.closest ? e.target.closest(".follow-row[data-author-id]") : null;
+        if (!rowEl || !followSuggestionsList.contains(rowEl)) return;
+        if (e.target && e.target.closest && e.target.closest(".follow-btn")) return;
+        const authorId = String(rowEl.getAttribute("data-author-id") || "").trim();
+        const authorName = String(rowEl.getAttribute("data-profile-name") || "User");
+        if (!authorId) return;
+        navigateToAuthor({ author: authorName, authorId: authorId }, authorName);
+      });
+    }
   }
 
   function bindSidebarFollowActions() {
-    const followRows = Array.prototype.slice.call(document.querySelectorAll(".follow-row[data-author-username]"));
-    if (!followRows.length) return;
+    if (!followSuggestionsList) return;
+    followSuggestionsList.innerHTML =
+      '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading suggestions…</div>';
 
-    fetch(API_BASE_URL + "/community/posts?feed=recommended&limit=50", {
+    fetch(API_BASE_URL + "/users/follow-suggestions?limit=6", {
       method: "GET",
       headers: getAuthHeaders()
     })
       .then(function (res) { return res.json(); })
       .then(function (result) {
-        if (!result || !result.success || !Array.isArray(result.data)) return;
-        const authorRows = [];
-        result.data.forEach(function (p) {
-          if (!p || !p.authorId) return;
-          authorRows.push({
-            id: p.authorId,
-            username: p.authorUsername || "",
-            displayName: p.author || "",
-            followed: !!p.followed
-          });
-        });
-        const lookup = buildAuthorLookup(authorRows);
-        const selfId = getCurrentUserId();
+        if (!result || !result.success || !Array.isArray(result.data)) {
+          followSuggestionsList.innerHTML =
+            '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Could not load suggestions.</div>';
+          return;
+        }
+        renderFollowSuggestions(result.data);
+      })
+      .catch(function () {
+        followSuggestionsList.innerHTML =
+          '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Could not load suggestions.</div>';
+      });
 
-        followRows.forEach(function (rowEl) {
-          const buttonEl = rowEl.querySelector(".follow-btn");
-          if (!buttonEl) return;
-          const author = resolveFollowAuthor(rowEl, lookup);
-          if (!author || !author.id || (selfId && author.id === selfId)) {
-            buttonEl.style.display = "none";
+    followSuggestionsList.addEventListener("click", function (e) {
+      const buttonEl = e.target && e.target.closest ? e.target.closest(".follow-btn") : null;
+      if (!buttonEl || !followSuggestionsList.contains(buttonEl)) return;
+      const rowEl = buttonEl.closest(".follow-row[data-author-id]");
+      if (!rowEl) return;
+      const authorId = String(rowEl.getAttribute("data-author-id") || "").trim();
+      if (!authorId) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (!requireLogin()) return;
+      buttonEl.disabled = true;
+      fetch(API_BASE_URL + "/users/" + encodeURIComponent(authorId) + "/follow", {
+        method: "POST",
+        headers: getAuthHeaders()
+      })
+        .then(function (res) {
+          if (res.status === 401) {
+            window.location.href = "/pages/log-in.html";
+            return null;
+          }
+          return res.json();
+        })
+        .then(function (followResult) {
+          if (!followResult || !followResult.success || !followResult.data) {
+            alert((followResult && followResult.message) || "Follow failed");
             return;
           }
-          rowEl.setAttribute("data-author-id", String(author.id));
-          updateSidebarFollowButtonState(buttonEl, !!author.followed);
-          buttonEl.addEventListener("click", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (!requireLogin()) return;
-            buttonEl.disabled = true;
-            fetch(API_BASE_URL + "/users/" + encodeURIComponent(author.id) + "/follow", {
-              method: "POST",
-              headers: getAuthHeaders()
-            })
-              .then(function (res) {
-                if (res.status === 401) {
-                  window.location.href = "/pages/log-in.html";
-                  return null;
-                }
-                return res.json();
-              })
-              .then(function (followResult) {
-                if (!followResult || !followResult.success || !followResult.data) {
-                  alert((followResult && followResult.message) || "Follow failed");
-                  return;
-                }
-                const on = !!followResult.data.following;
-                author.followed = on;
-                updateSidebarFollowButtonState(buttonEl, on);
-                posts.forEach(function (p) {
-                  if (p.authorId === author.id) p.followed = on;
-                });
-                if (currentPostId != null) {
-                  const currentPost = posts.find(function (p) { return p.id === currentPostId; });
-                  if (currentPost && currentPost.authorId === author.id) updateFollowButton(currentPost);
-                }
-                renderFeed();
-              })
-              .catch(function () {
-                alert("Network error, please try again.");
-              })
-              .finally(function () {
-                buttonEl.disabled = false;
-              });
+          const on = !!followResult.data.following;
+          updateSidebarFollowButtonState(buttonEl, on);
+          posts.forEach(function (p) {
+            if (p.authorId === authorId) p.followed = on;
           });
+          if (currentPostId != null) {
+            const currentPost = posts.find(function (p) { return p.id === currentPostId; });
+            if (currentPost && currentPost.authorId === authorId) updateFollowButton(currentPost);
+          }
+          renderFeed();
+          loadFollowedStories();
+        })
+        .catch(function () {
+          alert("Network error, please try again.");
+        })
+        .finally(function () {
+          buttonEl.disabled = false;
         });
-      })
-      .catch(function () {});
+    });
   }
 
   function openProfile(author) {
@@ -801,8 +884,60 @@ let pendingPostToOpen = "";
   }
   ensureStoryA11y();
 
+  function buildYourStoryHtml() {
+    return '<div class="story story-add" role="button" tabindex="0" onclick="document.getElementById(\'btnCreatePost\').click()"><div class="story-ring"><div class="story-inner">+</div></div><span class="story-name">Your story</span></div>';
+  }
+
+  function buildStoryListHtml(users) {
+    const list = Array.isArray(users) ? users : [];
+    return list.slice(0, 12).map(function (user) {
+      const display = (user && (user.display_name || user.username)) ? (user.display_name || user.username) : "User";
+      const avatar = user && user.avatar_url ? String(user.avatar_url) : "";
+      const id = user && user.id ? String(user.id) : "";
+      const avatarInner = avatar
+        ? '<img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(display) + '">'
+        : '<span style="font-size:20px;color:var(--brand);font-weight:800;">' + escapeHtml(display.charAt(0).toUpperCase()) + "</span>";
+      return (
+        '<div class="story" data-author-id="' + escapeHtml(id) + '">' +
+          '<div class="story-ring"><div class="story-inner">' + avatarInner + "</div></div>" +
+          '<span class="story-name">' + escapeHtml(display) + "</span>" +
+        "</div>"
+      );
+    }).join("");
+  }
+
+  function renderStories(users) {
+    if (!storiesTrack) return;
+    storiesTrack.innerHTML = buildYourStoryHtml() + buildStoryListHtml(users);
+    ensureStoryA11y();
+  }
+
+  function fetchStoryFallbackUsers() {
+    return fetch(API_BASE_URL + "/users/follow-suggestions?limit=12", {
+      method: "GET",
+      headers: getAuthHeaders()
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        const payload = response.payload || {};
+        if (!response.ok || !payload.success || !Array.isArray(payload.data)) return [];
+        return payload.data;
+      })
+      .catch(function () {
+        return [];
+      });
+  }
+
   function loadFollowedStories() {
-    if (!storiesTrack || !getToken()) return;
+    if (!storiesTrack) return;
+    if (!getToken()) {
+      fetchStoryFallbackUsers().then(renderStories);
+      return;
+    }
     fetch(API_BASE_URL + "/users/follows?type=following", {
       method: "GET",
       headers: getAuthHeaders()
@@ -814,28 +949,19 @@ let pendingPostToOpen = "";
       })
       .then(function (response) {
         const payload = response.payload || {};
-        if (!response.ok || !payload.success || !Array.isArray(payload.data)) return;
+        if (!response.ok || !payload.success || !Array.isArray(payload.data)) {
+          return fetchStoryFallbackUsers().then(renderStories);
+        }
         const following = payload.data;
-        const yourStoryHtml =
-          '<div class="story story-add" role="button" tabindex="0" onclick="document.getElementById(\'btnCreatePost\').click()"><div class="story-ring"><div class="story-inner">+</div></div><span class="story-name">Your story</span></div>';
-        const followHtml = following.slice(0, 12).map(function (user) {
-          const display = (user && (user.display_name || user.username)) ? (user.display_name || user.username) : "User";
-          const avatar = user && user.avatar_url ? String(user.avatar_url) : "";
-          const id = user && user.id ? String(user.id) : "";
-          const avatarInner = avatar
-            ? '<img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(display) + '">'
-            : '<span style="font-size:20px;color:var(--brand);font-weight:800;">' + escapeHtml(display.charAt(0).toUpperCase()) + "</span>";
-          return (
-            '<div class="story" data-author-id="' + escapeHtml(id) + '">' +
-              '<div class="story-ring"><div class="story-inner">' + avatarInner + "</div></div>" +
-              '<span class="story-name">' + escapeHtml(display) + "</span>" +
-            "</div>"
-          );
-        }).join("");
-        storiesTrack.innerHTML = yourStoryHtml + followHtml;
-        ensureStoryA11y();
+        if (following.length) {
+          renderStories(following);
+          return null;
+        }
+        return fetchStoryFallbackUsers().then(renderStories);
       })
-      .catch(function () {});
+      .catch(function () {
+        fetchStoryFallbackUsers().then(renderStories);
+      });
   }
 
   function renderFeed() {
@@ -848,16 +974,19 @@ let pendingPostToOpen = "";
       feedEl.innerHTML = '<div class="feed-empty">Could not load posts. Check backend service.</div>';
       return;
     }
-    if (!posts.length) {
+    const visiblePosts = filterPostsByActiveChip(posts);
+    if (!visiblePosts.length) {
       const emptyMsg = currentFeed === "followed"
         ? (!getToken()
             ? "Log in to see posts from creators you follow."
             : "No posts here yet. Follow someone from Recommended, then check back.")
-        : "No community posts yet.";
+        : (activeChipFilter === "all"
+            ? "No community posts yet."
+            : "No posts match this tag right now.");
       feedEl.innerHTML = '<div class="feed-empty">' + emptyMsg + "</div>";
       return;
     }
-    posts.forEach(function (post) {
+    visiblePosts.forEach(function (post) {
       const card = document.createElement("article");
       card.className = "post-card";
       card.dataset.id = post.id;
@@ -1016,6 +1145,7 @@ let pendingPostToOpen = "";
   bindSidebarProfileCards();
   bindSidebarFollowActions();
   loadFollowedStories();
+  bindChipFilters();
 })();
 
 (function () {
