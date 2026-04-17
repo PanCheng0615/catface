@@ -605,12 +605,9 @@
     </div>
     <div class="rp-card">
       <div class="rp-card-title">&#x1F43E; Cats to Follow</div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/gege.png" alt="Gege"></div><div class="follow-info"><div class="follow-name">Gege</div><div class="follow-sub">UM · 3 mo · gentle</div></div><button class="follow-btn">Follow</button></div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/luno.png" alt="Luno"></div><div class="follow-info"><div class="follow-name">Luno</div><div class="follow-sub">UM · heterochromia &#x2728;</div></div><button class="follow-btn">Follow</button></div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/spider-cat.png" alt="Spider Cat"></div><div class="follow-info"><div class="follow-name">Spider Cat</div><div class="follow-sub">UM · curious observer</div></div><button class="follow-btn">Follow</button></div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/tantou.png" alt="Peekaboo"></div><div class="follow-info"><div class="follow-name">Peekaboo</div><div class="follow-sub">UM · playful kitten</div></div><button class="follow-btn">Follow</button></div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/maojin.png" alt="Towel Boy"></div><div class="follow-info"><div class="follow-name">Towel Boy</div><div class="follow-sub">UM · towel nap expert</div></div><button class="follow-btn">Follow</button></div>
-      <div class="follow-row"><div class="follow-avatar"><img src="../assets/community/cesuo.png" alt="Lucky"></div><div class="follow-info"><div class="follow-name">Lucky</div><div class="follow-sub">UM · outgoing &amp; cuddly</div></div><button class="follow-btn">Follow</button></div>
+      <div id="followSuggestionsList" aria-live="polite">
+        <div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading suggestions…</div>
+      </div>
     </div>
   </aside>
 </div>
@@ -685,6 +682,7 @@
   </div>
 </div>
 
+<script src="../js/config.js"></script>
 <script>
   /* ── Tab / Chip / Follow ── */
   document.querySelectorAll('.ftab').forEach(function(t){t.addEventListener('click',function(){document.querySelectorAll('.ftab').forEach(function(x){x.classList.remove('active')});this.classList.add('active')})});
@@ -692,6 +690,122 @@
   document.querySelectorAll('.follow-btn').forEach(function(b){b.addEventListener('click',function(){if(this.textContent==='Follow'){this.textContent='Following';this.style.background='var(--brand)';this.style.color='#fff';}else{this.textContent='Follow';this.style.background='';this.style.color='';}})}); 
   var ta=document.querySelector('.composer-input'),cc=document.querySelector('.char-count');
   if(ta&&cc)ta.addEventListener('input',function(){cc.textContent=280-this.value.length;cc.style.color=this.value.length>260?'#e05b73':''});
+  var followSuggestionsList = document.getElementById('followSuggestionsList');
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function setSuggestedFollowButtonState(buttonEl, isFollowing) {
+    if (!buttonEl) return;
+    buttonEl.textContent = isFollowing ? 'Following' : 'Follow';
+    buttonEl.style.background = isFollowing ? 'var(--brand)' : '';
+    buttonEl.style.color = isFollowing ? '#fff' : '';
+  }
+
+  function buildSuggestionSubtitle(user) {
+    var mutualCount = Number(user && user.mutual_count) || 0;
+    var recentPostsCount = Number(user && user.recent_posts_count) || 0;
+    var recentEngagement = Number(user && user.recent_engagement) || 0;
+    if (mutualCount > 0) return mutualCount + ' mutual connections · ' + recentPostsCount + ' recent posts';
+    var bio = String((user && user.bio) || '').trim().replace(/\s+/g, ' ');
+    if (bio) return bio.slice(0, 48);
+    var postsCount = Number(user && user.posts_count) || 0;
+    var followersCount = Number(user && user.followers_count) || 0;
+    return postsCount + ' posts · ' + followersCount + ' followers · ' + recentEngagement + ' hot';
+  }
+
+  function renderFollowSuggestions(users) {
+    if (!followSuggestionsList) return;
+    var list = Array.isArray(users) ? users : [];
+    if (!list.length) {
+      followSuggestionsList.innerHTML =
+        '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">No suggestions yet.</div>';
+      return;
+    }
+    followSuggestionsList.innerHTML = list.map(function(user) {
+      var id = String((user && user.id) || '');
+      var name = String((user && (user.display_name || user.username)) || 'User');
+      var avatar = String((user && user.avatar_url) || '');
+      var subtitle = buildSuggestionSubtitle(user);
+      var avatarHtml = avatar
+        ? '<img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(name) + '">'
+        : '<span style="font-size:18px;color:var(--brand);font-weight:800;">' + escapeHtml(name.charAt(0).toUpperCase()) + '</span>';
+      return '<div class="follow-row">' +
+        '<div class="follow-avatar">' + avatarHtml + '</div>' +
+        '<div class="follow-info"><div class="follow-name">' + escapeHtml(name) + '</div><div class="follow-sub">' + escapeHtml(subtitle) + '</div></div>' +
+        '<button class="follow-btn" type="button" data-user-id="' + escapeHtml(id) + '">Follow</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function loadFollowSuggestions() {
+    if (!followSuggestionsList || typeof API_BASE_URL !== 'string') return;
+    followSuggestionsList.innerHTML =
+      '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading suggestions…</div>';
+    fetch(API_BASE_URL + '/users/follow-suggestions?limit=6', {
+      method: 'GET',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function(res) { return res.json(); })
+      .then(function(result) {
+        if (!result || !result.success || !Array.isArray(result.data)) {
+          followSuggestionsList.innerHTML =
+            '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Could not load suggestions.</div>';
+          return;
+        }
+        renderFollowSuggestions(result.data);
+      })
+      .catch(function() {
+        followSuggestionsList.innerHTML =
+          '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Could not load suggestions.</div>';
+      });
+  }
+
+  if (followSuggestionsList) {
+    followSuggestionsList.addEventListener('click', function(e) {
+      var buttonEl = e.target && e.target.closest ? e.target.closest('.follow-btn[data-user-id]') : null;
+      if (!buttonEl || !followSuggestionsList.contains(buttonEl)) return;
+      var targetUserId = String(buttonEl.getAttribute('data-user-id') || '').trim();
+      if (!targetUserId) return;
+      if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+        alert('Please log in first');
+        window.location.href = '/pages/log-in.html';
+        return;
+      }
+
+      buttonEl.disabled = true;
+      fetch(API_BASE_URL + '/users/' + encodeURIComponent(targetUserId) + '/follow', {
+        method: 'POST',
+        headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+      })
+        .then(function(res) {
+          return res.json().then(function(payload) {
+            return { ok: res.ok, payload: payload };
+          });
+        })
+        .then(function(response) {
+          if (!response.ok || !response.payload || !response.payload.success) {
+            alert((response.payload && response.payload.message) || 'Could not update follow status.');
+            return;
+          }
+          setSuggestedFollowButtonState(buttonEl, !!(response.payload.data && response.payload.data.following));
+        })
+        .catch(function() {
+          alert('Network error, please try again.');
+        })
+        .finally(function() {
+          buttonEl.disabled = false;
+        });
+    });
+  }
+
+  loadFollowSuggestions();
 
   /* ── Post data ── */
   var posts = [

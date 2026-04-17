@@ -626,6 +626,10 @@
     function applyOwnedCat(cat) {
       ownedCat = cat || null;
       if (!cat) {
+        try {
+          localStorage.removeItem('catface_current_cat_id');
+          localStorage.removeItem('catface_current_cat_face_code');
+        } catch (e) {}
         clearCatProfileFields();
         setHasCatFieldsEnabled(false);
         refreshMyCatLockHint();
@@ -658,6 +662,10 @@
       if (catAllergiesInput) catAllergiesInput.value = '';
       if (catIdFieldInput) catIdFieldInput.value = cat.face_code || cat.id || '';
       if (catNotesInput) catNotesInput.value = cat.description || '';
+      try {
+        localStorage.setItem('catface_current_cat_id', cat.id || '');
+        localStorage.setItem('catface_current_cat_face_code', cat.face_code || '');
+      } catch (e) {}
       refreshMyCatLockHint();
     }
 

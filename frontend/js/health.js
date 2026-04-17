@@ -4,8 +4,18 @@
   const API = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:3000/api';
 
   const params = new URLSearchParams(window.location.search);
-  let catId  = params.get('catId')  || localStorage.getItem('catface_test_catId')  || '';
-  let userId = params.get('userId') || localStorage.getItem('catface_test_userId') || '';
+  function readStoredUser() {
+    if (typeof getCurrentUser === 'function') return getCurrentUser();
+    try {
+      return JSON.parse(localStorage.getItem('catface_user') || 'null');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  let currentUser = readStoredUser();
+  let catId  = params.get('catId') || localStorage.getItem('catface_current_cat_id') || localStorage.getItem('catface_test_catId') || '';
+  let userId = (currentUser && currentUser.id) || params.get('userId') || localStorage.getItem('catface_test_userId') || '';
 
   // DOM references
   const catIdDisplay     = document.getElementById('current-cat-id');
@@ -52,6 +62,40 @@
     statusMsg.style.display    = 'block';
     clearTimeout(showStatus._t);
     showStatus._t = setTimeout(() => { statusMsg.style.display = 'none'; }, 4000);
+  }
+
+  function persistHealthContext() {
+    try {
+      if (catId) localStorage.setItem('catface_current_cat_id', catId);
+      if (userId) localStorage.setItem('catface_current_user_id', userId);
+    } catch (e) {}
+  }
+
+  async function resolveCurrentCatId() {
+    if (catId) return catId;
+    if (!userId) {
+      currentUser = readStoredUser();
+      userId = (currentUser && currentUser.id) || '';
+    }
+    if (!userId) return '';
+
+    try {
+      const res = await fetch(`${API}/cats`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      const body = await res.json();
+      if (!body.success || !Array.isArray(body.data)) return '';
+      const ownedCat = body.data.find(function (cat) {
+        return cat && cat.owner_id === userId;
+      });
+      if (!ownedCat) return '';
+      catId = ownedCat.id || '';
+      persistHealthContext();
+      return catId;
+    } catch (e) {
+      return '';
+    }
   }
 
   // Health passport hero (summary badges)
@@ -197,14 +241,23 @@
 
   // Load owner records, clinic reports, and permissions
   async function loadAll() {
+    if (!userId) {
+      currentUser = readStoredUser();
+      userId = (currentUser && currentUser.id) || '';
+    }
+    if (!catId) {
+      await resolveCurrentCatId();
+    }
     if (!catId) {
       const empty = (el, msg) => el && (el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>${msg}</p></div>`);
-      empty(ownerList, 'Please enter a cat ID first');
-      empty(clinicList, 'Please enter a cat ID first');
-      empty(shareList, 'Please enter a cat ID first');
+      empty(ownerList, 'No current cat found for this account yet.');
+      empty(clinicList, 'No current cat found for this account yet.');
+      empty(shareList, 'No current cat found for this account yet.');
+      showStatus('No current cat is linked to this account yet. Please save your cat profile from My Account first.', true);
       return;
     }
     if (catIdDisplay) catIdDisplay.textContent = catId;
+    persistHealthContext();
 
     try {
       const res  = await fetch(`${API}/health/records/${catId}`, {
@@ -269,7 +322,10 @@
   if (addRecordForm) {
     addRecordForm.addEventListener('submit', async function (e) {
       e.preventDefault();
-      if (!catId || !userId) { showStatus('Please enter both the cat ID and user ID first', true); return; }
+      if (!catId) {
+        await resolveCurrentCatId();
+      }
+      if (!catId) { showStatus('No current cat found for this account yet.', true); return; }
 
       const submitBtn = document.getElementById('rec-submit-btn');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Uploading...'; }
@@ -384,6 +440,7 @@
       catId = cid; userId = uid;
       localStorage.setItem('catface_test_catId',  catId);
       localStorage.setItem('catface_test_userId', userId);
+      persistHealthContext();
       showStatus('ID saved. Loading...');
       loadAll();
     });

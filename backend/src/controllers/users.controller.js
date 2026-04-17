@@ -34,6 +34,35 @@ function mapUserSummary(user) {
   };
 }
 
+function buildFollowRecommendationReason(params) {
+  const mutualCount = Number(params && params.mutualCount) || 0;
+  const recentPostsCount = Number(params && params.recentPostsCount) || 0;
+  const recentEngagement = Number(params && params.recentEngagement) || 0;
+  const followerCount = Number(params && params.followerCount) || 0;
+  const postCount = Number(params && params.postCount) || 0;
+  const freshnessDays = Number(params && params.freshnessDays);
+
+  if (mutualCount > 0) {
+    return mutualCount + ' mutual connections';
+  }
+  if (recentPostsCount >= 3) {
+    return 'Active in the last 30 days';
+  }
+  if (recentEngagement >= 20) {
+    return 'High recent engagement';
+  }
+  if (Number.isFinite(freshnessDays) && freshnessDays <= 7) {
+    return 'Fresh recent post';
+  }
+  if (followerCount >= 5) {
+    return 'Popular in the community';
+  }
+  if (postCount > 0) {
+    return 'Community creator worth exploring';
+  }
+  return 'New profile to discover';
+}
+
 // GET /api/users/me
 async function getMe(req, res) {
   try {
@@ -387,6 +416,14 @@ async function getFollowSuggestions(req, res) {
         const socialScore = mutualCount * SUGGEST_SOCIAL_MUTUAL_WEIGHT;
         const profileScore = String(user.bio || '').trim() ? SUGGEST_PROFILE_BIO_BONUS : 0;
         const score = activityScore + popularityScore + freshnessScore + socialScore + profileScore;
+        const recommendationReason = buildFollowRecommendationReason({
+          mutualCount: mutualCount,
+          recentPostsCount: recent.recent_posts,
+          recentEngagement: recentEngagement,
+          followerCount: followerCount,
+          postCount: postCount,
+          freshnessDays: freshnessDays
+        });
         return {
           ...mapUserSummary(user),
           posts_count: postCount,
@@ -395,7 +432,8 @@ async function getFollowSuggestions(req, res) {
           recent_posts_count: recent.recent_posts,
           recent_engagement: recentEngagement,
           is_following: false,
-          score
+          score,
+          recommendation_reason: recommendationReason
         };
       })
       .sort((a, b) => b.score - a.score)
@@ -411,7 +449,8 @@ async function getFollowSuggestions(req, res) {
         mutual_count: item.mutual_count,
         recent_posts_count: item.recent_posts_count,
         recent_engagement: item.recent_engagement,
-        is_following: item.is_following
+        is_following: item.is_following,
+        recommendation_reason: item.recommendation_reason
       }));
 
     return res.json({

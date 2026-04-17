@@ -313,7 +313,7 @@
 
   function resolveCatImg(src) {
     if (!src) return '';
-    if (/^(https?:)?\/\//i.test(src) || src.indexOf('../') === 0) return src;
+    if (/^(https?:)?\/\//i.test(src) || /^data:/i.test(src) || /^blob:/i.test(src) || src.indexOf('../') === 0) return src;
     return '../' + src.replace(/^\.?\//, '');
   }
 

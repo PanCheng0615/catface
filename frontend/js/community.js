@@ -81,6 +81,7 @@ let pendingPostToOpen = "";
   const storiesTrack = document.querySelector(".stories-track");
   const followSuggestionsList = document.getElementById("followSuggestionsList");
   const chipsRow = document.querySelector(".chips-row");
+  const trendingList = document.getElementById("trendingList");
 
   const CHIP_KEYWORDS = {
     all: [],
@@ -617,17 +618,24 @@ let pendingPostToOpen = "";
     buttonEl.classList.toggle("is-following", !!isFollowing);
   }
 
-  function buildFollowSubtitle(author) {
+  function buildFollowRecommendationReason(author) {
+    const explicitReason = String((author && author.recommendation_reason) || "").trim();
+    if (explicitReason) return explicitReason;
     const mutualCount = Number(author && author.mutual_count) || 0;
     const recentPostsCount = Number(author && author.recent_posts_count) || 0;
-    const recentEngagement = Number(author && author.recent_engagement) || 0;
     if (mutualCount > 0) {
-      return mutualCount + " mutual connections · " + recentPostsCount + " recent posts";
+      return mutualCount + " mutual connections";
     }
-    const bio = String((author && author.bio) || "").trim().replace(/\s+/g, " ");
-    if (bio) return bio.slice(0, 48);
+    if (recentPostsCount >= 3) {
+      return "Active in the last 30 days";
+    }
+    return "Recommended for you";
+  }
+
+  function buildFollowMeta(author) {
     const postsCount = Number(author && author.posts_count) || 0;
     const followerCount = Number(author && author.followers_count) || 0;
+    const recentEngagement = Number(author && author.recent_engagement) || 0;
     return postsCount + " posts · " + followerCount + " followers · " + recentEngagement + " hot";
   }
 
@@ -639,20 +647,23 @@ let pendingPostToOpen = "";
         '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">No suggestions yet.</div>';
       return;
     }
-    followSuggestionsList.innerHTML = list.map(function (author) {
+    followSuggestionsList.innerHTML = list.map(function (author, idx) {
       const id = String((author && author.id) || "");
       const name = String((author && (author.display_name || author.username)) || "User");
       const avatar = String((author && author.avatar_url) || "");
-      const subtitle = buildFollowSubtitle(author);
+      const recommendationReason = buildFollowRecommendationReason(author);
+      const statsMeta = buildFollowMeta(author);
       const avatarHtml = avatar
         ? '<img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(name) + '">'
         : '<span style="font-size:18px;color:var(--brand);font-weight:800;">' + escapeHtml(name.charAt(0).toUpperCase()) + "</span>";
       return (
         '<div class="follow-row" data-author-id="' + escapeHtml(id) + '" data-profile-name="' + escapeHtml(name) + '">' +
+          '<div class="follow-rank">#' + escapeHtml(String(idx + 1)) + "</div>" +
           '<div class="follow-avatar">' + avatarHtml + "</div>" +
           '<div class="follow-info">' +
             '<div class="follow-name">' + escapeHtml(name) + "</div>" +
-            '<div class="follow-sub">' + escapeHtml(subtitle) + "</div>" +
+            '<div class="follow-reason">' + escapeHtml(recommendationReason) + "</div>" +
+            '<div class="follow-sub">' + escapeHtml(statsMeta) + "</div>" +
           "</div>" +
           '<button class="follow-btn" type="button">Follow</button>' +
         "</div>"
@@ -661,7 +672,7 @@ let pendingPostToOpen = "";
   }
 
   function renderTrendingPanel() {
-    const wrap = document.getElementById("trendingList");
+    const wrap = trendingList;
     if (!wrap) return;
     wrap.innerHTML =
       '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading trending posts…</div>';
@@ -707,13 +718,14 @@ let pendingPostToOpen = "";
             ? '<img class="trend-img" src="' + escapeHtml(imgSrc) + '" alt="">'
             : '<div class="trend-img" style="display:grid;place-items:center;background:var(--brand-light);font-size:20px;">&#x1F4AC;</div>';
           row.innerHTML =
+            '<span class="trend-rank">' + escapeHtml(rankLabel) + '</span>' +
             thumb +
             '<div class="trend-info"><div class="trend-title">' +
             escapeHtml(titleText) +
             '</div><div class="trend-meta">' +
             escapeHtml(metaLine) +
             '</div></div><span class="trend-num">' +
-            escapeHtml(rankLabel) +
+            "Open" +
             "</span>";
           row.addEventListener("click", function () {
             if (p.id) openPostDetail(p.id);
@@ -765,7 +777,7 @@ let pendingPostToOpen = "";
     followSuggestionsList.innerHTML =
       '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading suggestions…</div>';
 
-    fetch(API_BASE_URL + "/users/follow-suggestions?limit=6", {
+    fetch(API_BASE_URL + "/users/follow-suggestions?limit=18", {
       method: "GET",
       headers: getAuthHeaders()
     })
@@ -908,7 +920,20 @@ let pendingPostToOpen = "";
 
   function renderStories(users) {
     if (!storiesTrack) return;
-    storiesTrack.innerHTML = buildYourStoryHtml() + buildStoryListHtml(users);
+    const list = Array.isArray(users) ? users : [];
+    const following = list.filter(function (user) {
+      return String((user && user.story_source) || "") === "following";
+    });
+    const suggested = list.filter(function (user) {
+      return String((user && user.story_source) || "") === "suggested";
+    });
+
+    let html = buildYourStoryHtml();
+    if (following.length) html += buildStoryListHtml(following);
+    if (following.length && suggested.length) html += '<div class="story-divider" aria-hidden="true"></div>';
+    if (suggested.length) html += buildStoryListHtml(suggested);
+
+    storiesTrack.innerHTML = html;
     ensureStoryA11y();
   }
 
@@ -925,11 +950,34 @@ let pendingPostToOpen = "";
       .then(function (response) {
         const payload = response.payload || {};
         if (!response.ok || !payload.success || !Array.isArray(payload.data)) return [];
-        return payload.data;
+        return payload.data.map(function (user) {
+          return Object.assign({}, user, { story_source: "suggested" });
+        });
       })
       .catch(function () {
         return [];
       });
+  }
+
+  function mergeStoryUsers(following, suggested) {
+    const merged = [];
+    const seen = new Set();
+
+    (Array.isArray(following) ? following : []).forEach(function (user) {
+      const id = String((user && user.id) || "").trim();
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      merged.push(Object.assign({}, user, { story_source: "following" }));
+    });
+
+    (Array.isArray(suggested) ? suggested : []).forEach(function (user) {
+      const id = String((user && user.id) || "").trim();
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      merged.push(Object.assign({}, user, { story_source: "suggested" }));
+    });
+
+    return merged.slice(0, 12);
   }
 
   function loadFollowedStories() {
@@ -952,12 +1000,12 @@ let pendingPostToOpen = "";
         if (!response.ok || !payload.success || !Array.isArray(payload.data)) {
           return fetchStoryFallbackUsers().then(renderStories);
         }
-        const following = payload.data;
-        if (following.length) {
-          renderStories(following);
-          return null;
-        }
-        return fetchStoryFallbackUsers().then(renderStories);
+        const following = payload.data.map(function (user) {
+          return Object.assign({}, user, { story_source: "following" });
+        });
+        return fetchStoryFallbackUsers().then(function (suggested) {
+          renderStories(mergeStoryUsers(following, suggested));
+        });
       })
       .catch(function () {
         fetchStoryFallbackUsers().then(renderStories);
