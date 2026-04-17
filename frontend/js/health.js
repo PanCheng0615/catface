@@ -4,8 +4,19 @@
   const API = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:3000/api';
 
   const params = new URLSearchParams(window.location.search);
-  let catId  = params.get('catId')  || localStorage.getItem('catface_test_catId')  || '';
-  let userId = params.get('userId') || localStorage.getItem('catface_test_userId') || '';
+
+  function readStoredUser() {
+    if (typeof getCurrentUser === 'function') return getCurrentUser();
+    try {
+      return JSON.parse(localStorage.getItem('catface_user') || 'null');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  let currentUser = readStoredUser();
+  let catId  = params.get('catId') || localStorage.getItem('catface_current_cat_id') || localStorage.getItem('catface_test_catId') || '';
+  let userId = (currentUser && currentUser.id) || params.get('userId') || localStorage.getItem('catface_test_userId') || '';
 
   // ── DOM ──
   const catIdDisplay     = document.getElementById('current-cat-id');
@@ -26,7 +37,7 @@
 
   // ── 颜色映射 ──
   const TYPE_COLOR = {
-    vaccine:    { bar: '#3b82f6', chip: 'chip-blue',   icon: '💉', label: '疫苗接種' },
+    vaccine:    { bar: '#3b82f6', chip: 'chip-blue',   icon: '💉', label: '疫苗證明' },
     deworming:  { bar: '#10b981', chip: 'chip-green',  icon: '🐛', label: '驅蟲'     },
     checkup:    { bar: '#0891b2', chip: 'chip-teal',   icon: '🩺', label: '一般體檢' },
     treatment:  { bar: '#f59e0b', chip: 'chip-orange', icon: '💊', label: '疾病治療' },
@@ -54,6 +65,40 @@
     showStatus._t = setTimeout(() => { statusMsg.style.display = 'none'; }, 4000);
   }
 
+  function persistHealthContext() {
+    try {
+      if (catId) localStorage.setItem('catface_current_cat_id', catId);
+      if (userId) localStorage.setItem('catface_current_user_id', userId);
+    } catch (e) {}
+  }
+
+  async function resolveCurrentCatId() {
+    if (catId) return catId;
+    if (!userId) {
+      currentUser = readStoredUser();
+      userId = (currentUser && currentUser.id) || '';
+    }
+    if (!userId) return '';
+
+    try {
+      const res = await fetch(`${API}/cats`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+      const body = await res.json();
+      if (!body.success || !Array.isArray(body.data)) return '';
+      const ownedCat = body.data.find(function (cat) {
+        return cat && cat.owner_id === userId;
+      });
+      if (!ownedCat) return '';
+      catId = ownedCat.id || '';
+      persistHealthContext();
+      return catId;
+    } catch (e) {
+      return '';
+    }
+  }
+
   // ── 健康护照 ──
   function updatePassport(ownerRecords, clinicReports) {
     const nameEl   = document.getElementById('passport-name');
@@ -70,7 +115,6 @@
                               .find(r => daysUntil(r.next_due_date) >= 0);
 
     if (nameEl) nameEl.textContent = catId ? '健康護照' : '— 健康護照';
-    // 優先顯示 face_code，無則顯示 id 前 8 位，兩者皆無則提示載入
     const catLabel = window._catFaceCode
       ? `編號：${window._catFaceCode}`
       : catId ? `ID：${catId.slice(0,8)}…` : '';
@@ -100,7 +144,7 @@
   // ── 渲染主人记录 ──
   function renderOwnerRecords(records) {
     if (!ownerList) return;
-    if (ownerCount) ownerCount.textContent = records.length + ' 筆';
+    if (ownerCount) ownerCount.textContent = records.length + ' 筆記錄';
     if (!records.length) {
       ownerList.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>暫無記錄，點擊右上角「新增記錄」</p></div>`;
       return;
@@ -146,7 +190,7 @@
   // ── 渲染诊所认证报告 ──
   function renderClinicReports(reports) {
     if (!clinicList) return;
-    if (clinicCount) clinicCount.textContent = reports.length + ' 筆';
+    if (clinicCount) clinicCount.textContent = reports.length + ' 筆記錄';
     if (!reports.length) {
       clinicList.innerHTML = `<div class="empty-state"><div class="empty-icon">🏥</div><p>暫無診所上傳的認證報告<br><span style="font-size:12px;">請在「授權管理」中授權合作診所後，由診所透過診所門戶上傳</span></p></div>`;
       return;
@@ -197,14 +241,23 @@
 
   // ── 加载全部数据 ──
   async function loadAll() {
+    if (!userId) {
+      currentUser = readStoredUser();
+      userId = (currentUser && currentUser.id) || '';
+    }
+    if (!catId) {
+      await resolveCurrentCatId();
+    }
     if (!catId) {
       const empty = (el, msg) => el && (el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>${msg}</p></div>`);
-      empty(ownerList, '請先輸入貓咪 ID');
-      empty(clinicList, '請先輸入貓咪 ID');
-      empty(shareList, '請先輸入貓咪 ID');
+      empty(ownerList, '此帳號尚未關聯任何貓咪，請先在「我的帳戶」中新增並保存您的貓咪檔案');
+      empty(clinicList, '此帳號尚未關聯任何貓咪');
+      empty(shareList, '此帳號尚未關聯任何貓咪');
+      showStatus('此帳號尚未關聯任何貓咪。請先在「我的帳戶」中新增並保存您的貓咪檔案', true);
       return;
     }
     if (catIdDisplay) catIdDisplay.textContent = catId;
+    persistHealthContext();
 
     try {
       const res  = await fetch(`${API}/health/records/${catId}`, {
@@ -216,7 +269,7 @@
       const ownerRecords  = body.data.owner_records    || [];
       const clinicReports = body.data.clinic_reports   || [];
       const sharePerms    = body.data.share_permissions|| [];
-      // 缓存 face_code 供护照卡展示（历史数据可能没有此字段）
+
       window._catFaceCode = body.data.cat?.face_code || null;
 
       updatePassport(ownerRecords, clinicReports);
@@ -269,12 +322,14 @@
   if (addRecordForm) {
     addRecordForm.addEventListener('submit', async function (e) {
       e.preventDefault();
-      if (!catId || !userId) { showStatus('請先填寫貓咪 ID 和用戶 ID', true); return; }
+      if (!catId) {
+        await resolveCurrentCatId();
+      }
+      if (!catId) { showStatus('此帳號尚未關聯任何貓咪，請先在「我的帳戶」中新增並保存您的貓咪檔案', true); return; }
 
       const submitBtn = document.getElementById('rec-submit-btn');
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '上傳中…'; }
 
-      // 1. 如果有选文件，先上传拿到 URL
       let fileUrl = null;
       const fileInput = document.getElementById('rec-file');
       if (fileInput && fileInput.files[0]) {
@@ -303,7 +358,6 @@
         }
       }
 
-      // 提交记录（user_id 由后端 JWT 自动取得，前端不需要传）
       const data = {
         record_type:   document.getElementById('rec-type').value,
         description:   document.getElementById('rec-desc').value.trim(),
@@ -384,6 +438,7 @@
       catId = cid; userId = uid;
       localStorage.setItem('catface_test_catId',  catId);
       localStorage.setItem('catface_test_userId', userId);
+      persistHealthContext();
       showStatus('ID 已設置，載入中…');
       loadAll();
     });

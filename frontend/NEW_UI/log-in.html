@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CatFace · Log In</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; -webkit-font-smoothing: antialiased; }
+    a { color: var(--brand); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button { font: inherit; cursor: pointer; }
+
+    .page { width: min(960px,100%); display: grid; grid-template-columns: 1fr 1fr; border-radius: 28px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.14); min-height: 580px; }
+    @media (max-width: 680px) { .page { grid-template-columns: 1fr; } .page-left { display: none; } }
+
+    .page-left { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 60%, #F0C888 100%); padding: 40px 36px; display: flex; flex-direction: column; justify-content: space-between; color: #fff; position: relative; overflow: hidden; }
+    .page-left::after { content: '🐱'; position: absolute; right: -10px; bottom: 20px; font-size: 160px; opacity: .12; line-height: 1; }
+    .logo-area { display: flex; align-items: center; gap: 10px; }
+    .logo-mark { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,.25); display: grid; place-items: center; font-size: 20px; }
+    .logo-text { font-size: 20px; font-weight: 900; letter-spacing: -.5px; }
+    .left-body { }
+    .left-body h2 { font-size: 30px; font-weight: 900; line-height: 1.2; margin-bottom: 16px; }
+    .feature-list { display: flex; flex-direction: column; gap: 12px; }
+    .feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.5; opacity: .92; }
+    .feature-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+    .left-footer { font-size: 12px; opacity: .75; }
+
+    .page-right { background: var(--surface); padding: 40px 36px; display: flex; flex-direction: column; justify-content: center; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+    .back-link:hover { color: var(--brand); text-decoration: none; }
+    .tab-bar { display: flex; border-bottom: 1.5px solid var(--border); margin-bottom: 28px; }
+    .tab { flex: 1; text-align: center; padding: 12px 0; font-size: 15px; font-weight: 700; color: var(--text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: color .2s, border-color .2s; }
+    .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .form-panel { display: none; flex-direction: column; gap: 16px; }
+    .form-panel.active { display: flex; }
+    .form-title { font-size: 22px; font-weight: 800; }
+    .form-sub { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 13px; font-weight: 700; color: var(--text-sub); }
+    .field input, .field select { border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 14px; font: inherit; font-size: 14px; color: var(--text); background: var(--bg); outline: none; transition: border-color .15s, background .15s; }
+    .field input:focus, .field select:focus { border-color: var(--accent); background: #fff; }
+    .field input::placeholder { color: var(--text-muted); }
+    .radio-group { display: flex; gap: 10px; }
+    .radio-option { flex: 1; border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 14px; font-size: 14px; cursor: pointer; transition: all .15s; text-align: center; color: var(--text-sub); font-weight: 600; }
+    .radio-option.selected { border-color: var(--brand); background: var(--brand-light); color: var(--brand); }
+    .pref-section { background: var(--bg); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .pref-title { font-size: 13px; font-weight: 700; color: var(--text-sub); }
+    .pref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .pref-select { border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 12px; font: inherit; font-size: 13px; background: #fff; color: var(--text); outline: none; }
+    .btn-submit { width: 100%; padding: 14px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 15px; font-weight: 800; border: none; transition: background .15s, transform .12s; }
+    .btn-submit:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .terms { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+    .divider { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 13px; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .status-msg { padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; display: none; }
+    .status-msg.success { background: #ecfdf3; color: #027a48; display: block; }
+    .status-msg.error { background: #fef2f2; color: #dc2626; display: block; }
+    .forgot-link { font-size: 13px; color: var(--text-muted); text-align: right; }
+    .forgot-link a { color: var(--brand); }
+  </style>
+</head>
+<body>
+<div class="page">
+  <!-- Left panel -->
+  <div class="page-left">
+    <div class="logo-area">
+      <div class="logo-mark">&#x1F431;</div>
+      <span class="logo-text">CatFace</span>
+    </div>
+    <div class="left-body">
+      <h2>The social platform for cat lovers</h2>
+      <div class="feature-list">
+        <div class="feature-item"><span class="feature-icon">&#x1F4AC;</span><span>Post updates about your cat and connect with the community</span></div>
+        <div class="feature-item"><span class="feature-icon">&#x1F431;</span><span>Discover adoptable cats matched to your preferences</span></div>
+        <div class="feature-item"><span class="feature-icon">&#x1FA7A;</span><span>Manage health records and share with clinics</span></div>
+        <div class="feature-item"><span class="feature-icon">&#x1F691;</span><span>Report and track stray cat rescue activities</span></div>
+      </div>
+    </div>
+    <div class="left-footer">CatFace · UI Demo · All data is simulated</div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="page-right">
+    <a class="back-link" href="index.html">&#x2190; Back to Home</a>
+    <div class="tab-bar">
+      <div class="tab active" id="tab-login">Log In</div>
+      <div class="tab" id="tab-signup">Sign Up</div>
+    </div>
+
+    <!-- Login Form -->
+    <div class="form-panel active" id="panel-login">
+      <div>
+        <div class="form-title">Welcome back</div>
+        <div class="form-sub">Log in to your CatFace account</div>
+      </div>
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" placeholder="Enter your email">
+      </div>
+      <div class="field">
+        <label for="login-pw">Password</label>
+        <input id="login-pw" type="password" placeholder="Enter your password">
+      </div>
+      <div class="forgot-link"><a href="#">Forgot password?</a></div>
+      <div id="login-status" class="status-msg"></div>
+      <button class="btn-submit" id="login-btn">Log In</button>
+      <div class="divider">or</div>
+      <div style="text-align:center;font-size:14px;color:var(--text-muted);">Don't have an account? <a href="#" onclick="switchTab('signup')">Sign up</a></div>
+    </div>
+
+    <!-- Sign Up Form -->
+    <div class="form-panel" id="panel-signup">
+      <div>
+        <div class="form-title">Create account</div>
+        <div class="form-sub">Join CatFace and find your perfect companion</div>
+      </div>
+      <div class="field">
+        <label>Nickname</label>
+        <input type="text" placeholder="Your display name">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" placeholder="Enter your email">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" placeholder="Create a password (min. 6 chars)">
+      </div>
+      <div class="field">
+        <label>I am signing up as</label>
+        <div class="radio-group">
+          <div class="radio-option selected" id="role-user">&#x1F431; I have a cat</div>
+          <div class="radio-option" id="role-adopt">&#x1F3E0; I want to adopt</div>
+        </div>
+      </div>
+      <div class="pref-section" id="adopt-prefs" style="display:none;">
+        <div class="pref-title">Adoption preferences (optional)</div>
+        <div class="pref-grid">
+          <select class="pref-select"><option>Any gender</option><option>Female</option><option>Male</option></select>
+          <select class="pref-select"><option>Any age</option><option>Kitten (0–1 yr)</option><option>Adult</option><option>Senior</option></select>
+          <select class="pref-select"><option>Any breed</option><option>Domestic shorthair</option><option>British Shorthair</option><option>Persian</option></select>
+          <select class="pref-select"><option>Any home type</option><option>Quiet home</option><option>Family</option><option>First-time owner</option></select>
+        </div>
+      </div>
+      <div class="terms">
+        <label><input type="checkbox"> I have read and agree to the <a href="#">User Agreement</a>, <a href="#">Privacy Policy</a>, and <a href="#">Children/Teen Personal Information Protection Rules</a>.</label>
+      </div>
+      <div id="signup-status" class="status-msg"></div>
+      <button class="btn-submit" id="signup-btn">Sign Up</button>
+      <div style="text-align:center;font-size:14px;color:var(--text-muted);">Already have an account? <a href="#" onclick="switchTab('login')">Log in</a></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+    document.querySelectorAll('.form-panel').forEach(function(p){p.classList.remove('active')});
+    document.getElementById('tab-'+tab).classList.add('active');
+    document.getElementById('panel-'+tab).classList.add('active');
+  }
+  document.getElementById('tab-login').onclick = function(){ switchTab('login'); };
+  document.getElementById('tab-signup').onclick = function(){ switchTab('signup'); };
+
+  // Role toggle
+  var roleUser = document.getElementById('role-user');
+  var roleAdopt = document.getElementById('role-adopt');
+  var adoptPrefs = document.getElementById('adopt-prefs');
+  roleUser.onclick = function(){
+    roleUser.classList.add('selected'); roleAdopt.classList.remove('selected');
+    adoptPrefs.style.display = 'none';
+  };
+  roleAdopt.onclick = function(){
+    roleAdopt.classList.add('selected'); roleUser.classList.remove('selected');
+    adoptPrefs.style.display = '';
+  };
+
+  // Demo login
+  document.getElementById('login-btn').onclick = function(){
+    var email = document.getElementById('login-email').value;
+    var pw = document.getElementById('login-pw').value;
+    var status = document.getElementById('login-status');
+    if(!email || !pw){ status.className='status-msg error'; status.textContent='Please enter email and password.'; return; }
+    status.className='status-msg success'; status.textContent='Login successful! Redirecting…';
+    setTimeout(function(){ location.href='index.html'; }, 1000);
+  };
+
+  // Demo signup
+  document.getElementById('signup-btn').onclick = function(){
+    var status = document.getElementById('signup-status');
+    status.className='status-msg success'; status.textContent='Account created! Welcome to CatFace!';
+    setTimeout(function(){ location.href='index.html'; }, 1200);
+  };
+</script>
+</body>
+</html>

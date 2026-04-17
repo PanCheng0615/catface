@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CatFace · My Account</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF; --surface-2: #FDFAF6;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4; --border-light: #F3E8D8; --like-color: #E05B73;
+      --radius-lg: 16px; --radius-md: 12px; --radius-sm: 8px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+
+    /* LEFT NAV */
+    .left-nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; background: var(--surface); border-right: 1px solid var(--border); }
+    .left-nav::-webkit-scrollbar { display: none; }
+    .nav-hero { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 100%); padding: 18px 16px 16px; position: relative; overflow: hidden; flex-shrink: 0; }
+    .nav-hero::after { content: '🐱'; position: absolute; right: 10px; top: 8px; font-size: 48px; opacity: .15; line-height: 1; pointer-events: none; }
+    .nav-hero-logo { font-size: 13px; font-weight: 800; letter-spacing: .5px; color: rgba(255,255,255,.75); text-transform: uppercase; margin-bottom: 12px; }
+    .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
+    .nav-hero-avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.22); border: 2.5px solid rgba(255,255,255,.55); color: #fff; display: grid; place-items: center; font-size: 19px; flex-shrink: 0; }
+    .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
+    .nav-hero-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; cursor: pointer; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #86EFAC; flex-shrink: 0; }
+    .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--text-sub); transition: background .15s, color .15s; cursor: pointer; }
+    .nav-link:hover { background: var(--brand-light); color: var(--brand); }
+    .nav-link.active { background: var(--brand-light); color: var(--brand); font-weight: 700; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; }
+    .n-label { flex: 1; }
+    .n-badge { background: var(--like-color); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px; }
+    .n-soon { font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--bg); padding: 2px 7px; border-radius: 99px; }
+    .btn-new-post { margin: 14px 10px 0; padding: 12px 0; border-radius: 12px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; transition: background .15s, transform .12s; }
+    .btn-new-post:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .nav-user { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--border-light); cursor: pointer; transition: background .15s; }
+    .nav-user:hover { background: var(--surface-2); }
+    .nav-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--brand-light); border: 2px solid var(--border); color: var(--brand); display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .u-handle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .nav-user-more { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
+
+    /* CENTER */
+    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; overflow-y: auto; }
+    .center-header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); padding: 16px 20px; }
+    .center-header h2 { font-size: 18px; font-weight: 800; }
+    .center-header p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .acct-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .acct-profile-hero { background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%); border-radius: 20px; padding: 22px; color: #fff; display: flex; align-items: center; gap: 16px; }
+    .acct-avatar-big { width: 64px; height: 64px; border-radius: 50%; background: rgba(255,255,255,.25); border: 3px solid rgba(255,255,255,.6); display: grid; place-items: center; font-size: 28px; flex-shrink: 0; }
+    .acct-hero-name { font-size: 20px; font-weight: 800; }
+    .acct-hero-sub { font-size: 13px; opacity: .9; margin-top: 4px; }
+    .acct-hero-edit { margin-left: auto; padding: 8px 18px; border-radius: 99px; background: rgba(255,255,255,.22); border: 1.5px solid rgba(255,255,255,.5); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; }
+    .acct-hero-edit:hover { background: rgba(255,255,255,.35); }
+    .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .section-card-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+    .section-card-title { font-size: 15px; font-weight: 700; }
+    .section-card-pill { padding: 4px 10px; border-radius: 99px; background: var(--brand-light); color: var(--brand); font-size: 11px; font-weight: 700; }
+    .section-card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+    .field input, .field select, .field textarea { border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; font: inherit; font-size: 14px; background: var(--surface-2); color: var(--text); outline: none; transition: border-color .15s; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); background: #fff; }
+    .field textarea { min-height: 80px; resize: vertical; }
+    .tags-row { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
+    .tags-row label { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .form-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; padding-top: 4px; }
+    .btn-primary { padding: 10px 22px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: background .15s; }
+    .btn-primary:hover { background: var(--brand-hover); }
+    .btn-secondary { padding: 10px 18px; border-radius: 99px; background: var(--surface-2); color: var(--text-sub); font-size: 14px; font-weight: 700; border: 1px solid var(--border); cursor: pointer; }
+    .btn-danger { padding: 10px 18px; border-radius: 99px; background: #18100A; color: #fff; font-size: 14px; font-weight: 700; border: none; cursor: pointer; }
+    .health-entry { display: flex; align-items: center; gap: 14px; background: var(--brand-light); border: 1px solid var(--accent); border-radius: 14px; padding: 14px 16px; }
+    .health-entry-icon { font-size: 26px; }
+    .health-entry-info { flex: 1; }
+    .health-entry-info h4 { font-size: 14px; font-weight: 700; }
+    .health-entry-info p { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .health-entry-btn { padding: 9px 18px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 13px; font-weight: 700; border: none; cursor: pointer; white-space: nowrap; transition: background .15s; }
+    .health-entry-btn:hover { background: var(--brand-hover); }
+    .saved-banner { display: none; padding: 12px 16px; background: #ecfdf3; color: #027a48; border-radius: 12px; font-size: 14px; font-weight: 700; }
+    .saved-banner.show { display: block; }
+
+    /* RIGHT PANEL */
+    .right-panel { padding: 20px 0 20px 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; scrollbar-width: none; }
+    .right-panel::-webkit-scrollbar { display: none; }
+    .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+    .rp-link-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+    .rp-link-row:last-child { border-bottom: none; }
+    .rp-link-row:hover { background: var(--bg); }
+    .rp-link-icon { font-size: 20px; width: 36px; height: 36px; border-radius: 10px; background: var(--brand-light); display: grid; place-items: center; flex-shrink: 0; }
+    .rp-link-label { flex: 1; font-size: 14px; font-weight: 600; color: var(--text-sub); }
+    .rp-link-arrow { color: var(--text-muted); font-size: 16px; }
+    .rp-info-block { padding: 14px 18px; font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <!-- LEFT NAV -->
+  <nav class="left-nav">
+    <div class="nav-hero">
+      <div class="nav-hero-logo">CatFace</div>
+      <div class="nav-hero-profile">
+        <div class="nav-hero-avatar">&#x1F464;</div>
+        <div>
+          <div class="nav-hero-name">Demo User</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Logged in · LV001</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-link" onclick="location.href='index.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+      <div class="nav-link" onclick="location.href='adoption.html'"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="location.href='notifications.html'"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge">3</span></div>
+      <div class="nav-link active"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
+    </div>
+    <button class="btn-new-post" onclick="location.href='index.html'">+ New Post</button>
+    <div class="nav-user">
+      <div class="nav-avatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name">Demo User</div><div class="u-handle">@LV001</div></div>
+      <span class="nav-user-more">&#x2026;</span>
+    </div>
+  </nav>
+
+  <!-- CENTER -->
+  <div class="center">
+    <div class="center-header">
+      <h2>&#x1F464; My Account</h2>
+      <p>Manage your profile, preferences, and your cat's information</p>
+    </div>
+    <div class="acct-body">
+      <div class="acct-profile-hero">
+        <div class="acct-avatar-big">&#x1F464;</div>
+        <div>
+          <div class="acct-hero-name">Demo User</div>
+          <div class="acct-hero-sub">LV001 · Joined March 2026 · Cat Lover</div>
+        </div>
+        <button class="acct-hero-edit">Edit Photo</button>
+      </div>
+
+      <!-- Profile Section -->
+      <div class="section-card">
+        <div class="section-card-head">
+          <span class="section-card-title">Profile</span>
+          <span class="section-card-pill">Logged in</span>
+        </div>
+        <div class="section-card-body">
+          <div class="form-grid">
+            <div class="field"><label>Nickname</label><input type="text" value="Demo User" placeholder="Enter nickname"></div>
+            <div class="field"><label>Email</label><input type="email" value="demo@catface.app" placeholder="Enter email"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Adoption Preferences -->
+      <div class="section-card">
+        <div class="section-card-head">
+          <span class="section-card-title">Adoption Preferences</span>
+          <span class="section-card-pill">Used for matching</span>
+        </div>
+        <div class="section-card-body">
+          <div class="form-grid">
+            <div class="field"><label>Preferred gender</label>
+              <select><option>Any</option><option>Female</option><option selected>Male</option><option>No preference</option></select></div>
+            <div class="field"><label>Preferred age</label>
+              <select><option>Any</option><option selected>Kitten (0–1 year)</option><option>Adult (1–7 years)</option><option>Senior (7+ years)</option></select></div>
+            <div class="field"><label>Preferred breed</label>
+              <select><option selected>Any</option><option>Domestic short hair</option><option>British Shorthair</option><option>Ragdoll</option><option>Persian</option></select></div>
+            <div class="field"><label>Home environment</label>
+              <select><option>Optional</option><option selected>Quiet (1–2 adults)</option><option>Family with children</option><option>Already have other pets</option></select></div>
+            <div class="field full"><label>Personality tags</label>
+              <div class="tags-row">
+                <label><input type="checkbox" checked> Playful / Active</label>
+                <label><input type="checkbox"> Gentle / Calm</label>
+                <label><input type="checkbox"> Good with kids</label>
+                <label><input type="checkbox" checked> Good for first-time owners</label>
+                <label><input type="checkbox"> OK with special needs</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Cat -->
+      <div class="section-card">
+        <div class="section-card-head">
+          <span class="section-card-title">My Cat</span>
+          <span class="section-card-pill">For owners</span>
+        </div>
+        <div class="section-card-body">
+          <div class="field full"><label style="display:flex;align-items:center;gap:8px;font-size:14px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--text-sub);"><input type="checkbox" id="hasCat"> I have adopted a cat / I already own a cat</label></div>
+          <div class="form-grid" id="catFields" style="opacity:.5;pointer-events:none;">
+            <div class="field"><label>Cat name</label><input type="text" placeholder="Enter cat name"></div>
+            <div class="field"><label>Breed</label><input type="text" placeholder="e.g. Domestic shorthair"></div>
+            <div class="field"><label>Gender</label>
+              <select><option>Not specified</option><option>Male</option><option>Female</option></select></div>
+            <div class="field"><label>Birthday</label><input type="date"></div>
+            <div class="field"><label>Spay / Neuter</label>
+              <select><option>Not specified</option><option>Completed</option><option>Not yet</option></select></div>
+            <div class="field"><label>Vaccination</label><input type="text" placeholder="e.g. Rabies + FVRCP"></div>
+            <div class="field"><label>Allergies</label><input type="text" placeholder="Optional"></div>
+            <div class="field"><label>Cat ID</label><input type="text" placeholder="Auto-generated" readonly style="opacity:.6;"></div>
+            <div class="field full"><label>Notes</label><textarea placeholder="Any notes about your cat..."></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Health Entry -->
+      <div class="section-card">
+        <div class="section-card-head"><span class="section-card-title">Health</span></div>
+        <div class="section-card-body">
+          <div class="health-entry">
+            <div class="health-entry-icon">&#x1FA7A;</div>
+            <div class="health-entry-info">
+              <h4>Cat Health Records</h4>
+              <p>View and manage medical data, vaccination history, and share records with clinics.</p>
+            </div>
+            <button class="health-entry-btn" onclick="location.href='health.html'">Go to Health &#x2192;</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="savedBanner" class="saved-banner">&#x2705; Saved successfully!</div>
+      <div class="form-actions">
+        <button class="btn-secondary">Reset</button>
+        <button class="btn-primary" onclick="document.getElementById('savedBanner').classList.add('show');setTimeout(function(){document.getElementById('savedBanner').classList.remove('show');},2000)">Save Changes</button>
+        <button class="btn-danger">Log Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+    <div class="rp-card">
+      <div class="rp-card-title">&#x26A1; Quick Actions</div>
+      <div class="rp-link-row" onclick="location.href='index.html'"><div class="rp-link-icon">&#x1F4AC;</div><span class="rp-link-label">Community Feed</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="location.href='adoption.html'"><div class="rp-link-icon">&#x1F431;</div><span class="rp-link-label">Adoption</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="location.href='health.html'"><div class="rp-link-icon">&#x1FA7A;</div><span class="rp-link-label">Health Records</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="location.href='cat-profile.html'"><div class="rp-link-icon">&#x1F4CB;</div><span class="rp-link-label">My Cat Profile</span><span class="rp-link-arrow">&#x203A;</span></div>
+    </div>
+    <div class="rp-card">
+      <div class="rp-card-title">&#x1F4A1; Tips</div>
+      <div class="rp-info-block">
+        <p>&#x2022; Update your adoption preferences to improve cat matching.</p>
+        <br>
+        <p>&#x2022; Keep your cat's health records up to date and share them with your vet on the Health page.</p>
+        <br>
+        <p>&#x2022; Your data is saved locally in your browser.</p>
+      </div>
+    </div>
+  </aside>
+</div>
+<script>
+  var hasCat = document.getElementById('hasCat');
+  var catFields = document.getElementById('catFields');
+  hasCat.addEventListener('change', function(){
+    catFields.style.opacity = this.checked ? '1' : '.5';
+    catFields.style.pointerEvents = this.checked ? '' : 'none';
+  });
+</script>
+</body>
+</html>

@@ -3,490 +3,842 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cat Creator Profile</title>
+  <title>CatFace · Cat Profile</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: #fafafa;
-      color: #222;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF; --surface-2: #FDFAF6;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4; --border-light: #F3E8D8; --like-color: #E05B73;
+      --radius-lg: 16px; --radius-md: 12px; --radius-sm: 8px;
     }
-    a { color: inherit; text-decoration: none; }
-    .header {
-      position: sticky;
-      top: 0;
-      background: #ffffffcc;
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid #f1f1f1;
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 13px;
-      color: #666;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: #f5f5f5;
-    }
-    .main {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-    .profile {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px;
-      border-radius: 18px;
-      background: #fff;
-      box-shadow: 0 6px 18px rgba(0,0,0,.06);
-    }
-    .avatar {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fad0c4 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-weight: 700;
-      font-size: 28px;
-    }
-    .info-main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .name {
-      font-size: 18px;
-      font-weight: 700;
-    }
-    .bio {
-      font-size: 13px;
-      color: #666;
-    }
-    .stats {
-      display: flex;
-      gap: 16px;
-      font-size: 13px;
-      color: #555;
-      margin-top: 4px;
-    }
-    .stat-label {
-      color: #999;
-      margin-left: 2px;
-    }
-    .follow-btn {
-      border-radius: 999px;
-      padding: 8px 18px;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      background: #ff2442;
-      color: #fff;
-      box-shadow: 0 6px 18px rgba(255,36,66,.4);
-    }
-    .follow-btn.is-following {
-      background: #f5f5f5;
-      color: #444;
-      box-shadow: none;
-      border: 1px solid #e3e3e3;
-    }
-    .section {
-      margin-top: 18px;
-      padding: 16px;
-      border-radius: 18px;
-      background: #fff;
-      box-shadow: 0 4px 12px rgba(0,0,0,.03);
-      font-size: 14px;
-    }
-    .section h2 {
-      margin: 0 0 10px;
-      font-size: 15px;
-    }
-    .cat-profile-card {
-      display: grid;
-      grid-template-columns: 190px minmax(0, 1fr);
-      gap: 16px;
-      align-items: center;
-      padding: 16px;
-      border-radius: 16px;
-      border: 1px solid #f0f0f0;
-      background: linear-gradient(180deg, #fff, #fdfdfd);
-      margin-bottom: 12px;
-    }
-    .cat-photo {
-      width: 190px;
-      height: 190px;
-      object-fit: cover;
-      border-radius: 14px;
-      background: #f2f2f2;
-      border: 1px solid #ececec;
-      display: block;
-    }
-    .cat-photo.is-editable {
-      cursor: pointer;
-      outline: 2px solid transparent;
-      transition: outline-color .16s ease, transform .16s ease;
-    }
-    .cat-photo.is-editable:hover {
-      outline-color: #ff9aa8;
-      transform: translateY(-1px);
-    }
-    .cat-edit-tip {
-      margin-top: 8px;
-      font-size: 12px;
-      color: #ff2442;
-      font-weight: 600;
-    }
-    .cat-name {
-      font-size: 30px;
-      font-weight: 800;
-      line-height: 1.1;
-      margin-bottom: 8px;
-    }
-    .cat-meta {
-      font-size: 18px;
-      color: #555;
-      margin-bottom: 6px;
-    }
-    .cat-meta-sub {
-      font-size: 16px;
-      color: #8a8a8a;
-    }
-    .placeholder {
-      font-size: 13px;
-      color: #888;
-    }
-    @media (max-width: 760px) {
-      .cat-profile-card {
-        grid-template-columns: minmax(0, 1fr);
-      }
-      .cat-photo {
-        width: 100%;
-        height: 260px;
-      }
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; } button { font: inherit; cursor: pointer; }
+    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+
+    /* LEFT NAV */
+    .left-nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; background: var(--surface); border-right: 1px solid var(--border); }
+    .left-nav::-webkit-scrollbar { display: none; }
+    .nav-hero { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 100%); padding: 18px 16px 16px; position: relative; overflow: hidden; flex-shrink: 0; }
+    .nav-hero::after { content: '🐱'; position: absolute; right: 10px; top: 8px; font-size: 48px; opacity: .15; line-height: 1; pointer-events: none; }
+    .nav-hero-logo { font-size: 13px; font-weight: 800; letter-spacing: .5px; color: rgba(255,255,255,.75); text-transform: uppercase; margin-bottom: 12px; }
+    .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
+    .nav-hero-avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.22); border: 2.5px solid rgba(255,255,255,.55); color: #fff; display: grid; place-items: center; font-size: 19px; flex-shrink: 0; }
+    .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
+    .nav-hero-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; cursor: pointer; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #86EFAC; flex-shrink: 0; }
+    .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--text-sub); transition: background .15s, color .15s; cursor: pointer; }
+    .nav-link:hover { background: var(--brand-light); color: var(--brand); }
+    .nav-link.active { background: var(--brand-light); color: var(--brand); font-weight: 700; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; } .n-label { flex: 1; }
+    .n-badge { background: var(--like-color); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px; }
+    .n-soon { font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--bg); padding: 2px 7px; border-radius: 99px; }
+    .btn-new-post { margin: 14px 10px 0; padding: 12px 0; border-radius: 12px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; transition: background .15s, transform .12s; }
+    .btn-new-post:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .nav-user { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--border-light); cursor: pointer; transition: background .15s; }
+    .nav-user:hover { background: var(--surface-2); }
+    .nav-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--brand-light); border: 2px solid var(--border); color: var(--brand); display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); } .u-handle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .nav-user-more { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
+
+    /* CENTER */
+    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; overflow-y: auto; }
+    .profile-cover { position: relative; width: 100%; height: 200px; background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%); overflow: hidden; }
+    .profile-cover img { width: 100%; height: 100%; object-fit: cover; opacity: .7; }
+    .profile-cover-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,.5) 100%); }
+    .profile-cover-back { position: absolute; top: 14px; left: 16px; padding: 8px 14px; border-radius: 99px; background: rgba(0,0,0,.35); color: #fff; font-size: 13px; font-weight: 700; border: 1px solid rgba(255,255,255,.3); cursor: pointer; transition: background .15s; }
+    .profile-cover-back:hover { background: rgba(0,0,0,.55); }
+    .profile-main-info { padding: 0 20px 0; margin-top: -40px; position: relative; z-index: 2; }
+    .profile-avatar-wrap { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+    .profile-avatar { width: 80px; height: 80px; border-radius: 50%; border: 4px solid var(--surface); overflow: hidden; background: var(--brand-light); display: grid; place-items: center; font-size: 36px; flex-shrink: 0; }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-actions-row { display: flex; gap: 8px; align-items: center; padding-bottom: 4px; }
+    .btn-follow { padding: 9px 20px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: background .15s; }
+    .btn-follow:hover { background: var(--brand-hover); }
+    .btn-message { padding: 9px 16px; border-radius: 99px; background: none; border: 1.5px solid var(--border); color: var(--text-sub); font-size: 14px; font-weight: 700; cursor: pointer; transition: border-color .15s; }
+    .btn-message:hover { border-color: var(--brand); color: var(--brand); }
+    .profile-name-section { padding: 14px 20px 0; }
+    .profile-name { font-size: 22px; font-weight: 900; }
+    .profile-handle { font-size: 14px; color: var(--text-muted); margin-top: 2px; }
+    .profile-bio { font-size: 14px; line-height: 1.6; color: var(--text-sub); margin-top: 10px; }
+    .profile-stats { display: flex; gap: 20px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-light); }
+    .profile-stat { text-align: center; cursor: pointer; }
+    .profile-stat-num { font-size: 18px; font-weight: 800; color: var(--text); }
+    .profile-stat-label { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .profile-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding: 0 20px; }
+    .profile-tag { padding: 5px 12px; border-radius: 99px; background: var(--brand-light); color: var(--brand); font-size: 12px; font-weight: 700; border: 1px solid var(--accent); }
+
+    /* Tab bar */
+    .profile-tabs { display: flex; border-bottom: 1.5px solid var(--border); margin-top: 16px; }
+    .ptab { flex: 1; text-align: center; padding: 13px 0; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; transition: color .2s, border-color .2s; margin-bottom: -1.5px; }
+    .ptab.active { color: var(--brand); border-bottom-color: var(--brand); }
+
+    /* Posts tab */
+    .post-card { padding: 16px 20px 14px; border-bottom: 1px solid var(--border-light); display: flex; gap: 12px; transition: background .15s; }
+    .post-card:hover { background: var(--surface-2); }
+    .post-body { flex: 1; }
+    .post-text { font-size: 15px; line-height: 1.7; color: var(--text); margin-bottom: 10px; }
+    .post-img { width: 100%; max-width: 100%; height: auto; border-radius: var(--radius-lg); object-fit: contain; background: var(--bg); margin-bottom: 12px; border: 1px solid var(--border-light); display: block; }
+    .post-time { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; }
+    .post-actions { display: flex; gap: 4px; margin: 0 -6px; }
+    .act { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text-muted); background: none; border: none; padding: 6px 10px; border-radius: 99px; transition: background .15s, color .15s; cursor: pointer; }
+    .act:hover { background: var(--brand-light); color: var(--brand); }
+    .act.liked { color: var(--like-color); }
+    .act .ai { font-size: 17px; }
+    .act-spacer { margin-left: auto; }
+
+    /* About tab */
+    .about-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+    .info-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .info-card-head { padding: 13px 16px 11px; font-size: 14px; font-weight: 700; border-bottom: 1px solid var(--border-light); }
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border-light); }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: 13px; color: var(--text-muted); }
+    .info-value { font-size: 13px; font-weight: 700; color: var(--text); text-align: right; }
+
+    /* RIGHT PANEL */
+    .right-panel { padding: 20px 0 20px 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; scrollbar-width: none; }
+    .right-panel::-webkit-scrollbar { display: none; }
+    .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+    .similar-row { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+    .similar-row:last-child { border-bottom: none; }
+    .similar-row:hover { background: var(--bg); }
+    .similar-img { width: 40px; height: 40px; border-radius: 10px; object-fit: cover; flex-shrink: 0; background: var(--brand-light); }
+    .similar-info { flex: 1; }
+    .similar-name { font-size: 13px; font-weight: 700; }
+    .similar-sub { font-size: 12px; color: var(--text-muted); }
+    .follow-btn { flex-shrink: 0; padding: 5px 12px; border-radius: 99px; border: 1.5px solid var(--brand); color: var(--brand); background: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s; }
+    .follow-btn:hover { background: var(--brand); color: #fff; }
+    .adopt-cta { background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%); border-radius: 18px; padding: 18px; color: #fff; }
+    .adopt-cta h3 { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+    .adopt-cta p { font-size: 13px; line-height: 1.5; opacity: .9; margin-bottom: 14px; }
+    .adopt-cta-btn { width: 100%; padding: 10px; border-radius: 99px; background: #fff; color: var(--brand); font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: box-shadow .15s; }
+    .adopt-cta-btn:hover { box-shadow: 0 4px 14px rgba(0,0,0,.15); }
   </style>
 </head>
 <body>
-  <header class="header">
-    <a href="/pages/cat-facebook.html?feed=recommended" class="back-link">← Back to Community</a>
-    <div style="font-size:14px;color:#666;">Cat Creator Profile</div>
-  </header>
-
-  <main class="main">
-    <section class="profile">
-      <div class="avatar" id="avatar">C</div>
-      <div class="info-main">
-        <div class="name" id="name">Cat Lover</div>
-        <div class="bio" id="bio">Sharing daily moments of my cat on CatFace.</div>
-        <div class="stats">
-          <div><span id="followers">0</span><span class="stat-label"> followers</span></div>
-          <div><span id="following">0</span><span class="stat-label"> following</span></div>
+<div class="layout">
+  <!-- LEFT NAV -->
+  <nav class="left-nav">
+    <div class="nav-hero">
+      <div class="nav-hero-logo">CatFace</div>
+      <div class="nav-hero-profile">
+        <div class="nav-hero-avatar">&#x1F464;</div>
+        <div>
+          <div class="nav-hero-name">Guest</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Not logged in</div>
         </div>
       </div>
-      <button class="follow-btn" type="button" id="followBtn">Follow</button>
-    </section>
+    </div>
+    <div class="nav-section">
+      <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/notifications.html', 'Please log in first')"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
+    </div>
+    <button class="btn-new-post" onclick="location.href='/pages/cat-facebook.html'">+ New Post</button>
+    <div class="nav-user" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')">
+      <div class="nav-avatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name">Guest</div><div class="u-handle">Log in to continue</div></div>
+      <span class="nav-user-more">&#x2026;</span>
+    </div>
+  </nav>
 
-    <section class="section" id="catSectionWrap">
-      <h2>Cat profile</h2>
-      <div id="catSection" class="placeholder">Loading...</div>
-    </section>
+  <!-- CENTER -->
+  <div class="center">
+    <!-- Cover photo -->
+    <div class="profile-cover">
+      <img id="profileCoverImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="Profile cover">
+      <div class="profile-cover-overlay"></div>
+      <button class="profile-cover-back" onclick="history.back()">&#x2190; Back</button>
+    </div>
 
-    <section class="section">
-      <h2>Posts from this creator</h2>
-      <div id="postsSection" class="placeholder">Loading...</div>
-    </section>
-  </main>
-  <input type="file" id="catPhotoInput" accept="image/*" style="display:none;">
+    <!-- Avatar & actions -->
+    <div class="profile-main-info">
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar"><img id="profileAvatarImage" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="Profile avatar"></div>
+        <div class="profile-actions-row">
+          <button class="btn-follow" id="followBtn">Follow</button>
+          <button class="btn-message" id="messageBtn">Message</button>
+        </div>
+      </div>
+    </div>
 
-  <script src="../js/config.js"></script>
-  <script>
-    (function () {
-      const API_BASE = API_BASE_URL + "/users";
-      const params = new URLSearchParams(window.location.search);
-      let author = params.get("author") || "";
-      let targetUserId = params.get("authorId") || params.get("id") || "";
+    <!-- Name & bio -->
+    <div class="profile-name-section">
+      <div class="profile-name" id="profileName">Loading profile...</div>
+      <div class="profile-handle" id="profileHandle">@loading</div>
+      <div class="profile-bio" id="profileBio">Fetching profile details.</div>
+      <div class="profile-stats">
+        <div class="profile-stat"><div class="profile-stat-num" id="profilePostsCount">0</div><div class="profile-stat-label">Posts</div></div>
+        <div class="profile-stat"><div class="profile-stat-num" id="profileFollowersCount">0</div><div class="profile-stat-label">Followers</div></div>
+        <div class="profile-stat"><div class="profile-stat-num" id="profileFollowingCount">0</div><div class="profile-stat-label">Following</div></div>
+      </div>
+    </div>
+
+    <div class="profile-tags" id="profileTags">
+      <span class="profile-tag">&#x1F464; Community member</span>
+      <span class="profile-tag">&#x2728; CatFace profile</span>
+    </div>
+
+    <!-- Tabs -->
+    <div class="profile-tabs">
+      <div class="ptab active" id="tab-posts">Posts</div>
+      <div class="ptab" id="tab-about">About</div>
+      <div class="ptab" id="tab-photos">Photos</div>
+    </div>
+
+    <!-- Posts tab content -->
+    <div id="content-posts">
+      <div id="profilePostsList">
+      <div class="post-card">
+        <div class="post-body">
+          <div class="post-time">Loading...</div>
+          <p class="post-text">Preparing posts for this profile.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- About tab content -->
+    <div id="content-about" style="display:none;">
+      <div class="about-body">
+        <div class="info-card">
+          <div class="info-card-head">&#x1F4CB; Profile Information</div>
+          <div class="info-row"><span class="info-label">Display name</span><span class="info-value" id="aboutDisplayName">Loading</span></div>
+          <div class="info-row"><span class="info-label">Username</span><span class="info-value" id="aboutUsername">@loading</span></div>
+          <div class="info-row"><span class="info-label">Profile type</span><span class="info-value" id="aboutProfileType">Community member</span></div>
+          <div class="info-row"><span class="info-label">Status</span><span class="info-value" id="aboutStatus">Active</span></div>
+          <div class="info-row"><span class="info-label">Profile source</span><span class="info-value" id="aboutSource">CatFace community</span></div>
+          <div class="info-row"><span class="info-label">Last viewed</span><span class="info-value" id="aboutLastViewed">Just now</span></div>
+          <div class="info-row"><span class="info-label">Story profile</span><span class="info-value" id="aboutStoryFlag">No</span></div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-head">&#x1FA7A; Activity Overview</div>
+          <div class="info-row"><span class="info-label">Posts</span><span class="info-value" id="aboutPostsCount">0</span></div>
+          <div class="info-row"><span class="info-label">Followers</span><span class="info-value" id="aboutFollowersCount">0</span></div>
+          <div class="info-row"><span class="info-label">Following</span><span class="info-value" id="aboutFollowingCount">0</span></div>
+          <div class="info-row"><span class="info-label">Bio</span><span class="info-value" id="aboutBioSummary">CatFace member</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photos tab content -->
+    <div id="content-photos" style="display:none;padding:16px;display:none;">
+      <div id="profilePhotosGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <div style="grid-column:1/-1;color:#A87848;font-size:14px;">Loading photos...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+    <div class="adopt-cta">
+      <h3 id="adoptCtaTitle">&#x1F464; View this profile</h3>
+      <p id="adoptCtaText">Explore this CatFace member's profile and recent posts.</p>
+      <button class="adopt-cta-btn" id="adoptCtaBtn" onclick="location.href='/pages/cat-facebook.html'">Open Community</button>
+    </div>
+  </aside>
+</div>
+
+<script src="../js/config.js"></script>
+<script>
+  (function () {
+    var tabs = { posts: 'content-posts', about: 'content-about', photos: 'content-photos' };
+    var followBtn = document.getElementById('followBtn');
+    var messageBtn = document.getElementById('messageBtn');
+    var profileName = document.getElementById('profileName');
+    var profileHandle = document.getElementById('profileHandle');
+    var profileBio = document.getElementById('profileBio');
+    var profileCoverImage = document.getElementById('profileCoverImage');
+    var profileAvatarImage = document.getElementById('profileAvatarImage');
+    var profilePostsCount = document.getElementById('profilePostsCount');
+    var profileFollowersCount = document.getElementById('profileFollowersCount');
+    var profileFollowingCount = document.getElementById('profileFollowingCount');
+    var profilePostsList = document.getElementById('profilePostsList');
+    var profileTags = document.getElementById('profileTags');
+    var profilePhotosGrid = document.getElementById('profilePhotosGrid');
+    var aboutDisplayName = document.getElementById('aboutDisplayName');
+    var aboutUsername = document.getElementById('aboutUsername');
+    var aboutProfileType = document.getElementById('aboutProfileType');
+    var aboutStatus = document.getElementById('aboutStatus');
+    var aboutPostsCount = document.getElementById('aboutPostsCount');
+    var aboutFollowersCount = document.getElementById('aboutFollowersCount');
+    var aboutFollowingCount = document.getElementById('aboutFollowingCount');
+    var aboutBioSummary = document.getElementById('aboutBioSummary');
+    var aboutSource = document.getElementById('aboutSource');
+    var aboutLastViewed = document.getElementById('aboutLastViewed');
+    var aboutStoryFlag = document.getElementById('aboutStoryFlag');
+    var adoptCtaTitle = document.getElementById('adoptCtaTitle');
+    var adoptCtaText = document.getElementById('adoptCtaText');
+    var adoptCtaBtn = document.getElementById('adoptCtaBtn');
+    var state = {
+      profile: null,
+      targetUserId: null,
+      postActionPending: false
+    };
+    var STORY_PROFILES = {
+      luna: {
+        username: 'luna_story',
+        display_name: 'Luna',
+        avatar_url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400&q=80',
+        bio: 'Sunbeam lover, gentle nap expert, and one of the cutest story regulars on CatFace.',
+        counts: { posts: 12, followers: 2100, following: 84 },
+        posts: [
+          { created_at: new Date(Date.now() - 2 * 86400000).toISOString(), content: 'Perfect sunbeam found. Do not disturb.', image_url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&q=80', likes: 412, comments: 31 }
+        ]
+      },
+      whiskers: {
+        username: 'whiskers_story',
+        display_name: 'Whiskers',
+        avatar_url: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&q=80',
+        bio: 'Health tips, nap notes, and serious tabby wisdom.',
+        counts: { posts: 19, followers: 1750, following: 63 },
+        posts: [
+          { created_at: new Date(Date.now() - 4 * 86400000).toISOString(), content: 'Daily reminder: warm laps are essential for wellness.', image_url: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&q=80', likes: 355, comments: 22 }
+        ]
+      },
+      charlie: {
+        username: 'charlie_story',
+        display_name: 'Charlie',
+        avatar_url: 'https://images.unsplash.com/photo-1495360010541-f48722b34f7d?w=400&q=80',
+        bio: 'Quiet observer with elegant poses and premium side-eye.',
+        counts: { posts: 8, followers: 980, following: 40 },
+        posts: [
+          { created_at: new Date(Date.now() - 6 * 86400000).toISOString(), content: 'Practicing my best statue pose by the window.', image_url: 'https://images.unsplash.com/photo-1495360010541-f48722b34f7d?w=800&q=80', likes: 188, comments: 12 }
+        ]
+      },
+      mochi: {
+        username: 'mochi_story',
+        display_name: 'Mochi',
+        avatar_url: 'https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=400&q=80',
+        bio: 'Small face, big personality, and very professional at looking adorable.',
+        counts: { posts: 16, followers: 3200, following: 96 },
+        posts: [
+          { created_at: new Date(Date.now() - 86400000).toISOString(), content: 'Camera ready from every angle today.', image_url: 'https://images.unsplash.com/photo-1571566882372-1598d88abd90?w=800&q=80', likes: 620, comments: 48 }
+        ]
+      },
+      nala: {
+        username: 'nala_story',
+        display_name: 'Nala',
+        avatar_url: 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=400&q=80',
+        bio: 'Sunny spots, feather toys, and tiny kitten chaos.',
+        counts: { posts: 24, followers: 3412, following: 142 },
+        posts: [
+          { created_at: new Date(Date.now() - 2 * 86400000).toISOString(), content: 'I just turned 3 months old today! Still figuring out this whole "walking gracefully" thing…', image_url: 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=800&q=80', likes: 3412, comments: 178 }
+        ]
+      },
+      simba: {
+        username: 'simba_story',
+        display_name: 'Simba',
+        avatar_url: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=400&q=80',
+        bio: 'Golden retriever energy in a CatFace story circle. Yes, I still count.',
+        counts: { posts: 14, followers: 7200, following: 118 },
+        posts: [
+          { created_at: new Date(Date.now() - 3 * 86400000).toISOString(), content: 'Big smile for everyone scrolling today.', image_url: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800&q=80', likes: 2500, comments: 133 }
+        ]
+      },
+      gege: {
+        username: 'gege_um',
+        display_name: 'Gege',
+        avatar_url: '../assets/community/gege.png',
+        bio: 'Gentle UM kitten with a calm personality and excellent story presence.',
+        tags: ['Community member', 'UM rescue', 'Gentle'],
+        counts: { posts: 6, followers: 612, following: 33 },
+        posts: [
+          { created_at: new Date(Date.now() - 5 * 86400000).toISOString(), content: 'Campus friends unite. Quiet day, warm naps, good mood.', image_url: '../assets/community/gege.png', likes: 123, comments: 9 }
+        ]
+      },
+      luno: {
+        username: 'luno_um',
+        display_name: 'Luno',
+        avatar_url: '../assets/community/luno.png',
+        bio: 'Quiet, curious, and famous for heterochromia.',
+        counts: { posts: 7, followers: 540, following: 29 },
+        posts: [
+          { created_at: new Date(Date.now() - 3 * 86400000).toISOString(), content: 'Two different eye colours, same excellent attitude.', image_url: '../assets/community/luno.png', likes: 201, comments: 15 }
+        ]
+      },
+      spidercat: {
+        username: 'spider_cat_um',
+        display_name: 'Spider Cat',
+        avatar_url: '../assets/community/spider-cat.png',
+        bio: 'Curious observer with elite climbing skills.',
+        counts: { posts: 5, followers: 430, following: 21 },
+        posts: [
+          { created_at: new Date(Date.now() - 6 * 86400000).toISOString(), content: 'High ground secured. Watching everything from above.', image_url: '../assets/community/spider-cat.png', likes: 144, comments: 8 }
+        ]
+      },
+      tantou: {
+        username: 'tantou_um',
+        display_name: 'Peekaboo',
+        avatar_url: '../assets/community/tantou.png',
+        bio: 'Playful kitten who shows up in every interesting corner.',
+        counts: { posts: 5, followers: 398, following: 26 },
+        posts: [
+          { created_at: new Date(Date.now() - 2 * 86400000).toISOString(), content: 'Popped my head out just in time for story hour.', image_url: '../assets/community/tantou.png', likes: 132, comments: 7 }
+        ]
+      },
+      maojin: {
+        username: 'maojin_um',
+        display_name: 'Towel Boy',
+        avatar_url: '../assets/community/maojin.png',
+        bio: 'Towel nap expert and calm little gentleman.',
+        counts: { posts: 5, followers: 376, following: 20 },
+        posts: [
+          { created_at: new Date(Date.now() - 4 * 86400000).toISOString(), content: 'Wrapped up for another perfect nap.', image_url: '../assets/community/maojin.png', likes: 111, comments: 6 }
+        ]
+      },
+      cesuo: {
+        username: 'cesuo_um',
+        display_name: 'Lucky',
+        avatar_url: '../assets/community/cesuo.png',
+        bio: 'Outgoing campus rescue cat with sweet voice and lots of energy.',
+        counts: { posts: 5, followers: 402, following: 24 },
+        posts: [
+          { created_at: new Date(Date.now() - 3 * 86400000).toISOString(), content: 'Exploring mode activated. Cuddles available later.', image_url: '../assets/community/cesuo.png', likes: 136, comments: 10 }
+        ]
+      }
+    };
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function loadCurrentUser() {
       try {
-        if (!targetUserId) targetUserId = window.localStorage.getItem("catface_last_author_id") || "";
-        if (!author) author = window.localStorage.getItem("catface_last_author_name") || "";
-      } catch (e) {}
-      if (!author) author = "Cat Lover";
+        return JSON.parse(localStorage.getItem('catface_user') || 'null');
+      } catch (e) {
+        return null;
+      }
+    }
 
-      const avatarEl = document.getElementById("avatar");
-      const nameEl = document.getElementById("name");
-      const followersEl = document.getElementById("followers");
-      const followingEl = document.getElementById("following");
-      const followBtn = document.getElementById("followBtn");
-      const catSection = document.getElementById("catSection");
-      const catSectionWrap = document.getElementById("catSectionWrap");
-      const postsSection = document.getElementById("postsSection");
-      const catPhotoInput = document.getElementById("catPhotoInput");
-      const token = window.localStorage.getItem("catface_token");
-      const currentUser = (function () {
-        try {
-          return JSON.parse(window.localStorage.getItem("catface_user") || "null");
-        } catch (e) {
+    function requireLogin() {
+      if (typeof isLoggedIn === 'function' && isLoggedIn()) return true;
+      alert('Please log in first.');
+      window.location.href = '/pages/log-in.html';
+      return false;
+    }
+
+    function formatCount(value) {
+      return Number(value || 0).toLocaleString();
+    }
+
+    function formatTime(iso) {
+      if (!iso) return 'Just now';
+      var d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return 'Just now';
+      var diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+      if (diffSec < 60) return 'Just now';
+      if (diffSec < 3600) return Math.floor(diffSec / 60) + 'm ago';
+      if (diffSec < 86400) return Math.floor(diffSec / 3600) + 'h ago';
+      if (diffSec < 604800) return Math.floor(diffSec / 86400) + 'd ago';
+      return d.toLocaleDateString();
+    }
+
+    function getTargetUserId() {
+      var params = new URLSearchParams(window.location.search);
+      var story = String(params.get('story') || '').trim();
+      if (story) return '';
+      var authorId = String(params.get('authorId') || '').trim();
+      if (authorId) return authorId;
+      try {
+        return String(localStorage.getItem('catface_last_author_id') || '').trim();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function getStoryKey() {
+      var params = new URLSearchParams(window.location.search);
+      var story = String(params.get('story') || '').trim().toLowerCase();
+      if (story) return story;
+      try {
+        return String(localStorage.getItem('catface_last_story_profile') || '').trim().toLowerCase();
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function setFollowButtonState(profile) {
+      if (!followBtn || !profile) return;
+      if (profile.is_self) {
+        followBtn.style.display = 'none';
+        return;
+      }
+      followBtn.style.display = '';
+      if (profile.is_following) {
+        followBtn.textContent = 'Following';
+        followBtn.style.background = 'var(--brand-hover)';
+      } else {
+        followBtn.textContent = 'Follow';
+        followBtn.style.background = '';
+      }
+    }
+
+    function renderPosts(posts) {
+      if (!profilePostsList) return;
+      if (!posts || !posts.length) {
+        profilePostsList.innerHTML =
+          '<div class="post-card"><div class="post-body"><div class="post-time">No posts yet</div><p class="post-text">This user has not shared anything yet.</p></div></div>';
+        return;
+      }
+      profilePostsList.innerHTML = posts.map(function (post) {
+        var canInteract = !!post.id;
+        var likeClass = post.liked ? 'act liked' : 'act';
+        return (
+          '<div class="post-card" data-post-open="' + escapeHtml(post.id || '') + '">' +
+            '<div class="post-body">' +
+              '<div class="post-time">' + escapeHtml(formatTime(post.created_at)) + '</div>' +
+              '<p class="post-text">' + escapeHtml(post.content || '') + '</p>' +
+              (post.image_url ? '<img class="post-img" src="' + escapeHtml(post.image_url) + '" alt="">' : '') +
+              '<div class="post-actions">' +
+                '<button class="' + likeClass + '" type="button" data-post-like="' + escapeHtml(post.id || '') + '"' + (canInteract ? '' : ' disabled') + '><span class="ai">&#x2665;</span> ' + escapeHtml(formatCount(post.likes)) + '</button>' +
+                '<button class="act" type="button" data-post-comment="' + escapeHtml(post.id || '') + '"' + (canInteract ? '' : ' disabled') + '><span class="ai">&#x1F4AC;</span> ' + escapeHtml(formatCount(post.comments)) + '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+
+    function openProfilePost(postId) {
+      if (!postId) return;
+      window.location.href = '/pages/cat-facebook.html?post=' + encodeURIComponent(postId);
+    }
+
+    function updatePostInState(postId, updater) {
+      if (!state.profile || !Array.isArray(state.profile.posts)) return;
+      state.profile.posts = state.profile.posts.map(function (post) {
+        if (!post || post.id !== postId) return post;
+        return updater(post);
+      });
+      applyProfile(state.profile);
+    }
+
+    function toggleProfilePostLike(postId) {
+      if (!postId || state.postActionPending) return;
+      if (!requireLogin()) return;
+      if (!state.targetUserId) return;
+      state.postActionPending = true;
+      fetchJson(
+        API_BASE_URL + '/users/' + encodeURIComponent(state.targetUserId) + '/profile/posts/' + encodeURIComponent(postId) + '/like',
+        {
+        method: 'POST',
+        headers: getAuthHeaders()
+      }).then(function (result) {
+        if (!result || !result.success || !result.data) {
+          alert((result && result.message) || 'Unable to update like.');
+          return;
+        }
+        updatePostInState(postId, function (post) {
+          return Object.assign({}, post, {
+            liked: !!result.data.liked,
+            likes: Number(result.data.likes || 0)
+          });
+        });
+      }).catch(function () {
+        alert('Network error, please try again.');
+      }).finally(function () {
+        state.postActionPending = false;
+      });
+    }
+
+    function addProfilePostComment(postId) {
+      if (!postId || state.postActionPending) return;
+      if (!requireLogin()) return;
+      if (!state.targetUserId) return;
+      var content = window.prompt('Write a comment:');
+      if (content == null) return;
+      var text = String(content).trim();
+      if (!text) return;
+      state.postActionPending = true;
+      fetchJson(
+        API_BASE_URL + '/users/' + encodeURIComponent(state.targetUserId) + '/profile/posts/' + encodeURIComponent(postId) + '/comments',
+        {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ content: text })
+      }).then(function (result) {
+        if (!result || !result.success) {
+          alert((result && result.message) || 'Unable to add comment.');
+          return;
+        }
+        updatePostInState(postId, function (post) {
+          return Object.assign({}, post, {
+            comments: Number(post.comments || 0) + 1
+          });
+        });
+      }).catch(function () {
+        alert('Network error, please try again.');
+      }).finally(function () {
+        state.postActionPending = false;
+      });
+    }
+
+    function renderTags(profile) {
+      if (!profileTags) return;
+      var tags = Array.isArray(profile.tags) && profile.tags.length
+        ? profile.tags
+        : ['Community member', profile.is_story_profile ? 'Story profile' : 'Profile active'];
+      profileTags.innerHTML = tags.map(function (tag) {
+        return '<span class="profile-tag">' + escapeHtml(tag) + '</span>';
+      }).join('');
+    }
+
+    function renderPhotos(profile) {
+      if (!profilePhotosGrid) return;
+      var photos = (profile.posts || [])
+        .map(function (post) { return post.image_url || ''; })
+        .filter(Boolean)
+        .slice(0, 6);
+      if (!photos.length && profile.avatar_url) photos = [profile.avatar_url];
+      if (!photos.length) {
+        profilePhotosGrid.innerHTML = '<div style="grid-column:1/-1;color:#A87848;font-size:14px;">No photos available.</div>';
+        return;
+      }
+      profilePhotosGrid.innerHTML = photos.map(function (src) {
+        return '<img src="' + escapeHtml(src) + '" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;" alt="">';
+      }).join('');
+    }
+
+    function applyProfile(profile) {
+      state.profile = profile;
+      document.title = 'CatFace · ' + (profile.display_name || profile.username || 'Profile');
+      if (profileName) profileName.textContent = profile.display_name || profile.username || 'User';
+      if (profileHandle) profileHandle.textContent = profile.username ? '@' + profile.username : '';
+      if (profileBio) profileBio.textContent = profile.bio || 'No bio yet.';
+      if (profileAvatarImage && profile.avatar_url) profileAvatarImage.src = profile.avatar_url;
+      if (profileAvatarImage) profileAvatarImage.alt = (profile.display_name || profile.username || 'User') + ' avatar';
+      if (profileCoverImage && profile.avatar_url) profileCoverImage.src = profile.avatar_url;
+      if (profileCoverImage) profileCoverImage.alt = (profile.display_name || profile.username || 'User') + ' cover';
+      if (profilePostsCount) profilePostsCount.textContent = formatCount(profile.counts.posts);
+      if (profileFollowersCount) profileFollowersCount.textContent = formatCount(profile.counts.followers);
+      if (profileFollowingCount) profileFollowingCount.textContent = formatCount(profile.counts.following);
+      if (aboutDisplayName) aboutDisplayName.textContent = profile.display_name || profile.username || 'User';
+      if (aboutUsername) aboutUsername.textContent = profile.username ? '@' + profile.username : 'N/A';
+      if (aboutProfileType) aboutProfileType.textContent = profile.is_story_profile ? 'Story profile' : 'Community member';
+      if (aboutStatus) aboutStatus.textContent = profile.is_self ? 'This is you' : (profile.is_following ? 'Following' : 'Available to follow');
+      if (aboutPostsCount) aboutPostsCount.textContent = formatCount(profile.counts.posts);
+      if (aboutFollowersCount) aboutFollowersCount.textContent = formatCount(profile.counts.followers);
+      if (aboutFollowingCount) aboutFollowingCount.textContent = formatCount(profile.counts.following);
+      if (aboutBioSummary) aboutBioSummary.textContent = profile.bio || 'No bio yet.';
+      if (aboutSource) aboutSource.textContent = profile.is_story_profile ? 'Recent Stories' : 'CatFace community';
+      if (aboutLastViewed) aboutLastViewed.textContent = 'Just now';
+      if (aboutStoryFlag) aboutStoryFlag.textContent = profile.is_story_profile ? 'Yes' : 'No';
+      if (adoptCtaTitle) adoptCtaTitle.innerHTML = '&#x1F464; View ' + escapeHtml(profile.display_name || profile.username || 'this profile');
+      if (adoptCtaText) adoptCtaText.textContent = profile.bio || 'Explore this CatFace member\'s profile and recent posts.';
+      if (adoptCtaBtn) adoptCtaBtn.textContent = 'Open Community';
+      setFollowButtonState(profile);
+      renderPosts(profile.posts || []);
+      renderTags(profile);
+      renderPhotos(profile);
+    }
+
+    function openMessageFlow() {
+      if (!state.profile) return;
+      if (!requireLogin()) return;
+      if (state.profile.is_self) {
+        alert('You are viewing your own profile.');
+        return;
+      }
+      if (state.profile.is_story_profile) {
+        alert('Story profiles do not support direct chat.');
+        return;
+      }
+      if (!state.profile.can_message || !state.profile.message_target_user_id) {
+        alert('Direct chat is currently available for rescue or clinic staff accounts only.');
+        return;
+      }
+      window.location.href = '/pages/chat.html?org=' + encodeURIComponent(state.profile.message_target_user_id);
+    }
+
+    function fetchJson(url, options) {
+      return fetch(url, options).then(function (res) {
+        if (res.status === 401) {
+          window.location.href = '/pages/log-in.html';
           return null;
         }
-      })();
-      const currentUserId = currentUser && currentUser.id ? String(currentUser.id) : "";
-      let followers = 0;
-      let following = 0;
-      let isFollowing = false;
-      let isSelfProfile = false;
-      let currentCats = [];
-      let pendingEditCatIndex = -1;
-
-      function render() {
-        followersEl.textContent = followers;
-        followingEl.textContent = following;
-        if (isSelfProfile) {
-          followBtn.style.display = "none";
-          return;
-        }
-        followBtn.style.display = "";
-        if (isFollowing) {
-          followBtn.textContent = "Following";
-          followBtn.classList.add("is-following");
-        } else {
-          followBtn.textContent = "Follow";
-          followBtn.classList.remove("is-following");
-        }
-      }
-
-      function escapeHtml(s) {
-        return String(s || "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
-      }
-
-      function formatTime(input) {
-        const d = new Date(input);
-        if (Number.isNaN(d.getTime())) return "";
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        const hh = String(d.getHours()).padStart(2, "0");
-        const mm = String(d.getMinutes()).padStart(2, "0");
-        return y + "-" + m + "-" + day + " " + hh + ":" + mm;
-      }
-
-      function renderCats(cats, hasCat) {
-        if (!hasCat) {
-          if (catSectionWrap) catSectionWrap.style.display = "none";
-          currentCats = [];
-          return;
-        }
-        if (catSectionWrap) catSectionWrap.style.display = "";
-        if (!Array.isArray(cats) || !cats.length) {
-          catSection.innerHTML = '<div class="placeholder">Cat profile is not completed yet.</div>';
-          currentCats = [];
-          return;
-        }
-        currentCats = cats.slice();
-        catSection.innerHTML = cats.map(function (cat, idx) {
-          const age = typeof cat.age_months === "number" ? cat.age_months + " months" : "Unknown age";
-          return (
-            '<article class="cat-profile-card">' +
-            '<img class="cat-photo' + (isSelfProfile ? " is-editable" : "") + '" data-cat-index="' + String(idx) + '" src="' + escapeHtml(cat.photo_url || "") + '" alt="Cat photo">' +
-            "<div>" +
-            '<div class="cat-name">' + escapeHtml(cat.name || "Unnamed cat") + "</div>" +
-            '<div class="cat-meta">' + escapeHtml(cat.breed || "Unknown breed") + " · " + escapeHtml(age) + "</div>" +
-            '<div class="cat-meta-sub">' + escapeHtml(cat.gender || "Unknown gender") + "</div>" +
-            (isSelfProfile ? '<div class="cat-edit-tip">Click photo to change</div>' : "") +
-            "</div>" +
-            "</article>"
-          );
-        }).join("");
-
-        if (isSelfProfile && catPhotoInput) {
-          Array.prototype.forEach.call(catSection.querySelectorAll(".cat-photo.is-editable"), function (img) {
-            img.addEventListener("click", function () {
-              const idx = parseInt(img.getAttribute("data-cat-index"), 10);
-              if (Number.isNaN(idx)) return;
-              pendingEditCatIndex = idx;
-              catPhotoInput.click();
-            });
-          });
-        }
-      }
-
-      function renderPosts(posts) {
-        if (!Array.isArray(posts) || !posts.length) {
-          postsSection.innerHTML = "No posts yet.";
-          return;
-        }
-        postsSection.innerHTML = posts.map(function (p) {
-          return (
-            '<article style="padding:12px 0;border-bottom:1px solid #f3f3f3;">' +
-            (p.image_url ? '<img src="' + escapeHtml(p.image_url) + '" alt="" style="width:100%;max-height:260px;object-fit:cover;border-radius:12px;background:#f2f2f2;margin-bottom:8px;">' : "") +
-            '<div style="line-height:1.5;">' + escapeHtml(p.content || "") + "</div>" +
-            '<div style="margin-top:6px;font-size:12px;color:#999;">' +
-            escapeHtml(formatTime(p.created_at)) +
-            " · " + Number(p.likes_count || 0) + " likes · " + Number(p.comments_count || 0) + " comments" +
-            "</div>" +
-            "</article>"
-          );
-        }).join("");
-      }
-
-      function loadProfile() {
-        if (!targetUserId) {
-          nameEl.textContent = author;
-          avatarEl.textContent = (author.trim()[0] || "C").toUpperCase();
-          document.getElementById("bio").textContent = "Missing author id.";
-          postsSection.innerHTML = "Missing author id.";
-          followBtn.disabled = true;
-          return;
-        }
-
-        const headers = token ? { Authorization: "Bearer " + token } : {};
-        fetch(API_BASE + "/" + encodeURIComponent(targetUserId) + "/profile", {
-          method: "GET",
-          headers: headers
-        })
-          .then(function (res) { return res.json(); })
-          .then(function (result) {
-            if (!result.success || !result.data) throw new Error(result.message || "Load profile failed");
-            const data = result.data;
-            const displayName = data.display_name || data.username || author;
-            try {
-              if (data.id) window.localStorage.setItem("catface_last_author_id", String(data.id));
-              if (displayName) window.localStorage.setItem("catface_last_author_name", String(displayName));
-            } catch (e) {}
-            nameEl.textContent = displayName;
-            avatarEl.textContent = (displayName.trim()[0] || "C").toUpperCase();
-            document.getElementById("bio").textContent = data.bio || "No bio yet.";
-            followers = Number(data.followers_count || 0);
-            following = Number(data.following_count || 0);
-            isFollowing = !!data.following;
-            isSelfProfile = !!(currentUserId && data.id && String(data.id) === currentUserId);
-            render();
-            const profileCats = Array.isArray(data.cats)
-              ? data.cats
-              : data.cat
-                ? [data.cat]
-                : [];
-            renderCats(profileCats, !!data.has_cat);
-            renderPosts(data.posts);
-          })
-          .catch(function () {
-            nameEl.textContent = author;
-            avatarEl.textContent = (author.trim()[0] || "C").toUpperCase();
-            document.getElementById("bio").textContent = "Failed to load profile.";
-            catSection.innerHTML = "Failed to load cat profile.";
-            postsSection.innerHTML = "Failed to load posts.";
-          });
-      }
-
-      followBtn.addEventListener("click", function () {
-        if (isSelfProfile) return;
-        if (!token) {
-          window.location.href = "/pages/log-in.html";
-          return;
-        }
-        if (!targetUserId) return;
-
-        followBtn.disabled = true;
-        fetch(API_BASE + "/" + encodeURIComponent(targetUserId) + "/follow", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token
-          }
-        })
-          .then(function (res) {
-            if (res.status === 401) {
-              window.location.href = "/pages/log-in.html";
-              return null;
-            }
-            return res.json();
-          })
-          .then(function (result) {
-            if (!result || !result.success || !result.data) {
-              alert((result && result.message) || "Follow failed");
-              return;
-            }
-            isFollowing = !!result.data.following;
-            followers = Number(result.data.followersCount || 0);
-            following = Number(result.data.followingCount || 0);
-            render();
-          })
-          .catch(function () {
-            alert("Network error, please try again.");
-          })
-          .finally(function () {
-            followBtn.disabled = false;
-          });
+        return res.json();
       });
+    }
 
-      if (catPhotoInput) {
-        catPhotoInput.addEventListener("change", function () {
-          const file = catPhotoInput.files && catPhotoInput.files[0];
-          if (!file) return;
-          if (!isSelfProfile || !token) return;
-          const cat = currentCats[pendingEditCatIndex];
-          if (!cat) return;
-
-          const reader = new FileReader();
-          reader.onload = function (ev) {
-            const dataUrl = ev.target && ev.target.result ? String(ev.target.result) : "";
-            if (!dataUrl) return;
-            const payload = {
-              display_name: nameEl.textContent || "",
-              has_cat: true,
-              cat: {
-                id: cat.id || "",
-                name: cat.name || "",
-                breed: cat.breed || "",
-                gender: cat.gender || "",
-                photo_url: dataUrl,
-                description: cat.description || ""
-              }
-            };
-            fetch(API_BASE + "/me/profile", {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: "Bearer " + token
-              },
-              body: JSON.stringify(payload)
-            })
-              .then(function (res) { return res.status === 401 ? null : res.json(); })
-              .then(function (result) {
-                if (!result || !result.success || !result.data) return;
-                const updatedCats = Array.isArray(result.data.cats)
-                  ? result.data.cats
-                  : result.data.cat
-                    ? [result.data.cat]
-                    : [];
-                renderCats(updatedCats, !!result.data.has_cat);
-                catPhotoInput.value = "";
-              })
-              .catch(function () {});
-          };
-          reader.readAsDataURL(file);
-        });
+    function loadProfile() {
+      var storyKey = getStoryKey();
+      if (storyKey && STORY_PROFILES[storyKey]) {
+        try {
+          localStorage.removeItem('catface_last_story_profile');
+        } catch (e) {}
+        state.targetUserId = '';
+        applyProfile(Object.assign({
+          id: '',
+          is_self: false,
+          is_following: false,
+          is_story_profile: true
+        }, STORY_PROFILES[storyKey]));
+        return;
       }
+      state.targetUserId = getTargetUserId();
+      if (!state.targetUserId) {
+        var currentUser = loadCurrentUser();
+        state.targetUserId = currentUser && currentUser.id ? String(currentUser.id) : '';
+      }
+      if (!state.targetUserId) {
+        window.location.href = '/pages/log-in.html';
+        return;
+      }
+      if (profilePostsList) {
+        profilePostsList.innerHTML =
+          '<div class="post-card"><div class="post-body"><div class="post-time">Loading...</div><p class="post-text">Fetching profile.</p></div></div>';
+      }
+      fetchJson(API_BASE_URL + '/users/' + encodeURIComponent(state.targetUserId) + '/profile', {
+        method: 'GET',
+        headers: getAuthHeaders()
+      }).then(function (result) {
+        if (!result || !result.success || !result.data) {
+          if (profilePostsList) {
+            profilePostsList.innerHTML =
+              '<div class="post-card"><div class="post-body"><div class="post-time">Unavailable</div><p class="post-text">Could not load this profile.</p></div></div>';
+          }
+          return;
+        }
+        applyProfile(Object.assign({ is_story_profile: false }, result.data));
+      }).catch(function () {
+        if (profilePostsList) {
+          profilePostsList.innerHTML =
+            '<div class="post-card"><div class="post-body"><div class="post-time">Unavailable</div><p class="post-text">Could not load this profile.</p></div></div>';
+        }
+      });
+    }
 
-      render();
-      loadProfile();
+    document.querySelectorAll('.ptab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('.ptab').forEach(function (item) { item.classList.remove('active'); });
+        tab.classList.add('active');
+        var key = tab.id.replace('tab-', '');
+        Object.keys(tabs).forEach(function (name) {
+          document.getElementById(tabs[name]).style.display = name === key ? '' : 'none';
+        });
+      });
+    });
+
+    if (followBtn) {
+      followBtn.addEventListener('click', function () {
+        if (!state.targetUserId || !state.profile || state.profile.is_self) return;
+        if (!requireLogin()) return;
+        followBtn.disabled = true;
+        fetchJson(API_BASE_URL + '/users/' + encodeURIComponent(state.targetUserId) + '/follow', {
+          method: 'POST',
+          headers: getAuthHeaders()
+        }).then(function (result) {
+          if (!result || !result.success || !result.data) {
+            alert((result && result.message) || 'Follow failed');
+            return;
+          }
+          state.profile.is_following = !!result.data.following;
+          state.profile.counts.followers = Math.max(
+            0,
+            Number(state.profile.counts.followers || 0) + (state.profile.is_following ? 1 : -1)
+          );
+          applyProfile(state.profile);
+        }).catch(function () {
+          alert('Network error, please try again.');
+        }).finally(function () {
+          followBtn.disabled = false;
+    });
+  });
+    }
+
+    if (messageBtn) {
+      messageBtn.addEventListener('click', function () {
+        openMessageFlow();
+      });
+    }
+
+    if (profilePostsList) {
+      profilePostsList.addEventListener('click', function (event) {
+        var likeButton = event.target.closest('[data-post-like]');
+        if (likeButton) {
+          var likePostId = likeButton.getAttribute('data-post-like');
+          if (!likePostId) return;
+          toggleProfilePostLike(likePostId);
+          return;
+        }
+
+        var commentButton = event.target.closest('[data-post-comment]');
+        if (commentButton) {
+          var commentPostId = commentButton.getAttribute('data-post-comment');
+          if (!commentPostId) return;
+          addProfilePostComment(commentPostId);
+          return;
+        }
+
+        var postCard = event.target.closest('[data-post-open]');
+        if (postCard) {
+          var openPostId = postCard.getAttribute('data-post-open');
+          if (!openPostId) return;
+          openProfilePost(openPostId);
+        }
+      });
+    }
+
+    document.querySelectorAll('.follow-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (btn.textContent === 'Follow') {
+          btn.textContent = 'Following';
+          btn.style.background = 'var(--brand)';
+          btn.style.color = '#fff';
+        } else {
+          btn.textContent = 'Follow';
+          btn.style.background = '';
+          btn.style.color = '';
+        }
+      });
+    });
+
+    (function syncShellUserInfo() {
+      var user = loadCurrentUser();
+      var heroName = document.querySelector('.nav-hero-name');
+      var heroStatus = document.querySelector('.nav-hero-status');
+      var navName = document.querySelector('.u-name');
+      var navHandle = document.querySelector('.u-handle');
+      if (heroName) heroName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+      if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> ' + (user ? ('Logged in · ' + escapeHtml(user.username || '')) : 'Not logged in');
+      if (navName) navName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+      if (navHandle) navHandle.textContent = user ? (user.username ? '@' + user.username : '') : 'Log in to continue';
     })();
-  </script>
+
+    (function syncNotifBadge() {
+      var user = loadCurrentUser();
+      var unreadCount = 0;
+      try {
+        var badgeCountKey = 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
+        unreadCount = Math.max(0, parseInt(localStorage.getItem(badgeCountKey) || '0', 10) || 0);
+      } catch (e) {
+        unreadCount = 0;
+      }
+      document.querySelectorAll('[data-notif-badge]').forEach(function (badge) {
+        if (unreadCount <= 0) {
+          badge.style.display = 'none';
+        } else {
+          badge.style.display = '';
+          badge.textContent = String(unreadCount);
+        }
+      });
+    })();
+
+    loadProfile();
+  })();
+</script>
 </body>
 </html>
-

@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CatFace · Cat Face Login</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4;
+      --success-bg: #ecfdf3; --success-text: #027a48;
+      --error-bg: #fef2f2; --error-text: #dc2626;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--brand); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button { font: inherit; cursor: pointer; }
+    .page {
+      width: min(960px, 100%);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,.14);
+      min-height: 580px;
+      background: var(--surface);
+    }
+    @media (max-width: 720px) {
+      .page { grid-template-columns: 1fr; }
+      .page-left { display: none; }
+    }
+    .page-left {
+      background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 60%, #F0C888 100%);
+      padding: 40px 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .page-left::after {
+      content: '🐾';
+      position: absolute;
+      right: -8px;
+      bottom: 16px;
+      font-size: 160px;
+      opacity: .12;
+      line-height: 1;
+    }
+    .logo-area { display: flex; align-items: center; gap: 10px; }
+    .logo-mark { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,.25); display: grid; place-items: center; font-size: 20px; }
+    .logo-text { font-size: 20px; font-weight: 900; letter-spacing: -.5px; }
+    .left-body h2 { font-size: 30px; font-weight: 900; line-height: 1.2; margin-bottom: 16px; }
+    .feature-list { display: flex; flex-direction: column; gap: 12px; }
+    .feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.5; opacity: .94; }
+    .feature-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+    .left-footer { font-size: 12px; opacity: .75; }
+    .page-right {
+      padding: 40px 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+    }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
+    .back-link:hover { color: var(--brand); text-decoration: none; }
+    .title-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .form-title { font-size: 28px; font-weight: 900; line-height: 1.15; }
+    .form-sub { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+    .upload-card {
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      background: var(--bg);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .preview-box {
+      min-height: 210px;
+      border: 1.5px dashed var(--border);
+      border-radius: 16px;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      padding: 16px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .preview-box img {
+      max-width: 100%;
+      max-height: 260px;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+    .upload-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 14px;
+      border-radius: 99px;
+      background: var(--brand-light);
+      border: 1.5px solid rgba(200,112,42,.18);
+      color: var(--brand);
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .upload-btn input { display: none; }
+    .status-msg {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      display: none;
+      line-height: 1.5;
+    }
+    .status-msg.success { background: var(--success-bg); color: var(--success-text); display: block; }
+    .status-msg.error { background: var(--error-bg); color: var(--error-text); display: block; }
+    .status-msg.info { background: var(--brand-light); color: var(--text-sub); display: block; }
+    .result-card {
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      background: #fff;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .result-row { display: flex; justify-content: space-between; gap: 14px; font-size: 14px; }
+    .result-label { color: var(--text-muted); font-weight: 700; }
+    .result-value { color: var(--text); font-weight: 800; text-align: right; word-break: break-word; }
+    .hint-box {
+      background: var(--bg);
+      border-radius: 16px;
+      padding: 14px 16px;
+      color: var(--text-sub);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .actions { display: flex; flex-direction: column; gap: 12px; }
+    .cat-form-card {
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      background: #fff;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .cat-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .cat-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .cat-field.full {
+      grid-column: 1 / -1;
+    }
+    .cat-field label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .cat-field input, .cat-field select, .cat-field textarea {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      transition: border-color .15s, background .15s;
+    }
+    .cat-field input:focus, .cat-field select:focus, .cat-field textarea:focus {
+      border-color: var(--accent);
+      background: #fff;
+    }
+    .cat-field textarea {
+      min-height: 78px;
+      resize: vertical;
+    }
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      border-radius: 99px;
+      background: var(--brand);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      border: none;
+      transition: background .15s, transform .12s;
+    }
+    .btn-primary:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .btn-primary:disabled { background: #d8b28a; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      width: 100%;
+      padding: 14px;
+      border-radius: 99px;
+      background: transparent;
+      color: var(--brand);
+      font-size: 15px;
+      font-weight: 800;
+      border: 1.5px solid rgba(200,112,42,.18);
+    }
+    @media (max-width: 860px) {
+      .cat-form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="page-left">
+      <div class="logo-area">
+        <div class="logo-mark">&#x1F431;</div>
+        <span class="logo-text">CatFace</span>
+      </div>
+      <div class="left-body">
+        <h2>Log in with your cat's face</h2>
+        <div class="feature-list">
+          <div class="feature-item"><span class="feature-icon">&#x1F4F7;</span><span>Upload a clear front-facing cat photo to identify the cat profile.</span></div>
+          <div class="feature-item"><span class="feature-icon">&#x1F50D;</span><span>We compare the uploaded face against saved cat embeddings already stored in the system.</span></div>
+          <div class="feature-item"><span class="feature-icon">&#x1F511;</span><span>If the matched cat profile is already linked to a user owner account, this page can log that user in directly.</span></div>
+        </div>
+      </div>
+      <div class="left-footer">CatFace · Cat Face Login Preview</div>
+    </div>
+
+    <div class="page-right">
+      <a class="back-link" href="/pages/log-in.html">&#x2190; Back to Log In</a>
+      <div class="title-wrap">
+        <div class="form-title">Cat Face Enrollment</div>
+      <div class="form-sub">Upload your cat's photo, then fill in the cat profile fields below.</div>
+      </div>
+
+      <div class="upload-card">
+        <div class="preview-box" id="face-preview-box">
+          <span id="face-preview-placeholder">Upload a clear cat face photo to start recognition.</span>
+          <img id="face-preview-image" src="" alt="Cat face preview" hidden>
+        </div>
+        <label class="upload-btn" for="face-login-input">
+          Upload Cat Photo
+          <input id="face-login-input" type="file" accept="image/*">
+        </label>
+      </div>
+
+      <div id="face-login-status" class="status-msg info">Upload a clear front-facing cat photo to begin recognition.</div>
+
+      <div class="result-card">
+        <div class="result-row">
+          <span class="result-label">Recognition result</span>
+          <span class="result-value" id="face-login-result">Waiting for upload</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Face code</span>
+          <span class="result-value" id="face-login-code">-</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="cat-form-card">
+          <div class="cat-form-grid">
+            <div class="cat-field"><label>Cat name</label><input type="text" id="enroll-cat-name" placeholder="Enter cat name"></div>
+            <div class="cat-field"><label>Breed</label><input type="text" id="enroll-cat-breed" placeholder="e.g. Domestic shorthair"></div>
+            <div class="cat-field"><label>Gender</label>
+              <select id="enroll-cat-gender"><option value="">Not specified</option><option value="male">Male</option><option value="female">Female</option><option value="unknown">Unknown</option></select>
+            </div>
+            <div class="cat-field"><label>Birthday</label><input type="date" id="enroll-cat-birthday"></div>
+            <div class="cat-field"><label>Spay / Neuter</label>
+              <select id="enroll-cat-neuter"><option value="">Not specified</option><option value="completed">Completed</option><option value="not_yet">Not yet</option></select>
+            </div>
+            <div class="cat-field"><label>Vaccination</label><input type="text" id="enroll-cat-vaccination" placeholder="Completed / Not yet"></div>
+            <div class="cat-field"><label>Cat ID</label><input type="text" id="enroll-cat-id" placeholder="Auto-generated from face code"></div>
+            <div class="cat-field full"><label>Notes</label><textarea id="enroll-cat-notes" placeholder="Any notes about your cat..."></textarea></div>
+          </div>
+        </div>
+        <button class="btn-primary" id="face-cat-save-btn" type="button" disabled>Save Cat Info</button>
+        <button class="btn-secondary" id="face-back-login-btn" type="button">Use Email and Password Instead</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script>
+    (function () {
+      var input = document.getElementById('face-login-input');
+      var previewImage = document.getElementById('face-preview-image');
+      var previewPlaceholder = document.getElementById('face-preview-placeholder');
+      var status = document.getElementById('face-login-status');
+      var result = document.getElementById('face-login-result');
+      var code = document.getElementById('face-login-code');
+      var saveCatBtn = document.getElementById('face-cat-save-btn');
+      var backLoginBtn = document.getElementById('face-back-login-btn');
+      var catNameInput = document.getElementById('enroll-cat-name');
+      var catBreedInput = document.getElementById('enroll-cat-breed');
+      var catGenderInput = document.getElementById('enroll-cat-gender');
+      var catBirthdayInput = document.getElementById('enroll-cat-birthday');
+      var catNeuterInput = document.getElementById('enroll-cat-neuter');
+      var catVaccinationInput = document.getElementById('enroll-cat-vaccination');
+      var catIdInput = document.getElementById('enroll-cat-id');
+      var catNotesInput = document.getElementById('enroll-cat-notes');
+      var currentImageDataUrl = '';
+      var currentMatch = null;
+      var currentSuggestedFaceCode = '';
+      var params = new URLSearchParams(window.location.search);
+      var sourceMode = String(params.get('source') || '').trim().toLowerCase();
+      var isOwnerSignupMode = sourceMode === 'owner-signup';
+      var ownerEnrollStorageKey = 'catface_owner_signup_enroll_v1';
+      var returnTo = String(params.get('return_to') || '').trim();
+      var redirectTarget = (function () {
+        var redirect = String(params.get('redirect') || '').trim();
+        if (!redirect) return '/pages/cat-facebook.html?feed=recommended';
+        if (redirect.indexOf('/pages/') === 0 || redirect.indexOf('/') === 0) return redirect;
+        return '/pages/cat-facebook.html?feed=recommended';
+      })();
+      var recognitionStatus = 'waiting';
+
+      if (params.get('source') === 'owner-signup') {
+        setStatus('Complete cat-face enrollment and cat info, then return to sign up.', 'info');
+        if (backLoginBtn) backLoginBtn.textContent = 'Back to Sign Up';
+      }
+
+      function setStatus(message, type) {
+        status.textContent = message || '';
+        status.className = 'status-msg' + (type ? ' ' + type : '');
+      }
+
+      function saveAuth(data) {
+        if (typeof setToken === 'function' && data && data.token) {
+          setToken(data.token);
+        }
+
+        if (data && data.user) {
+          try {
+            localStorage.setItem('catface_user', JSON.stringify(data.user));
+          } catch (e) {}
+        }
+      }
+
+      function getCurrentUser() {
+        try {
+          return JSON.parse(localStorage.getItem('catface_user') || 'null');
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function parseNullableBoolean(raw) {
+        var text = String(raw || '').trim().toLowerCase();
+        if (!text) return null;
+        if (text === 'completed' || text === 'yes' || text === 'done' || text === 'true' || text === '1') return true;
+        if (text === 'not yet' || text === 'not_yet' || text === 'no' || text === 'pending' || text === 'false' || text === '0') return false;
+        return null;
+      }
+
+      function formatDateInputValue(value) {
+        if (!value) return '';
+        var date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+        return date.toISOString().slice(0, 10);
+      }
+
+      function applyMatchedCatToForm(cat) {
+        if (!cat) return;
+        if (catNameInput && !catNameInput.value) catNameInput.value = cat.name || '';
+        if (catBreedInput && cat.breed) catBreedInput.value = cat.breed;
+        if (catGenderInput && cat.gender) catGenderInput.value = cat.gender;
+        if (catBirthdayInput && cat.intake_date) catBirthdayInput.value = formatDateInputValue(cat.intake_date);
+        if (catNeuterInput) {
+          if (cat.is_neutered === true) catNeuterInput.value = 'completed';
+          if (cat.is_neutered === false) catNeuterInput.value = 'not_yet';
+        }
+        if (catVaccinationInput) {
+          if (cat.is_vaccinated === true) catVaccinationInput.value = 'Completed';
+          if (cat.is_vaccinated === false) catVaccinationInput.value = 'Not yet';
+        }
+        if (catIdInput) catIdInput.value = cat.face_code || cat.id || '';
+        if (catNotesInput && cat.description) catNotesInput.value = cat.description;
+      }
+
+      function updateSaveButton() {
+        if (!currentImageDataUrl) {
+          saveCatBtn.disabled = true;
+          return;
+        }
+        if (isOwnerSignupMode) {
+          saveCatBtn.disabled = recognitionStatus !== 'new_cat';
+          return;
+        }
+        saveCatBtn.disabled = false;
+      }
+
+      input.addEventListener('change', function (event) {
+        var file = event.target.files && event.target.files[0];
+        if (!file) return;
+
+        var reader = new FileReader();
+        reader.onload = function (loadEvent) {
+          currentImageDataUrl = loadEvent.target.result;
+          currentMatch = null;
+          recognitionStatus = 'analyzing';
+          previewImage.src = loadEvent.target.result;
+          previewImage.hidden = false;
+          previewPlaceholder.hidden = true;
+          result.textContent = 'Analyzing cat face...';
+          code.textContent = '-';
+          updateSaveButton();
+          setStatus('Analyzing the uploaded cat face...', 'info');
+
+          fetch(API_BASE_URL + '/auth/cat-face/identify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_data_url: currentImageDataUrl })
+          })
+            .then(function (res) {
+              return res.json().then(function (payload) {
+                return { ok: res.ok, payload: payload };
+              });
+            })
+            .then(function (response) {
+              var payload = response.payload || {};
+              var data = payload.data || {};
+              var matchedFaceCode = data.best_match && data.best_match.cat && data.best_match.cat.face_code
+                ? data.best_match.cat.face_code
+                : (data.suggested_face_code || '');
+
+              if (!response.ok || !payload.success) {
+                throw new Error(payload.message || 'Cat face identification failed.');
+              }
+
+              code.textContent = matchedFaceCode || '-';
+              currentSuggestedFaceCode = matchedFaceCode || '';
+              currentMatch = data.best_match || null;
+
+              if (data.face_detected === false) {
+                result.textContent = 'No cat face detected';
+                recognitionStatus = 'no_face';
+                setStatus('No clear cat face was detected. Please upload a clearer photo.', 'error');
+                updateSaveButton();
+                return;
+              }
+
+              if (data.matched) {
+                result.textContent = 'Match failed (existing cat found)';
+                recognitionStatus = 'existing_cat';
+                applyMatchedCatToForm(data.best_match && data.best_match.cat ? data.best_match.cat : null);
+                updateSaveButton();
+                setStatus('This face already matches an existing cat profile in the database.', 'error');
+                return;
+              }
+
+              result.textContent = 'Match successful (new cat)';
+              recognitionStatus = 'new_cat';
+              if (catIdInput && !catIdInput.value && currentSuggestedFaceCode) {
+                catIdInput.value = currentSuggestedFaceCode;
+              }
+              updateSaveButton();
+              setStatus('', '');
+            })
+            .catch(function (error) {
+              result.textContent = 'Recognition failed';
+              code.textContent = '-';
+              currentMatch = null;
+              recognitionStatus = 'error';
+              updateSaveButton();
+              setStatus(error.message || 'Cat face identification failed.', 'error');
+            });
+        };
+        reader.readAsDataURL(file);
+      });
+
+      saveCatBtn.addEventListener('click', function () {
+        if (!currentImageDataUrl) {
+          setStatus('Please upload a cat photo first.', 'error');
+          return;
+        }
+        if (isOwnerSignupMode && recognitionStatus !== 'new_cat') {
+          setStatus('Only new cats can continue in owner sign-up enrollment.', 'error');
+          return;
+        }
+        var currentUser = getCurrentUser();
+        if (!isOwnerSignupMode && (!currentUser || !currentUser.id)) {
+          setStatus('Please log in first, then come back to save cat info.', 'error');
+          setTimeout(function () {
+            window.location.href = '/pages/log-in.html';
+          }, 500);
+          return;
+        }
+
+        saveCatBtn.disabled = true;
+        setStatus('Saving cat info...', 'info');
+        var matchedCat = currentMatch && currentMatch.cat ? currentMatch.cat : null;
+        if (isOwnerSignupMode) {
+          var ownerDraft = {
+            recognition_status: 'new_cat',
+            image_data_url: currentImageDataUrl,
+            name: (catNameInput && catNameInput.value.trim()) || '',
+            breed: catBreedInput ? (catBreedInput.value.trim() || null) : null,
+            gender: catGenderInput ? (catGenderInput.value || null) : null,
+            is_neutered: catNeuterInput ? (catNeuterInput.value === 'completed' ? true : (catNeuterInput.value === 'not_yet' ? false : null)) : null,
+            is_vaccinated: parseNullableBoolean(catVaccinationInput && catVaccinationInput.value),
+            intake_date: catBirthdayInput ? (catBirthdayInput.value || null) : null,
+            face_code: catIdInput ? (catIdInput.value.trim() || currentSuggestedFaceCode || null) : (currentSuggestedFaceCode || null),
+            description: catNotesInput ? (catNotesInput.value.trim() || null) : null
+          };
+          if (!ownerDraft.name) {
+            saveCatBtn.disabled = false;
+            setStatus('Please fill in cat name before saving.', 'error');
+            return;
+          }
+          try {
+            localStorage.setItem(ownerEnrollStorageKey, JSON.stringify(ownerDraft));
+          } catch (e) {}
+          setStatus('Cat face enrollment saved. Returning to sign-up...', 'success');
+          setTimeout(function () {
+            window.location.href = returnTo || '/pages/log-in.html?tab=signup';
+          }, 600);
+          return;
+        }
+        var chain = Promise.resolve().then(function () {
+          var vaccinationValue = parseNullableBoolean(catVaccinationInput && catVaccinationInput.value);
+          var neuteredValue = catNeuterInput
+            ? (catNeuterInput.value === 'completed' ? true : (catNeuterInput.value === 'not_yet' ? false : null))
+            : null;
+          if (!matchedCat || !matchedCat.id) {
+            return fetch(API_BASE_URL + '/auth/cat-face/enroll-cat', {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              body: JSON.stringify({
+                image_data_url: currentImageDataUrl,
+                name: (catNameInput && catNameInput.value.trim()) || '',
+                breed: catBreedInput ? (catBreedInput.value.trim() || null) : null,
+                gender: catGenderInput ? (catGenderInput.value || null) : null,
+                is_neutered: neuteredValue,
+                is_vaccinated: vaccinationValue,
+                intake_date: catBirthdayInput ? (catBirthdayInput.value || null) : null,
+                face_code: catIdInput ? (catIdInput.value.trim() || currentSuggestedFaceCode || null) : (currentSuggestedFaceCode || null),
+                description: catNotesInput ? (catNotesInput.value.trim() || null) : null
+              })
+            });
+          }
+          var ownerId = matchedCat.owner_id || (matchedCat.owner && matchedCat.owner.id) || null;
+          if (ownerId && ownerId !== currentUser.id) {
+            throw new Error('This cat is already linked to another account and cannot be edited here.');
+          }
+          var bindPromise = Promise.resolve();
+          if (!ownerId) {
+            bindPromise = fetch(API_BASE_URL + '/auth/cat-face/bind-owner', {
+              method: 'POST',
+              headers: getAuthHeaders(),
+              body: JSON.stringify({ image_data_url: currentImageDataUrl })
+            }).then(function (res) {
+              return res.json().then(function (payload) {
+                return { ok: res.ok, payload: payload };
+              });
+            }).then(function (response) {
+              var payload = response.payload || {};
+              if (!response.ok || !payload.success || !payload.data) {
+                throw new Error(payload.message || 'Unable to bind cat to current account.');
+              }
+              saveAuth(payload.data);
+              matchedCat.owner_id = currentUser.id;
+            });
+          }
+          return bindPromise.then(function () {
+          return fetch(API_BASE_URL + '/cats/' + encodeURIComponent(matchedCat.id), {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({
+              name: (catNameInput && catNameInput.value.trim()) || matchedCat.name || 'Unnamed Cat',
+              breed: catBreedInput ? (catBreedInput.value.trim() || null) : null,
+              gender: catGenderInput ? (catGenderInput.value || null) : null,
+              is_neutered: neuteredValue,
+              is_vaccinated: vaccinationValue,
+              intake_date: catBirthdayInput ? (catBirthdayInput.value || null) : null,
+              face_code: catIdInput ? (catIdInput.value.trim() || null) : null,
+              description: catNotesInput ? (catNotesInput.value.trim() || null) : null,
+              owner_id: currentUser.id
+            })
+          });
+          });
+        }).then(function (res) {
+          return res.json().then(function (payload) {
+            return { ok: res.ok, payload: payload };
+          });
+        }).then(function (response) {
+          var payload = response.payload || {};
+          if (!response.ok || !payload.success) {
+            throw new Error(payload.message || 'Unable to save cat info.');
+          }
+          if (payload.data && payload.data.face_code && catIdInput) {
+            catIdInput.value = payload.data.face_code;
+          }
+          setStatus('Cat info saved successfully! Redirecting to account...', 'success');
+          setTimeout(function () {
+            window.location.href = '/pages/account.html';
+          }, 700);
+        }).catch(function (error) {
+          setStatus(error.message || 'Unable to save cat info.', 'error');
+        }).finally(function () {
+          saveCatBtn.disabled = false;
+          updateSaveButton();
+        });
+      });
+
+      backLoginBtn.addEventListener('click', function () {
+        window.location.href = returnTo || '/pages/log-in.html';
+      });
+
+      [catNameInput, catBreedInput, catGenderInput, catBirthdayInput, catNeuterInput, catVaccinationInput, catIdInput, catNotesInput].forEach(function (el) {
+        if (!el) return;
+        var ev = el.tagName === 'SELECT' ? 'change' : 'input';
+        el.addEventListener(ev, function () {
+          if (saveCatBtn.disabled) updateSaveButton();
+        });
+      });
+
+      updateSaveButton();
+      if (saveCatBtn.disabled) {
+        setStatus('Upload a cat face first, then fill in cat info and save.', 'info');
+      }
+    })();
+  </script>
+</body>
+</html>

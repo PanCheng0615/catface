@@ -188,6 +188,11 @@ async function createCat(req, res) {
       description,
       photo_url,
       status,
+      face_code,
+      is_neutered,
+      is_vaccinated,
+      intake_date,
+      found_location,
       owner_id,
       org_id,
       tags,
@@ -270,6 +275,26 @@ function canEditCat(user, cat) {
   return false;
 }
 
+function normalizeNullableBoolean(raw) {
+  if (raw === undefined) return { provided: false, value: undefined, valid: true };
+  if (raw === null || raw === '') return { provided: true, value: null, valid: true };
+  if (typeof raw === 'boolean') return { provided: true, value: raw, valid: true };
+  if (typeof raw === 'number') {
+    if (raw === 1) return { provided: true, value: true, valid: true };
+    if (raw === 0) return { provided: true, value: false, valid: true };
+    return { provided: true, value: null, valid: false };
+  }
+  const text = String(raw).trim().toLowerCase();
+  if (!text) return { provided: true, value: null, valid: true };
+  if (['1', 'true', 'yes', 'completed', 'done'].includes(text)) {
+    return { provided: true, value: true, valid: true };
+  }
+  if (['0', 'false', 'no', 'not yet', 'not_yet', 'pending'].includes(text)) {
+    return { provided: true, value: false, valid: true };
+  }
+  return { provided: true, value: null, valid: false };
+}
+
 // PUT /api/cats/:id
 async function updateCat(req, res) {
   try {
@@ -299,6 +324,11 @@ async function updateCat(req, res) {
       description,
       photo_url,
       status,
+      face_code,
+      is_neutered,
+      is_vaccinated,
+      intake_date,
+      found_location,
       owner_id,
       org_id,
       tags,
@@ -315,6 +345,22 @@ async function updateCat(req, res) {
         });
       }
     }
+    const neutered = normalizeNullableBoolean(is_neutered);
+    if (!neutered.valid) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'is_neutered 必须是布尔值（true/false、1/0、yes/no）或空'
+      });
+    }
+    const vaccinated = normalizeNullableBoolean(is_vaccinated);
+    if (!vaccinated.valid) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'is_vaccinated 必须是布尔值（true/false、1/0、yes/no）或空'
+      });
+    }
 
     const data = {};
     if (name !== undefined) data.name = name;
@@ -326,6 +372,25 @@ async function updateCat(req, res) {
     if (photo_url !== undefined) data.photo_url = photo_url;
     if (status !== undefined && status !== null && status !== '') {
       data.status = /** @type {'available'|'adopted'|'fostered'|'deceased'} */ (parseCatStatus(status));
+    }
+    if (face_code !== undefined) data.face_code = face_code || null;
+    if (neutered.provided) data.is_neutered = neutered.value;
+    if (vaccinated.provided) data.is_vaccinated = vaccinated.value;
+    if (found_location !== undefined) data.found_location = found_location || null;
+    if (intake_date !== undefined) {
+      if (!intake_date) {
+        data.intake_date = null;
+      } else {
+        const parsedIntakeDate = new Date(intake_date);
+        if (Number.isNaN(parsedIntakeDate.getTime())) {
+          return res.status(422).json({
+            success: false,
+            error: 'ValidationError',
+            message: 'intake_date 格式无效，请使用可解析的日期格式'
+          });
+        }
+        data.intake_date = parsedIntakeDate;
+      }
     }
     if (owner_id !== undefined) data.owner_id = owner_id || null;
     if (org_id !== undefined) data.org_id = org_id || null;

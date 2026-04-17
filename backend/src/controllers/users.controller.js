@@ -1,27 +1,72 @@
+// backend/src/controllers/users.controller.js
 const { PrismaClient } = require('@prisma/client');
+const { ensureDemoCommunityData } = require('./community.controller');
 
 const prisma = new PrismaClient();
 
-function toTrimmedString(value) {
-  if (value === null || value === undefined) return '';
-  return String(value).trim();
+function envNumber(name, fallback) {
+  const raw = process.env[name];
+  if (raw == null || raw === '') return fallback;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function calcAgeMonthsFromBirthday(birthdayRaw) {
-  if (!birthdayRaw) return null;
-  const birthday = new Date(birthdayRaw);
-  if (Number.isNaN(birthday.getTime())) return null;
-  const now = new Date();
-  let months = (now.getFullYear() - birthday.getFullYear()) * 12;
-  months += now.getMonth() - birthday.getMonth();
-  if (now.getDate() < birthday.getDate()) months -= 1;
-  if (months < 0) months = 0;
-  return months;
+const SUGGEST_ACTIVITY_POST_WEIGHT = envNumber('FOLLOW_SUGGEST_ACTIVITY_POST_WEIGHT', 2);
+const SUGGEST_ACTIVITY_ENGAGEMENT_WEIGHT = envNumber('FOLLOW_SUGGEST_ACTIVITY_ENGAGEMENT_WEIGHT', 0.6);
+const SUGGEST_POPULARITY_FOLLOWER_WEIGHT = envNumber('FOLLOW_SUGGEST_POPULARITY_FOLLOWER_WEIGHT', 8);
+const SUGGEST_POPULARITY_POST_WEIGHT = envNumber('FOLLOW_SUGGEST_POPULARITY_POST_WEIGHT', 4);
+const SUGGEST_FRESHNESS_DAYS_CAP = envNumber('FOLLOW_SUGGEST_FRESHNESS_DAYS_CAP', 30);
+const SUGGEST_FRESHNESS_WEIGHT = envNumber('FOLLOW_SUGGEST_FRESHNESS_WEIGHT', 0.5);
+const SUGGEST_SOCIAL_MUTUAL_WEIGHT = envNumber('FOLLOW_SUGGEST_SOCIAL_MUTUAL_WEIGHT', 5);
+const SUGGEST_PROFILE_BIO_BONUS = envNumber('FOLLOW_SUGGEST_PROFILE_BIO_BONUS', 0.6);
+
+function canStartOrgChat(role) {
+  return role === 'rescue_staff' || role === 'clinic_staff' || role === 'admin';
+}
+
+function mapUserSummary(user) {
+  return {
+    id: user.id,
+    username: user.username,
+    display_name: user.display_name || '',
+    avatar_url: user.avatar_url || '',
+    bio: user.bio || ''
+  };
+}
+
+function buildFollowRecommendationReason(params) {
+  const mutualCount = Number(params && params.mutualCount) || 0;
+  const recentPostsCount = Number(params && params.recentPostsCount) || 0;
+  const recentEngagement = Number(params && params.recentEngagement) || 0;
+  const followerCount = Number(params && params.followerCount) || 0;
+  const postCount = Number(params && params.postCount) || 0;
+  const freshnessDays = Number(params && params.freshnessDays);
+
+  if (mutualCount > 0) {
+    return mutualCount + ' mutual connections';
+  }
+  if (recentPostsCount >= 3) {
+    return 'Active in the last 30 days';
+  }
+  if (recentEngagement >= 20) {
+    return 'High recent engagement';
+  }
+  if (Number.isFinite(freshnessDays) && freshnessDays <= 7) {
+    return 'Fresh recent post';
+  }
+  if (followerCount >= 5) {
+    return 'Popular in the community';
+  }
+  if (postCount > 0) {
+    return 'Community creator worth exploring';
+  }
+  return 'New profile to discover';
 }
 
 // GET /api/users/me
 async function getMe(req, res) {
   try {
+    // protect 中间件已经把 { id, role } 放在 req.user 里
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: {
@@ -29,6 +74,7 @@ async function getMe(req, res) {
         email: true,
         username: true,
         display_name: true,
+        has_cat: true,
         role: true
       }
     });
@@ -59,18 +105,20 @@ async function getMe(req, res) {
 // PUT /api/users/me
 async function updateMe(req, res) {
   try {
-    const { display_name } = req.body;
+    const { display_name, has_cat } = req.body;
 
     const updated = await prisma.user.update({
       where: { id: req.user.id },
       data: {
-        display_name: display_name ?? undefined
+        display_name: display_name ?? undefined,
+        has_cat: typeof has_cat === 'boolean' ? has_cat : undefined
       },
       select: {
         id: true,
         email: true,
         username: true,
         display_name: true,
+        has_cat: true,
         role: true
       }
     });
@@ -90,217 +138,12 @@ async function updateMe(req, res) {
   }
 }
 
-// GET /api/users/me/profile
-async function getMyProfile(req, res) {
-  try {
-    const userId = req.user.id;
-    const [user, pref, cats] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, email: true, username: true, display_name: true, bio: true, role: true }
-      }),
-      prisma.adopterPreference.findUnique({ where: { user_id: userId } }),
-      prisma.cat.findMany({
-        where: { owner_id: userId },
-        orderBy: { created_at: 'desc' },
-        select: {
-          id: true,
-          name: true,
-          breed: true,
-          gender: true,
-          age_months: true,
-          photo_url: true,
-          description: true
-        }
-      })
-    ]);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'NotFound',
-        message: '用户不存在'
-      });
-    }
-
-    const hasCatChoice = !pref || cats.length > 0;
-
-    return res.json({
-      success: true,
-      data: {
-        user,
-        has_cat: hasCatChoice,
-        cat: cats[0] || null,
-        cats,
-        preferences: pref
-          ? {
-              preferred_gender: pref.preferred_gender || '',
-              preferred_age: pref.preferred_age || '',
-              preferred_breed: pref.preferred_breed || ''
-            }
-          : {
-              preferred_gender: '',
-              preferred_age: '',
-              preferred_breed: ''
-            }
-      },
-      message: '操作成功'
-    });
-  } catch (error) {
-    console.error('getMyProfile error:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'ServerError',
-      message: '服务器错误'
-    });
-  }
-}
-
-// PUT /api/users/me/profile
-async function updateMyProfile(req, res) {
-  try {
-    const userId = req.user.id;
-    const displayName = toTrimmedString(req.body.display_name);
-    const hasCat = !!req.body.has_cat;
-    const preferences = req.body.preferences && typeof req.body.preferences === 'object' ? req.body.preferences : null;
-    const catInput = req.body.cat && typeof req.body.cat === 'object' ? req.body.cat : null;
-
-    await prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          display_name: displayName || undefined
-        }
-      });
-
-      if (!hasCat) {
-        await tx.cat.deleteMany({ where: { owner_id: userId } });
-        await tx.adopterPreference.upsert({
-          where: { user_id: userId },
-          create: {
-            user_id: userId,
-            preferred_gender: toTrimmedString(preferences && preferences.preferred_gender) || null,
-            preferred_age: toTrimmedString(preferences && preferences.preferred_age) || null,
-            preferred_breed: toTrimmedString(preferences && preferences.preferred_breed) || null
-          },
-          update: {
-            preferred_gender: toTrimmedString(preferences && preferences.preferred_gender) || null,
-            preferred_age: toTrimmedString(preferences && preferences.preferred_age) || null,
-            preferred_breed: toTrimmedString(preferences && preferences.preferred_breed) || null
-          }
-        });
-        return;
-      }
-
-      // Owner mode: clear adopter marker to persist "I have a cat" choice.
-      await tx.adopterPreference.deleteMany({ where: { user_id: userId } });
-
-      const existingCat = await tx.cat.findFirst({
-        where: { owner_id: userId },
-        orderBy: { created_at: 'desc' },
-        select: { id: true, age_months: true }
-      });
-
-      const fallbackName =
-        toTrimmedString(catInput && catInput.name) ||
-        displayName ||
-        'My Cat';
-      const birthdayInput = toTrimmedString(catInput && catInput.birthday);
-      const catData = {
-        name: fallbackName,
-        breed: toTrimmedString(catInput && catInput.breed) || null,
-        gender: toTrimmedString(catInput && catInput.gender) || null,
-        age_months: birthdayInput
-          ? calcAgeMonthsFromBirthday(birthdayInput)
-          : (existingCat ? existingCat.age_months : null),
-        photo_url: toTrimmedString(catInput && catInput.photo_url) || null,
-        description: toTrimmedString(catInput && catInput.description) || null
-      };
-
-      if (existingCat) {
-        await tx.cat.update({
-          where: { id: existingCat.id },
-          data: catData
-        });
-      } else {
-        await tx.cat.create({
-          data: {
-            owner_id: userId,
-            ...catData
-          }
-        });
-      }
-    });
-
-    const [user, pref, cats] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, email: true, username: true, display_name: true, bio: true, role: true }
-      }),
-      prisma.adopterPreference.findUnique({ where: { user_id: userId } }),
-      prisma.cat.findMany({
-        where: { owner_id: userId },
-        orderBy: { created_at: 'desc' },
-        select: {
-          id: true,
-          name: true,
-          breed: true,
-          gender: true,
-          age_months: true,
-          photo_url: true,
-          description: true
-        }
-      })
-    ]);
-
-    const hasCatChoice = !pref || cats.length > 0;
-
-    return res.json({
-      success: true,
-      data: {
-        user,
-        has_cat: hasCatChoice,
-        cat: cats[0] || null,
-        cats,
-        preferences: pref
-          ? {
-              preferred_gender: pref.preferred_gender || '',
-              preferred_age: pref.preferred_age || '',
-              preferred_breed: pref.preferred_breed || ''
-            }
-          : {
-              preferred_gender: '',
-              preferred_age: '',
-              preferred_breed: ''
-            }
-      },
-      message: '更新成功'
-    });
-  } catch (error) {
-    console.error('updateMyProfile error:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'ServerError',
-      message: '服务器错误'
-    });
-  }
-}
-
 // POST /api/users/:id/follow
 async function toggleFollow(req, res) {
   try {
-    const targetUserId = String(req.params.id || '').trim();
-    const currentUserId = req.user.id;
+    const targetUserId = req.params.id;
 
-    if (!targetUserId) {
-      return res.status(422).json({
-        success: false,
-        error: 'ValidationError',
-        message: '目标用户ID不能为空'
-      });
-    }
-
-    if (targetUserId === currentUserId) {
+    if (targetUserId === req.user.id) {
       return res.status(422).json({
         success: false,
         error: 'ValidationError',
@@ -323,7 +166,7 @@ async function toggleFollow(req, res) {
     const existing = await prisma.userFollow.findUnique({
       where: {
         follower_id_following_id: {
-          follower_id: currentUserId,
+          follower_id: req.user.id,
           following_id: targetUserId
         }
       }
@@ -332,48 +175,21 @@ async function toggleFollow(req, res) {
     let following = false;
     if (existing) {
       await prisma.userFollow.delete({
-        where: {
-          follower_id_following_id: {
-            follower_id: currentUserId,
-            following_id: targetUserId
-          }
+        where: { id: existing.id }
+      });
+    } else {
+      await prisma.userFollow.create({
+        data: {
+          follower_id: req.user.id,
+          following_id: targetUserId
         }
       });
-      following = false;
-    } else {
-      try {
-        await prisma.userFollow.create({
-          data: {
-            follower_id: currentUserId,
-            following_id: targetUserId
-          }
-        });
-        following = true;
-      } catch (createErr) {
-        // Handle fast repeated clicks that can race on unique constraint.
-        if (createErr && createErr.code === 'P2002') {
-          following = true;
-        } else {
-          throw createErr;
-        }
-      }
+      following = true;
     }
-
-    const followersCount = await prisma.userFollow.count({
-      where: { following_id: targetUserId }
-    });
-    const followingCount = await prisma.userFollow.count({
-      where: { follower_id: targetUserId }
-    });
 
     return res.json({
       success: true,
-      data: {
-        targetUserId,
-        following,
-        followersCount,
-        followingCount
-      },
+      data: { following },
       message: following ? '关注成功' : '已取消关注'
     });
   } catch (error) {
@@ -386,59 +202,85 @@ async function toggleFollow(req, res) {
   }
 }
 
-// GET /api/users/:id/follow-status
-async function getFollowStatus(req, res) {
+async function getFollowNetwork(req, res) {
   try {
-    const targetUserId = String(req.params.id || '').trim();
-    const currentUserId = req.user.id;
-
-    if (!targetUserId) {
+    const userId = req.user.id;
+    const type = String(req.query.type || 'followers').toLowerCase();
+    if (type !== 'followers' && type !== 'following') {
       return res.status(422).json({
         success: false,
         error: 'ValidationError',
-        message: '目标用户ID不能为空'
+        message: 'type 参数仅支持 followers/following'
       });
     }
 
-    const targetUser = await prisma.user.findUnique({
-      where: { id: targetUserId },
-      select: { id: true }
-    });
-    if (!targetUser) {
-      return res.status(404).json({
-        success: false,
-        error: 'NotFound',
-        message: '目标用户不存在'
+    if (type === 'followers') {
+      const rows = await prisma.userFollow.findMany({
+        where: { following_id: userId },
+        orderBy: { created_at: 'desc' },
+        include: {
+          follower: {
+            select: {
+              id: true,
+              username: true,
+              display_name: true,
+              avatar_url: true,
+              bio: true
+            }
+          }
+        }
+      });
+
+      const followerIds = rows.map((row) => row.follower.id);
+      const followBackRows = followerIds.length
+        ? await prisma.userFollow.findMany({
+            where: {
+              follower_id: userId,
+              following_id: { in: followerIds }
+            },
+            select: { following_id: true }
+          })
+        : [];
+      const followingSet = new Set(followBackRows.map((row) => row.following_id));
+
+      return res.json({
+        success: true,
+        data: rows.map((row) => ({
+          ...mapUserSummary(row.follower),
+          created_at: row.created_at,
+          is_following: followingSet.has(row.follower.id)
+        })),
+        message: '操作成功'
       });
     }
 
-    const existing = await prisma.userFollow.findUnique({
-      where: {
-        follower_id_following_id: {
-          follower_id: currentUserId,
-          following_id: targetUserId
+    const rows = await prisma.userFollow.findMany({
+      where: { follower_id: userId },
+      orderBy: { created_at: 'desc' },
+      include: {
+        following: {
+          select: {
+            id: true,
+            username: true,
+            display_name: true,
+            avatar_url: true,
+            bio: true
+          }
         }
       }
-    });
-    const followersCount = await prisma.userFollow.count({
-      where: { following_id: targetUserId }
-    });
-    const followingCount = await prisma.userFollow.count({
-      where: { follower_id: targetUserId }
     });
 
     return res.json({
       success: true,
-      data: {
-        targetUserId,
-        following: !!existing,
-        followersCount,
-        followingCount
-      },
-      message: '获取关注状态成功'
+      data: rows.map((row) => ({
+        ...mapUserSummary(row.following),
+        created_at: row.created_at,
+        is_following: true
+      })),
+      message: '操作成功'
     });
   } catch (error) {
-    console.error('getFollowStatus error:', error);
+    console.error('getFollowNetwork error:', error);
     return res.status(500).json({
       success: false,
       error: 'ServerError',
@@ -447,20 +289,226 @@ async function getFollowStatus(req, res) {
   }
 }
 
-// GET /api/users/:id/profile
+// GET /api/users/follow-suggestions
+async function getFollowSuggestions(req, res) {
+  try {
+    await ensureDemoCommunityData();
+
+    const viewerId = req.user && req.user.id ? req.user.id : null;
+    const rawLimit = parseInt(String(req.query.limit || '6'), 10);
+    const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(rawLimit, 20)) : 6;
+
+    let viewerFollowingIds = [];
+    let followingSet = new Set();
+    if (viewerId) {
+      const followingRows = await prisma.userFollow.findMany({
+        where: { follower_id: viewerId },
+        select: { following_id: true }
+      });
+      viewerFollowingIds = followingRows.map((row) => row.following_id);
+      followingSet = new Set(viewerFollowingIds);
+    }
+
+    const candidates = await prisma.user.findMany({
+      where: {
+        role: 'user',
+        ...(viewerId ? { id: { not: viewerId } } : {})
+      },
+      select: {
+        id: true,
+        username: true,
+        display_name: true,
+        avatar_url: true,
+        bio: true,
+        created_at: true,
+        _count: {
+          select: {
+            posts: true,
+            followers: true
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' },
+      take: 200
+    });
+
+    const filteredCandidates = candidates.filter((user) => !followingSet.has(user.id));
+    const candidateIds = filteredCandidates.map((user) => user.id);
+
+    const recentSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const recentPosts = candidateIds.length
+      ? await prisma.post.findMany({
+          where: {
+            user_id: { in: candidateIds },
+            created_at: { gte: recentSince }
+          },
+          select: {
+            user_id: true,
+            created_at: true,
+            _count: {
+              select: {
+                likes: true,
+                comments: true
+              }
+            }
+          }
+        })
+      : [];
+
+    const recentStatsMap = new Map();
+    recentPosts.forEach((post) => {
+      const key = post.user_id;
+      const current = recentStatsMap.get(key) || {
+        recent_posts: 0,
+        recent_likes: 0,
+        recent_comments: 0,
+        last_post_at: null
+      };
+      current.recent_posts += 1;
+      current.recent_likes += Number(post._count && post._count.likes) || 0;
+      current.recent_comments += Number(post._count && post._count.comments) || 0;
+      if (!current.last_post_at || new Date(post.created_at).getTime() > new Date(current.last_post_at).getTime()) {
+        current.last_post_at = post.created_at;
+      }
+      recentStatsMap.set(key, current);
+    });
+
+    const mutualRows = viewerFollowingIds.length && candidateIds.length
+      ? await prisma.userFollow.findMany({
+          where: {
+            follower_id: { in: viewerFollowingIds },
+            following_id: { in: candidateIds }
+          },
+          select: { following_id: true }
+        })
+      : [];
+
+    const mutualMap = new Map();
+    mutualRows.forEach((row) => {
+      const key = row.following_id;
+      mutualMap.set(key, (mutualMap.get(key) || 0) + 1);
+    });
+
+    const suggestions = candidates
+      .filter((user) => !followingSet.has(user.id))
+      .map((user) => {
+        const postCount = Number(user._count && user._count.posts) || 0;
+        const followerCount = Number(user._count && user._count.followers) || 0;
+        const recent = recentStatsMap.get(user.id) || {
+          recent_posts: 0,
+          recent_likes: 0,
+          recent_comments: 0,
+          last_post_at: null
+        };
+        const mutualCount = Number(mutualMap.get(user.id)) || 0;
+        const recentEngagement = recent.recent_likes + recent.recent_comments * 2;
+        const activityScore =
+          recent.recent_posts * SUGGEST_ACTIVITY_POST_WEIGHT +
+          recentEngagement * SUGGEST_ACTIVITY_ENGAGEMENT_WEIGHT;
+        const popularityScore =
+          Math.log10(followerCount + 1) * SUGGEST_POPULARITY_FOLLOWER_WEIGHT +
+          Math.log10(postCount + 1) * SUGGEST_POPULARITY_POST_WEIGHT;
+        const freshnessDays = recent.last_post_at
+          ? Math.max(0, (Date.now() - new Date(recent.last_post_at).getTime()) / (1000 * 60 * 60 * 24))
+          : 60;
+        const freshnessScore =
+          Math.max(0, SUGGEST_FRESHNESS_DAYS_CAP - freshnessDays) * SUGGEST_FRESHNESS_WEIGHT;
+        const socialScore = mutualCount * SUGGEST_SOCIAL_MUTUAL_WEIGHT;
+        const profileScore = String(user.bio || '').trim() ? SUGGEST_PROFILE_BIO_BONUS : 0;
+        const score = activityScore + popularityScore + freshnessScore + socialScore + profileScore;
+        const recommendationReason = buildFollowRecommendationReason({
+          mutualCount: mutualCount,
+          recentPostsCount: recent.recent_posts,
+          recentEngagement: recentEngagement,
+          followerCount: followerCount,
+          postCount: postCount,
+          freshnessDays: freshnessDays
+        });
+        return {
+          ...mapUserSummary(user),
+          posts_count: postCount,
+          followers_count: followerCount,
+          mutual_count: mutualCount,
+          recent_posts_count: recent.recent_posts,
+          recent_engagement: recentEngagement,
+          is_following: false,
+          score,
+          recommendation_reason: recommendationReason
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map((item) => ({
+        id: item.id,
+        username: item.username,
+        display_name: item.display_name || item.username || 'User',
+        avatar_url: item.avatar_url || '',
+        bio: item.bio || '',
+        posts_count: item.posts_count,
+        followers_count: item.followers_count,
+        mutual_count: item.mutual_count,
+        recent_posts_count: item.recent_posts_count,
+        recent_engagement: item.recent_engagement,
+        is_following: item.is_following,
+        recommendation_reason: item.recommendation_reason
+      }));
+
+    return res.json({
+      success: true,
+      data: suggestions,
+      message: '操作成功'
+    });
+  } catch (error) {
+    console.error('getFollowSuggestions error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
 async function getUserProfile(req, res) {
   try {
-    const targetUserId = req.params.id;
-    const viewerId = req.user && req.user.id ? req.user.id : null;
+    const targetUserId = String(req.params.id || '').trim();
+    if (!targetUserId) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '用户 ID 不能为空'
+      });
+    }
 
+    const viewerId = req.user && req.user.id;
     const user = await prisma.user.findUnique({
       where: { id: targetUserId },
       select: {
         id: true,
         username: true,
         display_name: true,
+        avatar_url: true,
         bio: true,
-        avatar_url: true
+        role: true,
+        created_at: true,
+        _count: {
+          select: {
+            posts: true,
+            followers: true,
+            following: true
+          }
+        },
+        posts: {
+          orderBy: { created_at: 'desc' },
+          take: 12,
+          select: {
+            id: true,
+            content: true,
+            image_url: true,
+            created_at: true,
+            likes: { select: { user_id: true } },
+            comments: { select: { id: true } }
+          }
+        }
       }
     });
 
@@ -468,69 +516,50 @@ async function getUserProfile(req, res) {
       return res.status(404).json({
         success: false,
         error: 'NotFound',
-        message: '目标用户不存在'
+        message: '用户不存在'
       });
     }
 
-    const [followersCount, followingCount, cats, posts, pref] = await Promise.all([
-      prisma.userFollow.count({ where: { following_id: targetUserId } }),
-      prisma.userFollow.count({ where: { follower_id: targetUserId } }),
-      prisma.cat.findMany({
-        where: { owner_id: targetUserId },
-        orderBy: { created_at: 'desc' },
-        select: {
-          id: true,
-          name: true,
-          breed: true,
-          age_months: true,
-          gender: true,
-          photo_url: true,
-          description: true
-        }
-      }),
-      prisma.post.findMany({
-        where: { user_id: targetUserId },
-        orderBy: { created_at: 'desc' },
-        include: {
-          likes: { select: { id: true } },
-          comments: { select: { id: true } }
-        },
-        take: 50
-      }),
-      prisma.adopterPreference.findUnique({ where: { user_id: targetUserId } })
-    ]);
-
-    let following = false;
+    let isFollowing = false;
     if (viewerId && viewerId !== targetUserId) {
-      const existing = await prisma.userFollow.findFirst({
-        where: { follower_id: viewerId, following_id: targetUserId },
-        select: { id: true }
+      const row = await prisma.userFollow.findUnique({
+        where: {
+          follower_id_following_id: {
+            follower_id: viewerId,
+            following_id: targetUserId
+          }
+        }
       });
-      following = !!existing;
+      isFollowing = !!row;
     }
-
-    const hasCatChoice = !pref || cats.length > 0;
 
     return res.json({
       success: true,
       data: {
         id: user.id,
         username: user.username,
-        display_name: user.display_name,
-        bio: user.bio,
-        avatar_url: user.avatar_url,
-        followers_count: followersCount,
-        following_count: followingCount,
-        following,
-        has_cat: hasCatChoice,
-        cats,
-        posts: posts.map((p) => ({
-          id: p.id,
-          content: p.content,
-          image_url: p.image_url,
-          created_at: p.created_at,
-          likes_count: p.likes.length,
-          comments_count: p.comments.length
+        display_name: user.display_name || user.username || 'User',
+        avatar_url: user.avatar_url || '',
+        bio: user.bio || '',
+        role: user.role,
+        created_at: user.created_at,
+        is_self: !!viewerId && viewerId === user.id,
+        is_following: isFollowing,
+        can_message: !!viewerId && viewerId !== user.id && canStartOrgChat(user.role),
+        message_target_user_id: canStartOrgChat(user.role) ? user.id : '',
+        counts: {
+          posts: user._count.posts,
+          followers: user._count.followers,
+          following: user._count.following
+        },
+        posts: user.posts.map((post) => ({
+          id: post.id,
+          content: post.content,
+          image_url: post.image_url || '',
+          created_at: post.created_at,
+          likes: post.likes.length,
+          liked: !!viewerId && post.likes.some((like) => like.user_id === viewerId),
+          comments: post.comments.length
         }))
       },
       message: '操作成功'
@@ -545,12 +574,139 @@ async function getUserProfile(req, res) {
   }
 }
 
+async function findProfilePostOrNull(targetUserId, postId) {
+  if (!targetUserId || !postId) return null;
+  return prisma.post.findFirst({
+    where: {
+      id: postId,
+      user_id: targetUserId
+    },
+    select: { id: true }
+  });
+}
+
+async function toggleProfilePostLike(req, res) {
+  try {
+    const userId = req.user && req.user.id;
+    const targetUserId = String(req.params.id || '').trim();
+    const postId = String(req.params.postId || '').trim();
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: '请先登录'
+      });
+    }
+    if (!targetUserId || !postId) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '缺少作者或帖子参数'
+      });
+    }
+
+    const post = await findProfilePostOrNull(targetUserId, postId);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        error: 'NotFound',
+        message: '帖子不存在或不属于该作者'
+      });
+    }
+
+    const existing = await prisma.postLike.findUnique({
+      where: { user_id_post_id: { user_id: userId, post_id: postId } }
+    });
+    if (existing) {
+      await prisma.postLike.delete({ where: { id: existing.id } });
+    } else {
+      await prisma.postLike.create({ data: { user_id: userId, post_id: postId } });
+    }
+
+    const likes = await prisma.postLike.count({ where: { post_id: postId } });
+    const liked = !existing;
+    return res.json({
+      success: true,
+      data: { liked, likes },
+      message: liked ? '点赞成功' : '已取消点赞'
+    });
+  } catch (error) {
+    console.error('toggleProfilePostLike error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
+async function addProfilePostComment(req, res) {
+  try {
+    const userId = req.user && req.user.id;
+    const targetUserId = String(req.params.id || '').trim();
+    const postId = String(req.params.postId || '').trim();
+    const content = String(req.body.content || '').trim();
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: '请先登录'
+      });
+    }
+    if (!targetUserId || !postId) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '缺少作者或帖子参数'
+      });
+    }
+    if (!content) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '评论内容不能为空'
+      });
+    }
+
+    const post = await findProfilePostOrNull(targetUserId, postId);
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        error: 'NotFound',
+        message: '帖子不存在或不属于该作者'
+      });
+    }
+
+    const comment = await prisma.comment.create({
+      data: { user_id: userId, post_id: postId, content: content.slice(0, 500) },
+      include: { user: { select: { username: true, display_name: true } } }
+    });
+    return res.status(201).json({
+      success: true,
+      data: {
+        id: comment.id,
+        author: comment.user.display_name || comment.user.username || 'User',
+        text: comment.content
+      },
+      message: '评论成功'
+    });
+  } catch (error) {
+    console.error('addProfilePostComment error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
 module.exports = {
   getMe,
   updateMe,
-  getMyProfile,
-  updateMyProfile,
   toggleFollow,
-  getFollowStatus,
-  getUserProfile
+  getFollowNetwork,
+  getFollowSuggestions,
+  getUserProfile,
+  toggleProfilePostLike,
+  addProfilePostComment
 };

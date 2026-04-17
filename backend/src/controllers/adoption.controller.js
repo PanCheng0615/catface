@@ -2,6 +2,51 @@ const { PrismaClient } = require('@prisma/client');
 const { scoreCatForUser, normalizeText, getWeights, updateWeights } = require('../utils/adoptionRecommendScore');
 
 const prisma = new PrismaClient();
+const hasAdoptionSwipeModel = Boolean(prisma.adoptionSwipe);
+const adopterPreferenceFieldSet = new Set(
+  (((prisma._runtimeDataModel || {}).models || {}).AdopterPreference || {}).fields
+    ? ((prisma._runtimeDataModel || {}).models.AdopterPreference.fields || []).map((field) => field.name)
+    : []
+);
+
+function hasAdopterPreferenceField(fieldName) {
+  return adopterPreferenceFieldSet.has(fieldName);
+}
+let adoptionSwipeStoreAvailability = {
+  checked_at: 0,
+  available: hasAdoptionSwipeModel
+};
+
+async function hasAdoptionSwipeStore() {
+  if (!hasAdoptionSwipeModel) return false;
+
+  const now = Date.now();
+  if (now - adoptionSwipeStoreAvailability.checked_at < 15000) {
+    return adoptionSwipeStoreAvailability.available;
+  }
+
+  try {
+    const rows = await prisma.$queryRaw`
+      SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'adoption_swipes'
+      ) AS exists
+    `;
+    const available = Boolean(rows && rows[0] && rows[0].exists === true);
+    adoptionSwipeStoreAvailability = {
+      checked_at: now,
+      available
+    };
+    return available;
+  } catch (error) {
+    console.warn('hasAdoptionSwipeStore check failed, treating swipe store as unavailable:', error.message);
+    adoptionSwipeStoreAvailability = {
+      checked_at: now,
+      available: false
+    };
+    return false;
+  }
+}
 
 const catCardInclude = {
   tags: true,
@@ -12,6 +57,14 @@ const catCardInclude = {
 // 请求体字段与 AdoptionSwipe 模型一致：cat_id、liked（user_id 由服务端从 token 写入）
 async function recordSwipe(req, res) {
   try {
+    if (!(await hasAdoptionSwipeStore())) {
+      return res.status(503).json({
+        success: false,
+        error: 'SwipeStoreUnavailable',
+        message: 'Swipe actions are not available in the current database schema'
+      });
+    }
+
     const { cat_id, liked } = req.body;
 
     if (!cat_id) {
@@ -84,12 +137,16 @@ async function getFeed(req, res) {
       where: { user_id: userId }
     });
 
-    const likedSwipes = await prisma.adoptionSwipe.findMany({
-      where: { user_id: userId, liked: true },
-      include: {
-        cat: { include: { tags: true } }
-      }
-    });
+    const swipeStoreAvailable = await hasAdoptionSwipeStore();
+
+    const likedSwipes = swipeStoreAvailable
+      ? await prisma.adoptionSwipe.findMany({
+          where: { user_id: userId, liked: true },
+          include: {
+            cat: { include: { tags: true } }
+          }
+        })
+      : [];
 
     const likedBreedSet = new Set();
     const likedTagSet = new Set();
@@ -105,10 +162,12 @@ async function getFeed(req, res) {
       }
     }
 
-    const allSwipes = await prisma.adoptionSwipe.findMany({
-      where: { user_id: userId },
-      select: { cat_id: true }
-    });
+    const allSwipes = swipeStoreAvailable
+      ? await prisma.adoptionSwipe.findMany({
+          where: { user_id: userId },
+          select: { cat_id: true }
+        })
+      : [];
     const swipedCatIds = allSwipes.map((s) => s.cat_id);
 
     const where = {
@@ -166,6 +225,14 @@ async function getFeed(req, res) {
 // 修改态度：再次 POST /api/adoption/swipe，body 传同一 cat_id 与新的 liked（upsert），推荐打分会自动按最新 liked 计算
 async function getSwipes(req, res) {
   try {
+    if (!(await hasAdoptionSwipeStore())) {
+      return res.json({
+        success: true,
+        data: [],
+        message: 'Swipe history is unavailable in the current database schema'
+      });
+    }
+
     const rows = await prisma.adoptionSwipe.findMany({
       where: { user_id: req.user.id },
       include: { cat: { include: catCardInclude } },
@@ -187,9 +254,59 @@ async function getSwipes(req, res) {
   }
 }
 
+// DELETE /api/adoption/swipes/:catId
+async function deleteSwipe(req, res) {
+  try {
+    if (!(await hasAdoptionSwipeStore())) {
+      return res.status(503).json({
+        success: false,
+        error: 'SwipeStoreUnavailable',
+        message: 'Swipe actions are not available in the current database schema'
+      });
+    }
+
+    const catId = String(req.params.catId || '').trim();
+    if (!catId) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '缺少 catId'
+      });
+    }
+
+    await prisma.adoptionSwipe.deleteMany({
+      where: {
+        user_id: req.user.id,
+        cat_id: catId
+      }
+    });
+
+    return res.json({
+      success: true,
+      data: { cat_id: catId },
+      message: '已取消喜欢记录'
+    });
+  } catch (error) {
+    console.error('deleteSwipe error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
 // GET /api/adoption/liked
 async function getLiked(req, res) {
   try {
+    if (!(await hasAdoptionSwipeStore())) {
+      return res.json({
+        success: true,
+        data: [],
+        message: 'Liked cats are unavailable in the current database schema'
+      });
+    }
+
     const rows = await prisma.adoptionSwipe.findMany({
       where: { user_id: req.user.id, liked: true },
       include: { cat: { include: catCardInclude } },
@@ -213,26 +330,61 @@ async function getLiked(req, res) {
   }
 }
 
+// GET /api/adoption/preferences
+async function getPreferences(req, res) {
+  try {
+    const pref = await prisma.adopterPreference.findUnique({
+      where: { user_id: req.user.id }
+    });
+
+    return res.json({
+      success: true,
+      data: pref || null,
+      message: pref ? '领养偏好获取成功' : '暂无已保存的领养偏好'
+    });
+  } catch (error) {
+    console.error('getPreferences error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
 // POST /api/adoption/preferences
 async function setPreferences(req, res) {
   try {
-    const { preferred_age, preferred_gender, preferred_breed, preferred_color } = req.body;
+    const { preferred_age, preferred_gender, preferred_breed, home_environment, personality_tags } = req.body;
+    const normalizedTags = Array.isArray(personality_tags)
+      ? personality_tags
+          .map((tag) => String(tag || '').trim())
+          .filter(Boolean)
+      : null;
+    const createData = {
+      user_id: req.user.id,
+      preferred_age: preferred_age ?? null,
+      preferred_gender: preferred_gender ?? null,
+      preferred_breed: preferred_breed ?? null
+    };
+    const updateData = {
+      preferred_age: preferred_age ?? undefined,
+      preferred_gender: preferred_gender ?? undefined,
+      preferred_breed: preferred_breed ?? undefined
+    };
+    if (hasAdopterPreferenceField('home_environment')) {
+      createData.home_environment = home_environment ?? null;
+      updateData.home_environment = home_environment ?? undefined;
+    }
+    if (hasAdopterPreferenceField('personality_tags')) {
+      createData.personality_tags = normalizedTags;
+      updateData.personality_tags = normalizedTags ?? undefined;
+    }
 
     const pref = await prisma.adopterPreference.upsert({
       where: { user_id: req.user.id },
-      create: {
-        user_id: req.user.id,
-        preferred_age: preferred_age ?? null,
-        preferred_gender: preferred_gender ?? null,
-        preferred_breed: preferred_breed ?? null,
-        preferred_color: preferred_color ?? null
-      },
-      update: {
-        preferred_age: preferred_age ?? undefined,
-        preferred_gender: preferred_gender ?? undefined,
-        preferred_breed: preferred_breed ?? undefined,
-        preferred_color: preferred_color ?? undefined
-      }
+      create: createData,
+      update: updateData
     });
 
     return res.json({
@@ -242,6 +394,47 @@ async function setPreferences(req, res) {
     });
   } catch (error) {
     console.error('setPreferences error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
+// GET /api/adoption/preference-tags
+// 标签来源：数据库中的 cat_tags.tag + adopter_preferences.personality_tags（去重后返回）
+async function getPreferenceTags(req, res) {
+  try {
+    const catTagRows = await prisma.catTag.findMany({
+      select: { tag: true },
+      orderBy: { tag: 'asc' }
+    });
+
+    const prefRows = await prisma.adopterPreference.findMany({
+      select: { personality_tags: true }
+    });
+
+    const merged = new Set();
+    (catTagRows || []).forEach((row) => {
+      const tag = row && row.tag ? String(row.tag).trim() : '';
+      if (tag) merged.add(tag);
+    });
+    (prefRows || []).forEach((row) => {
+      const list = Array.isArray(row && row.personality_tags) ? row.personality_tags : [];
+      list.forEach((item) => {
+        const tag = String(item || '').trim();
+        if (tag) merged.add(tag);
+      });
+    });
+
+    return res.json({
+      success: true,
+      data: Array.from(merged),
+      message: '标签列表获取成功'
+    });
+  } catch (error) {
+    console.error('getPreferenceTags error:', error);
     return res.status(500).json({
       success: false,
       error: 'ServerError',
@@ -452,7 +645,10 @@ module.exports = {
   recordSwipe,
   getFeed,
   getSwipes,
+  deleteSwipe,
   getLiked,
+  getPreferences,
+  getPreferenceTags,
   setPreferences,
   createApplication,
   cancelApplication,

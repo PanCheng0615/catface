@@ -3,700 +3,412 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Log in · CatFace</title>
+  <title>CatFace · Log In</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: radial-gradient(circle at top left, #ffe6eb 0%, #fafafa 40%, #f3f4ff 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      color: #222;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4;
     }
-    a { color: #2f6feb; text-decoration: none; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; -webkit-font-smoothing: antialiased; }
+    a { color: var(--brand); text-decoration: none; }
     a:hover { text-decoration: underline; }
+    button { font: inherit; cursor: pointer; }
 
-    .shell {
-      width: min(980px, 100%);
-      background: #fff;
-      border-radius: 24px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.12);
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-      overflow: hidden;
-    }
-    @media (max-width: 820px) {
-      .shell {
-        grid-template-columns: minmax(0, 1fr);
-      }
-    }
-    .left {
-      padding: 26px 26px 22px;
-    }
-    .right {
-      background: radial-gradient(circle at top, #ff2442 0%, #ff7a66 45%, #ffc1a6 100%);
-      color: #fff;
-      padding: 26px 24px 22px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
+    .page { width: min(960px,100%); display: grid; grid-template-columns: 1fr 1fr; border-radius: 28px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.14); min-height: 580px; }
+    @media (max-width: 680px) { .page { grid-template-columns: 1fr; } .page-left { display: none; } }
 
-    .logo {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 800;
-      color: #ff2442;
-      font-size: 18px;
-      margin-bottom: 8px;
-    }
-    .logo-mark {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      background: #ff2442;
-      color: #fff;
-      display: grid;
-      place-items: center;
-      font-size: 16px;
-    }
-    .back-link {
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 8px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
+    .page-left { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 60%, #F0C888 100%); padding: 40px 36px; display: flex; flex-direction: column; justify-content: space-between; color: #fff; position: relative; overflow: hidden; }
+    .page-left::after { content: '🐱'; position: absolute; right: -10px; bottom: 20px; font-size: 160px; opacity: .12; line-height: 1; }
+    .logo-area { display: flex; align-items: center; gap: 10px; }
+    .logo-mark { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,.25); display: grid; place-items: center; font-size: 20px; }
+    .logo-text { font-size: 20px; font-weight: 900; letter-spacing: -.5px; }
+    .left-body { }
+    .left-body h2 { font-size: 30px; font-weight: 900; line-height: 1.2; margin-bottom: 16px; }
+    .feature-list { display: flex; flex-direction: column; gap: 12px; }
+    .feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.5; opacity: .92; }
+    .feature-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+    .left-footer { font-size: 12px; opacity: .75; }
 
-    .tabs {
-      display: inline-flex;
-      margin: 8px 0 16px;
-      padding: 3px;
-      border-radius: 999px;
-      background: #f5f5f5;
-      font-size: 13px;
-    }
-    .tab-btn {
-      border-radius: 999px;
-      border: none;
-      padding: 6px 14px;
-      background: transparent;
-      cursor: pointer;
-      color: #666;
-    }
-    .tab-btn.is-active {
-      background: #fff;
-      color: #222;
-      font-weight: 600;
-      box-shadow: 0 2px 6px rgba(0,0,0,.08);
-    }
-
-    .title {
-      font-size: 22px;
-      font-weight: 700;
-      margin: 4px 0 4px;
-    }
-    .sub {
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 8px;
-    }
-
-    .field {
-      margin: 10px 0;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: #f6f6f6;
-      border: 1px solid #efefef;
-      border-radius: 999px;
-      padding: 10px 14px;
-      height: 52px;
-    }
-    .field:focus-within {
-      border-color: #ffd0d7;
-      background: #fafafa;
-    }
-    .input {
-      flex: 1;
-      border: none;
-      outline: none;
-      background: transparent;
-      font-size: 14px;
-      color: #333;
-    }
-    .input::placeholder { color: #b7b7b7; }
-    .select {
-      border: none;
-      outline: none;
-      background: transparent;
-      font-size: 14px;
-      color: #333;
-      flex: 1;
-    }
-    .label-inline {
-      font-size: 13px;
-      color: #555;
-      min-width: 90px;
-    }
-    .help {
-      font-size: 12px;
-      color: #999;
-      margin: 2px 4px 0;
-    }
-    .pref-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 6px;
-      font-size: 12px;
-      color: #555;
-    }
-    .pref-tags label {
-      cursor: pointer;
-    }
-    .type-options {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 8px;
-    }
-    .type-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      border: 1px solid #e5e7eb;
-      background: #fff;
-      padding: 12px 14px;
-      border-radius: 999px;
-      font-size: 14px;
-      color: #333;
-      cursor: pointer;
-      user-select: none;
-    }
-    .type-pill input {
-      width: 18px;
-      height: 18px;
-    }
-    .type-pill:hover {
-      border-color: #ffd0d7;
-      background: #fff7f8;
-    }
-    .type-pill:has(input:checked) {
-      border-color: #ff2442;
-      background: #ffeef1;
-      box-shadow: 0 6px 16px rgba(255,36,66,.12);
-    }
-
-    .btn-primary {
-      margin-top: 14px;
-      width: 100%;
-      height: 54px;
-      border-radius: 999px;
-      border: none;
-      background: #ff2442;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .btn-primary:hover { background: #e61e3a; }
-
-    .agree {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      margin-top: 8px;
-      font-size: 12px;
-      color: #666;
-    }
-    .agree input {
-      margin-top: 2px;
-    }
-    .switch-text {
-      margin-top: 8px;
-      font-size: 13px;
-      color: #777;
-    }
-
-    .right h2 {
-      margin: 0 0 6px;
-      font-size: 20px;
-    }
-    .right p {
-      margin: 0;
-      font-size: 13px;
-    }
-    .right-list {
-      margin-top: 14px;
-      padding-left: 18px;
-      font-size: 13px;
-    }
+    .page-right { background: var(--surface); padding: 40px 36px; display: flex; flex-direction: column; justify-content: center; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+    .back-link:hover { color: var(--brand); text-decoration: none; }
+    .tab-bar { display: flex; border-bottom: 1.5px solid var(--border); margin-bottom: 28px; }
+    .tab { flex: 1; text-align: center; padding: 12px 0; font-size: 15px; font-weight: 700; color: var(--text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: color .2s, border-color .2s; }
+    .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+    .form-panel { display: none; flex-direction: column; gap: 16px; }
+    .form-panel.active { display: flex; }
+    .form-title { font-size: 22px; font-weight: 800; }
+    .form-sub { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 13px; font-weight: 700; color: var(--text-sub); }
+    .field input, .field select { border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 14px; font: inherit; font-size: 14px; color: var(--text); background: var(--bg); outline: none; transition: border-color .15s, background .15s; }
+    .field input:focus, .field select:focus { border-color: var(--accent); background: #fff; }
+    .field input::placeholder { color: var(--text-muted); }
+    .radio-group { display: flex; gap: 10px; }
+    .radio-option { flex: 1; border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 14px; font-size: 14px; cursor: pointer; transition: all .15s; text-align: center; color: var(--text-sub); font-weight: 600; }
+    .radio-option.selected { border-color: var(--brand); background: var(--brand-light); color: var(--brand); }
+    .pref-section { background: var(--bg); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .pref-title { font-size: 13px; font-weight: 700; color: var(--text-sub); }
+    .pref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .pref-select { border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 12px; font: inherit; font-size: 13px; background: #fff; color: var(--text); outline: none; }
+    .btn-submit { width: 100%; padding: 14px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 15px; font-weight: 800; border: none; transition: background .15s, transform .12s; }
+    .btn-submit:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .btn-secondary { width: 100%; padding: 14px; border-radius: 99px; background: var(--brand-light); color: var(--brand); font-size: 15px; font-weight: 800; border: 1.5px solid rgba(200,112,42,.18); text-align: center; display: inline-flex; align-items: center; justify-content: center; transition: background .15s, transform .12s, border-color .15s; }
+    .btn-secondary:hover { background: #f8e7c7; border-color: rgba(200,112,42,.28); text-decoration: none; transform: translateY(-1px); }
+    .terms { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+    .divider { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 13px; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .status-msg { padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; display: none; }
+    .status-msg.success { background: #ecfdf3; color: #027a48; display: block; }
+    .status-msg.error { background: #fef2f2; color: #dc2626; display: block; }
+    .forgot-link { font-size: 13px; color: var(--text-muted); text-align: right; }
+    .forgot-link a { color: var(--brand); }
+    .org-entry { text-align: center; font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+    .org-entry a { font-weight: 700; }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <section class="left">
-      <a href="/pages/index.html" class="back-link">← Back to Home</a>
-      <div class="logo">
-        <span class="logo-mark">🐱</span>
-        <span>CatFace</span>
+<div class="page">
+  <!-- Left panel -->
+  <div class="page-left">
+    <div class="logo-area">
+      <div class="logo-mark">&#x1F431;</div>
+      <span class="logo-text">CatFace</span>
+    </div>
+    <div class="left-body">
+      <h2>The social platform for cat lovers</h2>
+      <div class="feature-list">
+        <div class="feature-item"><span class="feature-icon">&#x1F4AC;</span><span>Post updates about your cat and connect with the community</span></div>
+        <div class="feature-item"><span class="feature-icon">&#x1F431;</span><span>Discover adoptable cats matched to your preferences</span></div>
+        <div class="feature-item"><span class="feature-icon">&#x1FA7A;</span><span>Manage health records and share with clinics</span></div>
+        <div class="feature-item"><span class="feature-icon">&#x1F691;</span><span>Report and track stray cat rescue activities</span></div>
       </div>
-
-      <div class="tabs" role="tablist">
-        <button class="tab-btn is-active" type="button" id="tabLogin">Log in</button>
-        <button class="tab-btn" type="button" id="tabSignup">Sign up</button>
-      </div>
-
-      <!-- Log in form -->
-      <form id="loginForm" aria-label="Email login form">
-        <div class="title">Log in</div>
-        <div class="sub">Use your email and password to log in.</div>
-
-        <div class="field">
-          <span class="label-inline">Email</span>
-          <input class="input" id="login-email" type="email" autocomplete="email" placeholder="Enter email" required>
-        </div>
-        <div class="field">
-          <span class="label-inline">Password</span>
-          <input class="input" id="login-code" type="password" placeholder="Enter password" required>
-        </div>
-
-        <div class="agree">
-          <input id="login-agree" type="checkbox">
-          <label for="login-agree">
-            I have read and agree to the
-            <a href="#">User Agreement</a>,
-            <a href="#">Privacy Policy</a>,
-            and
-            <a href="#">Children/Teen Personal Information Protection Rules</a>.
-          </label>
-        </div>
-
-        <button class="btn-primary" type="submit">Log in</button>
-        <div class="switch-text">Don't have an account? <a href="#" id="goSignup">Sign up</a></div>
-      </form>
-
-      <!-- Sign up form -->
-      <form id="signupForm" aria-label="Sign-up form" style="display:none;">
-        <div class="title">Sign up</div>
-        <div class="sub">Create an account and choose your user type.</div>
-
-        <div class="field">
-          <span class="label-inline">Nickname</span>
-          <input class="input" id="reg-name" type="text" autocomplete="nickname" placeholder="Enter nickname" required>
-        </div>
-        <div class="field">
-          <span class="label-inline">Email</span>
-          <input class="input" id="reg-email" type="email" autocomplete="email" placeholder="Enter email" required>
-        </div>
-        <div class="field">
-          <span class="label-inline">Password</span>
-          <input class="input" id="reg-password" type="password" autocomplete="new-password" placeholder="Set password" required>
-        </div>
-
-        <div class="help">I am signing up as:</div>
-        <div class="type-options">
-          <label class="type-pill"><input type="radio" name="userType" id="typeOwner" value="owner" checked> I have a cat</label>
-          <label class="type-pill"><input type="radio" name="userType" id="typeAdopter" value="adopter"> I want to adopt</label>
-        </div>
-
-        <div id="adopterFields">
-          <div class="help">Adoption preferences (can be changed later):</div>
-        <div class="field">
-          <span class="label-inline">Gender</span>
-          <select class="select" id="pref-gender">
-            <option value="">Any</option>
-            <option value="female">Female</option>
-            <option value="male">Male</option>
-            <option value="no-preference">No preference</option>
-          </select>
-        </div>
-        <div class="field">
-          <span class="label-inline">Age</span>
-          <select class="select" id="pref-age">
-            <option value="">Any</option>
-            <option value="kitten">Kitten (0–1 year)</option>
-            <option value="adult">Adult (1–7 years)</option>
-            <option value="senior">Senior (7+ years)</option>
-          </select>
-        </div>
-        <div class="field">
-          <span class="label-inline">Breed</span>
-          <select class="select" id="pref-breed">
-            <option value="">Any</option>
-            <option value="domestic-short-hair">Domestic short hair</option>
-            <option value="british-shorthair">British Shorthair</option>
-            <option value="ragdoll">Ragdoll</option>
-            <option value="persian">Persian</option>
-            <option value="american-shorthair">American Shorthair</option>
-            <option value="mix">Mixed / Rescue cat</option>
-          </select>
-        </div>
-        <div class="field">
-          <span class="label-inline">Home</span>
-          <select class="select" id="pref-home">
-            <option value="">Optional</option>
-            <option value="quiet">Quiet (1–2 adults)</option>
-            <option value="family-kids">Family with children</option>
-            <option value="other-pets">Already have other pets</option>
-            <option value="first-time">First-time cat owner</option>
-          </select>
-        </div>
-        <div class="help">Personality you prefer (multiple choice):</div>
-        <div class="pref-tags">
-          <label><input type="checkbox" id="pref-playful"> Playful / Active</label>
-          <label><input type="checkbox" id="pref-gentle"> Gentle / Calm</label>
-          <label><input type="checkbox" id="pref-kid"> Good with kids</label>
-          <label><input type="checkbox" id="pref-beginner"> Good for first-time owners</label>
-          <label><input type="checkbox" id="pref-special"> OK with special needs</label>
-        </div>
-        </div>
-
-        <div id="ownerFields" style="display:none;">
-          <div class="help">Upload your cat's face to create a unique cat ID, then fill basic information (can be changed later).</div>
-          <div class="field">
-            <span class="label-inline">Cat face</span>
-            <input class="input" id="mycat-face" type="file" accept="image/*">
-          </div>
-          <div class="field" id="mycat-face-preview-row" style="display:none;">
-            <span class="label-inline">Preview</span>
-            <div style="display:flex; align-items:center; gap:10px;">
-              <img id="mycat-face-preview" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="Cat face preview" style="width:64px;height:64px;border-radius:16px;object-fit:cover;border:1px solid #e5e7eb;">
-              <span style="font-size:12px;color:#777;">Cat ID will be generated after sign up.</span>
-            </div>
-          </div>
-          <div class="field">
-            <span class="label-inline">Cat ID</span>
-            <input class="input" id="mycat-id-display" type="text" placeholder="Will be generated after sign up" readonly>
-          </div>
-          <div class="field">
-            <span class="label-inline">Cat name</span>
-            <input class="input" id="mycat-name" type="text" placeholder="Enter cat name">
-          </div>
-          <div class="field">
-            <span class="label-inline">Breed</span>
-            <input class="input" id="mycat-breed" type="text" placeholder="e.g. Domestic shorthair">
-          </div>
-          <div class="field">
-            <span class="label-inline">Gender</span>
-            <select class="select" id="mycat-gender">
-              <option value="">Not specified</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Unknown">Unknown</option>
-            </select>
-          </div>
-          <div class="field">
-            <span class="label-inline">Birthday</span>
-            <input class="input" id="mycat-birthday" type="date">
-          </div>
-        </div>
-
-        <div class="agree">
-          <input id="reg-agree" type="checkbox">
-          <label for="reg-agree">
-            I have read and agree to the
-            <a href="#">User Agreement</a>,
-            <a href="#">Privacy Policy</a>,
-            and
-            <a href="#">Children/Teen Personal Information Protection Rules</a>.
-          </label>
-        </div>
-
-        <button class="btn-primary" type="submit">Sign up</button>
-        <div class="switch-text">Already have an account? <a href="#" id="goLogin">Log in</a></div>
-      </form>
-    </section>
-
-    <aside class="right" aria-label="Highlights">
-      <div>
-        <h2>Why log in to CatFace?</h2>
-        <p>After logging in, you can:</p>
-        <ul class="right-list">
-          <li>Save your adoption preferences and get better matches</li>
-          <li>Like and comment on community posts</li>
-          <li>Follow your favorite cat creators</li>
-          <li>View and manage your own adoption applications (later via backend)</li>
-        </ul>
-      </div>
-    </aside>
+    </div>
+    <div class="left-footer">CatFace · UI Demo · All data is simulated</div>
   </div>
 
-  <script src="../js/config.js"></script>
-  <script>
-    (function () {
-      var USER_KEY = 'catface_user';
-      var API_BASE = typeof API_BASE_URL !== "undefined" ? API_BASE_URL : "http://localhost:3000/api";
+  <!-- Right panel -->
+  <div class="page-right">
+    <a class="back-link" href="/pages/cat-facebook.html">&#x2190; Back to Home</a>
+    <div class="tab-bar">
+      <div class="tab active" id="tab-login">Log In</div>
+      <div class="tab" id="tab-signup">Sign Up</div>
+    </div>
 
-      function loadUser() {
-        try {
-          var raw = window.localStorage.getItem(USER_KEY);
-          if (!raw) return null;
-          return JSON.parse(raw);
-        } catch (e) { return null; }
-      }
-      function saveUser(user) {
-        try {
-          window.localStorage.setItem(USER_KEY, JSON.stringify(user));
-        } catch (e) {}
-      }
-      function saveAuth(data) {
-        if (typeof setToken === "function" && data && data.token) {
-          setToken(data.token);
-        }
-        if (data && data.user) {
-          saveUser({
-            id: data.user.id,
-            email: data.user.email,
-            username: data.user.username,
-            display_name: data.user.display_name,
-            role: data.user.role,
-            loggedInAt: new Date().toISOString()
-          });
-        }
-      }
+    <!-- Login Form -->
+    <div class="form-panel active" id="panel-login">
+      <div>
+        <div class="form-title">Welcome back</div>
+        <div class="form-sub">Log in to your CatFace account</div>
+      </div>
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" placeholder="Enter your email">
+      </div>
+      <div class="field">
+        <label for="login-pw">Password</label>
+        <input id="login-pw" type="password" placeholder="Enter your password">
+      </div>
+      <div class="forgot-link"><a href="mailto:rescue@catface.local?subject=CatFace%20Password%20Reset">Forgot password?</a></div>
+      <div id="login-status" class="status-msg"></div>
+      <button class="btn-submit" id="login-btn">Log In</button>
+      <a class="btn-secondary" id="login-cat-face-link" href="/pages/cat-face-login.html">Log In with Cat Face ID</a>
+      <div class="org-entry">Are you a rescue organization? <a href="/pages/org-login.html">Log in here</a></div>
+      <div class="divider">or</div>
+      <div style="text-align:center;font-size:14px;color:var(--text-muted);">Don't have an account? <a href="javascript:void(0)" onclick="switchTab('signup')">Sign up</a></div>
+    </div>
 
-      function syncProfileAfterSignup(isOwner) {
-        if (!getToken()) return Promise.resolve();
-        var payload;
-        if (isOwner) {
-          payload = {
-            display_name: regName.value.trim(),
-            has_cat: true,
-            cat: {
-              name: (myCatName && myCatName.value.trim()) || "My Cat",
-              breed: (myCatBreed && myCatBreed.value.trim()) || "",
-              gender: (myCatGender && myCatGender.value) || "",
-              birthday: (myCatBirthday && myCatBirthday.value) || "",
-              photo_url: pendingCatFaceDataUrl || "",
-              description: "Created from sign-up"
-            }
-          };
-        } else {
-          payload = {
-            display_name: regName.value.trim(),
-            has_cat: false,
-            preferences: {
-              preferred_gender: (prefGender && prefGender.value) || "",
-              preferred_age: (prefAge && prefAge.value) || "",
-              preferred_breed: (prefBreed && prefBreed.value) || ""
-            }
-          };
-        }
-        return fetch(API_BASE + "/users/me/profile", {
-          method: "PUT",
-          headers: getAuthHeaders(),
-          body: JSON.stringify(payload)
-        })
-          .then(function (res) { return res.json(); })
-          .then(function () {})
-          .catch(function () {});
-      }
+    <!-- Sign Up Form -->
+    <div class="form-panel" id="panel-signup">
+      <div>
+        <div class="form-title">Create account</div>
+        <div class="form-sub">Join CatFace and find your perfect companion</div>
+      </div>
+      <div class="field">
+        <label>Nickname</label>
+        <input id="reg-name" type="text" placeholder="Your display name">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input id="reg-email" type="email" placeholder="Enter your email">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="reg-password" type="password" placeholder="Create a password (min. 6 chars)">
+      </div>
+      <div class="field">
+        <label>I am signing up as</label>
+        <div class="radio-group">
+          <div class="radio-option selected" id="role-user">&#x1F431; I have a cat</div>
+          <div class="radio-option" id="role-adopt">&#x1F3E0; I want to adopt</div>
+        </div>
+      </div>
+      <div class="pref-section" id="adopt-prefs" style="display:none;">
+        <div class="pref-title">Adoption preferences (optional)</div>
+        <div class="pref-grid">
+          <select class="pref-select" id="signup-pref-gender">
+            <option value="">Any gender</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+            <option value="no_preference">No preference</option>
+          </select>
+          <select class="pref-select" id="signup-pref-age">
+            <option value="">Any age</option>
+            <option value="kitten">Kitten (0–1 yr)</option>
+            <option value="adult">Adult</option>
+            <option value="senior">Senior</option>
+          </select>
+          <select class="pref-select" id="signup-pref-breed">
+            <option value="">Any breed</option>
+            <option value="domestic short hair">Domestic shorthair</option>
+            <option value="british shorthair">British Shorthair</option>
+            <option value="persian">Persian</option>
+          </select>
+          <select class="pref-select" id="signup-pref-home">
+            <option value="">Any home type</option>
+            <option value="Quiet (1–2 adults)">Quiet home</option>
+            <option value="Family with children">Family</option>
+            <option value="First-time owner">First-time owner</option>
+          </select>
+        </div>
+      </div>
+      <div class="terms">
+        <label><input type="checkbox" id="reg-agree"> I have read and agree to the <a href="mailto:rescue@catface.local?subject=CatFace%20User%20Agreement">User Agreement</a>, <a href="mailto:rescue@catface.local?subject=CatFace%20Privacy%20Policy">Privacy Policy</a>, and <a href="mailto:rescue@catface.local?subject=CatFace%20Children%20Teen%20Policy">Children/Teen Personal Information Protection Rules</a>.</label>
+      </div>
+      <div id="signup-status" class="status-msg"></div>
+      <a class="btn-secondary" id="signup-cat-face-enroll-btn" href="/pages/cat-face-login.html?source=owner-signup" style="margin-top:10px;">Enroll Cat Info with Cat Face ID</a>
+      <button class="btn-submit" id="signup-btn">Sign Up</button>
+      <div style="text-align:center;font-size:14px;color:var(--text-muted);">Already have an account? <a href="javascript:void(0)" onclick="switchTab('login')">Log in</a></div>
+    </div>
+  </div>
+</div>
 
-      var tabLogin = document.getElementById('tabLogin');
-      var tabSignup = document.getElementById('tabSignup');
-      var loginForm = document.getElementById('loginForm');
-      var signupForm = document.getElementById('signupForm');
-      var goSignup = document.getElementById('goSignup');
-      var goLogin = document.getElementById('goLogin');
+<script src="../js/config.js"></script>
+<script>
+  function getRedirectTarget() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var redirect = String(params.get('redirect') || '').trim();
+      if (!redirect) return '/pages/cat-facebook.html?feed=recommended';
+      if (redirect.indexOf('/pages/') === 0 || redirect.indexOf('/') === 0) return redirect;
+    } catch (e) {}
+    return '/pages/cat-facebook.html?feed=recommended';
+  }
 
-      function switchTo(mode) {
-        var isLogin = mode === 'login';
-        tabLogin.classList.toggle('is-active', isLogin);
-        tabSignup.classList.toggle('is-active', !isLogin);
-        loginForm.style.display = isLogin ? '' : 'none';
-        signupForm.style.display = isLogin ? 'none' : '';
-      }
+  function buildCatFaceLoginUrl(extraParams) {
+    var params = new URLSearchParams();
+    var redirect = getRedirectTarget();
+    if (redirect) params.set('redirect', redirect);
+    Object.keys(extraParams || {}).forEach(function (key) {
+      if (extraParams[key] == null || extraParams[key] === '') return;
+      params.set(key, String(extraParams[key]));
+    });
+    return '/pages/cat-face-login.html' + (params.toString() ? ('?' + params.toString()) : '');
+  }
 
-      tabLogin.addEventListener('click', function () { switchTo('login'); });
-      tabSignup.addEventListener('click', function () { switchTo('signup'); });
-      goSignup.addEventListener('click', function (e) { e.preventDefault(); switchTo('signup'); });
-      goLogin.addEventListener('click', function (e) { e.preventDefault(); switchTo('login'); });
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+    document.querySelectorAll('.form-panel').forEach(function(p){p.classList.remove('active')});
+    document.getElementById('tab-'+tab).classList.add('active');
+    document.getElementById('panel-'+tab).classList.add('active');
+  }
+  document.getElementById('tab-login').onclick = function(){ switchTab('login'); };
+  document.getElementById('tab-signup').onclick = function(){ switchTab('signup'); };
+  (function syncTabFromQuery() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var tab = String(params.get('tab') || '').trim().toLowerCase();
+      if (tab === 'signup') switchTab('signup');
+    } catch (e) {}
+  })();
 
-      // If already logged in, show a short hint and redirect option
-      var existing = loadUser();
-      if (existing && existing.email) {
-        // keep forms, but user can still change
-      }
+  var roleUser = document.getElementById('role-user');
+  var roleAdopt = document.getElementById('role-adopt');
+  var adoptPrefs = document.getElementById('adopt-prefs');
+  var signupCatFaceEnrollBtn = document.getElementById('signup-cat-face-enroll-btn');
+  var OWNER_ENROLL_KEY = 'catface_owner_signup_enroll_v1';
+  function loadOwnerEnrollDraft() {
+    try {
+      return JSON.parse(localStorage.getItem(OWNER_ENROLL_KEY) || 'null');
+    } catch (e) {
+      return null;
+    }
+  }
+  function clearOwnerEnrollDraft() {
+    try { localStorage.removeItem(OWNER_ENROLL_KEY); } catch (e) {}
+  }
+  function hasOwnerEnrollDraft() {
+    var draft = loadOwnerEnrollDraft();
+    return !!(draft && draft.image_data_url && draft.name && draft.recognition_status === 'new_cat');
+  }
+  function refreshSignupCatFaceEnrollBtn() {
+    if (!signupCatFaceEnrollBtn) return;
+    signupCatFaceEnrollBtn.style.display = roleUser.classList.contains('selected') ? '' : 'none';
+    if (roleUser.classList.contains('selected') && hasOwnerEnrollDraft()) {
+      signupCatFaceEnrollBtn.textContent = 'Cat Face Enrollment Completed';
+      signupCatFaceEnrollBtn.style.background = '#ecfdf3';
+      signupCatFaceEnrollBtn.style.color = '#027a48';
+      signupCatFaceEnrollBtn.style.borderColor = 'rgba(2,122,72,.25)';
+    } else {
+      signupCatFaceEnrollBtn.textContent = 'Enroll Cat Info with Cat Face ID';
+      signupCatFaceEnrollBtn.style.background = '';
+      signupCatFaceEnrollBtn.style.color = '';
+      signupCatFaceEnrollBtn.style.borderColor = '';
+    }
+  }
+  roleUser.onclick = function(){
+    roleUser.classList.add('selected'); roleAdopt.classList.remove('selected');
+    adoptPrefs.style.display = 'none';
+    refreshSignupCatFaceEnrollBtn();
+  };
+  roleAdopt.onclick = function(){
+    roleAdopt.classList.add('selected'); roleUser.classList.remove('selected');
+    adoptPrefs.style.display = '';
+    refreshSignupCatFaceEnrollBtn();
+  };
 
-      // Log in submit
-      var loginEmail = document.getElementById('login-email');
-      var loginCode = document.getElementById('login-code');
-      var loginAgree = document.getElementById('login-agree');
+  function saveAuth(data) {
+    if (typeof setToken === "function" && data && data.token) setToken(data.token);
+    if (data && data.user) {
+      try { localStorage.setItem("catface_user", JSON.stringify(data.user)); } catch (e) {}
+    }
+  }
 
-      loginForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var email = loginEmail.value.trim();
-        var code = loginCode.value.trim();
-        var agreed = loginAgree.checked;
-        if (!email) {
-          alert('Please enter your email.');
-          loginEmail.focus();
+  function redirectAfterAuth() {
+    location.href = getRedirectTarget();
+  }
+
+  function saveSignupPreferenceDraftForUser(userId, pref) {
+    if (!userId || !pref) return;
+    try {
+      localStorage.setItem('catface_adoption_preferences_v1_' + String(userId), JSON.stringify(pref));
+    } catch (e) {}
+  }
+
+  function persistSignupPreferences(token, pref) {
+    if (!token || !pref) return Promise.resolve();
+    return fetch(API_BASE_URL + "/adoption/preferences", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify(pref)
+    }).then(function () {
+      return null;
+    }).catch(function () {
+      return null;
+    });
+  }
+
+  var loginCatFaceLink = document.getElementById('login-cat-face-link');
+  if (loginCatFaceLink) loginCatFaceLink.href = buildCatFaceLoginUrl();
+  if (signupCatFaceEnrollBtn) signupCatFaceEnrollBtn.href = buildCatFaceLoginUrl({ source: 'owner-signup', return_to: '/pages/log-in.html?tab=signup' });
+  refreshSignupCatFaceEnrollBtn();
+
+  document.getElementById('login-btn').onclick = function(){
+    var email = document.getElementById('login-email').value.trim();
+    var pw = document.getElementById('login-pw').value;
+    var status = document.getElementById('login-status');
+    if(!email || !pw){ status.className='status-msg error'; status.textContent='Please enter email and password.'; return; }
+    status.className='status-msg'; status.textContent='Signing in…';
+    fetch(API_BASE_URL + "/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email, password: pw })
+    })
+      .then(function(res){ return res.json(); })
+      .then(function(result){
+        if (!result.success || !result.data) {
+          status.className='status-msg error';
+          status.textContent = result.message || 'Login failed.';
           return;
         }
-        if (!code) {
-          alert('Please enter the verification code (mock).');
-          loginCode.focus();
-          return;
-        }
-        if (!agreed) {
-          alert('Please agree to the terms before logging in.');
-          return;
-        }
-
-        fetch(API_BASE + "/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email, password: code })
-        })
-          .then(function (res) { return res.json(); })
-          .then(function (result) {
-            if (!result.success || !result.data) {
-              alert(result.message || "Login failed.");
-              return;
-            }
-            saveAuth(result.data);
-            alert('Logged in successfully.');
-            window.location.href = '/pages/index.html';
-          })
-          .catch(function () {
-            alert("Network error. Please check backend service.");
-          });
+        saveAuth(result.data);
+        status.className='status-msg success';
+        status.textContent='Login successful! Redirecting…';
+        setTimeout(redirectAfterAuth, 600);
+      })
+      .catch(function(){
+        status.className='status-msg error';
+        status.textContent='Network error. Is the backend running on port 3000?';
       });
+  };
 
-      // Sign up submit
-      var regName = document.getElementById('reg-name');
-      var regEmail = document.getElementById('reg-email');
-      var regPassword = document.getElementById('reg-password');
-      var regAgree = document.getElementById('reg-agree');
-      var typeOwner = document.getElementById('typeOwner');
-      var typeAdopter = document.getElementById('typeAdopter');
-      var adopterFields = document.getElementById('adopterFields');
-      var ownerFields = document.getElementById('ownerFields');
-
-      var prefGender = document.getElementById('pref-gender');
-      var prefAge = document.getElementById('pref-age');
-      var prefBreed = document.getElementById('pref-breed');
-      var prefHome = document.getElementById('pref-home');
-      var prefPlayful = document.getElementById('pref-playful');
-      var prefGentle = document.getElementById('pref-gentle');
-      var prefKid = document.getElementById('pref-kid');
-      var prefBeginner = document.getElementById('pref-beginner');
-      var prefSpecial = document.getElementById('pref-special');
-
-      var myCatName = document.getElementById('mycat-name');
-      var myCatBreed = document.getElementById('mycat-breed');
-      var myCatGender = document.getElementById('mycat-gender');
-      var myCatBirthday = document.getElementById('mycat-birthday');
-      var myCatFace = document.getElementById('mycat-face');
-      var myCatFacePreviewRow = document.getElementById('mycat-face-preview-row');
-      var myCatFacePreview = document.getElementById('mycat-face-preview');
-      var myCatIdDisplay = document.getElementById('mycat-id-display');
-
-      function applyUserTypeUI() {
-        var isOwner = typeOwner && typeOwner.checked;
-        if (adopterFields) adopterFields.style.display = isOwner ? 'none' : '';
-        if (ownerFields) ownerFields.style.display = isOwner ? '' : 'none';
-      }
-
-      if (typeOwner) typeOwner.addEventListener('change', applyUserTypeUI);
-      if (typeAdopter) typeAdopter.addEventListener('change', applyUserTypeUI);
-      applyUserTypeUI();
-
-      var pendingCatFaceDataUrl = "";
-      if (myCatFace) {
-        myCatFace.addEventListener('change', function () {
-          var file = myCatFace.files[0];
-          if (!file) {
-            pendingCatFaceDataUrl = "";
-            if (myCatFacePreviewRow) myCatFacePreviewRow.style.display = "none";
-            return;
-          }
-          var reader = new FileReader();
-          reader.onload = function (ev) {
-            pendingCatFaceDataUrl = ev.target.result;
-            if (myCatFacePreview) myCatFacePreview.src = pendingCatFaceDataUrl;
-            if (myCatFacePreviewRow) myCatFacePreviewRow.style.display = "";
-          };
-          reader.readAsDataURL(file);
+  document.getElementById('signup-btn').onclick = function(){
+    var name = document.getElementById('reg-name').value.trim();
+    var email = document.getElementById('reg-email').value.trim();
+    var password = document.getElementById('reg-password').value;
+    var agree = document.getElementById('reg-agree').checked;
+    var status = document.getElementById('signup-status');
+    var isOwner = roleUser.classList.contains('selected');
+    var prefGender = document.getElementById('signup-pref-gender');
+    var prefAge = document.getElementById('signup-pref-age');
+    var prefBreed = document.getElementById('signup-pref-breed');
+    var prefHome = document.getElementById('signup-pref-home');
+    var adoptionPreferences = {
+      preferred_gender: prefGender ? (prefGender.value || null) : null,
+      preferred_age: prefAge ? (prefAge.value || null) : null,
+      preferred_breed: prefBreed ? (prefBreed.value || null) : null,
+      home_environment: prefHome ? (prefHome.value || null) : null
+    };
+    if (!name) { status.className='status-msg error'; status.textContent='Please enter a nickname.'; return; }
+    if (!email) { status.className='status-msg error'; status.textContent='Please enter your email.'; return; }
+    if (!password || password.length < 6) { status.className='status-msg error'; status.textContent='Password must be at least 6 characters.'; return; }
+    if (!agree) { status.className='status-msg error'; status.textContent='Please agree to the terms.'; return; }
+    if (isOwner && !hasOwnerEnrollDraft()) {
+      status.className='status-msg error';
+      status.textContent='Please complete Cat Face enrollment and cat info first.';
+      return;
+    }
+    var ownerEnrollDraft = isOwner ? loadOwnerEnrollDraft() : null;
+    status.className='status-msg'; status.textContent='Creating account…';
+    fetch(API_BASE_URL + "/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email,
+        password: password,
+        username: name,
+        display_name: name,
+        has_cat: isOwner,
+        role: "user",
+        adoption_preferences: !isOwner ? adoptionPreferences : null,
+        owner_cat_enrollment: isOwner ? ownerEnrollDraft : null
+      })
+    })
+      .then(function(res){ return res.json(); })
+      .then(function(result){
+        if (!result.success || !result.data) {
+          status.className='status-msg error';
+          status.textContent = result.message || 'Sign up failed.';
+          return;
+        }
+        saveAuth(result.data);
+        if (!isOwner) {
+          saveSignupPreferenceDraftForUser(result.data.user && result.data.user.id, adoptionPreferences);
+        }
+        status.className='status-msg success';
+        if (isOwner) {
+          clearOwnerEnrollDraft();
+          refreshSignupCatFaceEnrollBtn();
+          status.textContent='Owner account created successfully! Redirecting…';
+          setTimeout(redirectAfterAuth, 600);
+          return;
+        }
+        persistSignupPreferences(result.data.token, adoptionPreferences).finally(function () {
+          status.textContent='Welcome to CatFace! Redirecting…';
+          setTimeout(redirectAfterAuth, 600);
         });
-      }
-
-      signupForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-        var name = regName.value.trim();
-        var email = regEmail.value.trim();
-        var password = regPassword.value.trim();
-        var agreed = regAgree.checked;
-        if (!name) {
-          alert('Please enter your nickname.');
-          regName.focus();
-          return;
-        }
-        if (!email) {
-          alert('Please enter your email.');
-          regEmail.focus();
-          return;
-        }
-        if (!password) {
-          alert('Please set a password (prototype only, not stored securely).');
-          regPassword.focus();
-          return;
-        }
-        if (!agreed) {
-          alert('Please agree to the terms before signing up.');
-          return;
-        }
-
-        var isOwner = typeOwner && typeOwner.checked;
-
-        if (isOwner) {
-          if (!pendingCatFaceDataUrl) {
-            alert("Please upload your cat's face photo so we can create a unique cat ID.");
-            if (myCatFace) myCatFace.focus();
-            return;
-          }
-          var generatedId = "CAT-" + Date.now().toString(36).toUpperCase();
-          if (myCatIdDisplay) myCatIdDisplay.value = generatedId;
-        } else {
-          // keep adopter form as frontend-only extra fields for now
-        }
-        fetch(API_BASE + "/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: email,
-            password: password,
-            username: name,
-            display_name: name,
-            role: "user"
-          })
-        })
-          .then(function (res) { return res.json(); })
-          .then(function (result) {
-            if (!result.success || !result.data) {
-              alert(result.message || "Sign up failed.");
-              return;
-            }
-            saveAuth(result.data);
-            syncProfileAfterSignup(isOwner).finally(function () {
-              alert('Sign up successful.');
-              window.location.href = '/pages/index.html';
-            });
-          })
-          .catch(function () {
-            alert("Network error. Please check backend service.");
-          });
+      })
+      .catch(function(){
+        status.className='status-msg error';
+        status.textContent='Network error. Is the backend running on port 3000?';
       });
-    })();
-  </script>
+  };
+</script>
 </body>
 </html>
-

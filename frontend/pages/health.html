@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>貓咪健康檔案 — CatFace</title>
+  <title>健康記錄 — CatFace</title>
   <style>
     :root {
       --bg:         #faf6ef;
@@ -38,7 +38,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
+    html { scrollbar-gutter: stable; }
     body {
       background: var(--bg);
       color: var(--text);
@@ -46,79 +46,137 @@
                    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
       font-size: 14px;
       line-height: 1.6;
+      min-height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
     a { color: var(--primary); text-decoration: none; }
     a:hover { text-decoration: underline; }
     button, input, textarea, select { font: inherit; }
 
-    /* ── 顶部栏 ── */
-    .top-bar {
-      position: fixed; top: 0; left: 0; right: 0;
-      height: var(--header-h);
-      background: var(--surface);
-      border-bottom: 1px solid var(--border-lt);
-      display: flex; align-items: center; padding: 0 20px;
-      z-index: 200; gap: 12px;
-    }
-    .logo {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 20px; font-weight: 800; color: var(--primary);
-      text-decoration: none; white-space: nowrap;
-    }
-    .logo span { font-size: 22px; }
-    .top-bar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-    .page-badge {
-      background: var(--primary-lt); color: var(--primary);
-      padding: 5px 14px; border-radius: 999px;
-      font-size: 13px; font-weight: 700;
-      border: 1px solid rgba(200,130,26,.2);
-    }
-
-    /* ── 侧边栏 ── */
-    .sidebar {
-      position: fixed; top: var(--header-h); left: 0; bottom: 0;
-      width: var(--sidebar-w);
-      background: var(--surface);
-      border-right: 1px solid var(--border-lt);
-      display: flex; flex-direction: column;
-      padding: 16px 0; z-index: 150; overflow-y: auto;
-    }
-    .sidebar-nav { list-style: none; }
-    .sidebar-nav a {
-      display: flex; align-items: center; gap: 11px;
-      padding: 11px 20px; color: #5c4520;
-      font-size: 14px; font-weight: 500;
-      transition: background .15s, color .15s; text-decoration: none;
-    }
-    .sidebar-nav a:hover { background: var(--primary-lt); color: var(--primary); text-decoration: none; }
-    .sidebar-nav a.active { background: var(--primary-lt); color: var(--primary); font-weight: 700; }
-    .nav-icon { font-size: 18px; width: 22px; text-align: center; }
-    .sidebar-divider { height: 1px; background: var(--border-lt); margin: 10px 16px; }
-    .sidebar-bottom { padding: 12px 16px; margin-top: auto; }
-    .sidebar-user {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: var(--r-lg);
-      background: var(--bg); border: 1px solid var(--border);
-    }
-    .user-avatar {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: var(--primary-lt); display: flex; align-items: center;
-      justify-content: center; font-size: 18px; flex-shrink: 0;
-      border: 2px solid var(--border);
-    }
-    .user-name { font-size: 13px; font-weight: 700; color: var(--text); }
-    .user-role { font-size: 11px; color: var(--muted); }
-
-    /* ── 主内容 ── */
-    .main {
-      margin-left: var(--sidebar-w);
-      margin-top: var(--header-h);
-      padding: 24px 28px 60px;
+    /* Site-wide three-column layout */
+    .layout {
+      display: grid;
+      grid-template-columns: 252px minmax(0,1fr) 308px;
+      max-width: 1200px;
+      margin: 0 auto;
       min-height: 100vh;
+      height: 100vh;
     }
 
-    /* ── 状态消息 ── */
+    /* Left nav */
+    .left-nav {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: none;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+    }
+    .left-nav::-webkit-scrollbar { display: none; }
+    .nav-hero {
+      background: linear-gradient(160deg, #C8702A 0%, #E8B050 100%);
+      padding: 18px 16px 16px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .nav-hero::after {
+      content: '🐱';
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      font-size: 48px;
+      opacity: .15;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .nav-hero-logo {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      color: rgba(255,255,255,.75);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
+    .nav-hero-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: rgba(255,255,255,.22);
+      border: 2.5px solid rgba(255,255,255,.55);
+      color: #fff;
+      display: grid; place-items: center;
+      font-size: 19px; flex-shrink: 0;
+    }
+    .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
+    .nav-hero-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #86EFAC; flex-shrink: 0; }
+    .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
+    .nav-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 12px;
+      font-size: 14px; font-weight: 500;
+      color: #6B4E2A;
+      transition: background .15s, color .15s;
+      cursor: pointer;
+    }
+    .nav-link:hover { background: #FDF0D8; color: #C8702A; text-decoration: none; }
+    .nav-link.active { background: #FDF0D8; color: #C8702A; font-weight: 700; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; }
+    .n-label { flex: 1; }
+    .n-badge { background: #E05B73; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px; }
+    .n-soon { font-size: 10px; font-weight: 600; color: #A87848; background: var(--bg); padding: 2px 7px; border-radius: 99px; }
+    .btn-new-post {
+      margin: 14px 10px 0; padding: 12px 0;
+      border-radius: 12px; background: #C8702A; color: #fff;
+      font-size: 14px; font-weight: 700; border: none;
+      transition: background .15s, transform .12s;
+    }
+    .btn-new-post:hover { background: #A85820; transform: translateY(-1px); }
+    .nav-user {
+      margin-top: auto; display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-top: 1px solid var(--border-lt);
+      cursor: pointer; transition: background .15s;
+    }
+    .nav-user:hover { background: #FDFAF6; }
+    .nav-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary-lt); border: 2px solid var(--border);
+      color: var(--primary); display: grid; place-items: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .u-handle { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .nav-user-more { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+
+    /* Center column */
+    .center {
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      min-height: 100vh;
+      height: 100vh;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+    }
+    .center-header {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+    }
+    .center-header h2 { font-size: 18px; font-weight: 800; }
+    .center-header p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+    /* Main content */
+    .main { margin: 0; padding: 20px; min-height: auto; }
+
+    /* Toast */
     #status-msg {
       display: none;
       position: fixed;
@@ -131,7 +189,7 @@
       box-shadow: var(--shadow-lg);
     }
 
-    /* ── 开发测试面板 ── */
+    /* Dev panel */
     .dev-panel {
       background: #fffcf0;
       border: 1px dashed #e8c84a;
@@ -152,14 +210,14 @@
     }
     .dev-note { font-size: 11px; color: #997700; margin-top: 8px; }
 
-    /* ── 顶部导航行 ── */
+    /* Page nav row */
     .page-nav {
       display: flex; align-items: center; justify-content: space-between;
       flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
     }
     .page-title { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
 
-    /* ── 标签页 ── */
+    /* Tabs */
     .tabs {
       display: flex; gap: 3px;
       background: var(--border-lt);
@@ -179,7 +237,7 @@
     .tab-pane { display: none; }
     .tab-pane.active { display: flex; flex-direction: column; gap: 14px; }
 
-    /* ── 健康护照 ── */
+    /* Health passport */
     .passport {
       background: linear-gradient(135deg, #5c3608 0%, #a86915 50%, #c8821a 100%);
       border-radius: var(--r-xl);
@@ -225,7 +283,7 @@
     .pbadge.warn { border-color: rgba(251,191,36,.5);  background: rgba(251,191,36,.12); }
     .pbadge.none { border-color: rgba(255,255,255,.1); background: rgba(0,0,0,.1); }
 
-    /* ── 卡片 ── */
+    /* Cards */
     .card {
       background: var(--surface);
       border-radius: var(--r-xl);
@@ -240,7 +298,7 @@
     }
     .section-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 
-    /* ── chip ── */
+    /* Chip */
     .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
     .chip-blue   { background: var(--blue-lt);   color: var(--blue);   }
     .chip-green  { background: var(--green-lt);  color: var(--green);  }
@@ -251,7 +309,7 @@
     .chip-teal   { background: var(--teal-lt);   color: var(--teal);   }
     .chip-warm   { background: var(--primary-lt); color: var(--primary); }
 
-    /* ── 按钮 ── */
+    /* Buttons */
     .btn {
       display: inline-flex; align-items: center; gap: 6px;
       border: none; border-radius: var(--r-md);
@@ -267,7 +325,7 @@
     .btn-blue    { background: var(--blue-lt); color: var(--blue); border: 1px solid #bfdbfe; }
     .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: var(--r-sm); }
 
-    /* ── 证书记录卡 ── */
+    /* Record list items */
     .rec-card {
       border: 1px solid var(--border);
       border-radius: var(--r-lg);
@@ -302,7 +360,7 @@
       background: var(--green-lt); color: #065f46; border: 1px solid #a7f3d0;
     }
 
-    /* ── 表单 ── */
+    /* Forms */
     .form-card {
       background: #fffaf4;
       border: 1px solid var(--border);
@@ -329,7 +387,7 @@
     select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b7355' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
     .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 
-    /* ── 授权项 ── */
+    /* Permission rows */
     .perm-item {
       display: flex; align-items: center; justify-content: space-between;
       padding: 12px 16px; border: 1px solid var(--border);
@@ -342,12 +400,12 @@
       justify-content: center; font-size: 18px; flex-shrink: 0;
     }
 
-    /* ── 空态 ── */
+    /* Empty states */
     .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
     .empty-icon  { font-size: 40px; margin-bottom: 10px; opacity: .6; }
     .empty-state p { font-size: 13px; line-height: 1.7; }
 
-    /* ── 信息提示条 ── */
+    /* Info callouts */
     .info-bar {
       font-size: 13px; color: var(--muted);
       padding: 10px 14px; border-radius: var(--r-md);
@@ -361,9 +419,36 @@
       color: #065f46;
     }
 
+    /* Right panel */
+    .right-panel {
+      padding: 20px 0 20px 20px;
+      position: sticky; top: 0; height: 100vh;
+      overflow-y: auto;
+      display: flex; flex-direction: column;
+      gap: 18px; scrollbar-width: none;
+    }
+    .right-panel::-webkit-scrollbar { display: none; }
+    .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+    .rp-link-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 18px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background .12s;
+    }
+    .rp-link-row:last-child { border-bottom: none; }
+    .rp-link-row:hover { background: var(--bg); }
+    .rp-link-icon { font-size: 20px; width: 36px; height: 36px; border-radius: 10px; background: var(--primary-lt); display: grid; place-items: center; flex-shrink: 0; }
+    .rp-link-label { flex: 1; font-size: 14px; font-weight: 600; color: #6B4E2A; }
+    .rp-link-arrow { color: var(--muted); font-size: 16px; }
+    .rp-info-block { padding: 14px 18px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 252px minmax(0,1fr); }
+      .right-panel { display: none; }
+    }
     @media (max-width: 860px) {
-      .sidebar { display: none; }
-      .main { margin-left: 0; }
+      .layout { grid-template-columns: 1fr; }
+      .left-nav { display: none; }
     }
     @media (max-width: 640px) {
       .passport-top { flex-direction: column; }
@@ -373,64 +458,44 @@
   </style>
 </head>
 <body>
-
-  <!-- ── 顶部栏 ── -->
-  <header class="top-bar">
-    <a href="index.html" class="logo">
-      <span>🐱</span> CatFace
-    </a>
-    <div class="top-bar-right">
-      <span class="page-badge">🩺 健康檔案</span>
-    </div>
-  </header>
-
-  <!-- ── 侧边栏 ── -->
-  <nav class="sidebar">
-    <ul class="sidebar-nav">
-      <li><a href="index.html">
-        <span class="nav-icon">💬</span> Community
-      </a></li>
-      <li><a href="adoption.html">
-        <span class="nav-icon">🐱</span> Adoption
-      </a></li>
-      <li><a href="index.html">
-        <span class="nav-icon">🔔</span> Notifications
-      </a></li>
-      <li><a href="account.html">
-        <span class="nav-icon">👤</span> Account
-      </a></li>
-    </ul>
-    <div class="sidebar-divider"></div>
-    <ul class="sidebar-nav">
-      <li><a href="health.html" class="active">
-        <span class="nav-icon">🩺</span> Health Records
-      </a></li>
-      <li><a href="clinic-portal.html">
-        <span class="nav-icon">🏥</span> Clinic Portal
-      </a></li>
-      <li><a href="rescue-dashboard.html">
-        <span class="nav-icon">🚑</span> Rescue Dashboard
-      </a></li>
-    </ul>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-bottom">
-      <div class="sidebar-user">
-        <div class="user-avatar">🐾</div>
+  <div class="layout">
+  <nav class="left-nav">
+    <div class="nav-hero">
+      <div class="nav-hero-logo">CatFace</div>
+      <div class="nav-hero-profile">
+        <div class="nav-hero-avatar">&#x1F464;</div>
         <div>
-          <div class="user-name">貓主人</div>
-          <div class="user-role">健康記錄管理</div>
+          <div class="nav-hero-name">Guest</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Not logged in</div>
         </div>
       </div>
     </div>
+    <div class="nav-section">
+      <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/notifications.html', 'Please log in first')"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
+      <div class="nav-link active" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
+    </div>
+    <button class="btn-new-post" onclick="location.href='/pages/cat-facebook.html'">+ New Post</button>
+    <div class="nav-user" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')">
+      <div class="nav-avatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name">Guest</div><div class="u-handle">Log in to continue</div></div>
+      <span class="nav-user-more">&#x2026;</span>
+    </div>
   </nav>
 
-  <!-- ── 主内容 ── -->
-  <main class="main">
+  <div class="center">
+    <div class="center-header">
+      <h2>&#x1FA7A; 健康記錄</h2>
+      <p>管理您的貓咪健康歷史、診所報告與授權設定</p>
+    </div>
+    <main class="main">
 
-    <!-- 状态消息 -->
+    <!-- 狀態訊息 -->
     <div id="status-msg"></div>
 
-    <!-- 开发测试面板 -->
+    <!-- 開發測試面板 -->
     <div class="dev-panel">
       <div class="dev-panel-title">🛠 開發測試面板</div>
       <div class="dev-row">
@@ -447,9 +512,9 @@
       <p class="dev-note">目前貓咪：<code id="current-cat-id">未設置</code></p>
     </div>
 
-    <!-- 导航行：标题 + 标签页 -->
+    <!-- 導航列：標題 + 標籤頁 -->
     <div class="page-nav">
-      <div class="page-title">🐾 貓咪健康檔案</div>
+      <div class="page-title">🐾 貓咪健康記錄</div>
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('records')">📋 健康記錄</button>
         <button class="tab-btn" onclick="switchTab('clinic')">🏥 診所認證</button>
@@ -457,7 +522,7 @@
       </div>
     </div>
 
-    <!-- 健康护照卡 -->
+    <!-- 健康護照卡 -->
     <div class="passport">
       <div class="passport-top" style="position:relative;z-index:1;">
         <div class="passport-avatar">🐱</div>
@@ -474,7 +539,7 @@
       </div>
     </div>
 
-    <!-- ── Tab 1：健康記錄 ── -->
+    <!-- Tab 1: 健康記錄 -->
     <div id="tab-records" class="tab-pane active">
       <div class="card">
         <div class="section-header">
@@ -485,7 +550,7 @@
           <button class="btn btn-primary btn-sm" id="toggle-add-btn">＋ 新增記錄</button>
         </div>
 
-        <!-- 新增表单 -->
+        <!-- 新增表單 -->
         <div id="add-record-section" style="display:none;">
           <div style="padding:18px 22px 0;">
             <div class="form-card">
@@ -546,7 +611,7 @@
           </div>
         </div>
 
-        <!-- 记录列表 -->
+        <!-- 記錄列表 -->
         <div id="owner-records-list" style="padding:16px 22px;">
           <div class="empty-state">
             <div class="empty-icon">📋</div>
@@ -556,7 +621,7 @@
       </div>
     </div>
 
-    <!-- ── Tab 2：診所認證 ── -->
+    <!-- Tab 2: 診所認證 -->
     <div id="tab-clinic" class="tab-pane">
       <div class="card">
         <div class="section-header">
@@ -580,7 +645,7 @@
       </div>
     </div>
 
-    <!-- ── Tab 3：授權管理 ── -->
+    <!-- Tab 3: 授權管理 -->
     <div id="tab-share" class="tab-pane">
       <div class="card">
         <div class="section-header">
@@ -622,10 +687,28 @@
       </div>
     </div>
 
-  </main>
+    </main>
+  </div>
 
-  <script src="../js/config.js"></script>
-  <script src="../js/health.js"></script>
+  <aside class="right-panel">
+    <div class="rp-card">
+      <div class="rp-card-title">快速操作</div>
+      <div class="rp-link-row" onclick="location.href='/pages/cat-facebook.html'"><div class="rp-link-icon">&#x1F4AC;</div><span class="rp-link-label">Community Feed</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><div class="rp-link-icon">&#x1F431;</div><span class="rp-link-label">Adoption</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')"><div class="rp-link-icon">&#x1FA7A;</div><span class="rp-link-label">Back to Account</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="location.href='/pages/clinic-portal.html'"><div class="rp-link-icon">&#x1F3E5;</div><span class="rp-link-label">Clinic Portal</span><span class="rp-link-arrow">&#x203A;</span></div>
+    </div>
+    <div class="rp-card">
+      <div class="rp-card-title">提示</div>
+      <div class="rp-info-block">
+        <p>保持您的疫苗、驅蟲和體檢記錄，以便您的帳戶和健康頁面形成連貫的工作流程。</p>
+      </div>
+    </div>
+  </aside>
+  </div>
+
+  <script src="../js/config.js?v=20260416-1"></script>
+  <script src="../js/health.js?v=20260416-2"></script>
   <script>
     function switchTab(name) {
       document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
@@ -634,6 +717,38 @@
       const idx = ['records', 'clinic', 'share'].indexOf(name);
       document.querySelectorAll('.tab-btn')[idx].classList.add('active');
     }
+  </script>
+  <script>
+    (function () {
+      if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+        alert('請先登入');
+        window.location.href = '/pages/log-in.html';
+        return;
+      }
+
+      var user = null;
+      try {
+        user = JSON.parse(localStorage.getItem('catface_user') || 'null');
+      } catch (e) {}
+      var heroName = document.querySelector('.nav-hero-name');
+      var heroStatus = document.querySelector('.nav-hero-status');
+      var navName = document.querySelector('.u-name');
+      var navHandle = document.querySelector('.u-handle');
+      if (heroName) heroName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+      if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> ' + (user ? ('已登入 · ' + (user.username || '')) : 'Not logged in');
+      if (navName) navName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+      if (navHandle) navHandle.textContent = user ? (user.username ? '@' + user.username : '') : 'Log in to continue';
+
+      var unreadCount = 0;
+      try {
+        var badgeCountKey = 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
+        unreadCount = Math.max(0, parseInt(localStorage.getItem(badgeCountKey) || '0', 10) || 0);
+      } catch (e) { unreadCount = 0; }
+      document.querySelectorAll('[data-notif-badge]').forEach(function (badge) {
+        if (unreadCount <= 0) badge.style.display = 'none';
+        else { badge.style.display = ''; badge.textContent = String(unreadCount); }
+      });
+    })();
   </script>
 </body>
 </html>
