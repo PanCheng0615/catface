@@ -94,7 +94,9 @@ model Organization {
 
   cats            Cat[]
   clinic_reports  ClinicHealthReport[]
+  endorsements    ClinicRecordEndorsement[]
   adoption_events AdoptionEvent[]
+  health_share_permissions HealthSharePermission[]
 
   @@map("organizations")
 }
@@ -396,6 +398,11 @@ enum ClinicReportType {
   other
 }
 
+enum SharePermissionType {
+  full
+  read_only
+}
+
 model OwnerHealthRecord {
   id            String            @id @default(uuid())
   cat_id        String
@@ -413,20 +420,26 @@ model OwnerHealthRecord {
 
   cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  endorsements ClinicRecordEndorsement[]
 
   @@map("owner_health_records")
 }
 
 model ClinicHealthReport {
-  id          String           @id @default(uuid())
-  cat_id      String
-  org_id      String
-  report_type ClinicReportType
-  description String
-  file_url    String?
-  date        DateTime
-  created_at  DateTime         @default(now())
-  updated_at  DateTime         @updatedAt
+  id             String           @id @default(uuid())
+  cat_id         String
+  org_id         String
+  report_type    ClinicReportType
+  description    String
+  findings       String?
+  recommendations String?
+  vet_name       String?
+  vet_license    String?
+  org_name       String?
+  file_url       String?
+  date           DateTime
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
 
   cat          Cat          @relation(fields: [cat_id], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
@@ -434,17 +447,36 @@ model ClinicHealthReport {
   @@map("clinic_health_reports")
 }
 
+model ClinicRecordEndorsement {
+  id            String   @id @default(uuid())
+  record_id     String
+  org_id        String
+  endorsement   String
+  note          String?
+  created_at    DateTime @default(now())
+
+  record     OwnerHealthRecord @relation(fields: [record_id], references: [id], onDelete: Cascade)
+  organization Organization      @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  @@unique([record_id, org_id])
+  @@map("clinic_record_endorsements")
+}
+
 model HealthSharePermission {
-  id         String   @id @default(uuid())
-  cat_id     String
-  user_id    String
-  org_id     String
-  is_allowed Boolean  @default(false)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id             String             @id @default(uuid())
+  cat_id         String
+  user_id        String
+  org_id         String
+  permission_type SharePermissionType @default(full)
+  is_allowed     Boolean            @default(false)
+  expires_at     DateTime?
+  note           String?
+  created_at     DateTime           @default(now())
+  updated_at     DateTime           @updatedAt
 
   cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  org  Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@unique([cat_id, org_id])
   @@map("health_share_permissions")

@@ -10,6 +10,7 @@
     "seed:organization": "node scripts/seedOrganizationAccount.js",
     "seed:community-chat": "node scripts/seedCommunityChatNotifications.js",
     "rename:cat-names": "node scripts/renameCatNamesToEnglish.js",
+    "seed": "node prisma/seed.js",
     "eval:cat-tags": "python3 scripts/evaluate_cat_tag_suggester.py scripts/cat_tag_suggester_samples.json"
   },
   "keywords": [],

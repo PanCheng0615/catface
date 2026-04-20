@@ -37,14 +37,14 @@
 
   // ── 颜色映射 ──
   const TYPE_COLOR = {
-    vaccine:    { bar: '#3b82f6', chip: 'chip-blue',   icon: '💉', label: '疫苗證明' },
-    deworming:  { bar: '#10b981', chip: 'chip-green',  icon: '🐛', label: '驅蟲'     },
-    checkup:    { bar: '#0891b2', chip: 'chip-teal',   icon: '🩺', label: '一般體檢' },
-    treatment:  { bar: '#f59e0b', chip: 'chip-orange', icon: '💊', label: '疾病治療' },
-    surgery:    { bar: '#8b5cf6', chip: 'chip-purple', icon: '✂️',  label: '手術記錄' },
-    blood_test: { bar: '#ef4444', chip: 'chip-red',    icon: '🔬', label: '血液報告' },
-    vaccination:{ bar: '#3b82f6', chip: 'chip-blue',   icon: '💉', label: '疫苗證明' },
-    other:      { bar: '#94a3b8', chip: 'chip-gray',   icon: '📋', label: '其他'     }
+    vaccine:    { bar: '#3b82f6', chip: 'chip-blue',   icon: '💉', label: 'Vaccination' },
+    deworming:  { bar: '#10b981', chip: 'chip-green',  icon: '🐛', label: 'Deworming'     },
+    checkup:    { bar: '#0891b2', chip: 'chip-teal',   icon: '🩺', label: 'Checkup'       },
+    treatment:  { bar: '#f59e0b', chip: 'chip-orange', icon: '💊', label: 'Treatment'      },
+    surgery:    { bar: '#8b5cf6', chip: 'chip-purple', icon: '✂️',  label: 'Surgery'       },
+    blood_test: { bar: '#ef4444', chip: 'chip-red',    icon: '🔬', label: 'Blood Report'  },
+    vaccination:{ bar: '#3b82f6', chip: 'chip-blue',   icon: '💉', label: 'Vaccination'  },
+    other:      { bar: '#94a3b8', chip: 'chip-gray',   icon: '📋', label: 'Other'        }
   };
 
   function typeInfo(t) { return TYPE_COLOR[t] || TYPE_COLOR.other; }
@@ -114,13 +114,13 @@
                               .sort((a,b) => new Date(a.next_due_date) - new Date(b.next_due_date))
                               .find(r => daysUntil(r.next_due_date) >= 0);
 
-    if (nameEl) nameEl.textContent = catId ? '健康護照' : '— 健康護照';
+    if (nameEl) nameEl.textContent = catId ? 'Health Passport' : '— Health Passport';
     const catLabel = window._catFaceCode
-      ? `編號：${window._catFaceCode}`
-      : catId ? `ID：${catId.slice(0,8)}…` : '';
+      ? `Code: ${window._catFaceCode}`
+      : catId ? `ID: ${catId.slice(0,8)}…` : '';
     if (metaEl) metaEl.textContent = catId
-      ? `${catLabel}  ·  共 ${all.length} 筆記錄`
-      : '請先輸入貓咪 ID 載入資料';
+      ? `${catLabel}  ·  ${all.length} records`
+      : 'Please link a cat to your account to load data';
 
     if (!badgesEl) return;
 
@@ -130,31 +130,43 @@
     }
 
     let html = '';
-    html += makeBadge('💉', '疫苗',   latestVaccine   ? fmt(latestVaccine.date)   : null, latestVaccine   ? 'ok' : 'none');
-    html += makeBadge('🐛', '驅蟲',   latestDeworming ? fmt(latestDeworming.date) : null, latestDeworming ? 'ok' : 'none');
-    html += makeBadge('✂️', '絕育手術', latestSurgery   ? fmt(latestSurgery.date)  : null, latestSurgery   ? 'ok' : 'none');
-    html += makeBadge('⚖️', '最新體重', latestWeight    ? latestWeight.weight_kg + ' kg' : null, latestWeight ? 'ok' : 'none');
+    html += makeBadge('💉', 'Vaccine',    latestVaccine   ? fmt(latestVaccine.date)   : null, latestVaccine   ? 'ok' : 'none');
+    html += makeBadge('🐛', 'Deworming',  latestDeworming ? fmt(latestDeworming.date) : null, latestDeworming ? 'ok' : 'none');
+    html += makeBadge('✂️', 'Neutered',   latestSurgery   ? fmt(latestSurgery.date)   : null, latestSurgery   ? 'ok' : 'none');
+    html += makeBadge('⚖️', 'Weight',     latestWeight    ? latestWeight.weight_kg + ' kg' : null, latestWeight ? 'ok' : 'none');
     if (upcoming) {
       const days = daysUntil(upcoming.next_due_date);
-      html += `<div class="pbadge ${days <= 7 ? 'warn' : 'ok'}"><span class="pb-icon">⏰</span><span class="pb-label">即將提醒</span><span class="pb-date">${fmt(upcoming.next_due_date)} (${days}天後)</span></div>`;
+      html += `<div class="pbadge ${days <= 7 ? 'warn' : 'ok'}"><span class="pb-icon">⏰</span><span class="pb-label">Reminder</span><span class="pb-date">${fmt(upcoming.next_due_date)} (${days >= 0 ? days+'d' : 'overdue'})</span></div>`;
     }
     badgesEl.innerHTML = html;
   }
 
-  // ── 渲染主人记录 ──
+  // ── Render owner records ──
   function renderOwnerRecords(records) {
     if (!ownerList) return;
-    if (ownerCount) ownerCount.textContent = records.length + ' 筆記錄';
+    if (ownerCount) ownerCount.textContent = records.length + ' records';
     if (!records.length) {
-      ownerList.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>暫無記錄，點擊右上角「新增記錄」</p></div>`;
+      ownerList.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>No records yet. Click "Add Record" above to get started.</p></div>`;
       return;
     }
     ownerList.innerHTML = records.map(r => {
       const ti = typeInfo(r.record_type);
       const days = r.next_due_date ? daysUntil(r.next_due_date) : null;
       const reminderHtml = r.next_due_date
-        ? `<span class="reminder-badge">⏰ 下次：${fmt(r.next_due_date)}${days !== null ? `（${days >= 0 ? days+'天後' : '已逾期'}）` : ''}</span>`
+        ? `<span class="reminder-badge">⏰ Next: ${fmt(r.next_due_date)}${days !== null ? ` (${days >= 0 ? days+'d' : 'overdue'})` : ''}</span>`
         : '';
+      let endorsementBadges = '';
+      if (r.endorsements && r.endorsements.length > 0) {
+        endorsementBadges = '<div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;">';
+        r.endorsements.forEach(e => {
+          endorsementBadges += '<div style="background:#e9faf2;border:1px solid #a7f3d0;border-radius:8px;padding:6px 10px;font-size:12px;">' +
+            '<span style="font-weight:700;color:#065f46;">✅ ' + (e.organization && e.organization.name ? e.organization.name : 'Clinic') + ' endorsed: </span>' +
+            '<span style="color:#065f46;">' + e.endorsement + '</span>' +
+            (e.note ? '<br><span style="color:#6b7280;font-size:11px;">📝 ' + e.note + '</span>' : '') +
+            '</div>';
+        });
+        endorsementBadges += '</div>';
+      }
       return `
         <div class="rec-card">
           <div class="rec-card-bar" style="background:${ti.bar};"></div>
@@ -171,28 +183,29 @@
               ${r.weight_kg ? `<span class="chip chip-gray" style="font-size:12px;">⚖️ ${r.weight_kg} kg</span>` : ''}
               ${reminderHtml}
             </div>
+            ${endorsementBadges}
             ${r.file_url ? `
             <div style="margin-top:10px;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;max-width:320px;">
               ${/\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(r.file_url)
                 ? `<img src="${r.file_url}" style="width:100%;max-height:180px;object-fit:cover;display:block;" loading="lazy">`
-                : `<a href="${r.file_url}" target="_blank" style="display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:#2563eb;background:#f8f9fa;">📄 查看附件 PDF</a>`
+                : `<a href="${r.file_url}" target="_blank" style="display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;color:#2563eb;background:#f8f9fa;">📄 View Attachment PDF</a>`
               }
             </div>` : ''}
             <div class="rec-actions">
-              <button onclick="deleteRecord('${r.id}')" class="btn btn-danger btn-sm">🗑 刪除</button>
-              ${r.file_url ? `<a href="${r.file_url}" target="_blank" class="btn btn-ghost btn-sm" style="font-size:12px;">📎 下載附件</a>` : ''}
+              <button onclick="deleteRecord('${r.id}')" class="btn btn-danger btn-sm">🗑 Delete</button>
+              ${r.file_url ? `<a href="${r.file_url}" target="_blank" class="btn btn-ghost btn-sm" style="font-size:12px;">📎 Download</a>` : ''}
             </div>
           </div>
         </div>`;
     }).join('');
   }
 
-  // ── 渲染诊所认证报告 ──
+  // ── Render clinic-certified reports ──
   function renderClinicReports(reports) {
     if (!clinicList) return;
-    if (clinicCount) clinicCount.textContent = reports.length + ' 筆記錄';
+    if (clinicCount) clinicCount.textContent = reports.length + ' records';
     if (!reports.length) {
-      clinicList.innerHTML = `<div class="empty-state"><div class="empty-icon">🏥</div><p>暫無診所上傳的認證報告<br><span style="font-size:12px;">請在「授權管理」中授權合作診所後，由診所透過診所門戶上傳</span></p></div>`;
+      clinicList.innerHTML = `<div class="empty-state"><div class="empty-icon">🏥</div><p>No clinic reports yet.<br><span style="font-size:12px;">Authorize a clinic from the Permissions tab to start receiving reports.</span></p></div>`;
       return;
     }
     clinicList.innerHTML = reports.map(r => {
@@ -204,39 +217,101 @@
             <div class="rec-card-head">
               <div class="rec-type-row">
                 <span class="chip ${ti.chip}">${ti.icon} ${ti.label}</span>
-                <span class="clinic-badge">✅ 診所認證</span>
+                <span class="clinic-badge">✅ Clinic Certified</span>
                 ${r.organization ? `<span class="chip chip-gray" style="font-size:12px;">🏥 ${r.organization.name}</span>` : ''}
+                ${r.vet_name ? `<span class="chip chip-gray" style="font-size:11px;">👨‍⚕️ ${r.vet_name}</span>` : ''}
               </div>
               <span class="rec-date">📅 ${fmt(r.date)}</span>
             </div>
+            ${r.findings ? `<p class="rec-desc" style="color:var(--text);font-weight:600;">🔍 ${r.findings}</p>` : ''}
             <p class="rec-desc">${r.description}</p>
-            ${r.file_url ? `<div class="rec-meta"><a href="${r.file_url}" target="_blank" class="btn btn-ghost btn-sm" style="font-size:12px;">📎 查看附件</a></div>` : ''}
+            ${r.recommendations ? `<p class="rec-desc" style="color:var(--green);">💡 ${r.recommendations}</p>` : ''}
+            <div class="rec-meta">
+              ${r.vet_license ? `<span class="chip chip-gray" style="font-size:11px;">📜 ${r.vet_license}</span>` : ''}
+              ${r.file_url ? `<a href="${r.file_url}" target="_blank" class="btn btn-ghost btn-sm" style="font-size:12px;">📎 View Attachment</a>` : ''}
+            </div>
+            <div class="rec-actions">
+              <button onclick="window.printReport('${r.id}')" class="btn btn-primary btn-sm">🖨 Print Report</button>
+            </div>
           </div>
         </div>`;
     }).join('');
   }
 
-  // ── 渲染授权列表 ──
+  window.printReport = async function (reportId) {
+    try {
+      showStatus('Generating report...');
+      const res = await fetch(`${API}/clinic/reports/${reportId}/print`, { headers: getAuthHeaders() });
+      const body = await res.json();
+      if (!body.success) { showStatus('Failed to generate report: ' + body.message, true); return; }
+      const printWindow = window.open('', '_blank', 'width=800,height=900,scrollbars=yes');
+      if (!printWindow) { showStatus('Please allow popups to print the report', true); return; }
+      printWindow.document.write(body.data.html);
+      printWindow.document.close();
+      setTimeout(function () { printWindow.focus(); }, 300);
+    } catch (e) { showStatus('Request failed', true); }
+  };
+
+  // ── 诊所列表 ──
+  let availableClinics = [];
+
+  async function loadClinicList() {
+    const select = document.getElementById('share-org-id');
+    const loading = document.getElementById('clinic-list-loading');
+    if (!select) return;
+    try {
+      const res = await fetch(`${API}/health/clinics`, { headers: getAuthHeaders() });
+      const body = await res.json();
+      if (body.success && Array.isArray(body.data)) {
+        availableClinics = body.data;
+        select.innerHTML = '<option value="">— Select a clinic —</option>';
+        availableClinics.forEach(function (c) {
+          const verified = c.is_verified ? ' ✓ Verified' : '';
+          select.innerHTML += `<option value="${c.id}">${c.name}${verified}${c.address ? ' · ' + c.address : ''}</option>`;
+        });
+        if (loading) { loading.style.display = 'none'; }
+      } else {
+        if (loading) { loading.textContent = '⚠ Could not load clinic list: ' + (body.message || ''); }
+      }
+    } catch (e) {
+      if (loading) { loading.textContent = '⚠ Cannot connect to server. Please ensure the server is running'; }
+    }
+  }
+
+  // ── 渲染授权列表（含诊所详情）──
   function renderShareList(perms) {
     if (!shareList) return;
     if (!perms.length) {
-      shareList.innerHTML = `<div class="empty-state" style="padding:20px;"><div class="empty-icon" style="font-size:28px;">🔑</div><p>尚未對任何診所授權</p></div>`;
+      shareList.innerHTML = `<div class="empty-state" style="padding:20px;"><div class="empty-icon" style="font-size:28px;">🔑</div><p>No clinic permissions granted yet</p></div>`;
       return;
     }
-    shareList.innerHTML = perms.map(p => `
-      <div class="perm-item">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="perm-avatar">${p.is_allowed ? '🏥' : '🚫'}</div>
-          <div>
-            <div style="font-size:14px;font-weight:600;">診所 ID</div>
-            <code style="font-size:12px;color:#6b7280;">${p.org_id}</code>
+    shareList.innerHTML = perms.map(function (p) {
+      const isActive = p.is_allowed && (!p.expires_at || new Date(p.expires_at) > new Date());
+      const isExpired = p.expires_at && new Date(p.expires_at) <= new Date();
+      const permType = p.permission_type === 'read_only' ? '👁 Read Only' : '🔓 Full Access';
+      const permColor = p.permission_type === 'read_only' ? 'chip-teal' : 'chip-blue';
+      const statusColor = isActive ? 'chip-green' : (isExpired ? 'chip-gray' : 'chip-red');
+      const statusText = isExpired ? 'Expired' : (isActive ? 'Authorized' : 'Revoked');
+      const orgName = (p.org && p.org.name) ? p.org.name : (p.org_id ? 'ID: ' + p.org_id.slice(0,8) + '…' : 'Unknown clinic');
+      const expiresText = p.expires_at ? ', until ' + fmt(p.expires_at) : ', permanent';
+      return `
+        <div class="perm-item">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+            <div class="perm-avatar">${p.is_allowed ? '🏥' : '🚫'}</div>
+            <div style="min-width:0;">
+              <div style="font-size:14px;font-weight:600;margin-bottom:3px;">${orgName}</div>
+              <div style="font-size:12px;color:var(--muted);">
+                ${permType}${expiresText}
+                ${p.note ? '<br>📝 ' + p.note : ''}
+              </div>
+            </div>
           </div>
-        </div>
-        <span class="chip ${p.is_allowed ? 'chip-green' : 'chip-red'}" style="font-size:13px;">
-          ${p.is_allowed ? '✅ 已授權' : '❌ 已拒絕'}
-        </span>
-      </div>
-    `).join('');
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;">
+            <span class="chip ${statusColor}" style="font-size:12px;">${statusText}</span>
+            ${p.org && p.org.is_verified ? '<span class="chip chip-blue" style="font-size:10px;">✓ 已認證</span>' : ''}
+          </div>
+        </div>`;
+    }).join('');
   }
 
   // ── 加载全部数据 ──
@@ -250,10 +325,10 @@
     }
     if (!catId) {
       const empty = (el, msg) => el && (el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>${msg}</p></div>`);
-      empty(ownerList, '此帳號尚未關聯任何貓咪，請先在「我的帳戶」中新增並保存您的貓咪檔案');
-      empty(clinicList, '此帳號尚未關聯任何貓咪');
-      empty(shareList, '此帳號尚未關聯任何貓咪');
-      showStatus('此帳號尚未關聯任何貓咪。請先在「我的帳戶」中新增並保存您的貓咪檔案', true);
+      empty(ownerList, 'This account has no cat linked. Please create and save a cat profile in "My Account" first');
+      empty(clinicList, 'This account has no cat linked.');
+      empty(shareList, 'This account has no cat linked.');
+      showStatus('This account has no cat linked. Please create and save a cat profile in "My Account" first', true);
       return;
     }
     if (catIdDisplay) catIdDisplay.textContent = catId;
@@ -276,23 +351,24 @@
       renderOwnerRecords(ownerRecords);
       renderClinicReports(clinicReports);
       renderShareList(sharePerms);
+      loadClinicList();
     } catch (e) {
       showStatus('無法連接後端，請確認伺服器正在運行', true);
     }
   }
 
-  // ── 删除记录 ──
+  // ── Delete record ──
   window.deleteRecord = async function (recordId) {
-    if (!confirm('確定要刪除這筆記錄嗎？')) return;
+    if (!confirm('Are you sure you want to delete this record?')) return;
     try {
       const res  = await fetch(`${API}/health/records/${recordId}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
       const body = await res.json();
-      if (body.success) { showStatus('記錄已刪除'); loadAll(); }
-      else showStatus('刪除失敗：' + body.message, true);
-    } catch { showStatus('請求失敗', true); }
+      if (body.success) { showStatus('Record deleted'); loadAll(); }
+      else showStatus('Delete failed: ' + body.message, true);
+    } catch { showStatus('Request failed', true); }
   };
 
   // ── 文件选择预览 ──
@@ -333,7 +409,7 @@
       let fileUrl = null;
       const fileInput = document.getElementById('rec-file');
       if (fileInput && fileInput.files[0]) {
-        if (recUploadStatus) { recUploadStatus.textContent = '正在上傳附件…'; recUploadStatus.style.display = 'block'; }
+        if (recUploadStatus) { recUploadStatus.textContent = 'Uploading attachment...'; recUploadStatus.style.display = 'block'; }
         try {
           const formData = new FormData();
           formData.append('file', fileInput.files[0]);
@@ -345,15 +421,15 @@
           const uploadBody = await uploadRes.json();
           if (uploadBody.success) {
             fileUrl = uploadBody.data.url;
-            if (recUploadStatus) recUploadStatus.textContent = '✅ 附件上傳成功';
+            if (recUploadStatus) recUploadStatus.textContent = '✅ Attachment uploaded';
           } else {
-            showStatus('附件上傳失敗：' + uploadBody.message, true);
-            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '儲存記錄'; }
+            showStatus('Upload failed: ' + uploadBody.message, true);
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save Record'; }
             return;
           }
         } catch {
-          showStatus('附件上傳失敗，請確認伺服器運行中', true);
-          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '儲存記錄'; }
+          showStatus('Upload failed. Please ensure the server is running', true);
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save Record'; }
           return;
         }
       }
@@ -376,76 +452,74 @@
         });
         const body = await res.json();
         if (body.success) {
-          showStatus('✅ 健康記錄已新增！');
+          showStatus('✅ Health record added!');
           addRecordForm.reset();
           if (recFilePreview)  { recFilePreview.style.display = 'none'; recFilePreview.innerHTML = ''; }
           if (recUploadStatus) { recUploadStatus.style.display = 'none'; }
           addRecordSection.style.display = 'none';
-          if (toggleAddBtn) toggleAddBtn.textContent = '＋ 新增記錄';
+          if (toggleAddBtn) toggleAddBtn.textContent = '＋ Add Record';
           loadAll();
         } else {
-          showStatus('新增失敗：' + body.message, true);
+          showStatus('Add failed: ' + body.message, true);
         }
-      } catch { showStatus('請求失敗，請確認伺服器運行中', true); }
+      } catch { showStatus('Request failed. Please ensure the server is running', true); }
       finally {
-        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '儲存記錄'; }
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save Record'; }
       }
     });
   }
 
-  // ── 授权设置 ──
+  // ── Permission form (fine-grained) ──
   if (shareForm) {
     shareForm.addEventListener('submit', async function (e) {
       e.preventDefault();
-      if (!catId) { showStatus('請先輸入貓咪 ID', true); return; }
-      const orgId     = document.getElementById('share-org-id').value.trim();
-      const isAllowed = document.getElementById('share-allowed').value === 'true';
-      if (!orgId) { showStatus('請輸入診所 ID', true); return; }
+      if (!catId) { showStatus('Please link a cat first', true); return; }
+      const orgId       = document.getElementById('share-org-id').value.trim();
+      const isAllowed   = document.getElementById('share-allowed').value === 'true';
+      const permType    = document.getElementById('share-perm-type').value;
+      const expiresAt   = document.getElementById('share-expires').value || undefined;
+      const note        = document.getElementById('share-note').value.trim() || undefined;
+      if (!orgId) { showStatus('Please select a clinic', true); return; }
       try {
-        const res  = await fetch(`${API}/health/share`, {
+        const res = await fetch(`${API}/health/share`, {
           method: 'POST',
           headers: getAuthHeaders(),
-          body: JSON.stringify({ cat_id: catId, org_id: orgId, is_allowed: isAllowed })
+          body: JSON.stringify({
+            cat_id: catId,
+            org_id: orgId,
+            is_allowed: isAllowed,
+            permission_type: permType,
+            expires_at: expiresAt,
+            note: note
+          })
         });
         const body = await res.json();
-        if (body.success) { showStatus('✅ 授權設定成功！'); loadAll(); }
-        else showStatus('失敗：' + body.message, true);
-      } catch { showStatus('請求失敗', true); }
+        if (body.success) {
+          showStatus('✅ Permission saved!');
+          document.getElementById('share-note').value = '';
+          document.getElementById('share-expires').value = '';
+          loadAll();
+        }
+        else showStatus('Failed: ' + body.message, true);
+      } catch { showStatus('Request failed', true); }
     });
   }
 
-  // ── 折叠表单 ──
+  // ── Toggle add form ──
   if (toggleAddBtn && addRecordSection) {
     toggleAddBtn.addEventListener('click', function () {
       const shown = addRecordSection.style.display !== 'none';
       addRecordSection.style.display = shown ? 'none' : 'block';
-      toggleAddBtn.textContent = shown ? '＋ 新增記錄' : '收起';
+      toggleAddBtn.textContent = shown ? '＋ Add Record' : 'Collapse';
     });
   }
   if (cancelAddBtn && addRecordSection) {
     cancelAddBtn.addEventListener('click', function () {
       addRecordSection.style.display = 'none';
-      if (toggleAddBtn) toggleAddBtn.textContent = '＋ 新增記錄';
+      if (toggleAddBtn) toggleAddBtn.textContent = '＋ Add Record';
     });
   }
 
-  // ── 测试面板 ──
-  if (testApplyBtn) {
-    testApplyBtn.addEventListener('click', function () {
-      const cid = testCatInput  ? testCatInput.value.trim()  : '';
-      const uid = testUserInput ? testUserInput.value.trim() : '';
-      if (!cid) { showStatus('請輸入貓咪 ID', true); return; }
-      catId = cid; userId = uid;
-      localStorage.setItem('catface_test_catId',  catId);
-      localStorage.setItem('catface_test_userId', userId);
-      persistHealthContext();
-      showStatus('ID 已設置，載入中…');
-      loadAll();
-    });
-  }
-
-  // ── 初始化 ──
-  if (testCatInput  && catId)  testCatInput.value  = catId;
-  if (testUserInput && userId) testUserInput.value = userId;
+  // ── Initialize ──
   loadAll();
 })();

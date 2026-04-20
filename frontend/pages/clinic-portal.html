@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>診所門戶 — CatFace</title>
+  <title>Clinic Portal — CatFace</title>
   <style>
     :root {
       --bg:         #faf6ef;
@@ -52,7 +52,7 @@
     a:hover { text-decoration: underline; }
     button, input, textarea, select { font: inherit; }
 
-    /* ── 顶部栏 ── */
+    /* ── Top bar ── */
     .top-bar {
       position: fixed; top: 0; left: 0; right: 0;
       height: var(--header-h);
@@ -81,7 +81,7 @@
       border: 1px solid rgba(200,130,26,.2);
     }
 
-    /* ── 侧边栏 ── */
+    /* ── Sidebar ── */
     .sidebar {
       position: fixed; top: var(--header-h); left: 0; bottom: 0;
       width: var(--sidebar-w);
@@ -118,7 +118,7 @@
     .user-info .user-name { font-size: 13px; font-weight: 700; color: var(--text); }
     .user-info .user-role { font-size: 11px; color: var(--muted); }
 
-    /* ── 主内容 ── */
+    /* ── Main content ── */
     .main {
       margin-left: var(--sidebar-w);
       margin-top: var(--header-h);
@@ -126,7 +126,7 @@
       min-height: 100vh;
     }
 
-    /* ── 状态消息 ── */
+    /* ── Status message ── */
     #status-msg {
       display: none;
       position: fixed;
@@ -141,33 +141,7 @@
       transition: opacity .3s;
     }
 
-    /* ── 开发测试面板 ── */
-    .dev-panel {
-      background: #fffcf0;
-      border: 1px dashed #e8c84a;
-      border-radius: var(--r-xl);
-      padding: 14px 18px;
-      margin-bottom: 20px;
-    }
-    .dev-panel-title {
-      font-size: 12px; font-weight: 800; color: #8a6a00;
-      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px;
-    }
-    .dev-row {
-      display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
-    }
-    .dev-field { display: flex; flex-direction: column; gap: 4px; }
-    .dev-field label { font-size: 11px; font-weight: 700; color: #7a5c00; }
-    .dev-field input {
-      border: 1px solid #e8c84a;
-      border-radius: var(--r-sm);
-      padding: 7px 10px;
-      min-width: 280px; font-size: 13px;
-      background: #fff;
-    }
-    .dev-note { font-size: 11px; color: #997700; margin-top: 8px; }
-
-    /* ── 诊所 Header 卡 ── */
+    /* ── Clinic Header card ── */
     .clinic-header {
       background: linear-gradient(135deg, #5c3608 0%, #a86915 50%, #c8821a 100%);
       border-radius: var(--r-xl);
@@ -211,7 +185,7 @@
     .clinic-stat .cs-num { font-size: 22px; font-weight: 800; }
     .clinic-stat .cs-label { font-size: 11px; opacity: .8; }
 
-    /* ── 双栏布局 ── */
+    /* ── Two-column layout ── */
     .workspace {
       display: grid;
       grid-template-columns: 300px minmax(0, 1fr);
@@ -220,7 +194,7 @@
     }
     @media (max-width: 900px) { .workspace { grid-template-columns: 1fr; } }
 
-    /* ── 卡片 ── */
+    /* ── Cards ── */
     .card {
       background: var(--surface);
       border-radius: var(--r-xl);
@@ -238,7 +212,7 @@
     }
     .card-body { padding: 16px 20px; }
 
-    /* ── 病患列表 ── */
+    /* ── Patient list ── */
     .patient-list { display: flex; flex-direction: column; gap: 0; }
     .cat-item {
       display: flex; align-items: center; gap: 12px;
@@ -264,10 +238,10 @@
     .cat-meta { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
     .cat-badges { display: flex; gap: 4px; flex-wrap: wrap; }
 
-    /* ── 右侧详情区 ── */
+    /* ── Detail area ── */
     .detail-stack { display: flex; flex-direction: column; gap: 20px; }
 
-    /* 空状态 */
+    /* Empty state */
     .empty-state {
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
@@ -276,14 +250,14 @@
     .ei { font-size: 40px; margin-bottom: 10px; opacity: .6; }
     .empty-state p { font-size: 14px; line-height: 1.7; }
 
-    /* 病患标签 */
+    /* Patient tags */
     .patient-tags-row {
       padding: 14px 20px;
       border-bottom: 1px solid var(--border-light);
       display: flex; flex-wrap: wrap; gap: 6px;
     }
 
-    /* 记录卡 */
+    /* Record cards */
     .rec-card {
       display: flex; overflow: hidden;
       border-radius: var(--r-lg);
@@ -305,7 +279,7 @@
     .rec-meta { display: flex; gap: 6px; flex-wrap: wrap; }
     .rec-actions { margin-top: 8px; display: flex; gap: 8px; }
 
-    /* 认证徽章 */
+    /* Cert badge */
     .clinic-cert-badge {
       background: #d1fae5; color: #065f46;
       padding: 3px 10px; border-radius: 999px;
@@ -313,7 +287,7 @@
       border: 1px solid #a7f3d0;
     }
 
-    /* 芯片 */
+    /* Chips */
     .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
     .chip-blue   { background: var(--blue-lt);   color: var(--blue);   }
     .chip-green  { background: var(--green-lt);  color: var(--green);  }
@@ -324,7 +298,7 @@
     .chip-teal   { background: var(--teal-lt);   color: var(--teal);   }
     .chip-warm   { background: var(--primary-lt); color: var(--primary); }
 
-    /* 按钮 */
+    /* Buttons */
     .btn {
       display: inline-flex; align-items: center; gap: 6px;
       border: none; border-radius: var(--r-md);
@@ -344,7 +318,7 @@
     .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: var(--r-sm); }
     .btn-full { width: 100%; justify-content: center; }
 
-    /* 表单 */
+    /* Forms */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
     .field { display: flex; flex-direction: column; gap: 6px; }
@@ -369,7 +343,7 @@
     select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b7355' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
     .form-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 
-    /* 分割线 */
+    /* Divider */
     .divider-label {
       display: flex; align-items: center; gap: 10px;
       font-size: 12px; font-weight: 700; color: var(--muted);
@@ -378,12 +352,12 @@
     }
     .divider-label::before, .divider-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-    /* 主人记录区 */
+    /* Sections */
     .owner-records-section { padding: 16px 20px; }
     .reports-section { padding: 16px 20px; border-top: 1px solid var(--border-light); }
     .upload-section { padding: 16px 20px; border-top: 1px solid var(--border-light); }
 
-    /* 数量徽章 */
+    /* Count badge */
     .count-badge {
       background: var(--primary-lt);
       color: var(--primary);
@@ -394,17 +368,17 @@
 </head>
 <body>
 
-  <!-- ── 顶部栏 ── -->
+  <!-- ── Top bar ── -->
   <header class="top-bar">
     <a href="cat-facebook.html" class="logo">
       <span>🐱</span> CatFace
     </a>
     <div class="top-bar-right">
-      <span class="page-badge">🏥 診所門戶</span>
+      <span class="page-badge">&#x1F3E5; Clinic Portal</span>
     </div>
   </header>
 
-  <!-- ── 侧边栏 ── -->
+  <!-- ── Sidebar ── -->
   <nav class="sidebar">
     <ul class="sidebar-nav">
       <li><a href="cat-facebook.html">
@@ -426,7 +400,7 @@
         <span class="nav-icon">🩺</span> Health Records
       </a></li>
       <li><a href="clinic-portal.html" class="active">
-        <span class="nav-icon">🏥</span> Clinic Portal
+        <span class="nav-icon">&#x1F3E5;</span> Clinic Portal
       </a></li>
       <li><a href="rescue-dashboard.html">
         <span class="nav-icon">🚑</span> Rescue Dashboard
@@ -435,84 +409,81 @@
     <div class="sidebar-divider"></div>
     <div class="sidebar-bottom">
       <div class="sidebar-user">
-        <div class="user-avatar">🏥</div>
+        <div class="user-avatar">&#x1F3E5;</div>
         <div class="user-info">
-          <div class="user-name" id="clinic-name-display">診所帳號</div>
-          <div class="user-role" id="clinic-id-display">未登入</div>
+          <div class="user-name" id="clinic-name-display">Clinic Account</div>
+          <div class="user-role" id="clinic-id-display">Not logged in</div>
         </div>
       </div>
+      <button id="sidebar-logout-btn" class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;margin-top:8px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;display:none;">
+        &#x1F6AA; Log out
+      </button>
     </div>
   </nav>
 
-  <!-- ── 主内容 ── -->
+  <!-- ── Main content ── -->
   <main class="main">
 
-    <!-- 状态消息 -->
+    <!-- Status message -->
     <div id="status-msg"></div>
 
-    <!-- 开发测试面板 -->
-    <div class="dev-panel">
-      <div class="dev-panel-title">🛠 開發測試面板</div>
-      <div class="dev-row">
-        <div class="dev-field">
-          <label>診所 Organization ID</label>
-          <input id="test-org-id-input" type="text"
-            placeholder="e.g. 4fddae50-31b3-4df3-bd62-07c2ff2c962d">
-        </div>
-        <button class="btn btn-primary" id="test-apply-btn">載入診所資料</button>
-      </div>
-      <p class="dev-note">目前設定的 ID：<code id="current-org-id">—</code></p>
-    </div>
-
-    <!-- 诊所 Header 卡 -->
+    <!-- Clinic Header card -->
     <div class="clinic-header">
       <div class="clinic-header-inner">
         <div class="clinic-header-left">
-          <div class="clinic-icon">🏥</div>
+          <div class="clinic-icon">&#x1F3E5;</div>
           <div class="clinic-info">
-            <h1 id="clinic-name-header">CatFace 合作診所</h1>
-            <div class="clinic-id-label">已認證醫療合作夥伴 · 官方報告上傳權限</div>
+            <h1 id="clinic-name-header">CatFace Partner Clinic</h1>
+            <div class="clinic-id-label">Verified Medical Partner · Official Report Upload Access</div>
           </div>
         </div>
         <div class="clinic-stats">
           <div class="clinic-stat">
             <div class="cs-num" id="stat-cats">0</div>
-            <div class="cs-label">已授權病患</div>
+            <div class="cs-label">Authorized Patients</div>
+          </div>
+          <div class="clinic-stat">
+            <div class="cs-num" id="stat-reports">0</div>
+            <div class="cs-label">Reports Uploaded</div>
+          </div>
+          <div class="clinic-stat">
+            <div class="cs-num" id="stat-endorsements">0</div>
+            <div class="cs-label">Records Endorsed</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 工作区：双栏 -->
+    <!-- Workspace: two columns -->
     <div class="workspace">
 
-      <!-- 左侧：病患列表 -->
+      <!-- Left: Patient list -->
       <div class="card">
         <div class="card-header">
-          <div class="card-title">🐾 已授權病患</div>
+          <div class="card-title">🐾 Authorized Patients</div>
         </div>
         <div id="authorized-cat-list" class="patient-list">
           <div class="empty-state">
-            <div class="ei">🏥</div>
-            <p>請在上方輸入診所 ID<br>載入授權病患列表</p>
+            <div class="ei">&#x1F3E5;</div>
+            <p>No authorized patients yet.<br>Patients need to grant access from their Health page.</p>
           </div>
         </div>
       </div>
 
-      <!-- 右侧：详情 + 上传 -->
+      <!-- Right: Details + Upload -->
       <div>
-        <!-- 未选择时的提示 -->
+        <!-- No selection yet -->
         <div id="no-selection" class="card">
           <div class="empty-state" style="padding:60px 20px;">
             <div class="ei">👈</div>
-            <p>從左側選擇一位病患<br>查看健康資料並上傳認證報告</p>
+            <p>Select a patient from the left<br>to view health records and upload reports</p>
           </div>
         </div>
 
-        <!-- 选中后的详情区 -->
+        <!-- Detail area (shown when patient selected) -->
         <div id="cat-detail-section" style="display:none;" class="detail-stack">
 
-          <!-- 病患信息卡 -->
+          <!-- Patient info card -->
           <div class="card">
             <div class="card-header">
               <div class="card-title">
@@ -521,81 +492,119 @@
               </div>
             </div>
 
-            <!-- 健康状态标签 -->
+            <!-- Health status tags -->
             <div id="patient-health-tags" class="patient-tags-row">
-              <span class="chip chip-gray" style="font-size:12px;">載入中…</span>
+              <span class="chip chip-gray" style="font-size:12px;">Loading...</span>
             </div>
 
-            <!-- 主人健康记录（只读） -->
+            <!-- Owner's health records (read-only, endorsable) -->
             <div class="owner-records-section">
-              <div class="divider-label">📋 主人健康記錄（唯讀）</div>
+              <div class="divider-label">&#x1F4CB; Owner's Health Records (Read-only)</div>
               <div id="detail-owner-records">
                 <div class="empty-state" style="padding:24px;">
-                  <div class="ei">📋</div>
-                  <p>主人尚無填寫健康記錄</p>
+                  <div class="ei">&#x1F4CB;</div>
+                  <p>No health records from owner yet</p>
                 </div>
+              </div>
+            </div>
+
+            <!-- Endorsement modal -->
+            <div id="endorse-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
+              <div style="background:#fff;border-radius:16px;padding:28px;max-width:520px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+                <h3 style="font-size:17px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px;">✅ Add Official Endorsement</h3>
+                <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Add official verification to the record below to increase its credibility:</p>
+                <div id="endorse-record-preview" style="background:#f8f9fa;border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:16px;border:1px solid var(--border);"></div>
+                <form id="endorse-form">
+                  <div style="margin-bottom:14px;">
+                    <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px;">Official Statement *</label>
+                    <textarea id="endorse-text" class="textarea" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;min-height:80px;resize:vertical;background:#f8f9fa;" placeholder="e.g. Verified vaccination record. Vaccine name: Fel-O-Vax FVRCP..." required></textarea>
+                  </div>
+                  <div style="margin-bottom:18px;">
+                    <label style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:6px;">Note (optional)</label>
+                    <input id="endorse-note" type="text" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;background:#f8f9fa;" placeholder="e.g. Record authenticity verified by our clinic">
+                  </div>
+                  <div style="display:flex;justify-content:flex-end;gap:10px;">
+                    <button type="button" onclick="closeEndorseModal()" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="endorse-submit-btn">✅ Submit Endorsement</button>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
 
-          <!-- 本诊所已上传的报告 -->
+          <!-- This clinic's uploaded reports -->
           <div class="card">
             <div class="card-header">
-              <div class="card-title">📄 本診所已上傳報告</div>
-              <span class="count-badge" id="reports-count">0 份</span>
+              <div class="card-title">&#x1F4C4; Reports Uploaded by This Clinic</div>
+              <span class="count-badge" id="reports-count">0</span>
             </div>
             <div class="reports-section">
               <div id="existing-reports">
                 <div class="empty-state" style="padding:24px;">
-                  <div class="ei">📄</div>
-                  <p>本診所尚無已上傳報告</p>
+                  <div class="ei">&#x1F4C4;</div>
+                  <p>No reports uploaded yet</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 上传新报告 -->
+          <!-- Upload new report -->
           <div class="card">
             <div class="card-header">
-              <div class="card-title">⬆️ 上傳認證報告</div>
-              <span class="chip chip-warm">✅ 官方認證</span>
+              <div class="card-title">&#x2191; Upload Report</div>
+              <span class="chip chip-warm">✅ Official Certification</span>
             </div>
             <div class="upload-section">
               <form id="upload-report-form">
                 <div class="form-grid">
                   <div class="field">
-                    <label>報告類型</label>
+                    <label>Report Type</label>
                     <select id="rpt-type" class="input" required>
-                      <option value="">請選擇類型</option>
-                      <option value="vaccination">💉 疫苗接种證明</option>
-                      <option value="deworming">🐛 驅蟲證明</option>
-                      <option value="checkup">🩺 健康檢查報告</option>
-                      <option value="blood_test">🔬 血液報告</option>
-                      <option value="treatment">💊 疾病治療記錄</option>
-                      <option value="surgery">✂️ 手術/絕育證明</option>
-                      <option value="other">📋 其他醫療文件</option>
+                      <option value="">Select type</option>
+                      <option value="vaccination">💉 Vaccination Certificate</option>
+                      <option value="deworming">🐛 Deworming Certificate</option>
+                      <option value="checkup">🩺 Health Checkup Report</option>
+                      <option value="blood_test">🔬 Blood Test Report</option>
+                      <option value="treatment">💊 Treatment Record</option>
+                      <option value="surgery">✂️ Surgery / Neutering Certificate</option>
+                      <option value="other">&#x1F4CB; Other Medical Document</option>
                     </select>
                   </div>
                   <div class="field">
-                    <label>診療日期</label>
+                    <label>Date of Visit *</label>
                     <input id="rpt-date" class="input" type="date" required>
                   </div>
                   <div class="field">
-                    <label>主治獸醫師</label>
-                    <input id="rpt-vet" class="input" type="text" placeholder="醫師姓名（選填）">
+                    <label>Veterinarian Name</label>
+                    <input id="rpt-vet" class="input" type="text" placeholder="Veterinarian name (optional)">
                   </div>
                   <div class="field">
-                    <label>文件編號</label>
-                    <input id="rpt-ref" class="input" type="text" placeholder="院內編號（選填）">
+                    <label>License Number</label>
+                    <input id="rpt-vet-license" class="input" type="text" placeholder="License number (optional)">
                   </div>
                   <div class="field field-full">
-                    <label>報告摘要</label>
-                    <textarea id="rpt-desc" class="textarea" placeholder="填寫診療摘要、注意事項或建議…" required></textarea>
+                    <label>Findings / Conclusions</label>
+                    <textarea id="rpt-findings" class="textarea" placeholder="Describe exam findings, abnormalities, blood values, etc..."></textarea>
+                  </div>
+                  <div class="field field-full">
+                    <label>Summary *</label>
+                    <textarea id="rpt-desc" class="textarea" placeholder="Summarize the visit, care instructions, follow-up notes..." required></textarea>
+                  </div>
+                  <div class="field field-full">
+                    <label>Recommendations</label>
+                    <textarea id="rpt-recommendations" class="textarea" placeholder="Follow-up care instructions, medication guidance, next appointment, etc..."></textarea>
+                  </div>
+                  <div class="field field-full">
+                    <label>Attachment (Image or PDF · Max 10 MB)</label>
+                    <input id="rpt-file" type="file" accept="image/*,application/pdf"
+                      style="border:1px solid var(--border);border-radius:var(--r-md);padding:9px 12px;background:var(--bg);font-size:13px;cursor:pointer;width:100%;">
+                    <div id="rpt-file-preview" style="display:none;margin-top:8px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);max-width:400px;"></div>
+                    <div id="rpt-upload-status" style="display:none;font-size:13px;color:var(--green);margin-top:4px;"></div>
                   </div>
                 </div>
                 <div class="form-actions">
-                  <button type="reset" class="btn btn-secondary">清空</button>
-                  <button type="submit" class="btn btn-primary">✅ 提交認證報告</button>
+                  <button type="reset" class="btn btn-secondary">Clear</button>
+                  <button type="submit" class="btn btn-primary" id="rpt-submit-btn">✅ Submit Report</button>
                 </div>
               </form>
             </div>
@@ -609,13 +618,42 @@
   <script src="../js/config.js"></script>
   <script src="../js/clinic-portal.js"></script>
   <script>
-    // 同步 header 中的诊所名称
+    // Sync header clinic name
     const headerName = document.getElementById('clinic-name-header');
     const obs = new MutationObserver(() => {
       const n = document.getElementById('clinic-name-display').textContent;
-      if (n && n !== '診所帳號') headerName.textContent = n;
+      if (n && n !== 'Clinic Account') headerName.textContent = n;
     });
     obs.observe(document.getElementById('clinic-name-display'), { childList: true, characterData: true, subtree: true });
+
+    // Sidebar logout button
+    (function () {
+      const sidebarLogoutBtn = document.getElementById('sidebar-logout-btn');
+      const devLogoutBtn = document.getElementById('dev-logout-btn');
+      function updateSidebarLogoutBtn() {
+        if (!sidebarLogoutBtn) return;
+        var user = null;
+        try { user = JSON.parse(localStorage.getItem('catface_user') || 'null'); } catch(e){}
+        var token = localStorage.getItem('catface_token');
+        sidebarLogoutBtn.style.display = (token && user) ? '' : 'none';
+      }
+      updateSidebarLogoutBtn();
+      if (sidebarLogoutBtn) {
+        sidebarLogoutBtn.addEventListener('click', function () {
+          if (devLogoutBtn) devLogoutBtn.click();
+          else {
+            localStorage.removeItem('catface_token');
+            localStorage.removeItem('catface_user');
+            localStorage.removeItem('catface_clinic_org_profile');
+            window.location.reload();
+          }
+        });
+      }
+      window.addEventListener('storage', function (e) {
+        if (e.key === 'catface_token' || e.key === 'catface_user') updateSidebarLogoutBtn();
+      });
+      setInterval(updateSidebarLogoutBtn, 2000);
+    })();
   </script>
 </body>
 </html>

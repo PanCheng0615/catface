@@ -15,6 +15,9 @@ app.use(express.json({ limit: '15mb' }));
 // 静态文件服务：上传的图片/PDF 可通过 /uploads/<filename> 访问
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+// 静态文件服务：前端页面（放在 API 路由之前，这样 /api/* 优先匹配）
+app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
+
 // Member 1 — 用户系统
 const authRouter  = require('./routes/auth.routes');
 const usersRouter = require('./routes/users.routes');
@@ -50,9 +53,6 @@ app.use('/api/rescue',        rescueRouter);
 // 健康检查
 app.get('/api/healthcheck', (req, res) => {
   res.json({ success: true, data: 'OK', message: 'Server is running' });
-});
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, data: { ok: true }, message: 'ok' });
 });
 
 // 404 兜底

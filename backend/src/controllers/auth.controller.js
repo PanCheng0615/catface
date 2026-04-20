@@ -858,6 +858,118 @@ async function enrollCatWithFace(req, res) {
   }
 }
 
+// POST /api/auth/org/register
+// 诊所注册：在 Organization 表和 User 表同时创建记录，一步完成
+// 这样 getOrgIdForUser() 就能通过邮箱匹配找到诊所身份
+async function orgRegister(req, res) {
+  try {
+    const { name, email, password, phone, address, license_number, type } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '诊所名称、邮箱、密码为必填项'
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '密码长度至少为 6 个字符'
+      });
+    }
+
+    // 检查 Organization 是否已存在
+    const existingOrg = await prisma.organization.findUnique({ where: { email } });
+    if (existingOrg) {
+      return res.status(422).json({
+        success: false,
+        error: 'OrgExists',
+        message: '该邮箱已被注册为机构账号，请直接登录'
+      });
+    }
+
+    // 检查 User 是否已存在（同一邮箱）
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(422).json({
+        success: false,
+        error: 'UserExists',
+        message: '该邮箱已被注册为普通用户，请使用其他邮箱'
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const orgType = type === 'rescue' ? 'rescue' : 'clinic';
+
+    // 创建 Organization
+    const org = await prisma.organization.create({
+      data: {
+        name,
+        type: orgType,
+        email,
+        password: hashedPassword, // bcrypt 加密存储
+        phone: phone || null,
+        address: address || null,
+        license_number: license_number || null,
+        is_verified: false
+      }
+    });
+
+    // 自动创建关联的 User（role=clinic_staff），由 ensureRescueStaffUserForOrganization 统一处理
+    const staffUser = await ensureRescueStaffUserForOrganization(org);
+
+    const token = generateToken({
+      id: staffUser.id,
+      role: staffUser.role,
+      account_type: 'organization',
+      organization_id: org.id,
+      organization_type: org.type,
+      organization_name: org.name
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        token,
+        organization: {
+          id: org.id,
+          name: org.name,
+          type: org.type,
+          email: org.email,
+          phone: org.phone,
+          address: org.address,
+          is_verified: org.is_verified
+        },
+        user: {
+          id: staffUser.id,
+          username: staffUser.username,
+          display_name: staffUser.display_name,
+          role: staffUser.role
+        }
+      },
+      message: '诊所注册成功'
+    });
+  } catch (error) {
+    console.error('orgRegister error:', error);
+    if (error && error.code === 'P2002') {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '该邮箱已被注册，请更换后重试'
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
+    });
+  }
+}
+
 // POST /api/auth/org/login
 async function orgLogin(req, res) {
   try {
@@ -943,6 +1055,7 @@ module.exports = {
   loginWithCatFace,
   bindCatFaceOwner,
   enrollCatWithFace,
+  orgRegister,
   orgLogin,
   ensureRescueStaffUserForOrganization
 };

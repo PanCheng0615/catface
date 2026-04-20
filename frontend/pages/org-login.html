@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CatFace · Organization Log In</title>
+  <title>Clinic Login — CatFace</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -11,159 +11,436 @@
       --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF;
       --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
       --border: #EAD9C4;
+      --green: #2e9e6b; --green-lt: #e9faf2;
+      --red: #e05252; --red-lt: #fef2f2;
     }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; -webkit-font-smoothing: antialiased; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                   "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; -webkit-font-smoothing: antialiased;
+    }
     a { color: var(--brand); text-decoration: none; }
     a:hover { text-decoration: underline; }
     button { font: inherit; cursor: pointer; }
 
-    .page { width: min(960px,100%); display: grid; grid-template-columns: 1fr 1fr; border-radius: 28px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.14); min-height: 580px; }
-    @media (max-width: 680px) { .page { grid-template-columns: 1fr; } .page-left { display: none; } }
+    .page { width: min(980px,100%); display: grid; grid-template-columns: 1fr 1fr; border-radius: 28px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.14); min-height: 600px; }
+    @media (max-width: 720px) { .page { grid-template-columns: 1fr; } .page-left { display: none; } }
 
-    .page-left { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 60%, #F0C888 100%); padding: 40px 36px; display: flex; flex-direction: column; justify-content: space-between; color: #fff; position: relative; overflow: hidden; }
+    .page-left {
+      background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 60%, #F0C888 100%);
+      padding: 40px 36px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      color: #fff; position: relative; overflow: hidden;
+    }
     .page-left::after { content: '🐱'; position: absolute; right: -10px; bottom: 20px; font-size: 160px; opacity: .12; line-height: 1; }
     .logo-area { display: flex; align-items: center; gap: 10px; }
     .logo-mark { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,.25); display: grid; place-items: center; font-size: 20px; }
     .logo-text { font-size: 20px; font-weight: 900; letter-spacing: -.5px; }
-    .left-body h2 { font-size: 30px; font-weight: 900; line-height: 1.2; margin-bottom: 16px; }
+    .left-body h2 { font-size: 28px; font-weight: 900; line-height: 1.25; margin-bottom: 16px; }
     .feature-list { display: flex; flex-direction: column; gap: 12px; }
     .feature-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.5; opacity: .92; }
     .feature-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
-    .cred-card { margin-top: 18px; border-radius: 18px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.24); padding: 18px; backdrop-filter: blur(8px); }
-    .cred-card h3 { font-size: 16px; margin-bottom: 10px; }
-    .cred-card p { font-size: 14px; line-height: 1.7; color: rgba(255,255,255,.94); }
     .left-footer { font-size: 12px; opacity: .75; }
 
-    .page-right { background: var(--surface); padding: 40px 36px; display: flex; flex-direction: column; justify-content: center; }
-    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+    .page-right { background: var(--surface); padding: 40px 36px; overflow-y: auto; max-height: 90vh; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
     .back-link:hover { color: var(--brand); text-decoration: none; }
-    .tab-bar { display: flex; border-bottom: 1.5px solid var(--border); margin-bottom: 28px; }
-    .tab { flex: 1; text-align: center; padding: 12px 0; font-size: 15px; font-weight: 700; color: var(--text-muted); border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; }
+
+    .tab-bar { display: flex; border-bottom: 1.5px solid var(--border); margin-bottom: 24px; }
+    .tab { flex: 1; text-align: center; padding: 12px 0; font-size: 15px; font-weight: 700; color: var(--text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: color .2s, border-color .2s; }
     .tab.active { color: var(--brand); border-bottom-color: var(--brand); }
-    .form-panel { display: flex; flex-direction: column; gap: 16px; }
+
+    .org-type-bar { display: flex; border-bottom: 1.5px solid var(--border); margin-bottom: 24px; }
+    .org-type-tab { flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: 700; color: var(--text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; margin-bottom: -1.5px; transition: color .2s, border-color .2s; border-radius: 8px 8px 0 0; }
+    .org-type-tab:hover { color: var(--brand); }
+    .org-type-tab.active { color: var(--brand); border-bottom-color: var(--brand); background: var(--brand-light); }
+
+    .form-panel { display: none; flex-direction: column; gap: 14px; }
+    .form-panel.active { display: flex; }
     .form-title { font-size: 22px; font-weight: 800; }
     .form-sub { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .field label { font-size: 13px; font-weight: 700; color: var(--text-sub); }
-    .field input { border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 14px; font: inherit; font-size: 14px; color: var(--text); background: var(--bg); outline: none; transition: border-color .15s, background .15s; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; font-weight: 700; color: var(--text-sub); text-transform: uppercase; letter-spacing: .03em; }
+    .field input { border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 14px; font: inherit; font-size: 14px; color: var(--text); background: var(--bg); outline: none; transition: border-color .15s, background .15s; }
     .field input:focus { border-color: var(--accent); background: #fff; }
     .field input::placeholder { color: var(--text-muted); }
-    .status-msg { padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; display: none; }
-    .status-msg.success { background: #ecfdf3; color: #027a48; display: block; }
-    .status-msg.error { background: #fef2f2; color: #dc2626; display: block; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 500px) { .two-col { grid-template-columns: 1fr; } }
+
+    .status-msg { padding: 12px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; display: none; }
+    .status-msg.success { background: var(--green-lt); color: #027a48; display: block; }
+    .status-msg.error { background: var(--red-lt); color: #dc2626; display: block; }
+    .status-msg.info { background: #eff5ff; color: #1d4ed8; display: block; }
+
     .btn-submit { width: 100%; padding: 14px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 15px; font-weight: 800; border: none; transition: background .15s, transform .12s; }
     .btn-submit:hover { background: var(--brand-hover); transform: translateY(-1px); }
     .btn-submit:disabled { opacity: .72; cursor: not-allowed; transform: none; }
-    .meta-note { color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+
     .switch-note { text-align: center; font-size: 14px; color: var(--text-muted); }
+
+    .info-callout {
+      background: #eff5ff; border: 1px solid #bfdbfe; border-radius: 10px;
+      padding: 12px 14px; font-size: 13px; color: #1e40af; line-height: 1.6;
+    }
+    .info-callout strong { display: block; margin-bottom: 2px; }
   </style>
 </head>
 <body>
   <div class="page">
-    <div class="page-left">
+    <div class="page-left" id="left-panel">
+      <!-- 动态切换，由 JS 控制 -->
       <div class="logo-area">
         <div class="logo-mark">&#x1F431;</div>
         <span class="logo-text">CatFace</span>
       </div>
-      <div class="left-body">
-        <h2>Rescue workspace for organization teams</h2>
-        <div class="feature-list">
-          <div class="feature-item"><span class="feature-icon">&#x1F4CB;</span><span>Manage rescue cats, profiles, and adoption records in one dashboard</span></div>
-          <div class="feature-item"><span class="feature-icon">&#x1F4E8;</span><span>Review adoption applications and follow up with adopters</span></div>
-          <div class="feature-item"><span class="feature-icon">&#x1F691;</span><span>Coordinate rescue activity and monitor organization operations</span></div>
-          <div class="feature-item"><span class="feature-icon">&#x1F63A;</span><span>Run Cat Face ID workflows with an authenticated organization session</span></div>
-        </div>
+      <div class="left-body" id="left-body">
+        <!-- 内容由 JS 切换 -->
       </div>
-      <div class="left-footer">CatFace · Rescue Dashboard Access</div>
+      <div class="left-footer" id="left-footer"></div>
     </div>
 
     <div class="page-right">
-      <a class="back-link" href="/pages/log-in.html">&#x2190; Back to User Login</a>
-      <div class="tab-bar">
-        <div class="tab active">Organization Log In</div>
+      <a class="back-link" href="/pages/log-in.html">&#x2190; Back to user login</a>
+
+      <!-- 组织类型选择 -->
+      <div class="org-type-bar">
+        <div class="org-type-tab active" id="tab-rescue" onclick="switchOrgType('rescue')">&#x1F43E; Rescue Organization</div>
+        <div class="org-type-tab" id="tab-clinic" onclick="switchOrgType('clinic')">&#x1F3E5; Pet Clinic</div>
       </div>
 
-      <form class="form-panel" id="org-login-form">
-        <div>
-          <div class="form-title">Organization access</div>
-          <div class="form-sub">Use your rescue organization account to enter the dashboard and manage cats.</div>
+      <!-- Rescue 表单 -->
+      <div id="panel-rescue">
+        <div class="tab-bar">
+          <div class="tab active" id="rescue-tab-login" onclick="switchTab('rescue', 'login')">Login</div>
+          <div class="tab" id="rescue-tab-register" onclick="switchTab('rescue', 'register')">Register Rescue</div>
         </div>
 
-        <div class="field">
-          <label for="org-email">Organization Email</label>
-          <input id="org-email" type="email" autocomplete="email" placeholder="Enter organization email" required>
+        <!-- Rescue Login -->
+        <div class="form-panel active" id="rescue-panel-login">
+          <div>
+            <div class="form-title">Rescue Login</div>
+            <div class="form-sub">Sign in with your rescue organization email and password</div>
+          </div>
+          <div class="field">
+            <label>Organization Email</label>
+            <input id="rescue-login-email" type="email" autocomplete="email" placeholder="rescue@example.com">
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input id="rescue-login-password" type="password" autocomplete="current-password" placeholder="Enter your password">
+          </div>
+          <div id="rescue-login-status" class="status-msg"></div>
+          <button class="btn-submit" id="rescue-login-btn" onclick="doRescueLogin()">Sign In to Rescue Dashboard</button>
+          <div class="switch-note">No rescue account yet? <a href="javascript:void(0)" onclick="switchTab('rescue','register')">Register now</a></div>
         </div>
 
-        <div class="field">
-          <label for="org-password">Password</label>
-          <input id="org-password" type="password" autocomplete="current-password" placeholder="Enter password" required>
+        <!-- Rescue Register -->
+        <div class="form-panel" id="rescue-panel-register">
+          <div>
+            <div class="form-title">Register Rescue Organization</div>
+            <div class="form-sub">Creates both the Organization and staff user account in one step</div>
+          </div>
+          <div class="info-callout">
+            <strong>What do you need?</strong>
+            Organization name + organization email (for login) + password. After registration you can log in to manage cats, applications, and adoption events.
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>Organization Name *</label>
+              <input id="rescue-reg-name" type="text" placeholder="e.g. Sunshine Rescue Center">
+            </div>
+            <div class="field">
+              <label>Organization Email *</label>
+              <input id="rescue-reg-email" type="email" autocomplete="email" placeholder="rescue@example.com">
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>Password * (min. 6 characters)</label>
+              <input id="rescue-reg-password" type="password" placeholder="Set your login password">
+            </div>
+            <div class="field">
+              <label>Phone (optional)</label>
+              <input id="rescue-reg-phone" type="text" placeholder="+1-555-1234567">
+            </div>
+          </div>
+          <div class="field">
+            <label>Address (optional)</label>
+            <input id="rescue-reg-address" type="text" placeholder="123 Main St, City, State 10001">
+          </div>
+          <div id="rescue-register-status" class="status-msg"></div>
+          <button class="btn-submit" id="rescue-register-btn" onclick="doRescueRegister()">Register Rescue Organization</button>
+          <div class="switch-note">Already have an account? <a href="javascript:void(0)" onclick="switchTab('rescue','login')">Sign in</a></div>
+        </div>
+      </div>
+
+      <!-- Clinic 表单 -->
+      <div id="panel-clinic" style="display:none;">
+        <div class="tab-bar">
+          <div class="tab active" id="clinic-tab-login" onclick="switchTab('clinic', 'login')">Login</div>
+          <div class="tab" id="clinic-tab-register" onclick="switchTab('clinic', 'register')">Register Clinic</div>
         </div>
 
-        <div class="meta-note">After login, this page stores the organization session in your browser and redirects to `rescue-dashboard.html`.</div>
-        <div class="status-msg" id="org-login-status"></div>
-        <button class="btn-submit" type="submit" id="org-login-submit">Log in to Rescue Dashboard</button>
-        <div class="switch-note">Want the normal member page? <a href="/pages/log-in.html">Go to user login</a></div>
-      </form>
+        <!-- Clinic Login -->
+        <div class="form-panel active" id="clinic-panel-login">
+          <div>
+            <div class="form-title">Clinic Account Login</div>
+            <div class="form-sub">Sign in with your clinic email and password</div>
+          </div>
+          <div class="field">
+            <label>Organization Email</label>
+            <input id="clinic-login-email" type="email" autocomplete="email" placeholder="clinic@example.com">
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input id="clinic-login-password" type="password" autocomplete="current-password" placeholder="Enter your password">
+          </div>
+          <div id="clinic-login-status" class="status-msg"></div>
+          <button class="btn-submit" id="clinic-login-btn" onclick="doClinicLogin()">Sign In to Portal</button>
+          <div class="switch-note">No clinic account yet? <a href="javascript:void(0)" onclick="switchTab('clinic','register')">Register now</a></div>
+        </div>
+
+        <!-- Clinic Register -->
+        <div class="form-panel" id="clinic-panel-register">
+          <div>
+            <div class="form-title">Register Clinic Account</div>
+            <div class="form-sub">Creates both the Organization and staff user account in one step</div>
+          </div>
+          <div class="info-callout">
+            <strong>What do you need?</strong>
+            Clinic name + organization email (for login) + password. After registration you can log in to manage authorized patients and upload reports.
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>Clinic Name *</label>
+              <input id="clinic-reg-name" type="text" placeholder="e.g. Sunshine Pet Hospital">
+            </div>
+            <div class="field">
+              <label>Organization Email *</label>
+              <input id="clinic-reg-email" type="email" autocomplete="email" placeholder="clinic@example.com">
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label>Password * (min. 6 characters)</label>
+              <input id="clinic-reg-password" type="password" placeholder="Set your login password">
+            </div>
+            <div class="field">
+              <label>Phone (optional)</label>
+              <input id="clinic-reg-phone" type="text" placeholder="+1-555-1234567">
+            </div>
+          </div>
+          <div class="field">
+            <label>Clinic Address (optional)</label>
+            <input id="clinic-reg-address" type="text" placeholder="123 Main St, City, State 10001">
+          </div>
+          <div id="clinic-register-status" class="status-msg"></div>
+          <button class="btn-submit" id="clinic-register-btn" onclick="doClinicRegister()">Register Clinic Account</button>
+          <div class="switch-note">Already have an account? <a href="javascript:void(0)" onclick="switchTab('clinic','login')">Sign in</a></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    (function () {
-      const form = document.getElementById("org-login-form");
-      const emailInput = document.getElementById("org-email");
-      const passwordInput = document.getElementById("org-password");
-      const status = document.getElementById("org-login-status");
-      const submitBtn = document.getElementById("org-login-submit");
-
-      function setStatus(message, isError) {
-        status.textContent = message || "";
-        status.className = "status-msg" + (message ? (isError ? " error" : " success") : "");
+    // ── 左侧面板内容 ──────────────────────────────────────────────────────
+    var leftContent = {
+      rescue: {
+        h2: 'Rescue Organization Portal',
+        features: [
+          { icon: '&#x1F43E;', text: 'Manage cat profiles, health records, and adoption listings' },
+          { icon: '&#x1F4CB;', text: 'Review and process adoption applications' },
+          { icon: '&#x1F389;', text: 'Create and manage adoption events' },
+          { icon: '&#x1F4AC;', text: 'Chat with potential adopters directly' },
+        ],
+        footer: 'CatFace · Rescue Portal · Save Lives, Find Homes'
+      },
+      clinic: {
+        h2: 'Pet Hospital & Clinic Staff Portal',
+        features: [
+          { icon: '&#x1F3E5;', text: 'View authorized cat health records and profiles' },
+          { icon: '&#x1F4CB;', text: 'Upload official medical reports and diagnoses' },
+          { icon: '&#x2705;', text: 'Endorse user health records with official verification' },
+          { icon: '&#x1F5A8;', text: 'Generate professional medical reports, print or export as PDF' },
+        ],
+        footer: 'CatFace · Clinic Portal · Connected Pet Healthcare'
       }
+    };
 
-      form.addEventListener("submit", async function (event) {
-        event.preventDefault();
-
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
-
-        if (!email || !password) {
-          setStatus("Please enter organization email and password.", true);
-          return;
-        }
-
-        submitBtn.disabled = true;
-        setStatus("Signing in...", false);
-
-        try {
-          const response = await fetch("http://localhost:3000/api/auth/org/login", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ email: email, password: password })
-          });
-
-          const payload = await response.json().catch(function () {
-            return {};
-          });
-
-          if (!response.ok || !payload.success) {
-            throw new Error(payload.message || "Organization login failed.");
-          }
-
-          localStorage.setItem("catface_org_token", payload.data.token);
-          localStorage.setItem("catface_token", payload.data.token);
-          localStorage.setItem("catface_org_profile", JSON.stringify(payload.data.organization || {}));
-
-          setStatus("Login successful. Redirecting...", false);
-          window.location.href = "rescue-dashboard.html";
-        } catch (error) {
-          setStatus(error.message || "Organization login failed.", true);
-        } finally {
-          submitBtn.disabled = false;
-        }
+    function renderLeftPanel(type) {
+      var c = leftContent[type];
+      var html = '<h2>' + c.h2 + '</h2><div class="feature-list">';
+      c.features.forEach(function(f) {
+        html += '<div class="feature-item"><span class="feature-icon">' + f.icon + '</span><span>' + f.text + '</span></div>';
       });
-    })();
+      html += '</div>';
+      document.getElementById('left-body').innerHTML = html;
+      document.getElementById('left-footer').textContent = c.footer;
+    }
+
+    function switchOrgType(type) {
+      // 更新 tab 高亮
+      document.getElementById('tab-rescue').classList.toggle('active', type === 'rescue');
+      document.getElementById('tab-clinic').classList.toggle('active', type === 'clinic');
+      // 切换表单显示
+      document.getElementById('panel-rescue').style.display = type === 'rescue' ? 'block' : 'none';
+      document.getElementById('panel-clinic').style.display = type === 'clinic' ? 'block' : 'none';
+      // 切换左侧面板
+      renderLeftPanel(type);
+    }
+
+    // ── 表单 Tab 切换 ────────────────────────────────────────────────────
+    function switchTab(orgType, tab) {
+      // org-type 内的 tab-bar
+      document.querySelectorAll('#panel-' + orgType + ' .tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('#panel-' + orgType + ' .form-panel').forEach(function(p) { p.classList.remove('active'); });
+      document.getElementById(orgType + '-tab-' + tab).classList.add('active');
+      document.getElementById(orgType + '-panel-' + tab).classList.add('active');
+    }
+
+    function setStatus(elId, msg, type) {
+      var el = document.getElementById(elId);
+      el.textContent = msg || '';
+      el.className = 'status-msg' + (msg ? ' ' + type : '');
+    }
+
+    function saveOrgSession(token, userData, orgData) {
+      localStorage.setItem('catface_token', token);
+      localStorage.setItem('catface_user', JSON.stringify({
+        id: userData.id,
+        username: userData.username || userData.display_name || 'org',
+        display_name: userData.display_name || orgData.name,
+        role: userData.role,
+        email: orgData.email,
+        organization_id: orgData.id,
+        organization_name: orgData.name,
+        organization_type: orgData.type,
+        account_type: 'organization'
+      }));
+      localStorage.setItem('catface_clinic_org_profile', JSON.stringify(orgData));
+    }
+
+    function redirectToPortal(orgType) {
+      if (orgType === 'clinic') {
+        window.location.href = '/pages/clinic-portal.html';
+      } else {
+        window.location.href = '/pages/rescue-dashboard.html';
+      }
+    }
+
+    // ── Rescue 登录 ────────────────────────────────────────────────────
+    function doRescueLogin() {
+      var email = document.getElementById('rescue-login-email').value.trim();
+      var password = document.getElementById('rescue-login-password').value;
+      var btn = document.getElementById('rescue-login-btn');
+      if (!email || !password) { setStatus('rescue-login-status', 'Please enter your email and password', 'error'); return; }
+      btn.disabled = true; btn.textContent = 'Signing in...';
+      setStatus('rescue-login-status', '', '');
+      fetch('http://localhost:3000/api/auth/org/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: password })
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+          if (!result.success) { setStatus('rescue-login-status', result.message || 'Login failed', 'error'); return; }
+          var data = result.data;
+          saveOrgSession(data.token, data.rescue_staff_user, data.organization);
+          setStatus('rescue-login-status', 'Login successful! Redirecting...', 'success');
+          setTimeout(function() { redirectToPortal(data.organization.type); }, 800);
+        })
+        .catch(function() { setStatus('rescue-login-status', 'Network error — make sure the backend server is running on port 3000', 'error'); })
+        .finally(function() { btn.disabled = false; btn.textContent = 'Sign In to Rescue Dashboard'; });
+    }
+
+    // ── Rescue 注册 ────────────────────────────────────────────────────
+    function doRescueRegister() {
+      var name = document.getElementById('rescue-reg-name').value.trim();
+      var email = document.getElementById('rescue-reg-email').value.trim();
+      var password = document.getElementById('rescue-reg-password').value;
+      var phone = document.getElementById('rescue-reg-phone').value.trim();
+      var address = document.getElementById('rescue-reg-address').value.trim();
+      var btn = document.getElementById('rescue-register-btn');
+      if (!name) { setStatus('rescue-register-status', 'Please enter the organization name', 'error'); return; }
+      if (!email) { setStatus('rescue-register-status', 'Please enter the organization email', 'error'); return; }
+      if (!password || password.length < 6) { setStatus('rescue-register-status', 'Password must be at least 6 characters', 'error'); return; }
+      btn.disabled = true; btn.textContent = 'Registering...';
+      setStatus('rescue-register-status', '', '');
+      fetch('http://localhost:3000/api/auth/org/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, type: 'rescue', email: email, password: password, phone: phone || undefined, address: address || undefined })
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+          if (!result.success) { setStatus('rescue-register-status', result.message || 'Registration failed', 'error'); return; }
+          var data = result.data;
+          saveOrgSession(data.token, data.user, data.organization);
+          setStatus('rescue-register-status', 'Registration successful! Redirecting to rescue dashboard...', 'success');
+          setTimeout(function() { redirectToPortal(data.organization.type); }, 800);
+        })
+        .catch(function() { setStatus('rescue-register-status', 'Network error — make sure the backend server is running on port 3000', 'error'); })
+        .finally(function() { btn.disabled = false; btn.textContent = 'Register Rescue Organization'; });
+    }
+
+    // ── Clinic 登录 ────────────────────────────────────────────────────
+    function doClinicLogin() {
+      var email = document.getElementById('clinic-login-email').value.trim();
+      var password = document.getElementById('clinic-login-password').value;
+      var btn = document.getElementById('clinic-login-btn');
+      if (!email || !password) { setStatus('clinic-login-status', 'Please enter your email and password', 'error'); return; }
+      btn.disabled = true; btn.textContent = 'Signing in...';
+      setStatus('clinic-login-status', '', '');
+      fetch('http://localhost:3000/api/auth/org/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: password })
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+          if (!result.success) { setStatus('clinic-login-status', result.message || 'Login failed', 'error'); return; }
+          var data = result.data;
+          saveOrgSession(data.token, data.rescue_staff_user, data.organization);
+          setStatus('clinic-login-status', 'Login successful! Redirecting...', 'success');
+          setTimeout(function() { redirectToPortal(data.organization.type); }, 800);
+        })
+        .catch(function() { setStatus('clinic-login-status', 'Network error — make sure the backend server is running on port 3000', 'error'); })
+        .finally(function() { btn.disabled = false; btn.textContent = 'Sign In to Portal'; });
+    }
+
+    // ── Clinic 注册 ────────────────────────────────────────────────────
+    function doClinicRegister() {
+      var name = document.getElementById('clinic-reg-name').value.trim();
+      var email = document.getElementById('clinic-reg-email').value.trim();
+      var password = document.getElementById('clinic-reg-password').value;
+      var phone = document.getElementById('clinic-reg-phone').value.trim();
+      var address = document.getElementById('clinic-reg-address').value.trim();
+      var btn = document.getElementById('clinic-register-btn');
+      if (!name) { setStatus('clinic-register-status', 'Please enter the clinic name', 'error'); return; }
+      if (!email) { setStatus('clinic-register-status', 'Please enter the organization email', 'error'); return; }
+      if (!password || password.length < 6) { setStatus('clinic-register-status', 'Password must be at least 6 characters', 'error'); return; }
+      btn.disabled = true; btn.textContent = 'Registering...';
+      setStatus('clinic-register-status', '', '');
+      fetch('http://localhost:3000/api/auth/org/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, email: email, password: password, phone: phone || undefined, address: address || undefined })
+      })
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+          if (!result.success) { setStatus('clinic-register-status', result.message || 'Registration failed', 'error'); return; }
+          var data = result.data;
+          saveOrgSession(data.token, data.user, data.organization);
+          setStatus('clinic-register-status', 'Registration successful! Redirecting to clinic portal...', 'success');
+          setTimeout(function() { redirectToPortal(data.organization.type); }, 800);
+        })
+        .catch(function() { setStatus('clinic-register-status', 'Network error — make sure the backend server is running on port 3000', 'error'); })
+        .finally(function() { btn.disabled = false; btn.textContent = 'Register Clinic Account'; });
+    }
+
+    // 初始化左侧面板为 rescue
+    renderLeftPanel('rescue');
   </script>
 </body>
 </html>

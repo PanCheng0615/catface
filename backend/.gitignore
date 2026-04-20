@@ -6,3 +6,8 @@ node_modules/
 *.log
 uploads/
 *.tmp*
+*.test.js
+test_*.js
+temp_*.json
+temp_login.json
+scripts/generate_test_accounts.js
