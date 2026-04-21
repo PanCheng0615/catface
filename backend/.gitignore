@@ -11,3 +11,5 @@ test_*.js
 temp_*.json
 temp_login.json
 scripts/generate_test_accounts.js
+data/export/
+*.xlsx
