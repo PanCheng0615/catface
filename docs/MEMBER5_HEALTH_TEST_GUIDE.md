@@ -74,7 +74,7 @@ node test_health_apis.js
 
 ### 2.1 普通用户账号
 
-在 `http://localhost:5500/pages/log-in.html` 点击 **Sign Up**，注册一个普通账号。
+在 `pages/log-in.html`（或直接访问 `http://localhost:5500/pages/log-in.html`）点击 **Sign Up**，注册一个普通账号。
 
 注册后需要做以下准备工作：
 
@@ -83,7 +83,7 @@ node test_health_apis.js
 
 ### 2.2 诊所账号
 
-直接打开 `http://localhost:5500/pages/clinic-portal.html`，页面顶部有"开发测试面板"，可以：
+直接打开 `http://localhost:5500/pages/clinic-portal.html`（或直接访问 Clinic Portal 页面），页面顶部有"开发测试面板"，可以：
 
 **第一次使用（注册）**：
 1. 填写诊所名称（如"阳光宠物医院"）
