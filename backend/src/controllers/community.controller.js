@@ -1,5 +1,10 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const {
+  DUPLICATE_POST_WINDOW_MS,
+  cleanupConsecutiveDuplicatePosts,
+  isImmediateDuplicatePost
+} = require('../services/community-dedup.service.js');
 
 const prisma = new PrismaClient();
 
@@ -280,6 +285,10 @@ async function ensureDemoCommunityData() {
       });
     }
   }
+
+  await cleanupConsecutiveDuplicatePosts(prisma, {
+    userIds: Array.from(usersByUsername.values()).map((user) => user.id)
+  });
 }
 
 function formatRelativeTime(date) {
@@ -338,7 +347,10 @@ function computeTrendingHotScore(likesCount, commentsCount) {
 
 async function getPosts(req, res) {
   try {
-    const limit = Math.min(parseInt(req.query.limit || '20', 10), 50);
+    const rawLimit = parseInt(req.query.limit || '20', 10);
+    const rawOffset = parseInt(req.query.offset || '0', 10);
+    const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(rawLimit, 50)) : 20;
+    const offset = Number.isFinite(rawOffset) ? Math.max(0, rawOffset) : 0;
     const feed = String(req.query.feed || 'recommended').toLowerCase();
     const viewerId = req.user && req.user.id;
 
@@ -349,7 +361,12 @@ async function getPosts(req, res) {
     let where = {};
     if (feed === 'followed') {
       if (!viewerId) {
-        return res.json({ success: true, data: [], message: '操作成功' });
+        return res.json({
+          success: true,
+          data: [],
+          pagination: { limit, offset, has_more: false, next_offset: offset },
+          message: '操作成功'
+        });
       }
       const followingRows = await prisma.userFollow.findMany({
         where: { follower_id: viewerId },
@@ -357,21 +374,29 @@ async function getPosts(req, res) {
       });
       const followingIds = followingRows.map((f) => f.following_id);
       if (!followingIds.length) {
-        return res.json({ success: true, data: [], message: '操作成功' });
+        return res.json({
+          success: true,
+          data: [],
+          pagination: { limit, offset, has_more: false, next_offset: offset },
+          message: '操作成功'
+        });
       }
       where = { user_id: { in: followingIds } };
     }
 
-    const posts = await prisma.post.findMany({
+    const rows = await prisma.post.findMany({
       where,
-      orderBy: { created_at: 'desc' },
-      take: limit,
+      orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+      skip: offset,
+      take: limit + 1,
       include: {
         user: { select: { id: true, username: true, display_name: true, avatar_url: true } },
         likes: { select: { user_id: true } },
         comments: { include: { user: { select: { username: true, display_name: true } } } }
       }
     });
+    const hasMore = rows.length > limit;
+    const posts = hasMore ? rows.slice(0, limit) : rows;
 
     let followingSet = null;
     if (viewerId) {
@@ -392,7 +417,17 @@ async function getPosts(req, res) {
         : posts;
 
     const data = strictFollowedPosts.map((p) => mapPostToFeed(p, viewerId, followingSet));
-    return res.json({ success: true, data, message: '操作成功' });
+    return res.json({
+      success: true,
+      data,
+      pagination: {
+        limit,
+        offset,
+        has_more: hasMore,
+        next_offset: offset + posts.length
+      },
+      message: '操作成功'
+    });
   } catch (error) {
     console.error('getPosts error:', error);
     return res.status(500).json({ success: false, error: 'ServerError', message: '服务器错误' });
@@ -491,13 +526,39 @@ async function createPost(req, res) {
     if (!content) {
       return res.status(422).json({ success: false, error: 'ValidationError', message: '内容不能为空' });
     }
-    const imageUrl = req.body.image_url ? String(req.body.image_url) : null;
+    const imageUrl = req.body.image_url ? String(req.body.image_url).trim() : '';
+    const normalizedImageUrl = imageUrl || null;
+
+    const latestPost = await prisma.post.findFirst({
+      where: { user_id: userId },
+      orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+      select: {
+        id: true,
+        user_id: true,
+        content: true,
+        image_url: true,
+        created_at: true
+      }
+    });
+
+    if (isImmediateDuplicatePost(latestPost, {
+      user_id: userId,
+      content,
+      image_url: normalizedImageUrl,
+      created_at: new Date()
+    })) {
+      return res.status(409).json({
+        success: false,
+        error: 'DuplicatePost',
+        message: `检测到你在短时间内重复发布了相同内容。若想再次发布，请稍等 ${Math.ceil(DUPLICATE_POST_WINDOW_MS / 1000)} 秒后再试。`
+      });
+    }
 
     const post = await prisma.post.create({
       data: {
         user_id: userId,
         content: content.slice(0, 500),
-        image_url: imageUrl
+        image_url: normalizedImageUrl
       },
       include: {
         user: { select: { id: true, username: true, display_name: true, avatar_url: true } },

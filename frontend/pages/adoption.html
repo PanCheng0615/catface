@@ -70,8 +70,8 @@
     .cat-card:nth-child(9) { transform: translate(0,92px) scale(.68); opacity: .07; z-index: 1; }
     .cat-card.swipe-left { transition: transform .32s ease-out, opacity .32s ease-out; transform: translateX(-140%) rotate(-18deg); opacity: 0; }
     .cat-card.swipe-right { transition: transform .32s ease-out, opacity .32s ease-out; transform: translateX(140%) rotate(18deg); opacity: 0; }
-    .card-bg { position: absolute; inset: 0; }
-    .card-bg img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.82); }
+    .card-bg { position: absolute; inset: 0; background: #d9c6aa; }
+    .card-bg img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.82); background: #d9c6aa; }
     .card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,.75) 100%); }
     .card-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; color: #fff; }
     .card-name { font-size: 24px; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,.5); }
@@ -238,10 +238,6 @@
   <!-- RIGHT PANEL -->
   <aside class="right-panel">
     <div class="rp-card">
-      <div class="rp-stat-row">
-        <div class="rp-stat"><div class="rp-stat-num" id="availableCatsCount">0</div><div class="rp-stat-label">Available cats</div></div>
-        <div class="rp-stat"><div class="rp-stat-num">12</div><div class="rp-stat-label">Adopted this month</div></div>
-      </div>
       <div class="rp-info-block">
         <h4>Adoption flow</h4>
         <ol>
@@ -302,7 +298,7 @@
   <button class="toast-btn" id="toastViewBtn">View Profile</button>
 </div>
 
-<script src="../js/config.js"></script>
+<script src="../js/config.js?v=20260421-1"></script>
 <script>
 (function(){
   if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
@@ -315,6 +311,47 @@
     if (!src) return '';
     if (/^(https?:)?\/\//i.test(src) || /^data:/i.test(src) || /^blob:/i.test(src) || src.indexOf('../') === 0) return src;
     return '../' + src.replace(/^\.?\//, '');
+  }
+
+  function optimizeCatImg(src, options) {
+    var resolved = resolveCatImg(src);
+    var opts = options || {};
+    if (!resolved || /^data:/i.test(resolved) || /^blob:/i.test(resolved)) return resolved;
+    try {
+      var url = new URL(resolved, window.location.origin);
+      var host = String(url.hostname || '').toLowerCase();
+      if (host === 'cataas.com' || /(^|\.)cataas\.com$/.test(host)) {
+        if (opts.width) url.searchParams.set('width', String(opts.width));
+        if (opts.height) url.searchParams.set('height', String(opts.height));
+        return url.toString();
+      }
+      if (host === 'images.unsplash.com') {
+        if (opts.width) url.searchParams.set('w', String(opts.width));
+        if (opts.height) url.searchParams.set('h', String(opts.height));
+        url.searchParams.set('auto', 'format');
+        url.searchParams.set('fit', 'crop');
+        if (opts.quality) url.searchParams.set('q', String(opts.quality));
+        return url.toString();
+      }
+      return resolved;
+    } catch (e) {
+      return resolved;
+    }
+  }
+
+  function warmCatImages(ids) {
+    (Array.isArray(ids) ? ids : []).slice(0, 2).forEach(function (id, index) {
+      var cat = cats[id];
+      if (!cat || !cat.img) return;
+      var img = new Image();
+      img.decoding = 'async';
+      img.fetchPriority = index === 0 ? 'high' : 'low';
+      img.src = optimizeCatImg(cat.img, {
+        width: index === 0 ? 720 : 480,
+        height: index === 0 ? 720 : 480,
+        quality: 68
+      });
+    });
   }
 
   var FALLBACK_IMAGES = [
@@ -341,6 +378,9 @@
   var openPreferencesBtn = document.getElementById('openPreferencesBtn');
   var applications = [];
   var likedSecondFetchScheduled = false;
+  var feedRequestInFlight = false;
+  var seenCatIds = [];
+  var ADOPTION_FEED_PAGE_SIZE = 8;
 
   function escapeHtml(value) {
     return String(value || '')
@@ -360,6 +400,15 @@
     }
   }
 
+  function getSeenStorageKey() {
+    try {
+      var currentUser = JSON.parse(localStorage.getItem('catface_user') || 'null');
+      return 'catface_seen_adoption_cats_v1_' + ((currentUser && currentUser.id) || 'guest');
+    } catch (e) {
+      return 'catface_seen_adoption_cats_v1_guest';
+    }
+  }
+
   function persistLiked() {
     try {
       localStorage.setItem(getLikedStorageKey(), JSON.stringify(liked));
@@ -373,6 +422,27 @@
     } catch (e) {
       liked = [];
     }
+  }
+
+  function persistSeenCats() {
+    try {
+      localStorage.setItem(getSeenStorageKey(), JSON.stringify(seenCatIds));
+    } catch (e) {}
+  }
+
+  function restoreSeenCats() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(getSeenStorageKey()) || '[]');
+      seenCatIds = Array.isArray(saved) ? saved.filter(Boolean) : [];
+    } catch (e) {
+      seenCatIds = [];
+    }
+  }
+
+  function markCatSeen(catId) {
+    if (!catId || seenCatIds.indexOf(catId) !== -1) return;
+    seenCatIds.push(catId);
+    persistSeenCats();
   }
 
   function recordSwipeOnServer(catId, likedBool) {
@@ -390,6 +460,25 @@
     list.forEach(function (cat, idx) {
       if (!cat || !cat.id) return;
       var mapped = mapCat(cat, (indexOffset || 0) + idx);
+      var existing = cats[mapped.id];
+      if (existing) {
+        cats[mapped.id] = {
+          id: mapped.id,
+          name: mapped.name || existing.name,
+          org: mapped.org || existing.org,
+          img: cat.photo_url ? mapped.img : (existing.img || mapped.img),
+          age: mapped.age || existing.age,
+          gender: mapped.gender || existing.gender,
+          breed: mapped.breed || existing.breed,
+          neuter: mapped.neuter || existing.neuter,
+          vaccine: mapped.vaccine || existing.vaccine,
+          found: mapped.found || existing.found,
+          note: mapped.note || existing.note,
+          tags: Array.isArray(mapped.tags) && mapped.tags.length ? mapped.tags : existing.tags,
+          status: mapped.status || existing.status
+        };
+        return;
+      }
       cats[mapped.id] = mapped;
     });
   }
@@ -479,8 +568,17 @@
     return tags.slice(0, 2);
   }
 
+  function pickStableFallbackImage(cat, index) {
+    var stableKey = String((cat && (cat.id || cat.face_code || cat.name)) || index || '');
+    var hash = 0;
+    for (var i = 0; i < stableKey.length; i += 1) {
+      hash = ((hash * 31) + stableKey.charCodeAt(i)) >>> 0;
+    }
+    return FALLBACK_IMAGES[hash % FALLBACK_IMAGES.length];
+  }
+
   function mapCat(cat, index) {
-    var fallbackImage = FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
+    var fallbackImage = pickStableFallbackImage(cat, index);
     var note = cat.description || 'No rescue notes have been added yet.';
     return {
       id: cat.id,
@@ -499,23 +597,39 @@
     };
   }
 
-  function applyFeedList(data) {
-    cats = {};
-    catOrder = [];
+  function applyFeedList(data, options) {
+    options = options || {};
+    var reset = options.reset !== false;
+    var indexBase = reset ? 0 : Object.keys(cats).length;
+    if (reset) {
+      cats = {};
+      catOrder = [];
+    }
     data.forEach(function (cat, index) {
-      var mapped = mapCat(cat, index);
+      var mapped = mapCat(cat, indexBase + index);
       cats[mapped.id] = mapped;
-      catOrder.push(mapped.id);
+      if (liked.indexOf(mapped.id) !== -1) return;
+      if (catOrder.indexOf(mapped.id) === -1) {
+        catOrder.push(mapped.id);
+      }
     });
     if (availableCatsCount) availableCatsCount.textContent = String(catOrder.length);
     renderDeck();
     renderRecentlyAvailable();
     renderLiked();
-    loadLikedFromServer();
+    warmCatImages(catOrder);
+    if (reset) {
+      loadLikedFromServer();
+    }
   }
 
-  function fetchAvailableCatsFallback() {
-    return fetch(API_BASE_URL + '/cats?status=available', {
+  function fetchAvailableCatsFallback(excludeIds) {
+    var query = '/cats?status=available&limit=' + ADOPTION_FEED_PAGE_SIZE;
+    var excluded = Array.isArray(excludeIds) ? excludeIds.filter(Boolean) : [];
+    if (excluded.length) {
+      query += '&exclude_ids=' + encodeURIComponent(excluded.join(','));
+    }
+    return fetch(API_BASE_URL + query, {
       method: 'GET',
       headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
     })
@@ -533,6 +647,16 @@
       });
   }
 
+  function retryFeedWithoutSeen(options) {
+    if (!seenCatIds.length || (options && options.resetSeen)) return false;
+    seenCatIds = [];
+    persistSeenCats();
+    window.setTimeout(function () {
+      loadFeed(Object.assign({}, options || {}, { resetSeen: true }));
+    }, 0);
+    return true;
+  }
+
   function renderDeck() {
     if (!catOrder.length) {
       stack.innerHTML = [
@@ -548,11 +672,19 @@
       return;
     }
 
-    stack.innerHTML = catOrder.map(function (id) {
+    var visibleStack = catOrder.slice(0, 4);
+    stack.innerHTML = visibleStack.map(function (id, index) {
       var cat = cats[id];
+      var cardImg = optimizeCatImg(cat.img, {
+        width: index === 0 ? 720 : 560,
+        height: index === 0 ? 720 : 560,
+        quality: 68
+      });
+      var loadingMode = index === 0 ? 'eager' : 'lazy';
+      var priority = index === 0 ? 'high' : 'low';
       return [
         '<div class="cat-card" data-id="' + escapeHtml(id) + '">',
-        '  <div class="card-bg"><img src="' + escapeHtml(cat.img) + '" alt="' + escapeHtml(cat.name) + '"></div>',
+        '  <div class="card-bg"><img src="' + escapeHtml(cardImg) + '" alt="' + escapeHtml(cat.name) + '" loading="' + loadingMode + '" decoding="async" fetchpriority="' + priority + '"></div>',
         '  <div class="card-overlay"></div>',
         '  <div class="card-info">',
         '    <div class="card-name">' + escapeHtml(cat.name) + '</div>',
@@ -567,7 +699,7 @@
   }
 
   function renderRecentlyAvailable() {
-    var items = catOrder.slice(0, 7);
+    var items = catOrder.slice(0, 4);
     if (!items.length) {
       recentlyAvailableList.innerHTML = [
         '<div class="rp-row">',
@@ -583,9 +715,10 @@
 
     recentlyAvailableList.innerHTML = items.map(function (id) {
       var cat = cats[id];
+      var listImg = optimizeCatImg(cat.img, { width: 120, height: 120, quality: 60 });
       return [
         '<div class="rp-row" data-id="' + escapeHtml(id) + '">',
-        '  <img class="rp-row-img" src="' + escapeHtml(cat.img) + '" alt="' + escapeHtml(cat.name) + '">',
+        '  <img class="rp-row-img" src="' + escapeHtml(listImg) + '" alt="' + escapeHtml(cat.name) + '" loading="lazy" decoding="async" fetchpriority="low">',
         '  <div class="rp-row-info">',
         '    <div class="rp-row-name">' + escapeHtml(cat.name) + '</div>',
         '    <div class="rp-row-sub">' + escapeHtml(cat.age + ' · ' + cat.gender + ' · ' + cat.breed) + '</div>',
@@ -627,6 +760,8 @@
         }
         liked = liked.filter(function (id) { return id !== catId; });
         persistLiked();
+        seenCatIds = seenCatIds.filter(function (id) { return id !== catId; });
+        persistSeenCats();
         if (cats[catId] && catOrder.indexOf(catId) === -1) {
           catOrder.unshift(catId);
         }
@@ -743,8 +878,14 @@
       });
   }
 
-  function loadFeed() {
-    stack.innerHTML = [
+  function loadFeed(options) {
+    options = options || {};
+    var append = options.append === true;
+    if (feedRequestInFlight) return;
+    feedRequestInFlight = true;
+
+    if (!append) {
+      stack.innerHTML = [
       '<div class="cat-card" data-id="loading">',
       '  <div class="card-overlay"></div>',
       '  <div class="card-info">',
@@ -754,8 +895,15 @@
       '  </div>',
       '</div>'
     ].join('');
+    }
 
-    fetch(API_BASE_URL + '/adoption/feed?limit=30', {
+    var excludeIds = seenCatIds.slice();
+    var query = '/adoption/feed?limit=' + ADOPTION_FEED_PAGE_SIZE + '&_=' + Date.now();
+    if (excludeIds.length) {
+      query += '&exclude_ids=' + encodeURIComponent(excludeIds.join(','));
+    }
+
+    fetch(API_BASE_URL + query, {
       method: 'GET',
       headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
     })
@@ -771,14 +919,24 @@
           throw new Error(payload.message || 'Unable to load adoption feed.');
         }
         if (data.length) {
-          applyFeedList(data);
+          applyFeedList(data, { reset: !append });
           return null;
         }
-        return fetchAvailableCatsFallback().then(applyFeedList);
+        return fetchAvailableCatsFallback(excludeIds).then(function (fallbackData) {
+          if (!fallbackData.length && retryFeedWithoutSeen(options)) {
+            return null;
+          }
+          applyFeedList(fallbackData, { reset: !append });
+        });
       })
       .catch(function (error) {
-        fetchAvailableCatsFallback()
-          .then(applyFeedList)
+        fetchAvailableCatsFallback(excludeIds)
+          .then(function (fallbackData) {
+            if (!fallbackData.length && retryFeedWithoutSeen(options)) {
+              return;
+            }
+            applyFeedList(fallbackData, { reset: !append });
+          })
           .catch(function (fallbackError) {
             stack.innerHTML = [
               '<div class="cat-card" data-id="error">',
@@ -800,6 +958,9 @@
               '</div>'
             ].join('');
           });
+      })
+      .finally(function () {
+        feedRequestInFlight = false;
       });
   }
 
@@ -812,13 +973,19 @@
     animating = true;
     var id = card.dataset.id;
     if(dir==='right'){ addLiked(id); showToast(id); }
+    markCatSeen(id);
     recordSwipeOnServer(id, dir === 'right');
     card.classList.add(dir==='right'?'swipe-right':'swipe-left');
     card.addEventListener('transitionend',function h(){
       card.removeEventListener('transitionend',h);
       card.classList.remove('swipe-right','swipe-left');
-      stack.appendChild(card);
+      catOrder = catOrder.filter(function (itemId) { return itemId !== id; });
+      renderDeck();
+      renderRecentlyAvailable();
       animating=false;
+      if (catOrder.length <= 5) {
+        loadFeed({ append: true });
+      }
     });
   }
 
@@ -833,7 +1000,7 @@
     var cat=cats[id];
     if (!cat) return;
     active=id;
-    document.getElementById('profileImg').src=resolveCatImg(cat.img);
+    document.getElementById('profileImg').src = optimizeCatImg(cat.img, { width: 820, height: 820, quality: 72 });
     document.getElementById('profileName').textContent=cat.name;
     document.getElementById('profileOrg').textContent='Rescue: '+cat.org;
     document.getElementById('profileNote').textContent=cat.note;
@@ -1038,6 +1205,7 @@
   })();
 
   restoreLiked();
+  restoreSeenCats();
   renderLiked();
   loadFeed();
   loadApplications();

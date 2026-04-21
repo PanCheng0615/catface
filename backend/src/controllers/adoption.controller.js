@@ -3,15 +3,6 @@ const { scoreCatForUser, normalizeText, getWeights, updateWeights } = require('.
 
 const prisma = new PrismaClient();
 const hasAdoptionSwipeModel = Boolean(prisma.adoptionSwipe);
-const adopterPreferenceFieldSet = new Set(
-  (((prisma._runtimeDataModel || {}).models || {}).AdopterPreference || {}).fields
-    ? ((prisma._runtimeDataModel || {}).models.AdopterPreference.fields || []).map((field) => field.name)
-    : []
-);
-
-function hasAdopterPreferenceField(fieldName) {
-  return adopterPreferenceFieldSet.has(fieldName);
-}
 let adoptionSwipeStoreAvailability = {
   checked_at: 0,
   available: hasAdoptionSwipeModel
@@ -123,6 +114,7 @@ async function recordSwipe(req, res) {
 async function getFeed(req, res) {
   try {
     const limitRaw = req.query.limit;
+    const excludeIdsRaw = req.query.exclude_ids;
     let limit = 30;
     if (limitRaw != null && limitRaw !== '') {
       const n = parseInt(String(limitRaw), 10);
@@ -130,6 +122,10 @@ async function getFeed(req, res) {
         limit = Math.min(n, 50);
       }
     }
+    const excludeIds = String(excludeIdsRaw || '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
 
     const userId = req.user.id;
 
@@ -169,10 +165,11 @@ async function getFeed(req, res) {
         })
       : [];
     const swipedCatIds = allSwipes.map((s) => s.cat_id);
+    const excludedCatIds = [...new Set([...swipedCatIds, ...excludeIds])];
 
     const where = {
       status: 'available',
-      ...(swipedCatIds.length > 0 ? { id: { notIn: swipedCatIds } } : {})
+      ...(excludedCatIds.length > 0 ? { id: { notIn: excludedCatIds } } : {})
     };
 
     const candidates = await prisma.cat.findMany({
@@ -356,35 +353,29 @@ async function getPreferences(req, res) {
 async function setPreferences(req, res) {
   try {
     const { preferred_age, preferred_gender, preferred_breed, home_environment, personality_tags } = req.body;
+    const normalizedGender = preferred_gender === 'no_preference' ? 'no preference' : preferred_gender;
     const normalizedTags = Array.isArray(personality_tags)
       ? personality_tags
           .map((tag) => String(tag || '').trim())
           .filter(Boolean)
       : null;
-    const createData = {
-      user_id: req.user.id,
-      preferred_age: preferred_age ?? null,
-      preferred_gender: preferred_gender ?? null,
-      preferred_breed: preferred_breed ?? null
-    };
-    const updateData = {
-      preferred_age: preferred_age ?? undefined,
-      preferred_gender: preferred_gender ?? undefined,
-      preferred_breed: preferred_breed ?? undefined
-    };
-    if (hasAdopterPreferenceField('home_environment')) {
-      createData.home_environment = home_environment ?? null;
-      updateData.home_environment = home_environment ?? undefined;
-    }
-    if (hasAdopterPreferenceField('personality_tags')) {
-      createData.personality_tags = normalizedTags;
-      updateData.personality_tags = normalizedTags ?? undefined;
-    }
-
     const pref = await prisma.adopterPreference.upsert({
       where: { user_id: req.user.id },
-      create: createData,
-      update: updateData
+      create: {
+        user_id: req.user.id,
+        preferred_age: preferred_age ?? null,
+        preferred_gender: normalizedGender ?? null,
+        preferred_breed: preferred_breed ?? null,
+        home_environment: home_environment ?? null,
+        personality_tags: normalizedTags
+      },
+      update: {
+        preferred_age: preferred_age === undefined ? undefined : (preferred_age ?? null),
+        preferred_gender: normalizedGender === undefined ? undefined : (normalizedGender ?? null),
+        preferred_breed: preferred_breed === undefined ? undefined : (preferred_breed ?? null),
+        home_environment: home_environment === undefined ? undefined : (home_environment ?? null),
+        personality_tags: normalizedTags === null ? [] : normalizedTags
+      }
     });
 
     return res.json({

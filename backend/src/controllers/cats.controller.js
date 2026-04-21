@@ -103,8 +103,12 @@ const catInclude = {
 // 查询参数：status=available|adopted|fostered|deceased
 async function getCats(req, res) {
   try {
-    const { status: statusQ } = req.query;
+    const { status: statusQ, limit: limitQ, offset: offsetQ, exclude_ids: excludeIdsQ } = req.query;
     const where = {};
+    const limitRequested = limitQ != null && String(limitQ).trim() !== '';
+    const parsedLimit = limitRequested ? parseInt(String(limitQ), 10) : null;
+    const parsedOffset = parseInt(String(offsetQ || '0'), 10);
+    const offset = Number.isFinite(parsedOffset) ? Math.max(0, parsedOffset) : 0;
 
     if (statusQ != null && String(statusQ).trim() !== '') {
       const parsed = parseCatStatus(statusQ);
@@ -118,18 +122,43 @@ async function getCats(req, res) {
       where.status = parsed;
     }
 
-    const cats = await prisma.cat.findMany({
+    const excludeIds = String(excludeIdsQ || '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
+    if (excludeIds.length) {
+      where.id = { notIn: excludeIds };
+    }
+
+    const query = {
       where,
-      orderBy: { created_at: 'desc' },
+      orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
       include: {
         tags: true,
         organization: { select: { id: true, name: true, logo_url: true } }
       }
-    });
+    };
+
+    let limit = null;
+    if (limitRequested && Number.isFinite(parsedLimit) && parsedLimit > 0) {
+      limit = Math.min(parsedLimit, 100);
+      query.skip = offset;
+      query.take = limit + 1;
+    }
+
+    const rows = await prisma.cat.findMany(query);
+    const hasMore = limit != null ? rows.length > limit : false;
+    const cats = limit != null && hasMore ? rows.slice(0, limit) : rows;
 
     return res.json({
       success: true,
       data: cats,
+      pagination: {
+        limit,
+        offset,
+        has_more: hasMore,
+        next_offset: limit != null ? offset + cats.length : null
+      },
       message: '获取猫咪列表成功'
     });
   } catch (error) {

@@ -155,6 +155,16 @@
     return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleDateString();
   }
 
+  function formatDateInputValue(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return year + "-" + month + "-" + day;
+  }
+
   function formatDateTime(value) {
     if (!value) return "";
     const date = new Date(value);
@@ -177,6 +187,20 @@
     const remainingMonths = months % 12;
     if (!remainingMonths) return years + " year" + (years === 1 ? "" : "s");
     return years + " year" + (years === 1 ? "" : "s") + " " + remainingMonths + " month" + (remainingMonths === 1 ? "" : "s");
+  }
+
+  function calculateAgeMonthsFromDate(value) {
+    if (!value) return null;
+    const birthDate = new Date(value);
+    if (Number.isNaN(birthDate.getTime())) return null;
+
+    const today = new Date();
+    let months = (today.getFullYear() - birthDate.getFullYear()) * 12 + (today.getMonth() - birthDate.getMonth());
+    if (today.getDate() < birthDate.getDate()) {
+      months -= 1;
+    }
+
+    return Math.max(0, months);
   }
 
   function humanizeCatStatus(status) {
@@ -472,23 +496,24 @@
 
   function catToViewModel(cat) {
     const description = splitDescription(cat.description);
+    const tagList = Array.isArray(cat.tags) ? cat.tags.map(function (tag) { return tag.tag; }) : [];
     return {
       dbId: cat.id,
       displayId: cat.face_code || cat.id,
       name: cat.name || "Unnamed",
       breed: cat.breed || "Unknown",
       gender: cat.gender || "unknown",
-      age: formatAgeMonths(cat.age_months),
-      age_months: cat.age_months,
+      age: formatAgeMonths(cat.age_months != null ? cat.age_months : calculateAgeMonthsFromDate(cat.intake_date)),
+      age_months: cat.age_months != null ? cat.age_months : calculateAgeMonthsFromDate(cat.intake_date),
       status: cat.status || "available",
       statusLabel: humanizeCatStatus(cat.status),
       avatarText: (cat.name || "C").charAt(0).toUpperCase(),
       avatarClass: avatarClassFromStatus(cat.status),
       health: description.health || (cat.is_vaccinated ? "Vaccinated" : "Not provided"),
-      personality: description.personality || "Not specified",
+      personality: description.personality || tagList.join(", ") || "Not specified",
       notes: description.notes || "",
       summary: description.summary || "No summary yet.",
-      tags: Array.isArray(cat.tags) ? cat.tags.map(function (tag) { return tag.tag; }) : [],
+      tags: tagList,
       photo: cat.photo_url || "",
       found_location: cat.found_location || "Not provided",
       spayed: cat.is_neutered == null ? "Unknown" : (cat.is_neutered ? "Yes" : "No"),
@@ -535,7 +560,7 @@
     catIdInput.disabled = true;
     catGenderInput.value = view.gender;
     catBreedInput.value = cat.breed || "";
-    catAgeInput.value = cat.age_months == null ? "" : String(cat.age_months);
+    catAgeInput.value = formatDateInputValue(cat.intake_date);
     catStatusInput.value = cat.status || "available";
     catLocationInput.value = cat.found_location || "";
     catHealthInput.value = splitDescription(cat.description).health || "";
@@ -568,7 +593,7 @@
     catProfileSpayed.textContent = view.spayed;
     catProfileVaccinationStatus.textContent = view.vaccinated;
     catProfileFoundLocation.textContent = view.found_location;
-    catProfileAllergyHistory.textContent = view.notes || "No allergy record";
+    catProfileAllergyHistory.textContent = view.notes || "No rescue notes";
     catProfileAdoptionStatus.textContent = view.statusLabel;
     catProfileTags.innerHTML = view.tags.length
       ? view.tags.map(function (tag) {
@@ -893,6 +918,21 @@
     });
   }
 
+  function renderMostWantedCats(items) {
+    renderMetricRows(dashboardStatusBreakdown, items, {
+      getTitle: function (item) {
+        return item.name || "Unknown cat";
+      },
+      getMeta: function (item) {
+        const parts = [];
+        parts.push((item.breed || "Unknown breed") + " profile");
+        parts.push((item.pending_count || 0) + " pending");
+        parts.push((item.approved_count || 0) + " approved");
+        return parts.join(" · ");
+      }
+    });
+  }
+
   function renderBreedPreference(items) {
     renderMetricRows(dashboardBreedPreference, items, {
       getTitle: function (item) {
@@ -962,7 +1002,7 @@
     renderStats(analytics.overview || {});
     renderFunnelChart(analytics.funnel || {});
     renderTrendChart(analytics.monthly_trend || []);
-    renderStatusBreakdown(analytics.status_breakdown || []);
+    renderMostWantedCats(analytics.most_wanted_cats || []);
     renderBreedPreference(analytics.breed_preferences || []);
     renderRecentRecords(analytics.recent_applications || []);
     renderAttentionItems(analytics.attention_items || []);
@@ -1040,7 +1080,7 @@
 
   function maybeRegisterEmbedding(cat) {
     if (!state.currentGeneratedEmbedding || !cat) {
-      return Promise.resolve();
+      return Promise.resolve({ attempted: false, ok: true });
     }
 
     return api("/rescue/cat-face/register", {
@@ -1051,8 +1091,14 @@
         face_code: cat.face_code || state.currentGeneratedFaceId,
         source_photo_url: state.currentCatPhoto || null
       })
-    }).catch(function () {
-      return null;
+    }).then(function () {
+      return { attempted: true, ok: true };
+    }).catch(function (error) {
+      return {
+        attempted: true,
+        ok: false,
+        error: error
+      };
     }).finally(function () {
       state.currentGeneratedEmbedding = null;
     });
@@ -1062,19 +1108,16 @@
     const tagValues = state.selectedSuggestedTags.length
       ? state.selectedSuggestedTags.slice()
       : parseTagInput(catPersonalityInput.value);
-    const personalityValue = state.selectedSuggestedTags.length
-      ? state.personalityDraftBeforeSelection
-      : catPersonalityInput.value.trim();
     const payload = {
       name: catNameInput.value.trim(),
       display_id: catIdInput.value.trim() || undefined,
       gender: catGenderInput.value,
       breed: catBreedInput.value.trim(),
-      age: catAgeInput.value.trim(),
+      intake_date: catAgeInput.value || null,
       status: catStatusInput.value,
       location: catLocationInput.value.trim(),
       health: catHealthInput.value.trim(),
-      personality: personalityValue,
+      personality: "",
       notes: catNotesInput.value.trim(),
       photo_url: state.currentCatPhoto || undefined,
       tags: tagValues
@@ -1099,7 +1142,16 @@
 
     request
       .then(function (cat) {
-        return maybeRegisterEmbedding(cat).then(function () {
+        return maybeRegisterEmbedding(cat).then(function (embeddingResult) {
+          if (embeddingResult && embeddingResult.attempted && !embeddingResult.ok) {
+            window.alert(
+              "Cat account was saved, but the face embedding was not registered. " +
+              "This cat may not be recognized as an existing cat next time.\n\n" +
+              (embeddingResult.error && embeddingResult.error.message
+                ? embeddingResult.error.message
+                : "Please reopen Generate Cat Face ID and save again.")
+            );
+          }
           return refreshAll();
         });
       })
@@ -1220,6 +1272,9 @@
   });
 
   catFormSaveBtn.addEventListener("click", saveCatForm);
+  if (catAgeInput) {
+    catAgeInput.max = formatDateInputValue(new Date());
+  }
   if (catSuggestTagsBtn) {
     catSuggestTagsBtn.addEventListener("click", requestTagSuggestions);
   }
@@ -1458,6 +1513,7 @@ if (false) {
 window.__CATFACE_EXTERNAL_RESCUE__ = true;
 
 (function () {
+  if (window.__CATFACE_EXTERNAL_RESCUE__) return;
   const API_BASE_URL = window.API_BASE_URL || "http://localhost:3000/api";
   const menuButtons = document.querySelectorAll(".menu-btn");
   const sections = document.querySelectorAll(".section");
@@ -1570,6 +1626,7 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
   let activeApplicationId = null;
   let pendingImages = [];
   let currentGeneratedFaceId = "";
+  let currentGeneratedEmbedding = null;
   let currentCatPhoto = "";
   let usingRemoteNotifications = false;
   let remoteThreadRefreshTimer = null;
@@ -1907,6 +1964,7 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
 
   function resetFaceRecognitionModal() {
     currentGeneratedFaceId = "";
+    currentGeneratedEmbedding = null;
     generatedFaceId.textContent = "Waiting for image upload";
     generatedFaceId.title = "";
     useFaceIdBtn.disabled = true;
@@ -1917,7 +1975,7 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
   }
 
   async function requestCatFaceId(imageDataUrl) {
-    const payload = await apiRequest("/rescue/cat-face-id", {
+    const payload = await apiRequest("/rescue/cat-face/identify", {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify({
@@ -1926,6 +1984,28 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
     });
 
     return payload;
+  }
+
+  async function maybeRegisterCurrentEmbedding(cat) {
+    if (!cat || !cat.id || !Array.isArray(currentGeneratedEmbedding) || !currentGeneratedEmbedding.length) {
+      currentGeneratedEmbedding = null;
+      return;
+    }
+
+    try {
+      await apiRequest("/rescue/cat-face/register", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          cat_id: cat.id,
+          embedding: currentGeneratedEmbedding,
+          face_code: cat.face_code || currentGeneratedFaceId || null,
+          source_photo_url: currentCatPhoto || null
+        })
+      });
+    } finally {
+      currentGeneratedEmbedding = null;
+    }
   }
 
   async function loadRescueCats() {
@@ -1968,11 +2048,13 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
     catFormSaveBtn.textContent = isEditing ? "Saving..." : "Creating...";
 
     try {
-      await apiRequest(endpoint, {
+      const savedCat = await apiRequest(endpoint, {
         method: method,
         headers: getAuthHeaders(),
         body: JSON.stringify(payload)
       });
+
+      await maybeRegisterCurrentEmbedding(savedCat);
 
       await loadRescueCats();
       setCatFormOpen(false);
@@ -1995,7 +2077,7 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
       avg_review_hours: `${overview.avg_review_hours || 0}h`
     };
     const notes = {
-      available_cats: `${overview.pending_applications || 0} pending applications in queue`,
+      available_cats: `${overview.pending_applications || 0} pending applications for cats in your organization`,
       total_applications: `${overview.active_conversations || 0} active conversations supporting follow-up`,
       approval_rate: `${overview.approved_applications || 0} approved out of ${overview.total_applications || 0} total applications`,
       completed_adoptions: `${overview.monthly_approved_applications || 0} approvals updated this month`,
@@ -2582,7 +2664,7 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
       renderStats(analytics.overview || {});
       renderFunnelChart(analytics.funnel || {});
       renderTrendChart(analytics.monthly_trend || []);
-      renderStatusBreakdown(analytics.status_breakdown || []);
+      renderMostWantedCats(analytics.most_wanted_cats || []);
       renderBreedPreference(analytics.breed_preferences || []);
       renderAttentionItems(analytics.attention_items || []);
       renderRecentRecords(analytics.recent_applications || []);
@@ -2590,7 +2672,7 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
       renderStats({});
       renderFunnelChart({});
       renderTrendChart([]);
-      renderStatusBreakdown([]);
+      renderMostWantedCats([]);
       renderBreedPreference([]);
       renderAttentionItems([]);
       renderRecentRecords([]);
@@ -2708,16 +2790,30 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
       facePreviewPlaceholder.hidden = true;
 
       currentGeneratedFaceId = "";
+      currentGeneratedEmbedding = null;
       useFaceIdBtn.disabled = true;
-      generatedFaceId.textContent = "Generating Cat Face ID...";
+      generatedFaceId.textContent = "Analyzing cat face...";
 
       try {
         const result = await requestCatFaceId(loadEvent.target.result);
-        currentGeneratedFaceId = result.generated_id || "";
-        generatedFaceId.textContent = currentGeneratedFaceId || "Cat Face ID unavailable";
+        const matchedFaceCode = result.best_match && result.best_match.cat && result.best_match.cat.face_code
+          ? result.best_match.cat.face_code
+          : "";
+        currentGeneratedFaceId = matchedFaceCode || result.suggested_face_code || "";
+        currentGeneratedEmbedding = Array.isArray(result.embedding) ? result.embedding : null;
+        if (result.matched && matchedFaceCode) {
+          generatedFaceId.textContent = "Matched existing cat: " + matchedFaceCode;
+        } else if (currentGeneratedFaceId) {
+          generatedFaceId.textContent = currentGeneratedFaceId;
+        } else if (result.face_detected === false) {
+          generatedFaceId.textContent = "No cat face detected";
+        } else {
+          generatedFaceId.textContent = "Cat Face ID unavailable";
+        }
         generatedFaceId.title = result.note || "";
         useFaceIdBtn.disabled = !currentGeneratedFaceId;
       } catch (error) {
+        currentGeneratedEmbedding = null;
         generatedFaceId.textContent = error.message || "Cat Face ID unavailable";
         generatedFaceId.title = "";
         window.alert("Cat Face ID generation failed: " + error.message);

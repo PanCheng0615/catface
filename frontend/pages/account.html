@@ -71,6 +71,43 @@
     .field input, .field select, .field textarea { border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; font: inherit; font-size: 14px; background: var(--surface-2); color: var(--text); outline: none; transition: border-color .15s; }
     .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); background: #fff; }
     .field textarea { min-height: 80px; resize: vertical; }
+    .cat-photo-card {
+      grid-column: 1 / -1;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface-2);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .cat-photo-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .cat-photo-preview {
+      width: 100%;
+      min-height: 180px;
+      border-radius: 12px;
+      border: 1px dashed var(--border);
+      background: #fff;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 12px;
+    }
+    .cat-photo-preview img {
+      max-width: 100%;
+      max-height: 260px;
+      object-fit: contain;
+      border-radius: 10px;
+    }
     .tags-row { display: flex; flex-wrap: wrap; gap: 10px; font-size: 13px; }
     .tags-row label { cursor: pointer; display: flex; align-items: center; gap: 6px; }
     .tag-selector-btn {
@@ -295,7 +332,12 @@
         <div class="section-card-body">
           <div class="field full"><label style="display:flex;align-items:center;gap:8px;font-size:14px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--text-sub);"><input type="checkbox" id="hasCat"> I have adopted a cat / I already own a cat</label></div>
           <div class="field full" id="myCatLockHint" style="font-size:12px;color:var(--text-muted);line-height:1.6;"></div>
+          <a class="btn-secondary" id="myCatFaceEnrollLink" href="cat-face-enroll.html?return_to=account.html" style="margin-bottom:12px;">Upload Cat Photo to Link or Enroll</a>
           <div class="form-grid" id="catFields" style="opacity:.5;pointer-events:none;">
+            <div class="cat-photo-card">
+              <div class="cat-photo-label">Cat Photo</div>
+              <div class="cat-photo-preview" id="catPhotoPreview">No cat photo linked yet.</div>
+            </div>
             <div class="field"><label>Cat name</label><input type="text" id="catNameInput" placeholder="Enter cat name"></div>
             <div class="field"><label>Breed</label><input type="text" id="catBreedInput" placeholder="e.g. Domestic shorthair"></div>
             <div class="field"><label>Gender</label>
@@ -338,13 +380,6 @@
   <!-- RIGHT PANEL -->
   <aside class="right-panel">
     <div class="rp-card">
-      <div class="rp-card-title">&#x26A1; Quick Actions</div>
-      <div class="rp-link-row" onclick="location.href='/pages/cat-facebook.html'"><div class="rp-link-icon">&#x1F4AC;</div><span class="rp-link-label">Community Feed</span><span class="rp-link-arrow">&#x203A;</span></div>
-      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><div class="rp-link-icon">&#x1F431;</div><span class="rp-link-label">Adoption</span><span class="rp-link-arrow">&#x203A;</span></div>
-      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/health.html', 'Please log in first')"><div class="rp-link-icon">&#x1FA7A;</div><span class="rp-link-label">Health Records</span><span class="rp-link-arrow">&#x203A;</span></div>
-      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/cat-profile.html', 'Please log in first')"><div class="rp-link-icon">&#x1F4CB;</div><span class="rp-link-label">My Cat Profile</span><span class="rp-link-arrow">&#x203A;</span></div>
-    </div>
-    <div class="rp-card">
       <div class="rp-card-title">&#x1F4A1; Tips</div>
       <div class="rp-info-block">
         <p>&#x2022; Update your adoption preferences to improve cat matching.</p>
@@ -372,7 +407,7 @@
     </div>
   </div>
 </div>
-<script src="../js/config.js"></script>
+<script src="../js/config.js?v=20260421-1"></script>
 <script>
   var hasCat = document.getElementById('hasCat');
   var catFields = document.getElementById('catFields');
@@ -403,6 +438,7 @@
     var catAllergiesInput = document.getElementById('catAllergiesInput');
     var catIdFieldInput = document.getElementById('catIdFieldInput');
     var catNotesInput = document.getElementById('catNotesInput');
+    var catPhotoPreview = document.getElementById('catPhotoPreview');
     var openTagModalBtn = document.getElementById('openTagModalBtn');
     var selectedTagList = document.getElementById('selectedTagList');
     var tagModal = document.getElementById('tagModal');
@@ -452,6 +488,74 @@
         .replace(/'/g, '&#39;');
     }
 
+    function readFileAsDataUrl(file) {
+      return new Promise(function (resolve, reject) {
+        if (!file) {
+          reject(new Error('Please choose an image file.'));
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function (event) {
+          resolve(String((event && event.target && event.target.result) || ''));
+        };
+        reader.onerror = function () {
+          reject(new Error('Could not read the selected image.'));
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function compressAvatarFile(file) {
+      return readFileAsDataUrl(file).then(function (rawDataUrl) {
+        return new Promise(function (resolve) {
+          var image = new Image();
+          image.onload = function () {
+            try {
+              var width = image.naturalWidth || image.width || 0;
+              var height = image.naturalHeight || image.height || 0;
+              if (!width || !height) {
+                resolve(rawDataUrl);
+                return;
+              }
+
+              var maxSide = 512;
+              var scale = Math.min(1, maxSide / Math.max(width, height));
+              var targetWidth = Math.max(1, Math.round(width * scale));
+              var targetHeight = Math.max(1, Math.round(height * scale));
+              var canvas = document.createElement('canvas');
+              canvas.width = targetWidth;
+              canvas.height = targetHeight;
+
+              var ctx = canvas.getContext('2d');
+              if (!ctx) {
+                resolve(rawDataUrl);
+                return;
+              }
+
+              ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
+
+              var qualities = [0.86, 0.76, 0.66];
+              var result = rawDataUrl;
+              qualities.forEach(function (quality) {
+                var candidate = canvas.toDataURL('image/jpeg', quality);
+                if (!result || candidate.length < result.length) {
+                  result = candidate;
+                }
+              });
+
+              resolve(result || rawDataUrl);
+            } catch (e) {
+              resolve(rawDataUrl);
+            }
+          };
+          image.onerror = function () {
+            resolve(rawDataUrl);
+          };
+          image.src = rawDataUrl;
+        });
+      });
+    }
+
     function getAccountStorageKey() {
       return 'catface_account_form_v1_' + ((user && user.id) || 'guest');
     }
@@ -481,7 +585,10 @@
     }
 
     function applyPreferenceData(pref) {
-      if (prefGenderSelect) prefGenderSelect.value = (pref && pref.preferred_gender) || '';
+      if (prefGenderSelect) {
+        var genderValue = (pref && pref.preferred_gender) || '';
+        prefGenderSelect.value = genderValue === 'no preference' ? 'no_preference' : genderValue;
+      }
       if (prefAgeSelect) prefAgeSelect.value = (pref && pref.preferred_age) || '';
       if (prefBreedSelect) prefBreedSelect.value = (pref && pref.preferred_breed) || '';
       if (prefHomeEnvironmentSelect) prefHomeEnvironmentSelect.value = (pref && pref.home_environment) || '';
@@ -605,6 +712,7 @@
     }
 
     function clearCatProfileFields() {
+      if (catPhotoPreview) catPhotoPreview.textContent = 'No cat photo linked yet.';
       if (catNameInput) catNameInput.value = '';
       if (catBreedInput) catBreedInput.value = '';
       if (catGenderInput) catGenderInput.value = '';
@@ -662,6 +770,13 @@
       if (catAllergiesInput) catAllergiesInput.value = '';
       if (catIdFieldInput) catIdFieldInput.value = cat.face_code || cat.id || '';
       if (catNotesInput) catNotesInput.value = cat.description || '';
+      if (catPhotoPreview) {
+        if (cat.photo_url) {
+          catPhotoPreview.innerHTML = '<img src="' + escapeHtml(cat.photo_url) + '" alt="Linked cat photo">';
+        } else {
+          catPhotoPreview.textContent = 'No cat photo linked yet.';
+        }
+      }
       try {
         localStorage.setItem('catface_current_cat_id', cat.id || '');
         localStorage.setItem('catface_current_cat_face_code', cat.face_code || '');
@@ -712,7 +827,13 @@
         .then(function (response) {
           var payload = response.payload || {};
           if (!response.ok || !payload.success || !payload.data) return null;
+          if (currentPhotoData && !payload.data.avatar_url) {
+            payload.data.avatar_url = currentPhotoData;
+          }
           user = payload.data;
+          if (!currentPhotoData && user.avatar_url) {
+            currentPhotoData = user.avatar_url;
+          }
           try {
             localStorage.setItem('catface_user', JSON.stringify(user));
           } catch (e) {}
@@ -748,7 +869,7 @@
       });
       return {
         form: form,
-        photo: currentPhotoData || ''
+        photo: currentPhotoData && currentPhotoData.length <= 800000 ? currentPhotoData : ''
       };
     }
 
@@ -781,6 +902,12 @@
         }
       });
       currentPhotoData = snapshot.photo || '';
+      if (currentPhotoData && user) {
+        user.avatar_url = currentPhotoData;
+        try {
+          localStorage.setItem('catface_user', JSON.stringify(user));
+        } catch (e) {}
+      }
       applyProfilePreview();
     }
 
@@ -904,17 +1031,37 @@
 
     if (editPhotoBtn && photoUploadInput) {
       editPhotoBtn.addEventListener('click', function () {
+        photoUploadInput.value = '';
         photoUploadInput.click();
       });
       photoUploadInput.addEventListener('change', function () {
         var file = photoUploadInput.files && photoUploadInput.files[0];
         if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function (event) {
-          currentPhotoData = String((event && event.target && event.target.result) || '');
+        if (String(file.type || '').indexOf('image/') !== 0) {
+          showSavedBanner('Please choose an image file.');
+          return;
+        }
+        editPhotoBtn.disabled = true;
+        editPhotoBtn.textContent = 'Processing...';
+        compressAvatarFile(file).then(function (avatarDataUrl) {
+          currentPhotoData = String(avatarDataUrl || '');
+          try {
+            if (user) {
+              user.avatar_url = currentPhotoData || '';
+              localStorage.setItem('catface_user', JSON.stringify(user));
+            }
+          } catch (e) {}
+          if (typeof refreshCurrentUserAvatarUi === 'function') {
+            refreshCurrentUserAvatarUi(user);
+          }
           applyProfilePreview();
-        };
-        reader.readAsDataURL(file);
+          showSavedBanner('New avatar selected. Click Save Changes to keep it.');
+        }).catch(function (error) {
+          showSavedBanner((error && error.message) || 'Could not load the selected image.');
+        }).finally(function () {
+          editPhotoBtn.disabled = false;
+          editPhotoBtn.textContent = 'Edit Photo';
+        });
       });
     }
 
@@ -935,15 +1082,21 @@
             if (!response.ok || !payload.success) {
               throw new Error(payload.message || 'Unable to save adoption preferences.');
             }
+            if (payload.data) {
+              applyPreferenceData(payload.data);
+            }
             savePreferenceDraft();
+            return payload.data || null;
           });
 
+        var hasCatChecked = !!(hasCat && hasCat.checked);
         var profilePromise = fetch(API_BASE_URL + '/users/me', {
           method: 'PUT',
           headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             display_name: (document.getElementById('nicknameInput') && document.getElementById('nicknameInput').value.trim()) || undefined,
-            has_cat: Boolean(ownedCat)
+            avatar_url: currentPhotoData || null,
+            has_cat: hasCatChecked
           })
         }).then(function (res) {
           return res.json().then(function (payload) {
@@ -955,12 +1108,18 @@
             throw new Error(payload.message || 'Unable to save profile.');
           }
           user = payload.data;
+          if (currentPhotoData) {
+            user.avatar_url = currentPhotoData;
+          }
           try {
             localStorage.setItem('catface_user', JSON.stringify(user));
           } catch (e) {}
+          if (typeof refreshCurrentUserAvatarUi === 'function') {
+            refreshCurrentUserAvatarUi(user);
+          }
+          return payload.data;
         });
 
-        var hasCatChecked = !!(hasCat && hasCat.checked);
         var catPromise = Promise.resolve();
         if (ownedCat && ownedCat.id) {
           if (!hasCatChecked) {
@@ -980,6 +1139,7 @@
                 throw new Error(payload.message || 'Unable to unlink cat profile.');
               }
               applyOwnedCat(null);
+              return null;
             });
           } else {
             var vaccinationRaw = (catVaccinationInput && catVaccinationInput.value || '').trim().toLowerCase();
@@ -1014,10 +1174,11 @@
                 throw new Error(payload.message || 'Unable to save cat profile.');
               }
               applyOwnedCat(payload.data);
+              return payload.data;
             });
           }
         } else if (hasCatChecked) {
-          catPromise = Promise.reject(new Error('No linked cat profile found in database. Please bind/adopt a cat first.'));
+          catPromise = Promise.resolve(null);
         }
 
         try {
@@ -1034,12 +1195,38 @@
           // ignore local save failures and still try server preference save
         }
 
-        Promise.all([preferencePromise, profilePromise, catPromise])
-          .then(function () {
-            showSavedBanner('Saved successfully!');
-          })
-          .catch(function (error) {
-            showSavedBanner(error.message || 'Saved locally for this session.');
+        Promise.allSettled([preferencePromise, profilePromise, catPromise])
+          .then(function (results) {
+            var preferenceResult = results[0];
+            var profileResult = results[1];
+            var catResult = results[2];
+            var failures = results
+              .filter(function (result) { return result.status === 'rejected'; })
+              .map(function (result) { return result.reason; })
+              .filter(Boolean);
+
+            if (preferenceResult && preferenceResult.status === 'fulfilled') {
+              savePreferenceDraft();
+            }
+            if ((profileResult && profileResult.status === 'fulfilled') || (catResult && catResult.status === 'fulfilled')) {
+              try {
+                localStorage.setItem(getAccountStorageKey(), JSON.stringify(serializeForm()));
+              } catch (e) {}
+            }
+
+            initialSnapshot = serializeForm();
+
+            if (!failures.length) {
+              showSavedBanner('Saved successfully!');
+              return;
+            }
+
+            if (preferenceResult && preferenceResult.status === 'fulfilled') {
+              showSavedBanner('Preferences saved. ' + (failures[0] && failures[0].message ? failures[0].message : 'Some other fields failed to save.'));
+              return;
+            }
+
+            showSavedBanner((failures[0] && failures[0].message) || 'Saved locally for this session.');
           });
       });
     }

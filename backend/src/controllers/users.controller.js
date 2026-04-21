@@ -74,6 +74,7 @@ async function getMe(req, res) {
         email: true,
         username: true,
         display_name: true,
+        avatar_url: true,
         has_cat: true,
         role: true
       }
@@ -105,12 +106,13 @@ async function getMe(req, res) {
 // PUT /api/users/me
 async function updateMe(req, res) {
   try {
-    const { display_name, has_cat } = req.body;
+    const { display_name, has_cat, avatar_url } = req.body;
 
     const updated = await prisma.user.update({
       where: { id: req.user.id },
       data: {
         display_name: display_name ?? undefined,
+        avatar_url: avatar_url === undefined ? undefined : (avatar_url || null),
         has_cat: typeof has_cat === 'boolean' ? has_cat : undefined
       },
       select: {
@@ -118,6 +120,7 @@ async function updateMe(req, res) {
         email: true,
         username: true,
         display_name: true,
+        avatar_url: true,
         has_cat: true,
         role: true
       }

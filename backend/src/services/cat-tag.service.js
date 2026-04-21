@@ -10,10 +10,27 @@ const execFileAsync = promisify(execFile);
 const PROJECT_ROOT = path.join(__dirname, '../..');
 const TAG_SCRIPT_PATH = path.join(PROJECT_ROOT, 'scripts/cat_tag_suggester.py');
 const TAG_VOCAB_PATH = path.join(PROJECT_ROOT, 'src/data/cat-tag-vocabulary.json');
-const TAG_PYTHON_BIN = process.env.CAT_TAG_PYTHON_BIN
-  || (fsSync.existsSync(path.join(PROJECT_ROOT, '.venv-catface-id/bin/python'))
-    ? path.join(PROJECT_ROOT, '.venv-catface-id/bin/python')
-    : 'python3');
+
+function resolveTagPythonBin() {
+  if (process.env.CAT_TAG_PYTHON_BIN) {
+    return process.env.CAT_TAG_PYTHON_BIN;
+  }
+
+  const candidatePaths = [
+    path.join(PROJECT_ROOT, '.venv-catface-id', 'Scripts', 'python.exe'),
+    path.join(PROJECT_ROOT, '.venv-catface-id', 'Scripts', 'python'),
+    path.join(PROJECT_ROOT, '.venv-catface-id', 'bin', 'python')
+  ];
+
+  const bundledPython = candidatePaths.find((candidate) => fsSync.existsSync(candidate));
+  if (bundledPython) {
+    return bundledPython;
+  }
+
+  return process.platform === 'win32' ? 'python' : 'python3';
+}
+
+const TAG_PYTHON_BIN = resolveTagPythonBin();
 
 let vocabularyCache = null;
 let aliasLookupCache = null;

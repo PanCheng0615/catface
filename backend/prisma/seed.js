@@ -1,8 +1,22 @@
 /**
- * Prisma Seed Script — 全表覆盖版
- * 用途：向所有表填充真实/仿真测试数据，供全员开发使用
- * 执行：npm run seed
- * 重置：npx prisma db push --force-reset && npm run seed
+ * CatFace Database Seed Script
+ * Generates realistic large-scale test data across all tables.
+ *
+ * Usage:
+ *   cd backend
+ *   node prisma/seed.js
+ *
+ * This script will CLEAR all existing data first, then generate:
+ *   ~500 users, 20 organizations, 350 cats, 1000 posts,
+ *   ~3000 likes, ~2000 comments, ~800 health records,
+ *   ~400 clinic reports, ~2500 adoption swipes, etc.
+ *
+ * Total records: ~10,000+
+ *
+ * Test accounts (all use password: password123):
+ *   Regular user:  user_1@catface.test
+ *   Clinic staff:  staff_clinic_1@catface.test
+ *   Rescue staff:  rescuer_0_rescue_1@catface.test
  */
 
 const { PrismaClient } = require('@prisma/client');
@@ -10,505 +24,1014 @@ const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
-// ─── 辅助函数 ────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────
 
-function parseAge(str) {
-  if (!str || str === 'N/A') return null;
-  str = String(str).trim();
-  let months = 0;
-  const yearMatch  = str.match(/(\d+)\s*岁/);
-  const monthMatch = str.match(/(\d+)\s*个月/);
-  if (yearMatch)  months += parseInt(yearMatch[1]) * 12;
-  if (monthMatch) months += parseInt(monthMatch[1]);
-  return months || null;
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-function parseGender(g) {
-  if (g === 'M') return 'male';
-  if (g === 'F') return 'female';
-  return 'unknown';
-}
-function parseStatus(adopted) {
-  if (adopted === 1)    return 'adopted';
-  if (adopted === '0*') return 'fostered';
-  return 'available';
-}
-function parseBool(val) {
-  if (!val || val === 'N/A') return null;
-  return val.includes('完成');
-}
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function range(n)  { return Array.from({ length: n }, (_, i) => i); }
 
-/**
- * 根据品种推断毛色（英文枚举，写入 cats.color）
- * breed 约定：orange_tabby / tabby / orange_white / black 等（与 preferred_breed 一致）
- */
-function inferColorFromBreed(breed) {
-  const palette = ['white', 'black', 'calico', 'orange', 'gray', 'orange_white', 'tabby'];
-  if (!breed || String(breed).trim() === '') {
-    return pick(palette);
+function randFloat(min, max, decimals = 2) {
+  return parseFloat((Math.random() * (max - min) + min).toFixed(decimals));
+}
+
+function randDate(daysBack, daysForward = 0) {
+  const now = Date.now();
+  const msBack = (daysBack || 0) * 86400000;
+  const msForward = (daysForward || 0) * 86400000;
+  return new Date(now - msBack + Math.random() * (msBack + msForward));
+}
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function uuid() {
+  return require('crypto').randomUUID();
+}
+
+function slugify(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function buildUniqueCatName(index) {
+  if (index < CAT_NAMES.length) return CAT_NAMES[index];
+  const base = CAT_NAMES[index % CAT_NAMES.length];
+  const suffixes = ['Mae', 'Rose', 'June', 'Jade', 'Ray', 'Cole', 'Reed', 'Lane', 'Blake', 'James'];
+  const suffix = suffixes[Math.floor(index / CAT_NAMES.length) % suffixes.length];
+  return `${base} ${suffix}`;
+}
+
+function buildCatPhotoUrl(catName, index) {
+  const seed = `${slugify(catName) || 'cat'}-${String(index + 1).padStart(4, '0')}`;
+  return `https://cataas.com/cat?width=1200&height=1200&seed=${seed}`;
+}
+
+// ─── Reference Data ────────────────────────────────────────
+
+const CAT_NAMES = [
+  'Biscuit', 'Luna', 'Mochi', 'Whiskers', 'Shadow', 'Ginger', 'Smokey',
+  'Duchess', 'Mittens', 'Felix', 'Cleo', 'Simba', 'Nala', 'Tigger',
+  'Oreo', 'Salem', 'Charlie', 'Lucy', 'Leo', 'Milo', 'Lily', 'Bella',
+  'Coco', 'Pepper', 'Daisy', 'Peanut', 'Noodle', 'Mocha', 'Maple',
+  'Olive', 'Hazel', 'Willow', 'Jasper', 'Finnegan', 'Oscar', 'Loki',
+  'Chester', 'Buddy', 'Oliver', 'Winston', 'Theo', 'Pippin', 'Mango',
+  'Tofu', 'Boba', 'Dumpling', 'Sushi', 'Nori', 'Wasabi', 'Gyoza',
+  'Tempura', 'Katsu', 'Sakura', 'Yuki', 'Hana', 'Kuro', 'Shiro'
+];
+
+const CAT_BREEDS = [
+  'Domestic Shorthair', 'Domestic Longhair', 'Tabby', 'Maine Coon',
+  'Siamese', 'British Shorthair', 'Persian', 'Ragdoll', 'Bengal',
+  'Scottish Fold', 'Sphynx', 'Abyssinian', 'Russian Blue', 'Birman',
+  'Norwegian Forest Cat', 'Devon Rex', 'Burmese', 'Exotic Shorthair',
+  'Turkish Angora', 'Japanese Bobtail'
+];
+
+const CAT_COLORS = [
+  'Orange Tabby', 'Gray Tabby', 'Black and White', 'Calico',
+  'Tortoiseshell', 'Solid Black', 'Solid White', 'Gray',
+  'Ginger/Orange', 'Cream', 'Blue/Gray', 'Brown Tabby',
+  'Seal Point', 'Chocolate Point', 'Blue Point', 'Flame Point',
+  'Tuxedo', 'Van Pattern', 'Bi-Color'
+];
+
+const USER_FIRST = ['Alice', 'Bob', 'Carol', 'David', 'Emma', 'Frank', 'Grace', 'Henry', 'Ivy', 'Jack', 'Kelly', 'Leo', 'Mia', 'Noah', 'Olivia', 'Peter', 'Quinn', 'Ryan', 'Sara', 'Tom', 'Uma', 'Victor', 'Wendy', 'Xavier', 'Yuki', 'Zara', 'Amber', 'Brian', 'Cindy', 'Derek', 'Emily', 'Freddie', 'Hugo', 'Isla', 'Jason', 'Kara', 'Liam', 'Maya', 'Neil', 'Annie', 'Benny', 'Cathy', 'Daniel', 'Elaine', 'Grace', 'Felix', 'Gigi', 'Hugo', 'Iris', 'Luna', 'Mark'];
+const USER_LAST = ['Chen', 'Wang', 'Liu', 'Zhang', 'Wu', 'Lin', 'Huang', 'Chang', 'Ko', 'Su', 'Hsieh', 'Fang', 'Guo', 'Tseng', 'Yeh', 'Hsu', 'Chang', 'Lo', 'Chen', 'Yang', 'Lu', 'Cheng', 'Peng', 'Tanaka', 'Ahmed', 'Kim', 'Park', 'Lee', 'Ho', 'Wong', 'Chu', 'Bao', 'Lu', 'Jin', 'Guo', 'Ng', 'Sun', 'Kao', 'Chen', 'Lau', 'Mao', 'Wu', 'Ting', 'Zhao', 'Xie', 'Jin', 'Lin'];
+
+const CLINIC_NAMES = [
+  'Happy Paws Animal Hospital', 'Meow Medical Center', 'Whiskers Vet Clinic',
+  'Purr-fect Pet Care', 'Feline Health Partners', 'Cat Care Specialists',
+  'Whisker Wellness Center', 'Pawsitive Vet Hospital', 'The Cat Clinic',
+  'Four Paws Medical', 'City Animal Hospital', 'Sunshine Vet Clinic',
+  'Premier Pet Care', 'Animal Care Associates', 'Companion Animal Hospital'
+];
+
+const RESCUE_NAMES = [
+  'Second Chance Rescue', 'Forever Home Foundation', 'Kitten Rescue Network',
+  'Street Cat Alliance', 'Feline Freedom Rescue', 'Lucky Paws Sanctuary',
+  'Purr Project', 'Community Cat Coalition', 'Safe Haven Animal Rescue',
+  'Tiny Paws Rescue', 'Second Life Rescue', 'Fur & Feathers Haven',
+  'Hope for Animals', 'City Paws Rescue', 'Guardian Angels Pet Rescue'
+];
+
+const VET_NAMES = [
+  'Dr. Sarah Johnson', 'Dr. Michael Chen', 'Dr. Emily Rodriguez',
+  'Dr. James Park', 'Dr. Lisa Wang', 'Dr. David Kim',
+  'Dr. Amanda Lee', 'Dr. Robert Zhang', 'Dr. Michelle Wu',
+  'Dr. Christopher Lin', 'Dr. Jessica Huang', 'Dr. Brian Chang'
+];
+
+const ORG_ADDRESSES = [
+  '123 Main Street, Taipei', '456 Zhongshan Road, Taichung',
+  '789 Xinyi District, Taipei', '321 Gongguan Road, Taipei',
+  '654 Renai Road, Taichung', '987 Fuxing South Road, Kaohsiung',
+  '147 Nanjing East Road, Taipei', '258 Dinghao Road, Tainan',
+  '369 Zhongxiao East Road, Taipei', '741 Guangfu Road, Hsinchu',
+  '852 Songshan Road, Taipei', '963 Dihua Street, Taipei',
+  '159 Zhongshan North Road, Taipei', '267 Wenhua Road, Taoyuan',
+  '378 Jinguo North Road, Taipei'
+];
+
+const HEALTH_RECORD_DESCS = {
+  vaccine: [
+    'Completed FVRCP vaccination. Cat showed no adverse reactions after 30-minute observation.',
+    'Rabies vaccine administered. Vaccine lot number recorded. Next due in 1 year.',
+    'First dose of FVRCP vaccine completed. Mild soreness at injection site expected.',
+    'Annual core vaccine completed. No complications observed.',
+    ' booster shot given. Cat tolerated well. Appointment scheduled for next year.'
+  ],
+  deworming: [
+    'Applied broad-spectrum dewormer. Fecal test negative for parasites.',
+    'Deworming treatment completed. Follow-up recommended in 2 weeks.',
+    'Monthly heartworm/flea prevention administered. No side effects noted.',
+    'Routine deworming. Treatment effective. No signs of intestinal parasites.'
+  ],
+  checkup: [
+    'Annual wellness exam. Overall condition: excellent. Weight stable.',
+    'Senior wellness checkup. Bloodwork ordered. Teeth condition: good.',
+    'Routine physical examination. No abnormalities detected.',
+    'Wellness visit. Heart and lungs clear. Weight within healthy range.',
+    'General health assessment. All vitals normal.'
+  ],
+  treatment: [
+    'Treated for mild upper respiratory infection. Antibiotics prescribed for 7 days.',
+    'Ear infection diagnosed. Medicated ear drops prescribed. Follow-up in 1 week.',
+    'Skin condition treated. Environmental allergen suspected. Diet recommended.',
+    'Minor wound cleaned and treated. Monitor for signs of infection.',
+    'Treated for FLUTD symptoms. Dietary changes recommended.'
+  ],
+  surgery: [
+    'Spay surgery completed. Recovery going well. Pain management provided.',
+    'Neuter procedure performed. Cat recovered from anesthesia smoothly.',
+    'Dental cleaning and extraction completed. Cat awake and alert after procedure.',
+    'Surgery went smoothly. Cat is resting comfortably.',
+    'Minor lump removed. Cat recovering well.'
+  ],
+  other: [
+    'Nail trim completed. Grooming session included coat brushing.',
+    'Microchip implanted. Registration information provided to owner.',
+    'Blood sample collected for wellness panel. Results reviewed.',
+    'Anal gland expression performed. No issues found.',
+    'Ear cleaning done. Sedation used for thorough cleaning.'
+  ]
+};
+
+const CLINIC_REPORT_DESCS = {
+  vaccination: [
+    'Official vaccination certificate issued. All core vaccines up to date.',
+    'Rabies vaccination completed per local regulations. Certificate provided.'
+  ],
+  blood_test: [
+    'Complete blood count (CBC) performed. All values within normal range.',
+    'Blood chemistry panel run. Kidney and liver function: normal.',
+    'Feline leukemia (FeLV) and FIV test: negative. Cat is healthy.'
+  ],
+  checkup: [
+    'Comprehensive wellness examination. No health concerns identified.',
+    'Annual health check completed. Weight and body condition score: good.',
+    'Senior cat wellness exam. Recommended twice-yearly visits.'
+  ],
+  deworming: [
+    'Intestinal parasite screening: negative. Routine deworming completed.',
+    'Fecal floatation test: no parasites detected. Heartworm test: negative.'
+  ],
+  treatment: [
+    'Follow-up for ongoing treatment. Condition improving with current medications.',
+    'Prescription diet and medication provided for chronic condition management.'
+  ],
+  surgery: [
+    'Surgery completed successfully. Pain management plan in place.',
+    'Post-operative check. Healing progressing well. Sutures intact.'
+  ],
+  other: [
+    'Dental assessment and professional cleaning completed. Oral health: good.',
+    'Diagnostic imaging performed. No abnormalities found.'
+  ]
+};
+
+const POST_CONTENTS = [
+  'My cat just knocked over my coffee for the third time this week.',
+  'Found this stray cat outside my apartment. Going to the vet tomorrow.',
+  'Adopted a new kitten today! She is already ruling the house.',
+  'Anyone have recommendations for hypoallergenic cat food?',
+  'My senior cat turned 15 today! Still going strong.',
+  'Spent the morning watching my cats zoom around the house at 3am.',
+  'Finally got my cat to use the new scratching post. Victory!',
+  'My cat is obsessed with the crinkle sound of chip bags.',
+  'Three years ago today I adopted my best friend. Happy anniversary!',
+  'Tip: if you want your cat to ignore the expensive toys, buy them a box.',
+  'My cat has claimed my laptop keyboard as her personal heating pad.',
+  'Took my cat to the groomer today. Silent treatment for 6 hours.',
+  'My orange tabby is exactly as dumb as the stereotype says.',
+  'Any recommendations for cat-friendly plants?',
+  'My cat sits in front of the mirror and hisses at himself.',
+  'Just adopted two kittens. My older cat is NOT pleased.',
+  'Annual vet checkup went great! All vaccines up to date.',
+  'My cat makes this weird chirping sound when she sees birds.',
+  'Does anyone elses cat do that slow blink thing?',
+  'Cats recognize their names. My cat knows her name. She simply chooses not to respond.',
+  'My void cat photobombs every Zoom call I have ever been on.',
+  'Just donated to a local rescue. If you can, please support local shelters!',
+  'My cat waits outside the bathroom door. Every. Single. Time.',
+  'The foster kittens I raised have all been adopted! Bittersweet.',
+  'My senior cat and the new puppy are best friends now.',
+  'Cat tax: here is my void doing his daily impression of a loaf.',
+  'My cat sleeps exactly 16 hours a day. Goals honestly.',
+  'Cat saved my life by waking me up during a fire alarm. True story.',
+  'New catio built! My indoor cats are so happy to have outdoor access safely.',
+  'Just completed a 5K with my cat in a backpack carrier. He loved it!'
+];
+
+const CAT_PERSONALITY_TAGS = [
+  'Playful', 'Lazy', 'Cuddly', 'Independent', 'Vocal', 'Shy',
+  'Curious', 'Social', 'Affectionate', 'Energetic', 'Calm', 'Mischievous',
+  'Lap Cat', 'Good with kids', 'Good with dogs', 'Good with other cats',
+  'Indoor only', 'Senior cat', 'Kitten', 'Special needs', 'FIV+',
+  'Special diet required', 'Daily medication', 'Blind', 'Deaf'
+];
+
+const CAT_REQUIREMENTS = [
+  'Must have outdoor access or catio', 'No other cats in household',
+  'Must be the only pet', 'Experienced cat owner preferred',
+  'No children under age 5', 'Quiet household required',
+  'Must have spare room for introduction period',
+  'Previous cat ownership required', 'Willing to do daily medication if needed',
+  'Strictly indoor home required', 'Regular vet checkups required',
+  'Must agree to follow-up visits', 'Willing to sign adoption contract'
+];
+
+const CAT_UPDATES = [
+  'Made great progress with socialization this week!',
+  'Finally got neutered today. Recovery going well.',
+  'Has been playfully chasing toys all morning.',
+  'Discovered a love for catnip. Very entertaining.',
+  'Starting to accept treats from staff. Huge milestone.',
+  'Sharing a room with another cat now. Doing well!',
+  'Has found her favorite sunny spot by the window.',
+  'Gained 0.2kg since intake. Health is improving.',
+  'Learned to use the scratching post! Small victories.',
+  'Successfully transitioned to wet food diet.',
+  'Very cuddly today. Asking for head scratches.',
+  'Playing fetch with a crumpled paper ball. So smart!',
+  'Full health exam completed. Ready for adoption.',
+  'Showing signs of readiness for adoption. More social.'
+];
+
+const COMMENT_CONTENTS = [
+  'So cute!', 'Love this!', 'Adorable!', 'What a sweetie!',
+  'Same here lol', 'Goals!', 'My cat does the same thing!',
+  'Beautiful kitty!', 'Proud cat parent!', 'This made my day!',
+  'Sending good vibes!', 'Aww so precious!', 'You are so lucky!',
+  'Welcome to the club!', 'Classic cat behavior!', 'So relatable!',
+  'Such a good kitty!', 'Love the name!', 'What breed is this?',
+  'Need more pics!', 'This is everything!', 'So fluffy!'
+];
+
+// ─── Seed Functions ────────────────────────────────────────
+
+async function clearAll() {
+  console.log('Clearing all existing data...');
+  await prisma.notificationRead.deleteMany();
+  await prisma.messageAttachment.deleteMany();
+  await prisma.message.deleteMany();
+  await prisma.conversation.deleteMany();
+  await prisma.clinicRecordEndorsement.deleteMany();
+  await prisma.healthSharePermission.deleteMany();
+  await prisma.clinicHealthReport.deleteMany();
+  await prisma.ownerHealthRecord.deleteMany();
+  await prisma.adoptionApplication.deleteMany();
+  await prisma.catUpdate.deleteMany();
+  await prisma.catRequirement.deleteMany();
+  await prisma.catTag.deleteMany();
+  await prisma.adoptionSwipe.deleteMany();
+  await prisma.catFaceEmbedding.deleteMany();
+  await prisma.adopterPreference.deleteMany();
+  await prisma.postLike.deleteMany();
+  await prisma.comment.deleteMany();
+  await prisma.postModeration.deleteMany();
+  await prisma.post.deleteMany();
+  await prisma.cat.deleteMany();
+  await prisma.userFollow.deleteMany();
+  await prisma.adoptionEvent.deleteMany();
+  await prisma.organization.deleteMany();
+  await prisma.user.deleteMany();
+  console.log('All data cleared.\n');
+}
+
+async function seedOrganizations() {
+  console.log('Seeding organizations...');
+  const hashed = await bcrypt.hash('password123', 10);
+  const allOrgs = [];
+
+  // 15 clinics
+  for (let i = 0; i < 15; i++) {
+    const org = await prisma.organization.create({
+      data: {
+        name: CLINIC_NAMES[i % CLINIC_NAMES.length] + (i >= CLINIC_NAMES.length ? ' ' + (i + 1) : ''),
+        type: 'clinic',
+        email: `clinic_${i + 1}@catface.test`,
+        password: hashed,
+        phone: `+886-2-${String(2000 + i).padStart(4, '0')}`,
+        address: ORG_ADDRESSES[i % ORG_ADDRESSES.length],
+        description: 'A full-service veterinary hospital providing comprehensive care for cats.',
+        is_verified: i < 12,
+        license_number: `VET-LIC-${String(1000 + i)}`
+      }
+    });
+    allOrgs.push(org);
   }
-  const b = String(breed).toLowerCase();
-  if (b.includes('orange_white')) return 'orange_white';
-  if (b.includes('orange')) return 'orange';
-  if (b.includes('black')) return 'black';
-  if (b === 'white' || (b.includes('white') && !b.includes('orange'))) return 'white';
-  if (b.includes('calico')) return 'calico';
-  if (b.includes('tabby')) return 'tabby';
-  if (b.includes('gray') || b.includes('grey')) return 'gray';
-  return pick(palette);
+
+  // 15 rescue orgs
+  for (let i = 0; i < 15; i++) {
+    const org = await prisma.organization.create({
+      data: {
+        name: RESCUE_NAMES[i % RESCUE_NAMES.length] + (i >= RESCUE_NAMES.length ? ' ' + (i + 1) : ''),
+        type: 'rescue',
+        email: `rescue_${i + 1}@catface.test`,
+        password: hashed,
+        phone: `+886-2-${String(3000 + i).padStart(4, '0')}`,
+        address: ORG_ADDRESSES[(i + 5) % ORG_ADDRESSES.length],
+        description: 'Dedicated to rescuing and rehoming stray and abandoned cats.',
+        is_verified: i < 10
+      }
+    });
+    allOrgs.push(org);
+  }
+
+  console.log(`  Created ${allOrgs.length} organizations`);
+  return allOrgs;
 }
 
-// ─── 猫咪原始数据（来自 Excel）────────────────────────────
+async function seedUsers(orgs) {
+  console.log('Seeding users...');
+  const clinics = orgs.filter(o => o.type === 'clinic');
+  const rescues = orgs.filter(o => o.type === 'rescue');
+  const hashed = await bcrypt.hash('password123', 10);
+  const users = [];
 
-const CATS_2ND = [
-  ['Inky',          1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    ['可爱', '淘气'],           ''],
-  ['Paper',         1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    ['可爱', '淘气'],           ''],
-  ['Canvas',        1,    'M', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['Dodo',          0,    'M', '5个月',   'tabby', '已完成', 'N/A',    'N/A',    ['爱说话', '乖巧', '粘人'], ''],
-  ['Coco',          1,    'M', '2岁',     'black', '已完成', 'N/A',    'N/A',    ['安静', '害羞', '慢热'],   ''],
-  ['Bobo',          0,    'M', '5个月',   'tabby', '已完成', 'N/A',    'N/A',    ['温顺', '乖巧', '爱吃'],   ''],
-  ['Zaza',          0,    'F', '2岁',     'orange_white', '已完成', 'N/A',    'N/A',    [],                       ''],
-];
-const CATS_3RD = [
-  ['Dishy',         '0*', 'F', '1岁5个月','orange_white', '已完成', 'N/A',    '已完成', [],                       ''],
-  ['Lucky',         1,    'M', '6个月',   'orange_white', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['Basin',         1,    'M', '4个月',   'tabby', '已完成', 'N/A',    'N/A',    ['异瞳'],                 ''],
-  ['Kiwi',          1,    'F', '4个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['Towel Boy',     1,    'M', '4个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['Gege',          1,    'F', '3个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['Luno',          '0*', 'M', '3个月',   'orange_white', '已完成', 'N/A',    'N/A',    ['半异瞳'],               ''],
-  ['Tangyuan',      1,    'M', '3个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['Dodo',          0,    'M', '9个月',   'tabby', '已完成', '已完成', '已完成', [],                       '第二次来'],
-  ['Zaza',          0,    'F', '2岁6个月','orange_white', '已完成', '已完成', '已完成', [],                       '第二次来'],
-  ['Big B',         1,    'X', '3周',     'tabby', 'N/A',    'N/A',    'N/A',    [],                       ''],
-  ['Little B',      1,    'X', '3周',     'tabby', 'N/A',    'N/A',    'N/A',    [],                       ''],
-  ['Big Sis B',     0,    'F', '8个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['Yomi',          1,    'M', '1个月',   'tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['Pika',          1,    'F', '1个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],                       ''],
-  ['Ginkgo',        0,    'M', '1岁',     'orange_white', '已完成', '已完成', '已完成', [],                       ''],
-  ['Boss',          0,    'M', '1岁',     'orange_white', '已完成', '已完成', '已完成', [],                       ''],
-];
-const CATS_4TH = [
-  ['Fruity',        1,    'F', '6个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],  '2026.1提前上架'],
-  ['Rescue',        0,    'F', '6个月',   'tabby', '已完成', 'N/A',    'N/A',    [],  ''],
-  ['Cheese',        0,    'M', '6个月',   'tabby', '已完成', 'N/A',    'N/A',    [],  ''],
-  ['Cloudstep',     1,    'M', '7个月',   'tabby', '已完成', '已完成', 'N/A',    [],  ''],
-  ['Cloudwing',     1,    'M', '7个月',   'tabby', '已完成', '已完成', 'N/A',    [],  ''],
-  ['Rustysnow',     0,    'M', '7个月',   'orange_tabby', '已完成', '已完成', 'N/A',    [],  ''],
-  ['Little Orange', 1,    'M', '6个月',   'orange_tabby', '已完成', 'N/A',    'N/A',    [],  ''],
-];
+  // 500 regular users (10 batches of 50)
+  for (let batch = 0; batch < 10; batch++) {
+    const batchData = [];
+    for (let i = 0; i < 50; i++) {
+      const idx = batch * 50 + i;
+      const firstName = USER_FIRST[idx % USER_FIRST.length];
+      const lastName = USER_LAST[idx % USER_LAST.length];
+      batchData.push({
+        email: `user_${idx + 1}@catface.test`,
+        username: `catlover${idx + 1}`,
+        password: hashed,
+        display_name: `${firstName} ${lastName}`,
+        has_cat: Math.random() > 0.3,
+        bio: `Cat enthusiast. ${randInt(1, 5)} cats and counting!`,
+        role: 'user'
+      });
+    }
+    const created = await prisma.user.createMany({ data: batchData });
+    users.push(...batchData);
+  }
+  console.log(`  Created ${users.length} regular users`);
 
-// ─── 测试用户（偏好多样，覆盖推荐算法各场景）────────────────
+  // 1 clinic staff per clinic
+  for (const clinic of clinics) {
+    await prisma.user.create({
+      data: {
+        email: clinic.email.replace('clinic_', 'staff_'),
+        username: `staff_${clinic.id.slice(0, 8)}`,
+        password: hashed,
+        display_name: pick(VET_NAMES),
+        role: 'clinic_staff'
+      }
+    });
+  }
+  console.log(`  Created ${clinics.length} clinic staff users`);
 
-const TEST_USERS = [
-  { email: 'alice@test.com',  username: 'alice',  display_name: 'Alice',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: 'orange_tabby' } },
-  { email: 'bob@test.com',    username: 'bob',    display_name: 'Bob',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: 'tabby' } },
-  { email: 'carol@test.com',  username: 'carol',  display_name: 'Carol',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: null } },
-  { email: 'david@test.com',  username: 'david',  display_name: 'David',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: 'orange_white' } },
-  { email: 'emma@test.com',   username: 'emma',   display_name: 'Emma',  role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'male',          preferred_breed: 'orange_tabby' } },
-  { email: 'frank@test.com',  username: 'frank',  display_name: 'Frank', role: 'user',
-    pref: { preferred_age: 'senior', preferred_gender: 'no_preference', preferred_breed: 'black' } },
-  { email: 'grace@test.com',  username: 'grace',  display_name: 'Grace',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'female',        preferred_breed: 'tabby' } },
-  { email: 'henry@test.com',  username: 'henry',  display_name: 'Henry',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'male',          preferred_breed: null } },
-  { email: 'iris@test.com',   username: 'iris',   display_name: 'Iris',   role: 'user',
-    pref: { preferred_age: 'kitten', preferred_gender: 'no_preference', preferred_breed: 'orange_white' } },
-  { email: 'jack@test.com',   username: 'jack',   display_name: 'Jack',   role: 'user',
-    pref: { preferred_age: 'adult',  preferred_gender: 'female',        preferred_breed: 'tabby' } },
-  // 机构工作人员账号（供 Member 6 聊天测试用）
-  { email: 'staff@rescue.com', username: 'rescue_staff', display_name: 'Rescue Staff Chen', role: 'rescue_staff', pref: null },
-  { email: 'vet@clinic.com',   username: 'clinic_vet',   display_name: 'Dr. Lin',     role: 'clinic_staff', pref: null },
-];
+  // 2 rescue staff per rescue org
+  const rescuerNames = ['Alex', 'Sam', 'Jordan', 'Taylor', 'Morgan', 'Casey'];
+  for (const rescue of rescues) {
+    for (let j = 0; j < 2; j++) {
+      await prisma.user.create({
+        data: {
+          email: rescue.email.replace('rescue_', `rescuer_${j}_`),
+          username: `rescuer_${rescue.id.slice(0, 8)}_${j}`,
+          password: hashed,
+          display_name: `${pick(rescuerNames)} ${rescue.name.split(' ')[0]}`,
+          role: 'rescue_staff'
+        }
+      });
+    }
+  }
+  console.log(`  Created ${rescues.length * 2} rescue staff users`);
 
-// ─── 社区帖子内容 ─────────────────────────────────────────
+  return users;
+}
 
-const POST_TEMPLATES = [
-  '今天带{cat}去打疫苗，表现超乖，医生说身体很健康！',
-  '{cat}最近爱上了纸箱，每天都要钻进去睡觉，太可爱了😂',
-  '领养{cat}已经一个月了，从怕生到现在每天追着我要抱抱，真的变化好大！',
-  '求推荐猫粮！{cat}最近不爱吃现在的，有没有好吃又不贵的选择？',
-  '分享一下{cat}今天的日常照，窗台上晒太阳真的很享受~',
-  '{cat}今天做了绝育手术，恢复得很好，明天就可以出院了！',
-  '家里新添了一只小猫，和{cat}磨合中，希望它们能成为好朋友',
-  '有没有人知道{cat}这个品种的护理要点？毛发打理太费劲了',
-  '今天{cat}第一次出门探险，回来之后累到直接倒头就睡，太萌了',
-  '推荐大家去参加领养会，我家{cat}就是从那里来的，真的很有缘分',
-];
+async function seedCats(users, orgs) {
+  console.log('Seeding cats...');
+  const rescues = orgs.filter(o => o.type === 'rescue');
+  const catOwners = users.filter(() => Math.random() > 0.3); // 70% have cats
+  const cats = [];
+  let catSequence = 0;
 
-// ─── 主函数 ──────────────────────────────────────────────
+  // 200 user-owned cats
+  for (let i = 0; i < 200; i++) {
+    const owner = pick(catOwners);
+    const ownerRec = await prisma.user.findUnique({ where: { email: owner.email } });
+    if (!ownerRec) continue;
+    const catName = buildUniqueCatName(catSequence);
+    cats.push(await prisma.cat.create({
+      data: {
+        name: catName,
+        face_code: `CF${String(i + 1).padStart(6, '0')}`,
+        breed: pick(CAT_BREEDS),
+        age_months: randInt(3, 180),
+        gender: pick(['male', 'female', 'unknown']),
+        color: pick(CAT_COLORS),
+        description: `${catName} is a friendly ${pick(CAT_BREEDS)} with a ${pick(['playful', 'calm', 'curious', 'mischievous'])} personality.`,
+        photo_url: buildCatPhotoUrl(catName, catSequence),
+        status: pick(['available', 'available', 'available', 'adopted', 'fostered']),
+        is_neutered: Math.random() > 0.3,
+        is_vaccinated: Math.random() > 0.2,
+        is_dewormed: Math.random() > 0.25,
+        intake_date: randDate(730, 0),
+        found_location: Math.random() > 0.5 ? pick(ORG_ADDRESSES) : null,
+        owner_id: ownerRec.id,
+        created_at: randDate(365, 0)
+      }
+    }));
+    catSequence += 1;
+  }
+
+  // 150 rescue cats
+  for (let i = 0; i < 150; i++) {
+    const rescue = pick(rescues);
+    const catName = buildUniqueCatName(catSequence);
+    cats.push(await prisma.cat.create({
+      data: {
+        name: catName,
+        face_code: `CF${String(1000 + i).padStart(6, '0')}`,
+        breed: pick(CAT_BREEDS),
+        age_months: randInt(1, 120),
+        gender: pick(['male', 'female', 'unknown']),
+        color: pick(CAT_COLORS),
+        description: `${catName} is a rescued ${pick(CAT_BREEDS)} found ${pick(['injured', 'abandoned', 'stray', 'surrendered'])}. ${pick(['Friendly', 'Shy', 'Needs time', 'Good with cats'])}.`,
+        photo_url: buildCatPhotoUrl(catName, catSequence),
+        status: pick(['available', 'available', 'available', 'fostered', 'adopted']),
+        is_neutered: Math.random() > 0.5,
+        is_vaccinated: Math.random() > 0.4,
+        is_dewormed: Math.random() > 0.4,
+        intake_date: randDate(180, 0),
+        found_location: pick(ORG_ADDRESSES),
+        org_id: rescue.id,
+        created_at: randDate(365, 0)
+      }
+    }));
+    catSequence += 1;
+  }
+
+  console.log(`  Created ${cats.length} cats`);
+  return cats;
+}
+
+async function seedCatRelations(cats) {
+  console.log('Seeding cat relations (tags, requirements, updates, embeddings)...');
+
+  // 300 tags
+  for (let i = 0; i < 300; i++) {
+    await prisma.catTag.create({ data: { cat_id: pick(cats).id, tag: pick(CAT_PERSONALITY_TAGS) } });
+  }
+  console.log('  Created 300 cat tags');
+
+  // 200 requirements
+  for (let i = 0; i < 200; i++) {
+    await prisma.catRequirement.create({ data: { cat_id: pick(cats).id, description: pick(CAT_REQUIREMENTS) } });
+  }
+  console.log('  Created 200 cat requirements');
+
+  // 250 cat updates
+  for (let i = 0; i < 250; i++) {
+    await prisma.catUpdate.create({
+      data: { cat_id: pick(cats).id, content: pick(CAT_UPDATES), created_at: randDate(90, 0) }
+    });
+  }
+  console.log('  Created 250 cat updates');
+
+  // 100 face embeddings
+  for (let i = 0; i < 100; i++) {
+    const dim = 512;
+    const embedding = Array.from({ length: dim }, () => parseFloat((Math.random() * 2 - 1).toFixed(6)));
+    await prisma.catFaceEmbedding.create({
+      data: {
+        cat_id: pick(cats).id,
+        embedding_json: embedding,
+        provider: pick(['yolov7', 'resnet', 'face_net', 'catface_v1']),
+        similarity_threshold: randFloat(0.6, 0.85)
+      }
+    });
+  }
+  console.log('  Created 100 face embeddings');
+}
+
+async function seedPosts(users) {
+  console.log('Seeding posts...');
+  let totalCount = 0;
+
+  // 20 batches of 50 = 1000 posts
+  for (let batch = 0; batch < 20; batch++) {
+    const batchData = [];
+    for (let i = 0; i < 50; i++) {
+      const user = pick(users);
+      const userRec = await prisma.user.findUnique({ where: { email: user.email } });
+      if (!userRec) continue;
+      batchData.push({
+        user_id: userRec.id,
+        content: pick(POST_CONTENTS),
+        created_at: randDate(180, 0)
+      });
+    }
+    if (batchData.length > 0) {
+      await prisma.post.createMany({ data: batchData });
+      totalCount += batchData.length;
+    }
+  }
+  console.log(`  Created ${totalCount} posts`);
+}
+
+async function seedLikesAndComments(users) {
+  console.log('Seeding post likes and comments...');
+  const posts = await prisma.post.findMany({ select: { id: true } });
+  if (!posts.length) return;
+
+  // 3000 likes
+  const likeSet = new Set();
+  let likesCreated = 0;
+  while (likesCreated < 3000) {
+    const post = pick(posts);
+    const user = pick(users);
+    const userRec = await prisma.user.findUnique({ where: { email: user.email } });
+    if (!userRec) continue;
+    const key = `${userRec.id}-${post.id}`;
+    if (!likeSet.has(key)) {
+      await prisma.postLike.create({
+        data: { user_id: userRec.id, post_id: post.id, created_at: randDate(180, 0) }
+      });
+      likeSet.add(key);
+      likesCreated++;
+    }
+  }
+  console.log(`  Created ${likesCreated} post likes`);
+
+  // 2000 comments
+  let commentsCreated = 0;
+  for (let i = 0; i < 2000; i++) {
+    const post = pick(posts);
+    const user = pick(users);
+    const userRec = await prisma.user.findUnique({ where: { email: user.email } });
+    if (!userRec) continue;
+    await prisma.comment.create({
+      data: { user_id: userRec.id, post_id: post.id, content: pick(COMMENT_CONTENTS), created_at: randDate(180, 0) }
+    });
+    commentsCreated++;
+  }
+  console.log(`  Created ${commentsCreated} comments`);
+
+  // 50 post moderations (deduplicated)
+  const modSet = new Set();
+  const samplePosts = [];
+  while (samplePosts.length < 50 && samplePosts.length < posts.length) {
+    const p = pick(posts);
+    if (!modSet.has(p.id)) {
+      modSet.add(p.id);
+      samplePosts.push(p);
+    }
+  }
+  for (const post of samplePosts) {
+    await prisma.postModeration.create({
+      data: {
+        post_id: post.id,
+        final_decision: pick(['approved', 'approved', 'approved', 'flagged', 'removed']),
+        final_primary_label: pick(['cat', 'food', 'accessory', 'health', 'general']),
+        final_secondary_label: pick(['indoor', 'product', 'tip', 'advice', 'discussion'])
+      }
+    });
+  }
+  console.log('  Created 50 post moderations');
+}
+
+async function seedFollows() {
+  console.log('Seeding user follows...');
+  const allUserRecs = await prisma.user.findMany({ where: { role: 'user' }, take: 200 });
+  const followSet = new Set();
+  let followsCreated = 0;
+  while (followsCreated < 500) {
+    const a = pick(allUserRecs);
+    const b = pick(allUserRecs);
+    if (a.id !== b.id) {
+      const key = `${a.id}-${b.id}`;
+      if (!followSet.has(key)) {
+        await prisma.userFollow.create({
+          data: { follower_id: a.id, following_id: b.id, created_at: randDate(180, 0) }
+        });
+        followSet.add(key);
+        followsCreated++;
+      }
+    }
+  }
+  console.log(`  Created ${followsCreated} user follows`);
+}
+
+async function seedAdoptionEvents(orgs) {
+  console.log('Seeding adoption events...');
+  const rescues = orgs.filter(o => o.type === 'rescue');
+  const events = [];
+  for (let i = 0; i < 20; i++) {
+    const ev = await prisma.adoptionEvent.create({
+      data: {
+        name: `${randInt(2023, 2026)} ${pick(['Spring', 'Summer', 'Autumn', 'Winter', 'Holiday'])} ${pick(['Cat', 'Kitten', 'Feline'])} Adoption Day`,
+        edition: i + 1,
+        start_date: randDate(365, -30),
+        end_date: randDate(0, 60),
+        location: pick(ORG_ADDRESSES),
+        description: 'A community adoption event organized to find forever homes for rescued cats and kittens.',
+        org_id: pick(rescues).id
+      }
+    });
+    events.push(ev);
+  }
+  console.log('  Created 20 adoption events');
+  return events;
+}
+
+async function seedAdoptionSwipes() {
+  console.log('Seeding adoption swipes...');
+  const cats = await prisma.cat.findMany({ select: { id: true, status: true } });
+  const availableCats = cats.filter(c => c.status === 'available');
+  const userRecs = await prisma.user.findMany({ where: { role: 'user' }, take: 200 });
+  const swipeSet = new Set();
+  let swipesCreated = 0;
+  while (swipesCreated < 2500) {
+    const user = pick(userRecs);
+    const cat = pick(availableCats);
+    const key = `${user.id}-${cat.id}`;
+    if (!swipeSet.has(key)) {
+      await prisma.adoptionSwipe.create({
+        data: { user_id: user.id, cat_id: cat.id, liked: Math.random() > 0.4, created_at: randDate(90, 0) }
+      });
+      swipeSet.add(key);
+      swipesCreated++;
+    }
+  }
+  console.log(`  Created ${swipesCreated} adoption swipes`);
+}
+
+async function seedAdopterPreferences() {
+  console.log('Seeding adopter preferences...');
+  const userRecs = await prisma.user.findMany({ where: { role: 'user' }, take: 200 });
+  let count = 0;
+  for (const user of userRecs) {
+    if (Math.random() > 0.4) {
+      await prisma.adopterPreference.create({
+        data: {
+          user_id: user.id,
+          preferred_age: pick(['kitten', 'young', 'adult', 'senior', 'any']),
+          preferred_gender: pick(['male', 'female', 'no_preference']),
+          preferred_breed: Math.random() > 0.6 ? pick(CAT_BREEDS) : null,
+          preferred_color: Math.random() > 0.7 ? pick(CAT_COLORS) : null,
+          accept_special_need: Math.random() > 0.7,
+          home_type: pick(['apartment', 'house', 'any']),
+          has_other_pets: Math.random() > 0.5 ? null : pick([true, false]),
+          has_children: Math.random() > 0.6 ? null : pick([true, false]),
+          personality_tags: JSON.stringify([pick(CAT_PERSONALITY_TAGS), pick(CAT_PERSONALITY_TAGS)]),
+          created_at: randDate(180, 0)
+        }
+      });
+      count++;
+    }
+  }
+  console.log(`  Created ${count} adopter preferences`);
+}
+
+async function seedAdoptionApplications(cats, events) {
+  console.log('Seeding adoption applications...');
+  const userRecs = await prisma.user.findMany({ where: { role: 'user' }, take: 150 });
+  let count = 0;
+  for (let i = 0; i < 150; i++) {
+    const user = pick(userRecs);
+    const cat = pick(cats);
+    const existing = await prisma.adoptionApplication.findFirst({
+      where: { user_id: user.id, cat_id: cat.id }
+    });
+    if (existing) continue;
+    const status = pick(['pending', 'pending', 'approved', 'rejected']);
+    await prisma.adoptionApplication.create({
+      data: {
+        user_id: user.id,
+        cat_id: cat.id,
+        event_id: Math.random() > 0.7 && events.length ? pick(events).id : null,
+        status,
+        message: `Hi, I am very interested in adopting ${cat.name}! I have had cats before and understand the commitment. Please consider my application.`,
+        reviewed_by: status !== 'pending' ? user.id : null,
+        reviewed_at: status !== 'pending' ? randDate(30, 0) : null,
+        reject_note: status === 'rejected' ? pick(['Home visit did not pass requirements.', 'Too many pets already.', 'Applicant withdrew.']) : null,
+        created_at: randDate(60, 0)
+      }
+    });
+    count++;
+  }
+  console.log(`  Created ${count} adoption applications`);
+}
+
+async function seedHealthRecords(cats) {
+  console.log('Seeding health records...');
+  const ownerCats = cats.filter(c => c.owner_id);
+  if (!ownerCats.length) return;
+
+  const userRecs = await prisma.user.findMany({ where: { role: 'user' }, take: 200 });
+  const orgRecs = await prisma.organization.findMany({ where: { type: 'clinic' } });
+  const TYPES = ['vaccine', 'deworming', 'checkup', 'treatment', 'surgery', 'other'];
+  const RPT_TYPES = ['vaccination', 'blood_test', 'checkup', 'deworming', 'treatment', 'surgery', 'other'];
+
+  // Owner health records
+  let ownerCount = 0;
+  for (const cat of ownerCats) {
+    const owner = pick(userRecs);
+    const numRecords = randInt(1, 6);
+    for (let i = 0; i < numRecords; i++) {
+      const type = pick(TYPES);
+      const date = randDate(730, 0);
+      const nextDue = (type === 'vaccine' || type === 'deworming')
+        ? new Date(date.getTime() + randInt(30, 365) * 86400000)
+        : null;
+      await prisma.ownerHealthRecord.create({
+        data: {
+          cat_id: cat.id,
+          user_id: owner.id,
+          record_type: type,
+          description: pick(HEALTH_RECORD_DESCS[type] || HEALTH_RECORD_DESCS.other),
+          date,
+          next_due_date: nextDue,
+          weight_kg: Math.random() > 0.3 ? randFloat(2.0, 8.5) : null,
+          vet_name: Math.random() > 0.5 ? pick(VET_NAMES) : null,
+          clinic_name: Math.random() > 0.5 ? pick(CLINIC_NAMES) : null,
+          file_url: Math.random() > 0.85 ? `https://example.com/attachments/${uuid()}.pdf` : null,
+          created_at: date
+        }
+      });
+      ownerCount++;
+    }
+  }
+  console.log(`  Created ${ownerCount} owner health records`);
+
+  // Clinic reports
+  let reportCount = 0;
+  for (const cat of ownerCats) {
+    if (Math.random() > 0.6) continue;
+    const org = pick(orgRecs);
+    const numReports = randInt(1, 4);
+    for (let i = 0; i < numReports; i++) {
+      const type = pick(RPT_TYPES);
+      const date = randDate(365, 0);
+      await prisma.clinicHealthReport.create({
+        data: {
+          cat_id: cat.id,
+          org_id: org.id,
+          report_type: type,
+          description: pick(CLINIC_REPORT_DESCS[type] || CLINIC_REPORT_DESCS.other),
+          findings: Math.random() > 0.5
+            ? `Patient presented for ${type}. ${pick(['No abnormalities found.', 'Vital signs normal.', 'Weight stable.', 'Coat condition: good.'])}`
+            : null,
+          recommendations: Math.random() > 0.5
+            ? pick(['Continue current diet.', 'Schedule follow-up in 6 months.', 'Monitor weight weekly.', 'Return if symptoms persist.'])
+            : null,
+          vet_name: pick(VET_NAMES),
+          vet_license: Math.random() > 0.5 ? `VET-${randInt(10000, 99999)}` : null,
+          org_name: org.name,
+          date,
+          file_url: Math.random() > 0.8 ? `https://example.com/reports/${uuid()}.pdf` : null,
+          created_at: date
+        }
+      });
+      reportCount++;
+    }
+  }
+  console.log(`  Created ${reportCount} clinic reports`);
+
+  // Health share permissions
+  let permCount = 0;
+  for (const cat of ownerCats) {
+    if (Math.random() > 0.5) continue;
+    const org = pick(orgRecs);
+    const existing = await prisma.healthSharePermission.findUnique({
+      where: { cat_id_org_id: { cat_id: cat.id, org_id: org.id } }
+    });
+    if (existing) continue;
+    await prisma.healthSharePermission.create({
+      data: {
+        cat_id: cat.id,
+        user_id: cat.owner_id,
+        org_id: org.id,
+        is_allowed: Math.random() > 0.15,
+        permission_type: Math.random() > 0.7 ? 'read_only' : 'full',
+        expires_at: Math.random() > 0.6 ? randDate(-30, 180) : null,
+        note: Math.random() > 0.7 ? pick(['For vet consultation', 'Second opinion', 'Emergency access', null]) : null,
+        created_at: randDate(180, 0)
+      }
+    });
+    permCount++;
+  }
+  console.log(`  Created ${permCount} health share permissions`);
+
+  // Clinic endorsements
+  const orgs = await prisma.organization.findMany({ where: { type: 'clinic' } });
+  const ownerRecs = await prisma.ownerHealthRecord.findMany({ take: 300 });
+  let endorseCount = 0;
+  for (const rec of ownerRecs) {
+    if (Math.random() > 0.4) continue;
+    const org = pick(orgs);
+    const existing = await prisma.clinicRecordEndorsement.findUnique({
+      where: { record_id_org_id: { record_id: rec.id, org_id: org.id } }
+    });
+    if (existing) continue;
+    await prisma.clinicRecordEndorsement.create({
+      data: {
+        record_id: rec.id,
+        org_id: org.id,
+        endorsement: pick([
+          'Verified against clinic records. Accurate and complete.',
+          'This vaccination was performed at our clinic. Record confirmed.',
+          'Independently verified by our veterinary team.',
+          'Cross-referenced with clinic database. Correct.',
+          'Diagnosis consistent with our examination findings.',
+          'Treatment plan aligns with standard veterinary guidelines.'
+        ]),
+        note: Math.random() > 0.7 ? pick(['Verified', 'Confirmed', 'Cross-checked']) : null,
+        created_at: randDate(60, 0)
+      }
+    });
+    endorseCount++;
+  }
+  console.log(`  Created ${endorseCount} clinic endorsements`);
+}
+
+async function seedConversationsAndMessages(orgs) {
+  console.log('Seeding conversations and messages...');
+  const clinicStaffRecs = await prisma.user.findMany({ where: { role: 'clinic_staff' } });
+  const rescueStaffRecs = await prisma.user.findMany({ where: { role: 'rescue_staff' } });
+  const userRecs = await prisma.user.findMany({ where: { role: 'user' }, take: 100 });
+
+  const CONV_MSGS = [
+    'Hello, I would like to inquire about the health records.',
+    'Thank you for your message. How can I help?',
+    'My cat has been showing some unusual symptoms lately.',
+    'Could you recommend a suitable time for the checkup?',
+    'I have uploaded the vaccination certificate.',
+    'Great, see you then!', 'Is the clinic open on weekends?',
+    'We are closed on public holidays.',
+    'Thank you for the update on the test results.',
+    'Everything looks normal. No concerns.',
+    'Please bring your cat in for the follow-up visit.',
+    'The prescription is ready for pickup.',
+    'Do you accept walk-in appointments?',
+    'Yes, we accept walk-ins but appointments are preferred.',
+    'Looking forward to meeting the team!'
+  ];
+
+  const RESCUE_MSGS = [
+    'I am interested in adopting one of your cats.',
+    'Which cats are currently available for adoption?',
+    'Can I schedule a visit to meet the cats?',
+    'Of course! We have several available right now.',
+    'Do you have any requirements for adopters?',
+    'We require a home visit and an adoption contract.',
+    'I understand. I am very excited!',
+    'Great! I will send you the adoption form.',
+    'When can I come to meet the cats?',
+    'We are open every Saturday from 10am to 4pm.'
+  ];
+
+  let convCount = 0, msgCount = 0, attachCount = 0;
+
+  // User <-> Clinic conversations
+  for (let i = 0; i < 80; i++) {
+    const user = pick(userRecs);
+    const staff = pick(clinicStaffRecs);
+    const existing = await prisma.conversation.findUnique({
+      where: { user_id_org_id: { user_id: user.id, org_id: staff.id } }
+    });
+    if (existing) continue;
+    const conv = await prisma.conversation.create({
+      data: { user_id: user.id, org_id: staff.id, created_at: randDate(90, 0) }
+    });
+    convCount++;
+    for (let j = 0; j < randInt(2, 15); j++) {
+      const sender = Math.random() > 0.5 ? user.id : staff.id;
+      const msg = await prisma.message.create({
+        data: { conversation_id: conv.id, sender_id: sender, content: pick(CONV_MSGS), created_at: randDate(60, 0) }
+      });
+      msgCount++;
+      if (Math.random() > 0.85) {
+        await prisma.messageAttachment.create({
+          data: {
+            message_id: msg.id,
+            file_url: `https://example.com/attachments/${uuid()}.jpg`,
+            file_type: pick(['image/jpeg', 'image/png', 'application/pdf'])
+          }
+        });
+        attachCount++;
+      }
+    }
+  }
+
+  // User <-> Rescue conversations
+  for (let i = 0; i < 60; i++) {
+    const user = pick(userRecs);
+    const rescuer = pick(rescueStaffRecs);
+    const existing = await prisma.conversation.findUnique({
+      where: { user_id_org_id: { user_id: user.id, org_id: rescuer.id } }
+    });
+    if (existing) continue;
+    const conv = await prisma.conversation.create({
+      data: { user_id: user.id, org_id: rescuer.id, created_at: randDate(90, 0) }
+    });
+    convCount++;
+    for (let j = 0; j < randInt(2, 10); j++) {
+      await prisma.message.create({
+        data: { conversation_id: conv.id, sender_id: pick([user.id, rescuer.id]), content: pick(RESCUE_MSGS), created_at: randDate(60, 0) }
+      });
+      msgCount++;
+    }
+  }
+
+  console.log(`  Created ${convCount} conversations, ${msgCount} messages, ${attachCount} attachments`);
+}
+
+async function seedNotificationReads() {
+  console.log('Seeding notification read records...');
+  const userRecs = await prisma.user.findMany({ where: { role: 'user' }, take: 100 });
+  let count = 0;
+  for (const user of userRecs) {
+    const numReads = randInt(0, 20);
+    const readIds = new Set();
+    for (let i = 0; i < numReads; i++) {
+      const notifId = `notif_${uuid()}`;
+      if (!readIds.has(notifId)) {
+        await prisma.notificationRead.create({
+          data: { user_id: user.id, notif_id: notifId, created_at: randDate(30, 0) }
+        });
+        readIds.add(notifId);
+        count++;
+      }
+    }
+  }
+  console.log(`  Created ${count} notification read records`);
+}
+
+// ─── Main ─────────────────────────────────────────────────
 
 async function main() {
-  console.log('🌱 开始全表 Seed...\n');
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('  CatFace Database Seeder — Realistic Large-Scale Data');
+  console.log('═══════════════════════════════════════════════════════\n');
 
-  const hashedPw = await bcrypt.hash('test1234', 10);
+  const start = Date.now();
 
-  // ══════════════════════════════════════════
-  // 1. 机构
-  // ══════════════════════════════════════════
-  console.log('📦 [1/10] 创建机构...');
-  const rescueOrg = await prisma.organization.upsert({
-    where:  { email: 'rescue@catface-seed.com' },
-    update: {
-      name: 'Stray Cat Rescue Association (Test)',
-      phone: '0900000000',
-      address: 'Daan District, Taipei',
-      is_verified: true,
-      description: 'Public-interest rescue organization focused on stray cat shelter and adoption.'
-    },
-    create: {
-      name: 'Stray Cat Rescue Association (Test)', type: 'rescue',
-      email: 'rescue@catface-seed.com', password: await bcrypt.hash('seed1234', 10),
-      phone: '0900000000', address: 'Daan District, Taipei', is_verified: true,
-      description: 'Public-interest rescue organization focused on stray cat shelter and adoption.'
-    }
-  });
-  const clinicOrg = await prisma.organization.upsert({
-    where:  { email: 'clinic@catface-seed.com' },
-    update: {
-      name: 'Kind Animal Clinic (Test)',
-      phone: '0911111111',
-      address: 'Xinyi District, Taipei',
-      is_verified: true,
-      license_number: 'VET-2024-0001',
-      description: 'Provides professional health checks and vaccination services for cats.'
-    },
-    create: {
-      name: 'Kind Animal Clinic (Test)', type: 'clinic',
-      email: 'clinic@catface-seed.com', password: await bcrypt.hash('seed1234', 10),
-      phone: '0911111111', address: 'Xinyi District, Taipei', is_verified: true,
-      license_number: 'VET-2024-0001',
-      description: 'Provides professional health checks and vaccination services for cats.'
-    }
-  });
-  console.log(`   ✅ 救助机构 ${rescueOrg.id.slice(0,8)}… | 诊所 ${clinicOrg.id.slice(0,8)}…`);
+  try {
+    await clearAll();
+    const orgs = await seedOrganizations();
+    const users = await seedUsers(orgs);
+    const cats = await seedCats(users, orgs);
+    await seedCatRelations(cats);
+    await seedPosts(users);
+    await seedLikesAndComments(users);
+    await seedFollows();
+    const events = await seedAdoptionEvents(orgs);
+    await seedAdoptionSwipes();
+    await seedAdopterPreferences();
+    await seedAdoptionApplications(cats, events);
+    await seedHealthRecords(cats);
+    await seedConversationsAndMessages(orgs);
+    await seedNotificationReads();
 
-  // ══════════════════════════════════════════
-  // 2. 用户
-  // ══════════════════════════════════════════
-  console.log('\n👤 [2/10] 创建用户...');
-  const users = [];
-  for (const u of TEST_USERS) {
-    const user = await prisma.user.upsert({
-      where:  { email: u.email },
-      update: {},
-      create: {
-        email: u.email, password: hashedPw,
-        username: u.username, display_name: u.display_name, role: u.role,
-        adopter_preferences: u.pref ? { create: u.pref } : undefined
-      }
-    });
-    users.push(user);
-    console.log(`   👤 ${u.display_name.padEnd(8)} | ${u.role}`);
+    const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+    console.log('\n═══════════════════════════════════════════════════════');
+    console.log(`  ✅ Seeding complete in ${elapsed}s`);
+    console.log('  ─────────────────────────────────────────────────');
+    console.log('  Test accounts (password: password123)');
+    console.log('  ─────────────────────────────────────────────────');
+    console.log('  Regular user:  user_1@catface.test');
+    console.log('  Clinic staff:  staff_clinic_1@catface.test');
+    console.log('  Rescue staff:  rescuer_0_rescue_1@catface.test');
+    console.log('  ─────────────────────────────────────────────────');
+    console.log('  Run `npx prisma studio` to browse data');
+    console.log('═══════════════════════════════════════════════════════\n');
+  } catch (err) {
+    console.error('Seed failed:', err);
+    process.exit(1);
+  } finally {
+    await prisma.$disconnect();
   }
-  const normalUsers  = users.filter(u => u.role === 'user');
-  const staffUser    = users.find(u => u.role === 'rescue_staff');
-  const clinicUser   = users.find(u => u.role === 'clinic_staff');
-
-  // ══════════════════════════════════════════
-  // 3. 关注关系
-  // ══════════════════════════════════════════
-  console.log('\n🔗 [3/10] 创建关注关系...');
-  const followPairs = [
-    [0,1],[0,2],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],
-    [1,0],[3,0],[4,1],[5,2],[6,3],[7,4],[9,0],
-  ];
-  let followCount = 0;
-  for (const [a, b] of followPairs) {
-    if (a >= normalUsers.length || b >= normalUsers.length) continue;
-    await prisma.userFollow.upsert({
-      where:  { follower_id_following_id: { follower_id: normalUsers[a].id, following_id: normalUsers[b].id } },
-      update: {},
-      create: { follower_id: normalUsers[a].id, following_id: normalUsers[b].id }
-    });
-    followCount++;
-  }
-  console.log(`   ✅ ${followCount} 条关注关系`);
-
-  // ══════════════════════════════════════════
-  // 4. 领养活动
-  // ══════════════════════════════════════════
-  console.log('\n📅 [4/10] 创建领养活动...');
-  const [ev2, ev3, ev4] = await Promise.all([
-    prisma.adoptionEvent.upsert({ where: { id: 'seed-event-2nd-00000000-0000' }, update: {},
-      create: { id: 'seed-event-2nd-00000000-0000', name: '第2届领养会', edition: 2,
-        start_date: new Date('2025-06-21'), end_date: new Date('2025-06-22'),
-        location: '台北市大安区四维路', org_id: rescueOrg.id } }),
-    prisma.adoptionEvent.upsert({ where: { id: 'seed-event-3rd-00000000-0000' }, update: {},
-      create: { id: 'seed-event-3rd-00000000-0000', name: '第3届领养会', edition: 3,
-        start_date: new Date('2025-09-20'), end_date: new Date('2025-09-21'),
-        location: '台北市信义区松仁路', org_id: rescueOrg.id } }),
-    prisma.adoptionEvent.upsert({ where: { id: 'seed-event-4th-00000000-0000' }, update: {},
-      create: { id: 'seed-event-4th-00000000-0000', name: '第4届领养会', edition: 4,
-        start_date: new Date('2026-01-24'), end_date: new Date('2026-01-25'),
-        location: '台北市中山区民生东路', org_id: rescueOrg.id } }),
-  ]);
-  console.log('   ✅ 第2、3、4届领养活动');
-
-  // ══════════════════════════════════════════
-  // 5. 猫咪 + 标签 + 要求 + 动态
-  // ══════════════════════════════════════════
-  console.log('\n🐱 [5/10] 创建猫咪档案...');
-  const allCatRows = [
-    ...CATS_2ND.map(r => ({ row: r, event: ev2, date: new Date('2025-06-21') })),
-    ...CATS_3RD.map(r => ({ row: r, event: ev3, date: new Date('2025-09-20') })),
-    ...CATS_4TH.map(r => ({ row: r, event: ev4, date: new Date('2026-01-24') })),
-  ];
-
-  const createdCats = [];
-  for (const { row, event, date } of allCatRows) {
-    const [name, adopted, gender, ageStr, breed, dewormed, vaccinated, neutered, tags] = row;
-    const g = gender === 'X' ? 'unknown' : parseGender(gender);
-    const color = inferColorFromBreed(breed);
-    const cat = await prisma.cat.create({
-      data: {
-        name, breed,
-        color,
-        age_months:    parseAge(ageStr),
-        gender:        g,
-        status:        parseStatus(adopted),
-        is_neutered:   parseBool(neutered),
-        is_vaccinated: parseBool(vaccinated),
-        is_dewormed:   parseBool(dewormed),
-        intake_date:   date,
-        org_id:        rescueOrg.id,
-        event_id:      event.id,
-        tags: tags.length ? { create: tags.map(tag => ({ tag })) } : undefined,
-        // 可领养的猫加领养要求
-        requirements: parseStatus(adopted) === 'available' ? {
-          create: [
-            { description: '领养前需填写领养申请表并通过审核' },
-            { description: '需提供稳定的居住环境，不可频繁搬家' },
-            ...(parseBool(neutered) ? [] : [{ description: '领养后须在三个月内完成绝育手术' }])
-          ]
-        } : undefined,
-        // 所有猫加一条动态
-        updates: {
-          create: [{
-            content: `${name} 于 ${date.toISOString().slice(0,10)} 参加${event.name}，已完成健康检查。`,
-          }]
-        }
-      }
-    });
-    createdCats.push({ cat, adopted });
-  }
-  console.log(`   ✅ ${createdCats.length} 只猫咪（含标签、要求、动态）`);
-
-  // ══════════════════════════════════════════
-  // 6. 领养申请
-  // ══════════════════════════════════════════
-  console.log('\n📝 [6/10] 创建领养申请...');
-  const adoptedCats    = createdCats.filter(c => c.adopted === 1);
-  const availableCats  = createdCats.filter(c => c.adopted === 0);
-  let appCount = 0;
-
-  // 已领养的猫 → approved 申请
-  for (let i = 0; i < adoptedCats.length; i++) {
-    const { cat } = adoptedCats[i];
-    const user    = normalUsers[i % normalUsers.length];
-    await prisma.adoptionApplication.create({
-      data: {
-        user_id: user.id, cat_id: cat.id,
-        status: 'approved',
-        message: `我非常喜欢${cat.name}，家里环境适合养猫，请审核通过。`,
-        reviewed_by: staffUser?.id,
-        reviewed_at: cat.intake_date
-      }
-    });
-    appCount++;
-  }
-
-  // 可领养的猫 → pending 申请（多人申请同一只）
-  for (let i = 0; i < availableCats.length; i++) {
-    const { cat } = availableCats[i];
-    const applicants = [normalUsers[i % normalUsers.length], normalUsers[(i + 1) % normalUsers.length]];
-    for (const user of applicants) {
-      await prisma.adoptionApplication.create({
-        data: {
-          user_id: user.id, cat_id: cat.id,
-          status: 'pending',
-          message: `${cat.name}的性格很适合我，希望能给它一个温暖的家。`
-        }
-      });
-      appCount++;
-    }
-  }
-
-  // 一条 rejected 示例
-  if (availableCats.length && normalUsers.length) {
-    await prisma.adoptionApplication.create({
-      data: {
-        user_id: normalUsers[0].id, cat_id: availableCats[0].cat.id,
-        status: 'rejected',
-        message: '申请测试。',
-        reviewed_by: staffUser?.id,
-        reviewed_at: new Date(),
-        reject_note: '申请人居住环境不符合本次领养要求，建议改善后再申请。'
-      }
-    });
-    appCount++;
-  }
-  console.log(`   ✅ ${appCount} 条领养申请（approved / pending / rejected 各有）`);
-
-  // ══════════════════════════════════════════
-  // 7. 社区帖子 + 点赞 + 评论
-  // ══════════════════════════════════════════
-  console.log('\n💬 [7/10] 创建社区内容...');
-  const posts = [];
-  for (let i = 0; i < normalUsers.length; i++) {
-    const user    = normalUsers[i];
-    const catName = createdCats[i % createdCats.length].cat.name;
-    const content = POST_TEMPLATES[i % POST_TEMPLATES.length].replace('{cat}', catName);
-    const post = await prisma.post.create({
-      data: { user_id: user.id, content }
-    });
-    posts.push(post);
-  }
-
-  // 每篇帖子被随机 3-5 人点赞
-  let likeCount = 0, commentCount = 0;
-  for (const post of posts) {
-    const likers = normalUsers.filter(u => u.id !== post.user_id).slice(0, 4);
-    for (const liker of likers) {
-      await prisma.postLike.upsert({
-        where:  { user_id_post_id: { user_id: liker.id, post_id: post.id } },
-        update: {},
-        create: { user_id: liker.id, post_id: post.id }
-      });
-      likeCount++;
-    }
-    // 每篇帖子 1-2 条评论
-    const commenter = normalUsers.find(u => u.id !== post.user_id);
-    if (commenter) {
-      await prisma.comment.create({
-        data: { user_id: commenter.id, post_id: post.id,
-          content: pick(['太可爱了！', '谢谢分享～', '好羡慕你有这么乖的猫！', '请问是什么品种？', '看了好想养猫哦']) }
-      });
-      commentCount++;
-    }
-  }
-  console.log(`   ✅ ${posts.length} 篇帖子 | ${likeCount} 个点赞 | ${commentCount} 条评论`);
-
-  // ══════════════════════════════════════════
-  // 8. 健康记录 + 诊所报告 + 授权
-  // ══════════════════════════════════════════
-  console.log('\n🏥 [8/10] 创建健康数据...');
-  // 取前5只猫，为它们建立完整健康档案
-  const healthCats   = createdCats.slice(0, 5);
-  let   hrCount = 0, crCount = 0, spCount = 0;
-
-  for (let i = 0; i < healthCats.length; i++) {
-    const { cat } = healthCats[i];
-    const owner   = normalUsers[i % normalUsers.length];
-
-    // 主人健康记录（每只猫 2-3 条）
-    const records = [
-      { record_type: 'vaccine',    description: '接种三联疫苗第一针，反应正常', date: cat.intake_date,
-        next_due_date: new Date(cat.intake_date.getTime() + 30 * 86400000), weight_kg: 2.5 + i * 0.3,
-        vet_name: '林医生', clinic_name: '爱心动物诊所' },
-      { record_type: 'deworming',  description: '体内外驱虫处理完成', date: cat.intake_date,
-        next_due_date: new Date(cat.intake_date.getTime() + 90 * 86400000), weight_kg: 2.5 + i * 0.3 },
-      { record_type: 'checkup',    description: '常规体检，一切正常，体重达标', date: new Date(),
-        weight_kg: 3.0 + i * 0.4, vet_name: '王医生', clinic_name: '爱心动物诊所' },
-    ];
-
-    for (const rec of records) {
-      await prisma.ownerHealthRecord.create({
-        data: { cat_id: cat.id, user_id: owner.id, ...rec }
-      });
-      hrCount++;
-    }
-
-    // 授权诊所查看
-    await prisma.healthSharePermission.upsert({
-      where:  { cat_id_org_id: { cat_id: cat.id, org_id: clinicOrg.id } },
-      update: {},
-      create: { cat_id: cat.id, user_id: owner.id, org_id: clinicOrg.id, is_allowed: true }
-    });
-    spCount++;
-
-    // 诊所上传官方报告（需有授权）
-    await prisma.clinicHealthReport.create({
-      data: {
-        cat_id: cat.id, org_id: clinicOrg.id,
-        report_type: 'vaccination',
-        description: `${cat.name} 已完成三联疫苗接种，健康状况良好，建议一个月后补打第二针。`,
-        date: cat.intake_date
-      }
-    });
-    crCount++;
-  }
-  console.log(`   ✅ ${hrCount} 条主人记录 | ${crCount} 份诊所报告 | ${spCount} 条授权`);
-
-  // ══════════════════════════════════════════
-  // 9. 聊天会话 + 消息
-  // ══════════════════════════════════════════
-  console.log('\n💌 [9/10] 创建聊天数据...');
-  // Conversation 的 org_id 指向 User 表中的机构工作人员账号
-  let convCount = 0, msgCount = 0;
-  if (staffUser) {
-    const chatUsers = normalUsers.slice(0, 4);
-    for (const user of chatUsers) {
-      const conv = await prisma.conversation.upsert({
-        where:  { user_id_org_id: { user_id: user.id, org_id: staffUser.id } },
-        update: {},
-        create: { user_id: user.id, org_id: staffUser.id }
-      });
-      convCount++;
-
-      const dialogues = [
-        { sender_id: user.id,     content: '你好，请问现在还有可以领养的猫咪吗？' },
-        { sender_id: staffUser.id, content: '您好！目前还有几只可以领养，欢迎来参加我们的领养活动～' },
-        { sender_id: user.id,     content: '太好了！请问需要准备什么材料？' },
-        { sender_id: staffUser.id, content: '需要填写领养申请表，并提供身份证明即可，现场审核当天出结果。' },
-      ];
-      for (const msg of dialogues) {
-        await prisma.message.create({
-          data: { conversation_id: conv.id, ...msg, content: msg.content }
-        });
-        msgCount++;
-      }
-    }
-  }
-  console.log(`   ✅ ${convCount} 条会话 | ${msgCount} 条消息`);
-
-  // ══════════════════════════════════════════
-  // 10. 汇总
-  // ══════════════════════════════════════════
-  console.log('\n─────────────────────────────────────────');
-  console.log('🎉 全表 Seed 完成！数据汇总：');
-  console.log(`
-   表名                      条数
-   ──────────────────────────────
-   organizations              2  （1救助 + 1诊所）
-   users                     ${users.length}  （10普通 + 1救助员 + 1诊所员）
-   user_follows              ${followCount}
-   adoption_events            3  （第2、3、4届）
-   cats                      ${createdCats.length}
-   cat_tags                  （含于猫咪创建中）
-   cat_requirements          （含于猫咪创建中）
-   cat_updates               ${createdCats.length}  （每猫1条）
-   adopter_preferences       10
-   adoption_applications     ${appCount}
-   posts                     ${posts.length}
-   post_likes                ${likeCount}
-   comments                  ${commentCount}
-   owner_health_records      ${hrCount}
-   clinic_health_reports     ${crCount}
-   health_share_permissions  ${spCount}
-   conversations             ${convCount}
-   messages                  ${msgCount}
-  `);
-  console.log('所有测试账号密码均为：test1234');
-  console.log('机构账号密码：seed1234');
 }
 
-main()
-  .catch(e => { console.error('\n❌ Seed 失败：', e.message); process.exit(1); })
-  .finally(() => prisma.$disconnect());
+main();

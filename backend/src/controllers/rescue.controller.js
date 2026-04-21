@@ -7,7 +7,6 @@ const { execFile } = require('child_process');
 const { promisify } = require('util');
 const { runKamFaceInference, findCatFaceMatches } = require('../services/cat-face.service');
 const {
-  extractDelimitedTags,
   getCatTagVocabulary,
   normalizeManualTagValues,
   suggestCatTags
@@ -258,6 +257,7 @@ function mapCat(cat) {
     name: cat.name,
     breed: cat.breed,
     age_months: cat.age_months,
+    intake_date: cat.intake_date,
     gender: cat.gender,
     color: cat.color,
     found_location: cat.found_location,
@@ -333,6 +333,38 @@ function parseAgeMonthsInput(value) {
   return null;
 }
 
+function parseDateInput(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const normalized = String(value).trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function calculateAgeMonthsFromDate(dateValue) {
+  if (!(dateValue instanceof Date) || Number.isNaN(dateValue.getTime())) {
+    return null;
+  }
+
+  const today = new Date();
+  let months = (today.getFullYear() - dateValue.getFullYear()) * 12 + (today.getMonth() - dateValue.getMonth());
+  if (today.getDate() < dateValue.getDate()) {
+    months -= 1;
+  }
+
+  return Math.max(0, months);
+}
+
 function buildCatDescription({ notes, health, personality }) {
   const lines = [];
 
@@ -351,14 +383,8 @@ function buildCatDescription({ notes, health, personality }) {
   return lines.join('\n') || null;
 }
 
-async function normalizeTagValues(tags, personality) {
-  const values = Array.isArray(tags) ? tags.slice() : [];
-
-  if (typeof personality === 'string' && personality.trim()) {
-    extractDelimitedTags(personality).forEach((tag) => values.push(tag));
-  }
-
-  return normalizeManualTagValues(values);
+async function normalizeTagValues(tags) {
+  return normalizeManualTagValues(Array.isArray(tags) ? tags.slice() : []);
 }
 
 function mapApplication(application) {
@@ -470,6 +496,7 @@ async function createCat(req, res) {
       breed,
       gender,
       age,
+      intake_date,
       status,
       health,
       location,
@@ -487,7 +514,9 @@ async function createCat(req, res) {
       });
     }
 
-    const tagValues = await normalizeTagValues(tags, personality);
+    const tagValues = await normalizeTagValues(tags);
+    const hasEstimatedBirthDate = Object.prototype.hasOwnProperty.call(req.body, 'intake_date');
+    const estimatedBirthDate = hasEstimatedBirthDate ? parseDateInput(intake_date) : null;
     const requestedFaceCode = typeof display_id === 'string' && display_id.trim()
       ? display_id.trim()
       : null;
@@ -512,13 +541,14 @@ async function createCat(req, res) {
         name: String(name).trim(),
         face_code: requestedFaceCode,
         breed: typeof breed === 'string' && breed.trim() ? breed.trim() : null,
-        age_months: parseAgeMonthsInput(age),
+        age_months: hasEstimatedBirthDate ? calculateAgeMonthsFromDate(estimatedBirthDate) : parseAgeMonthsInput(age),
+        intake_date: hasEstimatedBirthDate ? estimatedBirthDate : null,
         gender: normalizeCatGenderInput(gender),
         found_location: typeof location === 'string' && location.trim() ? location.trim() : null,
         description: buildCatDescription({
           notes: typeof notes === 'string' ? notes.trim() : '',
           health: typeof health === 'string' ? health.trim() : '',
-          personality: typeof personality === 'string' ? personality.trim() : ''
+          personality: ''
         }),
         photo_url: typeof photo_url === 'string' && photo_url.trim() ? photo_url.trim() : null,
         status: normalizeCatStatusInput(status),
@@ -661,6 +691,7 @@ async function updateCat(req, res) {
       breed,
       gender,
       age,
+      intake_date,
       status,
       health,
       location,
@@ -670,7 +701,9 @@ async function updateCat(req, res) {
       tags
     } = req.body;
 
-    const tagValues = await normalizeTagValues(tags, personality);
+    const tagValues = await normalizeTagValues(tags);
+    const hasEstimatedBirthDate = Object.prototype.hasOwnProperty.call(req.body, 'intake_date');
+    const estimatedBirthDate = hasEstimatedBirthDate ? parseDateInput(intake_date) : null;
     const updatedCat = await prisma.cat.update({
       where: { id: req.params.id },
       data: {
@@ -679,13 +712,16 @@ async function updateCat(req, res) {
           ? req.body.display_id.trim()
           : existingCat.face_code,
         breed: typeof breed === 'string' ? breed.trim() || null : existingCat.breed,
-        age_months: age !== undefined ? parseAgeMonthsInput(age) : existingCat.age_months,
+        age_months: hasEstimatedBirthDate
+          ? calculateAgeMonthsFromDate(estimatedBirthDate)
+          : (age !== undefined ? parseAgeMonthsInput(age) : existingCat.age_months),
+        intake_date: hasEstimatedBirthDate ? estimatedBirthDate : existingCat.intake_date,
         gender: gender !== undefined ? normalizeCatGenderInput(gender) : existingCat.gender,
         found_location: typeof location === 'string' ? location.trim() || null : existingCat.found_location,
         description: buildCatDescription({
           notes: typeof notes === 'string' ? notes.trim() : '',
           health: typeof health === 'string' ? health.trim() : '',
-          personality: typeof personality === 'string' ? personality.trim() : ''
+          personality: ''
         }),
         photo_url: typeof photo_url === 'string' ? photo_url.trim() || null : existingCat.photo_url,
         status: status ? normalizeCatStatusInput(status) : existingCat.status,
@@ -896,7 +932,9 @@ async function getAnalytics(req, res) {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const catWhere = scope.isAdmin ? undefined : { org_id: scope.organizationId };
-    const availableCatWhere = { status: 'available' };
+    const availableCatWhere = scope.isAdmin
+      ? { status: 'available' }
+      : { status: 'available', org_id: scope.organizationId };
     const applicationWhere = scope.isAdmin
       ? undefined
       : {
@@ -1037,6 +1075,44 @@ async function getAnalytics(req, res) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    const mostWantedCatMap = {};
+    applications.forEach((application) => {
+      if (!application.cat || !application.cat.id) return;
+      const catId = application.cat.id;
+      if (!mostWantedCatMap[catId]) {
+        mostWantedCatMap[catId] = {
+          id: catId,
+          name: application.cat.name || 'Unknown cat',
+          breed: application.cat.breed || 'Unknown',
+          count: 0,
+          approved_count: 0,
+          pending_count: 0,
+          rejected_count: 0,
+          last_applied_at: application.updated_at || application.created_at || null
+        };
+      }
+      const entry = mostWantedCatMap[catId];
+      entry.count += 1;
+      if (application.status === 'approved') entry.approved_count += 1;
+      else if (application.status === 'rejected') entry.rejected_count += 1;
+      else entry.pending_count += 1;
+      if (
+        application.updated_at &&
+        (!entry.last_applied_at || application.updated_at.getTime() > entry.last_applied_at.getTime())
+      ) {
+        entry.last_applied_at = application.updated_at;
+      }
+    });
+
+    const mostWantedCats = Object.values(mostWantedCatMap)
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        const ta = a.last_applied_at ? new Date(a.last_applied_at).getTime() : 0;
+        const tb = b.last_applied_at ? new Date(b.last_applied_at).getTime() : 0;
+        return tb - ta;
+      })
+      .slice(0, 5);
+
     const pendingAttentionItems = applications
       .filter((application) => application.status === 'pending')
       .slice(0, 3)
@@ -1107,6 +1183,7 @@ async function getAnalytics(req, res) {
           { status: 'approved', label: 'Approved', count: approvedApplications },
           { status: 'rejected', label: 'Rejected', count: rejectedApplications }
         ],
+        most_wanted_cats: mostWantedCats,
         breed_preferences: breedPreferences,
         attention_items: pendingAttentionItems.concat(conversationAttentionItems),
         recent_applications: recentApplications.map((application) => ({

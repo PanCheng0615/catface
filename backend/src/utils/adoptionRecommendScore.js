@@ -124,7 +124,7 @@ function preferenceBreedMatches(preferred_breed, cat_breed) {
 function preferenceGenderMatches(preferred_gender, cat_gender) {
   if (!preferred_gender || !cat_gender) return false;
   const p = normalizeText(preferred_gender);
-  if (p === 'no preference') return true;
+  if (p === 'no preference' || p === 'no_preference') return true;
   return p === normalizeText(cat_gender);
 }
 

@@ -50,7 +50,7 @@
     /* Notification list view */
     #view-list { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
     .list-scroll { overflow-y: auto; flex: 1; }
-    .notif-summary { display: grid; grid-template-columns: repeat(3,1fr); border-bottom: 1px solid var(--border); }
+    .notif-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid var(--border); }
     .summary-card { padding: 16px 10px; text-align: center; border-right: 1px solid var(--border); cursor: pointer; transition: background .15s, color .15s; }
     .summary-card:last-child { border-right: none; }
     .summary-card:hover { background: var(--surface-2); }
@@ -63,6 +63,7 @@
     .list-actions { display: flex; gap: 8px; padding: 0 16px 10px; flex-wrap: wrap; }
     .list-chip { border: 1.5px solid var(--border); background: #fff; color: var(--text-sub); padding: 8px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; }
     .list-chip:hover { border-color: var(--brand); color: var(--brand); }
+    .list-chip.is-active { background: var(--brand-light); border-color: var(--brand); color: var(--brand); }
     .date-div { padding: 8px 16px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; background: var(--bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
     .date-div:first-child { border-top: none; }
     .notif-item { display: flex; gap: 11px; padding: 14px 16px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background .15s; position: relative; align-items: center; }
@@ -196,6 +197,12 @@
     .fr-sub { font-size: 12px; color: var(--text-muted); }
     .fr-btn { padding: 6px 14px; border-radius: 99px; border: 1.5px solid var(--brand); color: var(--brand); background: none; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s; white-space: nowrap; }
     .fr-btn:hover { background: var(--brand); color: #fff; }
+
+    @media (max-width: 900px) {
+      .notif-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .summary-card:nth-child(2) { border-right: none; }
+      .summary-card:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+    }
   </style>
 </head>
 <body>
@@ -235,18 +242,13 @@
     <div id="view-list">
       <div class="list-scroll">
         <div class="notif-summary">
+          <div class="summary-card" id="summaryChat"><div class="summary-icon">&#x1F4E8;</div><div class="summary-num" id="summaryChatCount">0</div><div class="summary-label">Chat</div></div>
           <div class="summary-card" id="summaryLikes"><div class="summary-icon">&#x2665;&#xFE0F;</div><div class="summary-num" id="summaryLikesCount">0</div><div class="summary-label">Likes</div></div>
           <div class="summary-card" id="summaryComments"><div class="summary-icon">&#x1F4AC;</div><div class="summary-num" id="summaryCommentsCount">0</div><div class="summary-label">Comments</div></div>
           <div class="summary-card" id="summaryFollowers"><div class="summary-icon">&#x1F465;</div><div class="summary-num" id="summaryFollowersCount">0</div><div class="summary-label">Followers</div></div>
-          <div class="summary-card" id="summaryChat"><div class="summary-icon">&#x1F4E8;</div><div class="summary-num" id="summaryChatCount">0</div><div class="summary-label">Chat</div></div>
         </div>
         <button class="mark-btn" id="markAllReadBtn">Mark all as read</button>
-        <div class="list-actions">
-          <button class="list-chip" type="button" id="viewAllActivityBtn">All activity</button>
-          <button class="list-chip" type="button" id="viewFollowersBtn">View followers</button>
-          <button class="list-chip" type="button" id="viewFollowingBtn">View following</button>
-          <button class="list-chip" type="button" id="openFollowingFeedBtn">Open Following feed</button>
-        </div>
+        <div class="list-actions" id="categoryControls"></div>
         <div id="notifList"></div>
       </div>
     </div>
@@ -265,12 +267,6 @@
   <!-- RIGHT PANEL -->
   <aside class="right-panel">
     <div class="rp-card">
-      <div class="rp-title">&#x1F4CA; This Week</div>
-      <div class="rp-row"><div class="rp-icon" style="background:#fff0f3;">&#x2665;&#xFE0F;</div><div class="rp-info"><strong>Likes received</strong><span>Dynamic activity</span></div><div class="rp-num" id="weekLikes">0</div></div>
-      <div class="rp-row"><div class="rp-icon" style="background:#f0fdf4;">&#x1F4AC;</div><div class="rp-info"><strong>New comments</strong><span>Dynamic activity</span></div><div class="rp-num" id="weekComments">0</div></div>
-      <div class="rp-row"><div class="rp-icon" style="background:#eff6ff;">&#x1F465;</div><div class="rp-info"><strong>New followers</strong><span>Current followers</span></div><div class="rp-num" id="weekFollowers">0</div></div>
-    </div>
-    <div class="rp-card">
       <div class="rp-title">&#x1F43E; Follow Back</div>
       <div id="followBackList"></div>
     </div>
@@ -281,7 +277,7 @@
   </aside>
 </div>
 
-<script src="../js/config.js"></script>
+<script src="../js/config.js?v=20260421-1"></script>
 <script>
 (function () {
   var viewList = document.getElementById('view-list');
@@ -292,10 +288,7 @@
   var markAllReadBtn = document.getElementById('markAllReadBtn');
   var notifNavBadge = document.getElementById('notifNavBadge');
   var notifList = document.getElementById('notifList');
-  var viewAllActivityBtn = document.getElementById('viewAllActivityBtn');
-  var viewFollowersBtn = document.getElementById('viewFollowersBtn');
-  var viewFollowingBtn = document.getElementById('viewFollowingBtn');
-  var openFollowingFeedBtn = document.getElementById('openFollowingFeedBtn');
+  var categoryControls = document.getElementById('categoryControls');
   var summaryLikes = document.getElementById('summaryLikes');
   var summaryComments = document.getElementById('summaryComments');
   var summaryFollowers = document.getElementById('summaryFollowers');
@@ -303,6 +296,7 @@
   var state = {
     notifications: [],
     filter: 'all',
+    direction: 'all',
     contentMode: 'notifications',
     socialMode: 'followers',
     followers: [],
@@ -421,7 +415,73 @@
 
   function getFilteredNotifications() {
     return state.notifications.filter(function (item) {
-      return state.filter === 'all' || item.type === state.filter;
+      if (!(state.filter === 'all' || item.type === state.filter)) return false;
+      if (state.direction === 'incoming') return !item.is_outgoing;
+      if (state.direction === 'outgoing') return !!item.is_outgoing;
+      return true;
+    });
+  }
+
+  function getNotificationsForType(type) {
+    return state.notifications.filter(function (item) {
+      return item.type === type;
+    });
+  }
+
+  function getDirectionConfigForFilter() {
+    if (state.filter === 'likes') {
+      return {
+        all: 'All likes',
+        incoming: 'Liked my posts',
+        outgoing: 'I liked others'
+      };
+    }
+    if (state.filter === 'comments') {
+      return {
+        all: 'All comments',
+        incoming: 'Commented on my posts',
+        outgoing: 'My comments'
+      };
+    }
+    if (state.filter === 'follows') {
+      return {
+        all: 'All follows',
+        incoming: 'Followed me',
+        outgoing: 'I followed'
+      };
+    }
+    return null;
+  }
+
+  function countNotificationsForDirection(type, direction) {
+    return getNotificationsForType(type).filter(function (item) {
+      if (direction === 'incoming') return !item.is_outgoing;
+      if (direction === 'outgoing') return !!item.is_outgoing;
+      return true;
+    }).length;
+  }
+
+  function renderCategoryControls() {
+    if (!categoryControls) return;
+    var config = getDirectionConfigForFilter();
+    if (!config) {
+      categoryControls.innerHTML = '';
+      categoryControls.style.display = 'none';
+      return;
+    }
+    categoryControls.style.display = '';
+    categoryControls.innerHTML = ['all', 'incoming', 'outgoing'].map(function (direction) {
+      var label = config[direction];
+      var count = countNotificationsForDirection(state.filter, direction);
+      return '<button class="list-chip' + (state.direction === direction ? ' is-active' : '') + '" type="button" data-direction="' + escapeHtml(direction) + '">' +
+        escapeHtml(label) + ' (' + count + ')' +
+      '</button>';
+    }).join('');
+    categoryControls.querySelectorAll('[data-direction]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        state.direction = btn.getAttribute('data-direction') || 'all';
+        renderNotificationList();
+      });
     });
   }
 
@@ -451,28 +511,23 @@
     var likeCount = state.notifications.filter(function (item) { return item.type === 'likes'; }).length;
     var commentCount = state.notifications.filter(function (item) { return item.type === 'comments'; }).length;
     var chatCount = state.notifications.filter(function (item) { return item.type === 'chat'; }).length;
-    var followerCount = state.followers.length;
+    var followerCount = state.notifications.filter(function (item) { return item.type === 'follows'; }).length;
     document.getElementById('summaryLikesCount').textContent = String(likeCount);
     document.getElementById('summaryCommentsCount').textContent = String(commentCount);
     document.getElementById('summaryFollowersCount').textContent = String(followerCount);
     document.getElementById('summaryChatCount').textContent = String(chatCount);
-    document.getElementById('weekLikes').textContent = String(likeCount);
-    document.getElementById('weekComments').textContent = String(commentCount);
-    document.getElementById('weekFollowers').textContent = String(followerCount);
     summaryLikes.classList.toggle('is-active', state.contentMode === 'notifications' && state.filter === 'likes');
     summaryComments.classList.toggle('is-active', state.contentMode === 'notifications' && state.filter === 'comments');
-    summaryFollowers.classList.toggle('is-active', state.contentMode === 'social');
+    summaryFollowers.classList.toggle('is-active', state.contentMode === 'notifications' && state.filter === 'follows');
     if (summaryChat) {
       summaryChat.classList.toggle('is-active', state.contentMode === 'notifications' && state.filter === 'chat');
-    }
-    if (viewAllActivityBtn) {
-      viewAllActivityBtn.classList.toggle('is-active', state.contentMode === 'notifications' && state.filter === 'all');
     }
   }
 
   function renderNotificationList() {
     state.contentMode = 'notifications';
     var list = getFilteredNotifications();
+    renderCategoryControls();
     if (!notifList) return;
     if (!list.length) {
       notifList.innerHTML = '<div class="empty-state">No activity yet for this tab.</div>';
@@ -522,7 +577,6 @@
             '<button type="button" data-mode="followers"' + (mode === 'followers' ? ' class="is-active"' : '') + '>Followers</button>' +
             '<button type="button" data-mode="following"' + (mode === 'following' ? ' class="is-active"' : '') + '>Following</button>' +
           '</div>' +
-          '<button class="list-chip" type="button" id="openFeedInline">Open Following feed</button>' +
         '</div>' +
         '<div class="social-list">' + renderUserRows(list) + '</div>' +
       '</div>';
@@ -531,12 +585,6 @@
         renderInlineSocial(btn.getAttribute('data-mode'));
       });
     });
-    var openFeedInline = document.getElementById('openFeedInline');
-    if (openFeedInline) {
-      openFeedInline.addEventListener('click', function () {
-        window.location.href = '/pages/cat-facebook.html?feed=followed';
-      });
-    }
     bindFollowButtons(notifList);
     updateUnreadUi();
     renderSummary();
@@ -672,6 +720,7 @@
     viewDetail.classList.remove('open');
     viewDetail.style.display = 'none';
     viewList.style.display = 'flex';
+    renderCategoryControls();
   }
 
   function renderRightPanel() {
@@ -773,6 +822,7 @@
   if (summaryLikes) {
     summaryLikes.addEventListener('click', function () {
       state.filter = 'likes';
+      state.direction = 'all';
       showList();
       renderNotificationList();
     });
@@ -780,45 +830,27 @@
   if (summaryComments) {
     summaryComments.addEventListener('click', function () {
       state.filter = 'comments';
+      state.direction = 'all';
       showList();
       renderNotificationList();
     });
   }
   if (summaryFollowers) {
     summaryFollowers.addEventListener('click', function () {
-      showSocialDetail('followers');
+      state.filter = 'follows';
+      state.direction = 'all';
+      showList();
+      renderNotificationList();
     });
   }
   if (summaryChat) {
     summaryChat.addEventListener('click', function () {
       state.filter = 'chat';
+      state.direction = 'all';
       showList();
       renderNotificationList();
     });
   }
-  if (viewAllActivityBtn) {
-    viewAllActivityBtn.addEventListener('click', function () {
-      state.filter = 'all';
-      showList();
-      renderNotificationList();
-    });
-  }
-  if (viewFollowersBtn) {
-    viewFollowersBtn.addEventListener('click', function () {
-      showSocialDetail('followers');
-    });
-  }
-  if (viewFollowingBtn) {
-    viewFollowingBtn.addEventListener('click', function () {
-      showSocialDetail('following');
-    });
-  }
-  if (openFollowingFeedBtn) {
-    openFollowingFeedBtn.addEventListener('click', function () {
-      window.location.href = '/pages/cat-facebook.html?feed=followed';
-    });
-  }
-
   (function syncUserUi() {
     var user = loadUser();
     var heroName = document.querySelector('.nav-hero-name');

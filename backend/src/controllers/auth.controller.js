@@ -36,6 +36,53 @@ function normalizeNullableBoolean(raw) {
   return null;
 }
 
+async function resolveSafeFaceCode(db, preferredFaceCode, excludeCatId) {
+  const raw = preferredFaceCode ? String(preferredFaceCode).trim() : '';
+  if (!raw) return null;
+
+  const existingFaceCode = await db.cat.findUnique({
+    where: { face_code: raw },
+    select: { id: true }
+  });
+
+  if (!existingFaceCode) return raw;
+  if (excludeCatId && existingFaceCode.id === excludeCatId) return raw;
+  return null;
+}
+
+async function saveCatFaceEmbedding(db, options) {
+  const {
+    catId,
+    inference,
+    imageDataUrl,
+    threshold
+  } = options || {};
+
+  if (!catId || !inference) {
+    const err = new Error('Cannot save cat face embedding: missing cat or inference payload.');
+    err.code = 'FaceEmbeddingSaveInvalid';
+    throw err;
+  }
+
+  if (!Array.isArray(inference.embedding) || !inference.embedding.length) {
+    const err = new Error(
+      'Cat face model did not return a usable embedding vector; recognition data was not saved.'
+    );
+    err.code = 'FaceEmbeddingMissing';
+    throw err;
+  }
+
+  return db.catFaceEmbedding.create({
+    data: {
+      cat_id: catId,
+      embedding_json: inference.embedding,
+      source_photo_url: imageDataUrl || null,
+      provider: inference.provider || 'kam_face_pipeline',
+      similarity_threshold: typeof threshold === 'number' ? threshold : getCatFaceThreshold()
+    }
+  });
+}
+
 function serializeUser(user) {
   if (!user) return null;
 
@@ -212,7 +259,7 @@ async function ensureRescueStaffUserForOrganization(organization) {
 // POST /api/auth/register
 async function register(req, res) {
   try {
-    const { email, password, username, display_name, role, has_cat, adoption_preferences, owner_cat_enrollment } = req.body;
+    const { email, password, username, display_name, role, has_cat, adoption_preferences, owner_cat_face_check } = req.body;
 
     if (!email || !password || !username) {
       return res.status(422).json({
@@ -249,80 +296,42 @@ async function register(req, res) {
     // 加密密码
     const hashedPassword = await bcrypt.hash(password, 10);
     const ownerSignup = Boolean(has_cat);
-    const ownerEnrollInput = owner_cat_enrollment && typeof owner_cat_enrollment === 'object'
-      ? owner_cat_enrollment
+    const ownerFaceCheckInput = owner_cat_face_check && typeof owner_cat_face_check === 'object'
+      ? owner_cat_face_check
       : null;
 
+    let ownerFaceCheck = null;
     if (ownerSignup) {
-      if (!ownerEnrollInput || !ownerEnrollInput.image_data_url || !ownerEnrollInput.name) {
+      if (!ownerFaceCheckInput || !ownerFaceCheckInput.image_data_url) {
         return res.status(422).json({
           success: false,
           error: 'ValidationError',
-          message: 'Owner sign-up requires completed cat-face enrollment and cat info.'
+          message: 'Please upload your cat photo and complete cat face recognition first.'
         });
       }
 
-      const faceCheck = await resolveCatFaceMatch(String(ownerEnrollInput.image_data_url));
-      if (!faceCheck.inference || !faceCheck.inference.success) {
-        return res.status(mapCatFaceErrorToStatus(faceCheck.inference && faceCheck.inference.error_code)).json({
+      ownerFaceCheck = await resolveCatFaceMatch(String(ownerFaceCheckInput.image_data_url));
+      if (!ownerFaceCheck.inference || !ownerFaceCheck.inference.success) {
+        return res.status(mapCatFaceErrorToStatus(ownerFaceCheck.inference && ownerFaceCheck.inference.error_code)).json({
           success: false,
-          error: (faceCheck.inference && faceCheck.inference.error_code) || 'FaceInferenceFailed',
-          message: (faceCheck.inference && faceCheck.inference.message) || 'Cat face verification failed during sign-up.'
+          error: (ownerFaceCheck.inference && ownerFaceCheck.inference.error_code) || 'FaceInferenceFailed',
+          message: (ownerFaceCheck.inference && ownerFaceCheck.inference.message) || 'Cat face verification failed during sign-up.'
         });
       }
-      if (!faceCheck.inference.face_detected) {
+      if (!ownerFaceCheck.inference.face_detected) {
         return res.status(422).json({
           success: false,
           error: 'CatFaceNotDetected',
-          message: faceCheck.inference.message || 'No cat face detected in the uploaded image.'
+          message: ownerFaceCheck.inference.message || 'No cat face detected in the uploaded image.'
         });
       }
-      if (faceCheck.matchedRecord && faceCheck.matchedRecord.cat) {
+      if (ownerFaceCheck.matchedRecord && ownerFaceCheck.matchedRecord.cat) {
         return res.status(422).json({
           success: false,
           error: 'CatFaceAlreadyExists',
-          message: 'This cat face already exists in database. Please use another cat face.'
+          message: 'This cat already exists in the system. Please use another cat photo.'
         });
       }
-    }
-
-    // 创建用户（字段名要和 Member5 的 users 表对应）
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        username,                         // 必填
-        display_name: display_name || '', // 可选
-        has_cat: Boolean(has_cat),
-        role: role || 'user'
-      }
-    });
-
-    if (ownerSignup && ownerEnrollInput) {
-      const requestedFaceCode = ownerEnrollInput.face_code ? String(ownerEnrollInput.face_code).trim() : '';
-      let safeFaceCode = requestedFaceCode || null;
-      if (safeFaceCode) {
-        const existingFaceCode = await prisma.cat.findUnique({
-          where: { face_code: safeFaceCode },
-          select: { id: true }
-        });
-        if (existingFaceCode) safeFaceCode = null;
-      }
-      await prisma.cat.create({
-        data: {
-          name: String(ownerEnrollInput.name || '').trim().slice(0, 120) || 'My Cat',
-          breed: ownerEnrollInput.breed ? String(ownerEnrollInput.breed).trim() : null,
-          gender: normalizeCatGender(ownerEnrollInput.gender),
-          is_neutered: normalizeNullableBoolean(ownerEnrollInput.is_neutered),
-          is_vaccinated: normalizeNullableBoolean(ownerEnrollInput.is_vaccinated),
-          intake_date: ownerEnrollInput.intake_date ? new Date(ownerEnrollInput.intake_date) : null,
-          face_code: safeFaceCode,
-          description: ownerEnrollInput.description ? String(ownerEnrollInput.description).trim() : null,
-          photo_url: String(ownerEnrollInput.image_data_url),
-          owner_id: user.id,
-          status: 'adopted'
-        }
-      });
     }
 
     const prefInput = adoption_preferences && typeof adoption_preferences === 'object'
@@ -335,27 +344,69 @@ async function register(req, res) {
       prefInput.home_environment ||
       (Array.isArray(prefInput.personality_tags) && prefInput.personality_tags.length)
     );
-    if (shouldSavePreferences) {
-      const createData = {
-        user_id: user.id,
-        preferred_gender: prefInput.preferred_gender || null,
-        preferred_age: prefInput.preferred_age || null,
-        preferred_breed: prefInput.preferred_breed || null
-      };
-      if (hasAdopterPreferenceField('home_environment')) {
-        createData.home_environment = prefInput.home_environment || null;
-      }
-      if (hasAdopterPreferenceField('personality_tags')) {
-        createData.personality_tags = Array.isArray(prefInput.personality_tags)
-          ? prefInput.personality_tags.map((item) => String(item || '').trim()).filter(Boolean)
-          : [];
-      }
-      await prisma.adopterPreference.upsert({
-        where: { user_id: user.id },
-        create: createData,
-        update: createData
+
+    const user = await prisma.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          username,
+          display_name: display_name || '',
+          has_cat: Boolean(has_cat),
+          role: role || 'user'
+        }
       });
-    }
+
+      if (shouldSavePreferences) {
+        const createData = {
+          user_id: createdUser.id,
+          preferred_gender: prefInput.preferred_gender || null,
+          preferred_age: prefInput.preferred_age || null,
+          preferred_breed: prefInput.preferred_breed || null
+        };
+        if (hasAdopterPreferenceField('home_environment')) {
+          createData.home_environment = prefInput.home_environment || null;
+        }
+        if (hasAdopterPreferenceField('personality_tags')) {
+          createData.personality_tags = Array.isArray(prefInput.personality_tags)
+            ? prefInput.personality_tags.map((item) => String(item || '').trim()).filter(Boolean)
+            : [];
+        }
+        await tx.adopterPreference.upsert({
+          where: { user_id: createdUser.id },
+          create: createData,
+          update: createData
+        });
+      }
+
+      if (ownerSignup && ownerFaceCheck && ownerFaceCheck.inference && ownerFaceCheck.inference.face_detected) {
+        const safeFaceCode = await resolveSafeFaceCode(
+          tx,
+          ownerFaceCheckInput && ownerFaceCheckInput.suggested_face_code
+            ? ownerFaceCheckInput.suggested_face_code
+            : ownerFaceCheck.inference.suggested_face_code
+        );
+
+        const createdCat = await tx.cat.create({
+          data: {
+            name: `${(display_name || username || 'My').trim().slice(0, 80)}'s Cat`,
+            face_code: safeFaceCode,
+            photo_url: String(ownerFaceCheckInput.image_data_url),
+            owner_id: createdUser.id,
+            status: 'adopted'
+          }
+        });
+
+        await saveCatFaceEmbedding(tx, {
+          catId: createdCat.id,
+          inference: ownerFaceCheck.inference,
+          imageDataUrl: String(ownerFaceCheckInput.image_data_url),
+          threshold: ownerFaceCheck.threshold
+        });
+      }
+
+      return createdUser;
+    });
 
     const token = generateToken({ id: user.id, role: user.role });
 
@@ -712,17 +763,28 @@ async function bindCatFaceOwner(req, res) {
       });
     }
 
-    const updatedCat = await prisma.cat.update({
-      where: { id: matchedRecord.cat.id },
-      data: { owner_id: userId },
-      select: {
-        id: true,
-        name: true,
-        face_code: true,
-        photo_url: true,
-        status: true,
-        owner_id: true
-      }
+    const updatedCat = await prisma.$transaction(async (tx) => {
+      const cat = await tx.cat.update({
+        where: { id: matchedRecord.cat.id },
+        data: { owner_id: userId },
+        select: {
+          id: true,
+          name: true,
+          face_code: true,
+          photo_url: true,
+          status: true,
+          owner_id: true
+        }
+      });
+
+      await saveCatFaceEmbedding(tx, {
+        catId: cat.id,
+        inference,
+        imageDataUrl: String(image_data_url),
+        threshold
+      });
+
+      return cat;
     });
 
     const token = generateToken({ id: currentUser.id, role: currentUser.role });
@@ -771,6 +833,7 @@ async function enrollCatWithFace(req, res) {
     }
 
     const {
+      cat_id,
       image_data_url,
       name,
       breed,
@@ -797,50 +860,119 @@ async function enrollCatWithFace(req, res) {
       });
     }
 
-    const faceCodeRaw = face_code ? String(face_code).trim() : '';
-    let safeFaceCode = faceCodeRaw || null;
-    if (safeFaceCode) {
-      const existingFaceCode = await prisma.cat.findUnique({
-        where: { face_code: safeFaceCode },
-        select: { id: true }
+    const inference = await runKamFaceInference(String(image_data_url));
+    if (!inference.success) {
+      return res.status(mapCatFaceErrorToStatus(inference.error_code)).json({
+        success: false,
+        error: inference.error_code || 'FaceInferenceFailed',
+        message: inference.message || 'Cat face enrollment failed',
+        data: inference
       });
-      if (existingFaceCode) {
-        safeFaceCode = null;
-      }
+    }
+    if (!inference.face_detected) {
+      return res.status(422).json({
+        success: false,
+        error: 'CatFaceNotDetected',
+        message: inference.message || 'No cat face detected in the uploaded image.'
+      });
     }
 
-    const createdCat = await prisma.cat.create({
-      data: {
-        name: String(name).trim().slice(0, 120),
-        breed: breed ? String(breed).trim() : null,
-        gender: gender ? String(gender).trim().toLowerCase() : null,
-        is_neutered: is_neutered == null ? null : Boolean(is_neutered),
-        is_vaccinated: is_vaccinated == null ? null : Boolean(is_vaccinated),
-        intake_date: intake_date ? new Date(intake_date) : null,
-        face_code: safeFaceCode,
-        description: description ? String(description).trim() : null,
-        photo_url: String(image_data_url),
-        owner_id: userId,
-        status: 'adopted'
-      },
-      select: {
-        id: true,
-        name: true,
-        face_code: true,
-        breed: true,
-        gender: true,
-        is_neutered: true,
-        is_vaccinated: true,
-        intake_date: true,
-        description: true,
-        owner_id: true,
-        status: true
-      }
-    });
+    const createdCat = await prisma.$transaction(async (tx) => {
+      let cat;
+      if (cat_id) {
+        const existingCat = await tx.cat.findUnique({
+          where: { id: String(cat_id) },
+          select: { id: true, owner_id: true, face_code: true, status: true }
+        });
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: { has_cat: true }
+        if (!existingCat) {
+          const error = new Error('Cat not found.');
+          error.statusCode = 404;
+          throw error;
+        }
+        if (existingCat.owner_id !== userId) {
+          const error = new Error('You can only complete cat face info for your own cat.');
+          error.statusCode = 403;
+          throw error;
+        }
+
+        const safeFaceCode = await resolveSafeFaceCode(tx, face_code || inference.suggested_face_code, existingCat.id);
+        cat = await tx.cat.update({
+          where: { id: existingCat.id },
+          data: {
+            name: String(name).trim().slice(0, 120),
+            breed: breed ? String(breed).trim() : null,
+            gender: gender ? String(gender).trim().toLowerCase() : null,
+            is_neutered: is_neutered == null ? null : Boolean(is_neutered),
+            is_vaccinated: is_vaccinated == null ? null : Boolean(is_vaccinated),
+            intake_date: intake_date ? new Date(intake_date) : null,
+            face_code: safeFaceCode || existingCat.face_code,
+            description: description ? String(description).trim() : null,
+            photo_url: String(image_data_url),
+            owner_id: userId,
+            status: existingCat.status || 'adopted'
+          },
+          select: {
+            id: true,
+            name: true,
+            face_code: true,
+            breed: true,
+            gender: true,
+            is_neutered: true,
+            is_vaccinated: true,
+            intake_date: true,
+            description: true,
+            owner_id: true,
+            status: true,
+            photo_url: true
+          }
+        });
+      } else {
+        const safeFaceCode = await resolveSafeFaceCode(tx, face_code || inference.suggested_face_code);
+        cat = await tx.cat.create({
+          data: {
+            name: String(name).trim().slice(0, 120),
+            breed: breed ? String(breed).trim() : null,
+            gender: gender ? String(gender).trim().toLowerCase() : null,
+            is_neutered: is_neutered == null ? null : Boolean(is_neutered),
+            is_vaccinated: is_vaccinated == null ? null : Boolean(is_vaccinated),
+            intake_date: intake_date ? new Date(intake_date) : null,
+            face_code: safeFaceCode,
+            description: description ? String(description).trim() : null,
+            photo_url: String(image_data_url),
+            owner_id: userId,
+            status: 'adopted'
+          },
+          select: {
+            id: true,
+            name: true,
+            face_code: true,
+            breed: true,
+            gender: true,
+            is_neutered: true,
+            is_vaccinated: true,
+            intake_date: true,
+            description: true,
+            owner_id: true,
+            status: true,
+            photo_url: true
+          }
+        });
+      }
+
+      await saveCatFaceEmbedding(tx, {
+        catId: cat.id,
+        inference,
+        imageDataUrl: String(image_data_url),
+        threshold: getCatFaceThreshold()
+      });
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { has_cat: true }
+      });
+
+      return cat;
     });
 
     return res.status(201).json({
@@ -850,10 +982,129 @@ async function enrollCatWithFace(req, res) {
     });
   } catch (error) {
     console.error('enrollCatWithFace error:', error);
+    if (error && error.statusCode) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: error.statusCode === 404 ? 'CatNotFound' : 'Forbidden',
+        message: error.message || 'Cat profile enrollment failed'
+      });
+    }
     return res.status(500).json({
       success: false,
       error: 'ServerError',
       message: error.message || 'Cat profile enrollment failed'
+    });
+  }
+}
+
+// POST /api/auth/org/register
+// 诊所注册：在 Organization 表和 User 表同时创建记录，一步完成
+// 这样 getOrgIdForUser() 就能通过邮箱匹配找到诊所身份
+async function orgRegister(req, res) {
+  try {
+    const { name, email, password, phone, address, license_number, type } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '诊所名称、邮箱、密码为必填项'
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '密码长度至少为 6 个字符'
+      });
+    }
+
+    // 检查 Organization 是否已存在
+    const existingOrg = await prisma.organization.findUnique({ where: { email } });
+    if (existingOrg) {
+      return res.status(422).json({
+        success: false,
+        error: 'OrgExists',
+        message: '该邮箱已被注册为机构账号，请直接登录'
+      });
+    }
+
+    // 检查 User 是否已存在（同一邮箱）
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(422).json({
+        success: false,
+        error: 'UserExists',
+        message: '该邮箱已被注册为普通用户，请使用其他邮箱'
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const orgType = type === 'rescue' ? 'rescue' : 'clinic';
+
+    // 创建 Organization
+    const org = await prisma.organization.create({
+      data: {
+        name,
+        type: orgType,
+        email,
+        password: hashedPassword, // bcrypt 加密存储
+        phone: phone || null,
+        address: address || null,
+        license_number: license_number || null,
+        is_verified: false
+      }
+    });
+
+    // 自动创建关联的 User（role=clinic_staff），由 ensureRescueStaffUserForOrganization 统一处理
+    const staffUser = await ensureRescueStaffUserForOrganization(org);
+
+    const token = generateToken({
+      id: staffUser.id,
+      role: staffUser.role,
+      account_type: 'organization',
+      organization_id: org.id,
+      organization_type: org.type,
+      organization_name: org.name
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        token,
+        organization: {
+          id: org.id,
+          name: org.name,
+          type: org.type,
+          email: org.email,
+          phone: org.phone,
+          address: org.address,
+          is_verified: org.is_verified
+        },
+        user: {
+          id: staffUser.id,
+          username: staffUser.username,
+          display_name: staffUser.display_name,
+          role: staffUser.role
+        }
+      },
+      message: '诊所注册成功'
+    });
+  } catch (error) {
+    console.error('orgRegister error:', error);
+    if (error && error.code === 'P2002') {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: '该邮箱已被注册，请更换后重试'
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      error: 'ServerError',
+      message: '服务器错误'
     });
   }
 }
@@ -943,6 +1194,7 @@ module.exports = {
   loginWithCatFace,
   bindCatFaceOwner,
   enrollCatWithFace,
+  orgRegister,
   orgLogin,
   ensureRescueStaffUserForOrganization
 };

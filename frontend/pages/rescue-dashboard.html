@@ -1279,7 +1279,7 @@
           <article class="stat-card" data-stat="available_cats">
             <div class="stat-label">Available Cats</div>
             <div class="stat-value">0</div>
-            <div class="stat-note">Platform-wide cats open for adoption</div>
+            <div class="stat-note">Cats from your organization currently open for adoption</div>
           </article>
           <article class="stat-card" data-stat="total_applications">
             <div class="stat-label">Total Applications</div>
@@ -1330,8 +1330,8 @@
           <article class="chart-card">
             <div class="panel-head">
               <div>
-                <h2>Status Breakdown</h2>
-                <p>Spot where the workflow is piling up right now.</p>
+                <h2>Most Wanted Cats</h2>
+                <p>See which cats attract the most adoption interest right now.</p>
               </div>
             </div>
             <div class="chart-surface metric-list" id="dashboard-status-breakdown"></div>
@@ -1433,8 +1433,8 @@
                 <input id="cat-breed" type="text" placeholder="Enter breed">
               </div>
               <div class="field">
-                <label for="cat-age">Estimated Age</label>
-                <input id="cat-age" type="text" placeholder="Enter age">
+                <label for="cat-age">Estimated Birth Date</label>
+                <input id="cat-age" type="date">
               </div>
               <div class="field">
                 <label for="cat-status">Adoption Status</label>
@@ -1680,7 +1680,7 @@
             <div class="profile-row"><span class="profile-label">Breed</span><span class="profile-value" id="cat-profile-breed">Domestic Shorthair</span></div>
             <div class="profile-row"><span class="profile-label">Gender</span><span class="profile-value" id="cat-profile-gender">Female</span></div>
             <div class="profile-row"><span class="profile-label">Age</span><span class="profile-value" id="cat-profile-age">1 year</span></div>
-            <div class="profile-row"><span class="profile-label">Birthday</span><span class="profile-value" id="cat-profile-birthday">2024-02-14</span></div>
+            <div class="profile-row"><span class="profile-label">Estimated Birth Date</span><span class="profile-value" id="cat-profile-birthday">2024-02-14</span></div>
           </div>
         </article>
         <article class="profile-card">
@@ -1690,7 +1690,7 @@
             <div class="profile-row"><span class="profile-label">Spayed / Neutered</span><span class="profile-value" id="cat-profile-spayed">Yes</span></div>
             <div class="profile-row"><span class="profile-label">Vaccination Status</span><span class="profile-value" id="cat-profile-vaccination-status">Core vaccines completed</span></div>
             <div class="profile-row"><span class="profile-label">Found Location</span><span class="profile-value" id="cat-profile-found-location">Kowloon City</span></div>
-            <div class="profile-row"><span class="profile-label">Allergy History</span><span class="profile-value" id="cat-profile-allergy-history">No known allergies</span></div>
+            <div class="profile-row"><span class="profile-label">Rescue Notes</span><span class="profile-value" id="cat-profile-allergy-history">No rescue notes</span></div>
             <div class="profile-row"><span class="profile-label">Adoption Status</span><span class="profile-value" id="cat-profile-adoption-status">Available</span></div>
           </div>
         </article>
@@ -1834,7 +1834,7 @@
     </div>
   </section>
 
-  <script src="../js/rescue-dashboard.js?v=20260414-tag-toggle-fix"></script>
+  <script src="../js/rescue-dashboard.js?v=20260421-most-wanted-cats"></script>
   <script>
     (function () {
       if (window.__CATFACE_EXTERNAL_RESCUE__) return;

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CatFace · Rescue Log In</title>
+  <title>CatFace · Clinic Log In</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -56,7 +56,7 @@
       overflow: hidden;
     }
     .page-left::after {
-      content: '🐾';
+      content: '🏥';
       position: absolute;
       right: -10px;
       bottom: 20px;
@@ -137,124 +137,48 @@
         <span class="logo-text">CatFace</span>
       </div>
       <div class="left-body">
-        <h2>Rescue workspace for adoption partners</h2>
+        <h2>Clinic workspace for verified partners</h2>
         <div class="feature-list">
-          <div class="feature-item"><span class="feature-icon">&#x1F43E;</span><span>Manage rescued cat profiles and keep adoption listings up to date</span></div>
-          <div class="feature-item"><span class="feature-icon">&#x1F4CB;</span><span>Review adoption applications and follow the full rescue workflow</span></div>
-          <div class="feature-item"><span class="feature-icon">&#x1F389;</span><span>Create events and coordinate adoption activities from one dashboard</span></div>
-          <div class="feature-item"><span class="feature-icon">&#x1F4AC;</span><span>Chat with potential adopters without mixing rescue and user accounts</span></div>
+          <div class="feature-item"><span class="feature-icon">&#x1F489;</span><span>Review authorized patient profiles and owner-submitted health records</span></div>
+          <div class="feature-item"><span class="feature-icon">&#x1F4C4;</span><span>Upload official clinic reports and maintain certified medical history</span></div>
+          <div class="feature-item"><span class="feature-icon">&#x1F6E1;</span><span>Access only cats that have granted permission to your clinic organization</span></div>
+          <div class="feature-item"><span class="feature-icon">&#x1F63A;</span><span>Keep clinic operations separate from rescue and adopter accounts</span></div>
         </div>
       </div>
-      <div class="left-footer">CatFace · Rescue Portal Access</div>
+      <div class="left-footer">CatFace · Clinic Portal Access</div>
     </div>
 
     <div class="page-right">
       <a class="back-link" href="/pages/log-in.html">&#x2190; Back to User Login</a>
       <div class="tab-bar">
-        <div class="tab active">Rescue Log In</div>
+        <div class="tab active">Clinic Log In</div>
       </div>
 
-      <form class="form-panel" id="rescue-login-form">
+      <form class="form-panel" id="clinic-login-form">
         <div>
-          <div class="form-title">Rescue access</div>
-          <div class="form-sub">Use your rescue organization account to enter the rescue dashboard and manage cats, applications, and conversations.</div>
+          <div class="form-title">Clinic access</div>
+          <div class="form-sub">Use your clinic organization account to enter the clinic portal and manage certified reports.</div>
         </div>
 
         <div class="field">
-          <label for="rescue-email">Organization Email</label>
-          <input id="rescue-email" type="email" autocomplete="email" placeholder="Enter rescue organization email" required>
+          <label for="clinic-email">Clinic Email</label>
+          <input id="clinic-email" type="email" autocomplete="email" placeholder="Enter clinic email" required>
         </div>
 
         <div class="field">
-          <label for="rescue-password">Password</label>
-          <input id="rescue-password" type="password" autocomplete="current-password" placeholder="Enter password" required>
+          <label for="clinic-password">Password</label>
+          <input id="clinic-password" type="password" autocomplete="current-password" placeholder="Enter password" required>
         </div>
 
-        <div class="meta-note">After login, this page stores the organization session in your browser and redirects to `rescue-dashboard.html`.</div>
-        <div class="status-msg" id="rescue-login-status"></div>
-        <button class="btn-submit" type="submit" id="rescue-login-submit">Log in to Rescue Dashboard</button>
-        <div class="switch-note">Need the clinic portal instead? <a href="/pages/clinic-login.html">Go to pet clinic login</a></div>
+        <div class="meta-note">After login, this page stores the clinic session in your browser and redirects to `clinic-portal.html`.</div>
+        <div class="status-msg" id="clinic-login-status"></div>
+        <button class="btn-submit" type="submit" id="clinic-login-submit">Log in to Clinic Portal</button>
+        <div class="switch-note">Need the rescue dashboard instead? <a href="/pages/org-login.html">Go to rescue organization login</a></div>
       </form>
     </div>
   </div>
 
   <script src="../js/config.js"></script>
-  <script>
-    (function () {
-      var form = document.getElementById('rescue-login-form');
-      var emailInput = document.getElementById('rescue-email');
-      var passwordInput = document.getElementById('rescue-password');
-      var status = document.getElementById('rescue-login-status');
-      var submitBtn = document.getElementById('rescue-login-submit');
-
-      function setStatus(message, type) {
-        status.textContent = message || '';
-        status.className = 'status-msg' + (message ? ' ' + type : '');
-      }
-
-      function saveOrgSession(token, userData, orgData) {
-        localStorage.setItem('catface_token', token);
-        localStorage.setItem('catface_org_token', token);
-        localStorage.setItem('catface_user', JSON.stringify({
-          id: userData.id,
-          username: userData.username || userData.display_name || 'org',
-          display_name: userData.display_name || orgData.name,
-          role: userData.role,
-          email: orgData.email,
-          organization_id: orgData.id,
-          organization_name: orgData.name,
-          organization_type: orgData.type,
-          account_type: 'organization'
-        }));
-        localStorage.setItem('catface_org_profile', JSON.stringify(orgData));
-      }
-
-      form.addEventListener('submit', function (event) {
-        event.preventDefault();
-
-        var email = emailInput.value.trim();
-        var password = passwordInput.value;
-
-        if (!email || !password) {
-          setStatus('Please enter your email and password', 'error');
-          return;
-        }
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Signing in...';
-        setStatus('', '');
-
-        fetch(API_BASE_URL + '/auth/org/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email, password: password })
-        })
-          .then(function (response) {
-            return response.json().then(function (payload) {
-              return { ok: response.ok, payload: payload };
-            });
-          })
-          .then(function (result) {
-            if (!result.ok || !result.payload || !result.payload.success) {
-              throw new Error((result.payload && result.payload.message) || 'Login failed');
-            }
-
-            var data = result.payload.data || {};
-            saveOrgSession(data.token, data.rescue_staff_user, data.organization);
-            setStatus('Login successful! Redirecting...', 'success');
-            setTimeout(function () {
-              window.location.href = '/pages/rescue-dashboard.html';
-            }, 800);
-          })
-          .catch(function (error) {
-            setStatus(error.message || 'Network error — make sure the backend server is running on port 3000', 'error');
-          })
-          .finally(function () {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Log in to Rescue Dashboard';
-          });
-      });
-    })();
-  </script>
+  <script src="../js/clinic-login.js"></script>
 </body>
 </html>

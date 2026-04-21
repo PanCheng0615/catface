@@ -1,4 +1,6 @@
 (function () {
+  const FEED_PAGE_SIZE = 15;
+  const FEED_SCROLL_THRESHOLD_PX = 800;
   let posts = [];
   let trendingById = {};
   let currentPostId = null;
@@ -6,7 +8,11 @@
   let activeChipFilter = "all";
   let feedLoadState = "loading";
   let latestFeedRequestId = 0;
-let pendingPostToOpen = "";
+  let pendingPostToOpen = "";
+  let feedOffset = 0;
+  let feedHasMore = true;
+  let feedLoadingMore = false;
+  let feedFillCheckTimer = 0;
 
   function getCurrentUserId() {
     try {
@@ -33,6 +39,32 @@ let pendingPostToOpen = "";
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  }
+
+  function optimizeCommunityImg(src, options) {
+    const raw = String(src || "").trim();
+    const opts = options || {};
+    if (!raw || /^data:/i.test(raw) || /^blob:/i.test(raw) || /^[./]/.test(raw)) return raw;
+    try {
+      const url = new URL(raw, window.location.origin);
+      const host = String(url.hostname || "").toLowerCase();
+      if (host === "cataas.com" || /(^|\.)cataas\.com$/.test(host)) {
+        if (opts.width) url.searchParams.set("width", String(opts.width));
+        if (opts.height) url.searchParams.set("height", String(opts.height));
+        return url.toString();
+      }
+      if (host === "images.unsplash.com") {
+        if (opts.width) url.searchParams.set("w", String(opts.width));
+        if (opts.height) url.searchParams.set("h", String(opts.height));
+        url.searchParams.set("auto", "format");
+        url.searchParams.set("fit", "crop");
+        url.searchParams.set("q", String(opts.quality || 72));
+        return url.toString();
+      }
+      return raw;
+    } catch (e) {
+      return raw;
+    }
   }
 
   function setComposeInUrl(isOpen) {
@@ -147,6 +179,7 @@ let pendingPostToOpen = "";
       activeChipFilter = getChipFilterKeyFromElement(chip);
       updateChipStyles();
       renderFeed();
+      scheduleFeedFillCheck();
     });
     chipsRow.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
@@ -156,8 +189,43 @@ let pendingPostToOpen = "";
       activeChipFilter = getChipFilterKeyFromElement(chip);
       updateChipStyles();
       renderFeed();
+      scheduleFeedFillCheck();
     });
     updateChipStyles();
+  }
+
+  function mergePosts(existingPosts, incomingPosts) {
+    const seenIds = new Set((existingPosts || []).map(function (post) { return post.id; }));
+    const merged = (existingPosts || []).slice();
+    (incomingPosts || []).forEach(function (post) {
+      if (!post || !post.id || seenIds.has(post.id)) return;
+      seenIds.add(post.id);
+      merged.push(post);
+    });
+    return merged;
+  }
+
+  function isNearFeedBottom() {
+    const doc = document.documentElement;
+    return window.innerHeight + window.scrollY >= doc.scrollHeight - FEED_SCROLL_THRESHOLD_PX;
+  }
+
+  function scheduleFeedFillCheck() {
+    if (feedFillCheckTimer) return;
+    feedFillCheckTimer = window.setTimeout(function () {
+      feedFillCheckTimer = 0;
+      maybeLoadMoreFeed();
+    }, 0);
+  }
+
+  function maybeLoadMoreFeed() {
+    if (feedLoadState !== "ok" || feedLoadingMore || !feedHasMore) return;
+    const visiblePosts = filterPostsByActiveChip(posts);
+    const doc = document.documentElement;
+    const contentShort = doc.scrollHeight <= window.innerHeight + 120;
+    if (isNearFeedBottom() || contentShort || !visiblePosts.length) {
+      fetchBrowseFeed(currentFeed, { append: true });
+    }
   }
 
   function normalizeCommunityPost(p) {
@@ -346,13 +414,13 @@ let pendingPostToOpen = "";
     if (!post) return;
     currentPostId = id;
     if (!postOverlay || !postDetailImage || !detailAuthorAvatar || !detailAuthorName || !detailTime || !detailText) return;
-    postDetailImage.src = post.image || "";
+    postDetailImage.src = optimizeCommunityImg(post.image || "", { width: 1200, height: 1200, quality: 80 });
     postDetailImage.style.display = post.image ? "" : "none";
     if (postModalBody) {
       postModalBody.classList.toggle("no-image", !post.image);
     }
     if (post.authorAvatar) {
-      detailAuthorAvatar.innerHTML = '<img src="' + escapeHtml(post.authorAvatar) + '" alt="">';
+      detailAuthorAvatar.innerHTML = '<img src="' + escapeHtml(optimizeCommunityImg(post.authorAvatar, { width: 128, height: 128, quality: 72 })) + '" alt="" decoding="async">';
     } else {
       detailAuthorAvatar.textContent = post.authorInitial || post.author[0] || "C";
     }
@@ -654,7 +722,7 @@ let pendingPostToOpen = "";
       const recommendationReason = buildFollowRecommendationReason(author);
       const statsMeta = buildFollowMeta(author);
       const avatarHtml = avatar
-        ? '<img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(name) + '">'
+        ? '<img src="' + escapeHtml(optimizeCommunityImg(avatar, { width: 96, height: 96, quality: 68 })) + '" alt="' + escapeHtml(name) + '" loading="lazy" decoding="async" fetchpriority="low">'
         : '<span style="font-size:18px;color:var(--brand);font-weight:800;">' + escapeHtml(name.charAt(0).toUpperCase()) + "</span>";
       return (
         '<div class="follow-row" data-author-id="' + escapeHtml(id) + '" data-profile-name="' + escapeHtml(name) + '">' +
@@ -714,8 +782,9 @@ let pendingPostToOpen = "";
           const metaLine = "by " + (p.author || "Member") + " · ❤ " + likesCount + " · 💬 " + commentsCount;
           const rankLabel = "#" + String(idx + 1);
           const imgSrc = p.image || "";
+          const trendImgSrc = optimizeCommunityImg(imgSrc, { width: 120, height: 120, quality: 68 });
           const thumb = imgSrc
-            ? '<img class="trend-img" src="' + escapeHtml(imgSrc) + '" alt="">'
+            ? '<img class="trend-img" src="' + escapeHtml(trendImgSrc) + '" alt="" loading="lazy" decoding="async" fetchpriority="low">'
             : '<div class="trend-img" style="display:grid;place-items:center;background:var(--brand-light);font-size:20px;">&#x1F4AC;</div>';
           row.innerHTML =
             '<span class="trend-rank">' + escapeHtml(rankLabel) + '</span>' +
@@ -902,12 +971,12 @@ let pendingPostToOpen = "";
 
   function buildStoryListHtml(users) {
     const list = Array.isArray(users) ? users : [];
-    return list.slice(0, 12).map(function (user) {
+    return list.slice(0, 12).map(function (user, index) {
       const display = (user && (user.display_name || user.username)) ? (user.display_name || user.username) : "User";
       const avatar = user && user.avatar_url ? String(user.avatar_url) : "";
       const id = user && user.id ? String(user.id) : "";
       const avatarInner = avatar
-        ? '<img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(display) + '">'
+        ? '<img src="' + escapeHtml(optimizeCommunityImg(avatar, { width: 120, height: 120, quality: 68 })) + '" alt="' + escapeHtml(display) + '" loading="' + (index < 4 ? "eager" : "lazy") + '" decoding="async" fetchpriority="' + (index < 4 ? "high" : "low") + '">'
         : '<span style="font-size:20px;color:var(--brand);font-weight:800;">' + escapeHtml(display.charAt(0).toUpperCase()) + "</span>";
       return (
         '<div class="story" data-author-id="' + escapeHtml(id) + '">' +
@@ -1024,6 +1093,11 @@ let pendingPostToOpen = "";
     }
     const visiblePosts = filterPostsByActiveChip(posts);
     if (!visiblePosts.length) {
+      if (feedHasMore) {
+        feedEl.innerHTML = '<div class="feed-status">Loading more posts...</div>';
+        scheduleFeedFillCheck();
+        return;
+      }
       const emptyMsg = currentFeed === "followed"
         ? (!getToken()
             ? "Log in to see posts from creators you follow."
@@ -1034,18 +1108,19 @@ let pendingPostToOpen = "";
       feedEl.innerHTML = '<div class="feed-empty">' + emptyMsg + "</div>";
       return;
     }
-    visiblePosts.forEach(function (post) {
+    visiblePosts.forEach(function (post, index) {
       const card = document.createElement("article");
       card.className = "post-card";
       card.dataset.id = post.id;
       const postImage = post.image || "";
+      const postImageSrc = optimizeCommunityImg(postImage, { width: 900, height: 900, quality: 74 });
       const imgHtml = postImage
-        ? '<img class="post-img" src="' + escapeHtml(post.image) + '" alt="" data-open-detail="1">'
+        ? '<img class="post-img" src="' + escapeHtml(postImageSrc) + '" alt="" data-open-detail="1" loading="' + (index < 2 ? "eager" : "lazy") + '" decoding="async" fetchpriority="' + (index < 2 ? "high" : "low") + '">'
         : "";
       const safeAuthor = post.author || "User";
       const safeAuthorInitial = post.authorInitial || safeAuthor[0] || "U";
       const avatarInner = post.authorAvatar
-        ? '<img src="' + escapeHtml(post.authorAvatar) + '" alt="">'
+        ? '<img src="' + escapeHtml(optimizeCommunityImg(post.authorAvatar, { width: 96, height: 96, quality: 68 })) + '" alt="" loading="' + (index < 3 ? "eager" : "lazy") + '" decoding="async" fetchpriority="' + (index < 3 ? "high" : "low") + '">'
         : "<span>" + escapeHtml(safeAuthorInitial) + "</span>";
       const likeIcon = post.liked ? "&#x2665;" : "&#x2661;";
       card.innerHTML =
@@ -1086,6 +1161,13 @@ let pendingPostToOpen = "";
       }, true);
       feedEl.appendChild(card);
     });
+
+    if (feedLoadingMore) {
+      const loadingMore = document.createElement("div");
+      loadingMore.className = "feed-status";
+      loadingMore.textContent = "Loading more posts...";
+      feedEl.appendChild(loadingMore);
+    }
   }
 
   function updateTabStyles(mode) {
@@ -1096,11 +1178,23 @@ let pendingPostToOpen = "";
     });
   }
 
-  function fetchBrowseFeed(feed) {
+  function fetchBrowseFeed(feed, options) {
+    options = options || {};
+    const append = options.append === true;
     closeCreate();
-    currentFeed = feed;
-    feedLoadState = "loading";
-    renderFeed();
+    if (append) {
+      if (feedLoadingMore || !feedHasMore) return;
+      feedLoadingMore = true;
+      renderFeed();
+    } else {
+      currentFeed = feed;
+      posts = [];
+      feedOffset = 0;
+      feedHasMore = true;
+      feedLoadingMore = false;
+      feedLoadState = "loading";
+      renderFeed();
+    }
     latestFeedRequestId += 1;
     const requestId = latestFeedRequestId;
     const q = feed === "followed" ? "followed" : "recommended";
@@ -1108,20 +1202,31 @@ let pendingPostToOpen = "";
     if (feed === "followed" && !getToken()) {
       feedLoadState = "ok";
       posts = [];
+      feedOffset = 0;
+      feedHasMore = false;
+      feedLoadingMore = false;
       renderFeed();
       return;
     }
 
-    fetch(API_BASE_URL + "/community/posts?feed=" + encodeURIComponent(q), {
+    fetch(
+      API_BASE_URL + "/community/posts?feed=" + encodeURIComponent(q) +
+      "&limit=" + FEED_PAGE_SIZE +
+      "&offset=" + (append ? feedOffset : 0),
+      {
       method: "GET",
       headers: getAuthHeaders()
-    })
+      }
+    )
       .then(function (res) { return res.json(); })
       .then(function (result) {
         if (requestId !== latestFeedRequestId || currentFeed !== feed) return;
         if (!result.success || !Array.isArray(result.data)) {
           feedLoadState = "error";
           posts = [];
+          feedOffset = 0;
+          feedHasMore = false;
+          feedLoadingMore = false;
           renderFeed();
           return;
         }
@@ -1135,8 +1240,14 @@ let pendingPostToOpen = "";
         }
 
         feedLoadState = "ok";
-        posts = mappedPosts;
+        posts = append ? mergePosts(posts, mappedPosts) : mappedPosts;
+        feedOffset = result.pagination && typeof result.pagination.next_offset === "number"
+          ? result.pagination.next_offset
+          : posts.length;
+        feedHasMore = !!(result.pagination && result.pagination.has_more);
+        feedLoadingMore = false;
         renderFeed();
+        scheduleFeedFillCheck();
         if (pendingPostToOpen) {
           const targetPost = posts.find(function (p) { return p.id === pendingPostToOpen; });
           if (targetPost) {
@@ -1150,8 +1261,13 @@ let pendingPostToOpen = "";
       })
       .catch(function () {
         if (requestId !== latestFeedRequestId || currentFeed !== feed) return;
-        feedLoadState = "error";
-        posts = [];
+        feedLoadingMore = false;
+        if (!append) {
+          feedLoadState = "error";
+          posts = [];
+          feedOffset = 0;
+          feedHasMore = false;
+        }
         renderFeed();
       });
   }
@@ -1167,6 +1283,9 @@ let pendingPostToOpen = "";
       switchCommunityView(btn.getAttribute("data-feed"));
     });
   });
+
+  window.addEventListener("scroll", maybeLoadMoreFeed, { passive: true });
+  window.addEventListener("resize", scheduleFeedFillCheck);
 
   function initPageFromUrl() {
     const params = new URLSearchParams(window.location.search);
@@ -1210,6 +1329,28 @@ let pendingPostToOpen = "";
   const loginBtn = document.querySelector(".login-btn");
   const navUserRow = document.getElementById("communityNavUser");
   const user = loadUser();
+  const navHeroAvatar = document.querySelector(".nav-hero-avatar");
+  const navUserAvatar = document.querySelector(".nav-avatar");
+  const composerAvatar = document.querySelector(".composer-avatar");
+
+  function applyAvatar(el, avatarUrl, fallbackText) {
+    if (!el) return;
+    const label = (fallbackText || "U").charAt(0).toUpperCase();
+    if (avatarUrl) {
+      el.textContent = "";
+      el.style.backgroundImage = 'url("' + String(avatarUrl).replace(/"/g, '\\"') + '")';
+      el.style.backgroundSize = "cover";
+      el.style.backgroundPosition = "center";
+      el.style.backgroundRepeat = "no-repeat";
+    } else {
+      el.textContent = label;
+      el.style.backgroundImage = "";
+      el.style.backgroundSize = "";
+      el.style.backgroundPosition = "";
+      el.style.backgroundRepeat = "";
+    }
+  }
+
   if (loginBtn) {
     if (user) {
       loginBtn.textContent = "My Account";
@@ -1222,8 +1363,16 @@ let pendingPostToOpen = "";
   var heroName = document.querySelector(".nav-hero-name");
   var heroHandle = document.querySelector(".u-handle");
   if (user) {
-    if (heroName) heroName.textContent = user.display_name || user.username || user.email || "User";
+    var displayName = user.display_name || user.username || user.email || "User";
+    if (heroName) heroName.textContent = displayName;
     if (heroHandle) heroHandle.textContent = user.username ? "@" + user.username : "";
+    applyAvatar(navHeroAvatar, user.avatar_url, displayName);
+    applyAvatar(navUserAvatar, user.avatar_url, displayName);
+    applyAvatar(composerAvatar, user.avatar_url, displayName);
+  } else {
+    applyAvatar(navHeroAvatar, "", "U");
+    applyAvatar(navUserAvatar, "", "U");
+    applyAvatar(composerAvatar, "", "U");
   }
   if (navUserRow) {
     navUserRow.addEventListener("click", function () {
