@@ -169,6 +169,7 @@ async function getFeed(req, res) {
 
     const where = {
       status: 'available',
+      org_id: { not: null },
       ...(excludedCatIds.length > 0 ? { id: { notIn: excludedCatIds } } : {})
     };
 

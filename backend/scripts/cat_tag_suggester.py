@@ -64,11 +64,35 @@ HEURISTIC_TAG_PATTERNS = {
         (r"\beasygoing\b", 0.74),
         (r"\bquiet\b", 0.72),
     ],
+    "happy": [
+        (r"\bhappy\b", 0.88),
+        (r"\bcheerful\b", 0.84),
+        (r"\bjoyful\b", 0.82),
+        (r"\bin\s+a\s+good\s+mood\b", 0.76),
+    ],
+    "sweet": [
+        (r"\bsweet\b", 0.84),
+        (r"\bvery\s+sweet\b", 0.86),
+        (r"\bsuper\s+sweet\b", 0.88),
+        (r"\blovely\b", 0.74),
+    ],
+    "gentle": [
+        (r"\bgentle\b", 0.86),
+        (r"\bmild\b", 0.72),
+        (r"\bsoft[-\s]?natured\b", 0.8),
+        (r"\btender\b", 0.68),
+    ],
     "timid": [
         (r"\bnot\s+at\s+ease\b", 0.78),
         (r"\banxious\b", 0.78),
         (r"\bnervous\b", 0.75),
         (r"\beasily\s+startled\b", 0.8),
+    ],
+    "cute": [
+        (r"\bcute\b", 0.82),
+        (r"\badorable\b", 0.82),
+        (r"\bprecious\b", 0.74),
+        (r"\bcharming\b", 0.7),
     ],
     "needs-companionship": [
         (r"\bneeds?\s+(company|companionship)\b", 0.86),

@@ -54,8 +54,6 @@
   const catProfileAge = document.getElementById("cat-profile-age");
   const catProfileBirthday = document.getElementById("cat-profile-birthday");
   const catProfilePersonality = document.getElementById("cat-profile-personality");
-  const catProfileSpayed = document.getElementById("cat-profile-spayed");
-  const catProfileVaccinationStatus = document.getElementById("cat-profile-vaccination-status");
   const catProfileFoundLocation = document.getElementById("cat-profile-found-location");
   const catProfileAllergyHistory = document.getElementById("cat-profile-allergy-history");
   const catProfileAdoptionStatus = document.getElementById("cat-profile-adoption-status");
@@ -560,8 +558,6 @@
       tags: tagList,
       photo: cat.photo_url || "",
       found_location: cat.found_location || "Not provided",
-      spayed: cat.is_neutered == null ? "Unknown" : (cat.is_neutered ? "Yes" : "No"),
-      vaccinated: cat.is_vaccinated == null ? "Unknown" : (cat.is_vaccinated ? "Yes" : "No"),
       dewormed: cat.is_dewormed == null ? "Unknown" : (cat.is_dewormed ? "Yes" : "No"),
       intake_date: cat.intake_date,
       created_at: cat.created_at
@@ -622,42 +618,50 @@
     if (!cat) return;
 
     const view = catToViewModel(cat);
-    catProfileAvatar.className = "profile-avatar" + (view.avatarClass ? " " + view.avatarClass : "");
-    catProfileAvatar.textContent = view.avatarText;
-    catProfileName.textContent = view.name;
-    catProfileSubtitle.textContent = view.displayId + " · " + view.breed;
-    catProfileStatus.textContent = view.statusLabel;
-    catProfileId.textContent = view.displayId;
-    catProfileNameValue.textContent = view.name;
-    catProfileBreed.textContent = view.breed;
-    catProfileGender.textContent = view.gender;
-    catProfileAge.textContent = view.age;
-    catProfileBirthday.textContent = view.intake_date ? formatDate(view.intake_date) : "Unknown";
-    catProfilePersonality.textContent = view.personality;
-    catProfileSpayed.textContent = view.spayed;
-    catProfileVaccinationStatus.textContent = view.vaccinated;
-    catProfileFoundLocation.textContent = view.found_location;
-    catProfileAllergyHistory.textContent = view.notes || "No rescue notes";
-    catProfileAdoptionStatus.textContent = view.statusLabel;
-    catProfileTags.innerHTML = view.tags.length
-      ? view.tags.map(function (tag) {
-          return "<span class=\"profile-tag\">" + escapeHtml(tag) + "</span>";
-        }).join("")
-      : "<span class=\"profile-tag\">No tags</span>";
-    catProfileSummary.textContent = view.summary;
+    if (catProfileAvatar) {
+      catProfileAvatar.className = "profile-avatar" + (view.avatarClass ? " " + view.avatarClass : "");
+      catProfileAvatar.textContent = view.avatarText;
+    }
+    if (catProfileName) catProfileName.textContent = view.name;
+    if (catProfileSubtitle) catProfileSubtitle.textContent = view.displayId + " · " + view.breed;
+    if (catProfileStatus) catProfileStatus.textContent = view.statusLabel;
+    if (catProfileId) catProfileId.textContent = view.displayId;
+    if (catProfileNameValue) catProfileNameValue.textContent = view.name;
+    if (catProfileBreed) catProfileBreed.textContent = view.breed;
+    if (catProfileGender) catProfileGender.textContent = view.gender;
+    if (catProfileAge) catProfileAge.textContent = view.age;
+    if (catProfileBirthday) catProfileBirthday.textContent = view.intake_date ? formatDate(view.intake_date) : "Unknown";
+    if (catProfilePersonality) catProfilePersonality.textContent = view.personality;
+    if (catProfileFoundLocation) catProfileFoundLocation.textContent = view.found_location;
+    if (catProfileAllergyHistory) catProfileAllergyHistory.textContent = view.notes || "No rescue notes";
+    if (catProfileAdoptionStatus) catProfileAdoptionStatus.textContent = view.statusLabel;
+    if (catProfileTags) {
+      catProfileTags.innerHTML = view.tags.length
+        ? view.tags.map(function (tag) {
+            return "<span class=\"profile-tag\">" + escapeHtml(tag) + "</span>";
+          }).join("")
+        : "<span class=\"profile-tag\">No tags</span>";
+    }
+    if (catProfileSummary) catProfileSummary.textContent = view.summary;
 
     if (view.photo) {
-      catProfilePhoto.src = view.photo;
-      catProfilePhoto.hidden = false;
-      catProfilePhotoEmpty.hidden = true;
+      if (catProfilePhoto) {
+        catProfilePhoto.src = view.photo;
+        catProfilePhoto.hidden = false;
+      }
+      if (catProfilePhotoEmpty) catProfilePhotoEmpty.hidden = true;
     } else {
-      catProfilePhoto.src = "";
-      catProfilePhoto.hidden = true;
-      catProfilePhotoEmpty.hidden = false;
+      if (catProfilePhoto) {
+        catProfilePhoto.src = "";
+        catProfilePhoto.hidden = true;
+      }
+      if (catProfilePhotoEmpty) catProfilePhotoEmpty.hidden = false;
     }
 
-    catProfileOverlay.classList.add("open");
-    catProfileOverlay.setAttribute("aria-hidden", "false");
+    if (catProfileOverlay) {
+      catProfileOverlay.classList.add("open");
+      catProfileOverlay.setAttribute("aria-hidden", "false");
+    }
   }
 
   function closeCatProfile() {

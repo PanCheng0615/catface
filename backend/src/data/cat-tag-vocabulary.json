@@ -27,8 +27,24 @@
       "aliases": ["calm", "quiet", "gentle", "relaxed", "easygoing", "settled", "low energy"]
     },
     {
+      "tag": "happy",
+      "aliases": ["happy", "cheerful", "joyful", "sunny", "bright", "good mood", "always looks happy"]
+    },
+    {
+      "tag": "sweet",
+      "aliases": ["sweet", "very sweet", "super sweet", "lovely", "kind", "soft natured", "soft-natured"]
+    },
+    {
+      "tag": "gentle",
+      "aliases": ["gentle", "mild", "tender", "soft", "soft-hearted", "soft hearted"]
+    },
+    {
       "tag": "playful",
       "aliases": ["playful", "loves toys", "loves wand toys", "likes chasing", "interactive play", "toy-driven", "loves playing"]
+    },
+    {
+      "tag": "cute",
+      "aliases": ["cute", "adorable", "precious", "charming", "lovable"]
     },
     {
       "tag": "food-motivated",
