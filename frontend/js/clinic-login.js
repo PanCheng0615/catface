@@ -58,8 +58,16 @@
       }
 
       localStorage.setItem("catface_org_token", payload.data.token);
-      localStorage.setItem("catface_token", payload.data.token);
+      localStorage.setItem("catface_org_user", JSON.stringify(payload.data.rescue_staff_user || payload.data.user || null));
       localStorage.setItem("catface_org_profile", JSON.stringify(organization));
+      try {
+        const currentToken = localStorage.getItem("catface_token");
+        const currentUser = JSON.parse(localStorage.getItem("catface_user") || "null");
+        if (currentToken === payload.data.token) localStorage.removeItem("catface_token");
+        if (currentUser && currentUser.account_type === "organization") {
+          localStorage.removeItem("catface_user");
+        }
+      } catch (error) {}
 
       showStatus("Login successful. Redirecting...", "success");
       window.location.href = "clinic-portal.html";

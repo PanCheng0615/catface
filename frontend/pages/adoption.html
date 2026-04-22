@@ -466,7 +466,8 @@
           id: mapped.id,
           name: mapped.name || existing.name,
           org: mapped.org || existing.org,
-          img: cat.photo_url ? mapped.img : (existing.img || mapped.img),
+          img: existing.img || mapped.img,
+          displayImg: existing.displayImg || mapped.displayImg,
           age: mapped.age || existing.age,
           gender: mapped.gender || existing.gender,
           breed: mapped.breed || existing.breed,
@@ -580,11 +581,14 @@
   function mapCat(cat, index) {
     var fallbackImage = pickStableFallbackImage(cat, index);
     var note = cat.description || 'No rescue notes have been added yet.';
+    var resolvedImg = resolveCatImg(cat.photo_url || fallbackImage);
+    var stableDisplayImg = optimizeCatImg(resolvedImg, { width: 820, height: 820, quality: 72 });
     return {
       id: cat.id,
       name: cat.name || 'Unnamed Cat',
       org: cat.organization && cat.organization.name ? cat.organization.name : 'Rescue organization',
-      img: resolveCatImg(cat.photo_url || fallbackImage),
+      img: resolvedImg,
+      displayImg: stableDisplayImg,
       age: formatAge(cat.age_months),
       gender: formatGender(cat.gender),
       breed: cat.breed || 'Mixed breed',
@@ -675,11 +679,7 @@
     var visibleStack = catOrder.slice(0, 4);
     stack.innerHTML = visibleStack.map(function (id, index) {
       var cat = cats[id];
-      var cardImg = optimizeCatImg(cat.img, {
-        width: index === 0 ? 720 : 560,
-        height: index === 0 ? 720 : 560,
-        quality: 68
-      });
+      var cardImg = cat.displayImg || cat.img || '';
       var loadingMode = index === 0 ? 'eager' : 'lazy';
       var priority = index === 0 ? 'high' : 'low';
       return [
@@ -1000,7 +1000,7 @@
     var cat=cats[id];
     if (!cat) return;
     active=id;
-    document.getElementById('profileImg').src = optimizeCatImg(cat.img, { width: 820, height: 820, quality: 72 });
+    document.getElementById('profileImg').src = cat.displayImg || cat.img || '';
     document.getElementById('profileName').textContent=cat.name;
     document.getElementById('profileOrg').textContent='Rescue: '+cat.org;
     document.getElementById('profileNote').textContent=cat.note;

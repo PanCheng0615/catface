@@ -14,6 +14,12 @@
     statusBox.className = "status show " + type;
   }
 
+  function getOrgLandingPage(organization) {
+    return organization && organization.type === "clinic"
+      ? "clinic-portal.html"
+      : "rescue-dashboard.html";
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -45,14 +51,22 @@
         throw new Error(result.message || "Organization login failed.");
       }
 
-      localStorage.setItem("catface_token", result.data.token);
       localStorage.setItem("catface_org_token", result.data.token);
+      localStorage.setItem("catface_org_user", JSON.stringify(result.data.rescue_staff_user || null));
       localStorage.setItem("catface_org_profile", JSON.stringify(result.data.organization));
+      try {
+        const currentToken = localStorage.getItem("catface_token");
+        const currentUser = JSON.parse(localStorage.getItem("catface_user") || "null");
+        if (currentToken === result.data.token) localStorage.removeItem("catface_token");
+        if (currentUser && currentUser.account_type === "organization") {
+          localStorage.removeItem("catface_user");
+        }
+      } catch (error) {}
 
       showStatus("Login successful. Redirecting to rescue dashboard...", "success");
 
       window.setTimeout(function () {
-        window.location.href = "rescue-dashboard.html";
+        window.location.href = getOrgLandingPage(result.data.organization);
       }, 700);
     } catch (error) {
       showStatus(error.message, "error");

@@ -6,7 +6,16 @@ function getApiBaseUrl() {
   if (typeof window === "undefined") return "http://localhost:3000/api";
   var loc = window.location;
   var port = loc.port || (loc.protocol === "https:" ? "443" : "80");
-  return loc.protocol + "//" + loc.hostname + (port ? ":" + port : "") + "/api";
+  var hostname = loc.hostname || "localhost";
+  var isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+  // When the frontend is served from a static dev server like :5500,
+  // API requests should still target the backend on :3000.
+  if (isLocalHost && port !== "3000") {
+    return loc.protocol + "//" + hostname + ":3000/api";
+  }
+
+  return loc.protocol + "//" + hostname + (port ? ":" + port : "") + "/api";
 }
 
 const API_BASE_URL = getApiBaseUrl();
@@ -37,6 +46,15 @@ function getOrgProfile() {
   }
 }
 
+function getOrgUser() {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    return JSON.parse(localStorage.getItem("catface_org_user") || "null");
+  } catch (e) {
+    return null;
+  }
+}
+
 function setToken(token) {
   if (typeof localStorage !== "undefined") localStorage.setItem("catface_token", token);
 }
@@ -47,6 +65,7 @@ function logout() {
     localStorage.removeItem("catface_user");
     localStorage.removeItem("catface_org_token");
     localStorage.removeItem("catface_org_profile");
+    localStorage.removeItem("catface_org_user");
   }
   if (typeof window !== "undefined") window.location.href = "/pages/log-in.html";
 }
@@ -59,7 +78,7 @@ function isLoggedIn() {
 }
 
 function isOrgLoggedIn() {
-  const token = getOrgToken() || getToken();
+  const token = getOrgToken();
   const org = getOrgProfile();
   return !!(token && org && (org.id || org.email || org.name));
 }
@@ -73,7 +92,7 @@ function getAuthHeaders() {
 }
 
 function getOrgAuthHeaders() {
-  const token = getOrgToken() || getToken();
+  const token = getOrgToken();
   return {
     "Content-Type": "application/json",
     Authorization: token ? "Bearer " + token : ""

@@ -121,6 +121,46 @@
     selectedSuggestedTags: [],
     personalityDraftBeforeSelection: ""
   };
+  let redirectingForOrgSession = false;
+
+  function getOrganizationProfile() {
+    try {
+      const raw = localStorage.getItem("catface_org_profile");
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function redirectForOrganizationSession() {
+    if (redirectingForOrgSession) return;
+    redirectingForOrgSession = true;
+
+    const organization = getOrganizationProfile();
+    if (organization && organization.type === "clinic") {
+      window.location.href = "clinic-portal.html";
+      return;
+    }
+
+    window.location.href = "org-login.html";
+  }
+
+  function ensureRescueOrganizationSession() {
+    const token = localStorage.getItem("catface_org_token");
+    const organization = getOrganizationProfile();
+
+    if (!token || !organization) {
+      redirectForOrganizationSession();
+      return false;
+    }
+
+    if (organization.type !== "rescue") {
+      redirectForOrganizationSession();
+      return false;
+    }
+
+    return true;
+  }
 
   function getAuthToken() {
     return localStorage.getItem("catface_org_token") || localStorage.getItem("catface_token") || "";
@@ -261,9 +301,13 @@
   }
 
   function api(path, options) {
+    if (!ensureRescueOrganizationSession()) {
+      return Promise.reject(new Error("Redirecting to the correct organization portal."));
+    }
+
     const token = getAuthToken();
     if (!token) {
-      window.location.href = "org-login.html";
+      redirectForOrganizationSession();
       return Promise.reject(new Error("Please log in with an organization account first."));
     }
 
@@ -1498,15 +1542,29 @@
 
   if (orgLogoutBtn) {
     orgLogoutBtn.addEventListener("click", function () {
+      var orgToken = localStorage.getItem("catface_org_token");
+      var genericToken = localStorage.getItem("catface_token");
+      var legacyUser = null;
+      try {
+        legacyUser = JSON.parse(localStorage.getItem("catface_user") || "null");
+      } catch (error) {}
       localStorage.removeItem("catface_org_token");
-      localStorage.removeItem("catface_token");
       localStorage.removeItem("catface_org_profile");
+      localStorage.removeItem("catface_org_user");
+      if (genericToken && genericToken === orgToken) {
+        localStorage.removeItem("catface_token");
+      }
+      if (legacyUser && legacyUser.account_type === "organization") {
+        localStorage.removeItem("catface_user");
+      }
       window.location.href = "org-login.html";
     });
   }
 
   refreshAll().catch(function (error) {
-    window.alert(error.message || "Unable to load rescue dashboard data.");
+    if (!redirectingForOrgSession) {
+      window.alert(error.message || "Unable to load rescue dashboard data.");
+    }
   });
 })();
 if (false) {
@@ -3017,9 +3075,21 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
 
   if (orgLogoutBtn) {
     orgLogoutBtn.addEventListener("click", function () {
+      var orgToken = localStorage.getItem("catface_org_token");
+      var genericToken = localStorage.getItem("catface_token");
+      var legacyUser = null;
+      try {
+        legacyUser = JSON.parse(localStorage.getItem("catface_user") || "null");
+      } catch (error) {}
       localStorage.removeItem("catface_org_token");
       localStorage.removeItem("catface_org_profile");
-      localStorage.removeItem("catface_token");
+      localStorage.removeItem("catface_org_user");
+      if (genericToken && genericToken === orgToken) {
+        localStorage.removeItem("catface_token");
+      }
+      if (legacyUser && legacyUser.account_type === "organization") {
+        localStorage.removeItem("catface_user");
+      }
       updateOrganizationSessionUI();
       window.location.href = "org-login.html";
     });

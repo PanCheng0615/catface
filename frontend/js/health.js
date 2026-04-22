@@ -14,7 +14,17 @@
     }
   }
 
+  function readOrgProfile() {
+    if (typeof getOrgProfile === 'function') return getOrgProfile();
+    try {
+      return JSON.parse(localStorage.getItem('catface_org_profile') || 'null');
+    } catch (e) {
+      return null;
+    }
+  }
+
   let currentUser = readStoredUser();
+  const currentOrg = readOrgProfile();
   let catId  = params.get('catId') || localStorage.getItem('catface_current_cat_id') || localStorage.getItem('catface_test_catId') || '';
   let userId = (currentUser && currentUser.id) || params.get('userId') || localStorage.getItem('catface_test_userId') || '';
 
@@ -70,6 +80,25 @@
       if (catId) localStorage.setItem('catface_current_cat_id', catId);
       if (userId) localStorage.setItem('catface_current_user_id', userId);
     } catch (e) {}
+  }
+
+  function renderAccessNotice(message) {
+    const empty = function (el) {
+      if (!el) return;
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔒</div><p>${message}</p></div>`;
+    };
+    empty(ownerList);
+    empty(clinicList);
+    empty(shareList);
+    updatePassport([], []);
+    showStatus(message, true);
+  }
+
+  function isOrganizationSession() {
+    const orgToken = typeof getOrgToken === 'function'
+      ? getOrgToken()
+      : localStorage.getItem('catface_org_token');
+    return !!((currentUser && currentUser.account_type === 'organization' && currentOrg) || (orgToken && currentOrg));
   }
 
   async function resolveCurrentCatId() {
@@ -521,5 +550,13 @@
   }
 
   // ── Initialize ──
-  loadAll();
+  if (isOrganizationSession()) {
+    const orgType = currentOrg && currentOrg.type === 'clinic' ? 'clinic' : 'rescue';
+    const message = orgType === 'clinic'
+      ? 'Clinic accounts should use the Clinic Portal instead of the owner Health page.'
+      : 'Organization accounts should use the Rescue Dashboard instead of the owner Health page.';
+    renderAccessNotice(message);
+  } else {
+    loadAll();
+  }
 })();

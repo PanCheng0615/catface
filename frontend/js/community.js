@@ -49,9 +49,9 @@
       const url = new URL(raw, window.location.origin);
       const host = String(url.hostname || "").toLowerCase();
       if (host === "cataas.com" || /(^|\.)cataas\.com$/.test(host)) {
-        if (opts.width) url.searchParams.set("width", String(opts.width));
-        if (opts.height) url.searchParams.set("height", String(opts.height));
-        return url.toString();
+        // Keep the exact same URL for feed/detail/trending so fallback cat
+        // images never change when the same post is opened in another view.
+        return raw;
       }
       if (host === "images.unsplash.com") {
         if (opts.width) url.searchParams.set("w", String(opts.width));
@@ -110,6 +110,7 @@
   const closePostOverlayBtn = document.getElementById("closePostOverlay");
   const quickComposer = document.querySelector(".composer-input");
   const quickComposerSubmit = document.querySelector(".composer-submit");
+  const centerScrollEl = document.querySelector(".center");
   const storiesTrack = document.querySelector(".stories-track");
   const followSuggestionsList = document.getElementById("followSuggestionsList");
   const chipsRow = document.querySelector(".chips-row");
@@ -206,6 +207,9 @@
   }
 
   function isNearFeedBottom() {
+    if (centerScrollEl) {
+      return centerScrollEl.scrollTop + centerScrollEl.clientHeight >= centerScrollEl.scrollHeight - FEED_SCROLL_THRESHOLD_PX;
+    }
     const doc = document.documentElement;
     return window.innerHeight + window.scrollY >= doc.scrollHeight - FEED_SCROLL_THRESHOLD_PX;
   }
@@ -220,10 +224,7 @@
 
   function maybeLoadMoreFeed() {
     if (feedLoadState !== "ok" || feedLoadingMore || !feedHasMore) return;
-    const visiblePosts = filterPostsByActiveChip(posts);
-    const doc = document.documentElement;
-    const contentShort = doc.scrollHeight <= window.innerHeight + 120;
-    if (isNearFeedBottom() || contentShort || !visiblePosts.length) {
+    if (isNearFeedBottom()) {
       fetchBrowseFeed(currentFeed, { append: true });
     }
   }
@@ -1093,11 +1094,6 @@
     }
     const visiblePosts = filterPostsByActiveChip(posts);
     if (!visiblePosts.length) {
-      if (feedHasMore) {
-        feedEl.innerHTML = '<div class="feed-status">Loading more posts...</div>';
-        scheduleFeedFillCheck();
-        return;
-      }
       const emptyMsg = currentFeed === "followed"
         ? (!getToken()
             ? "Log in to see posts from creators you follow."
@@ -1167,6 +1163,11 @@
       loadingMore.className = "feed-status";
       loadingMore.textContent = "Loading more posts...";
       feedEl.appendChild(loadingMore);
+    } else if (feedHasMore) {
+      const loadHint = document.createElement("div");
+      loadHint.className = "feed-status";
+      loadHint.textContent = "Scroll to the bottom to load 15 more posts.";
+      feedEl.appendChild(loadHint);
     }
   }
 
@@ -1247,7 +1248,6 @@
         feedHasMore = !!(result.pagination && result.pagination.has_more);
         feedLoadingMore = false;
         renderFeed();
-        scheduleFeedFillCheck();
         if (pendingPostToOpen) {
           const targetPost = posts.find(function (p) { return p.id === pendingPostToOpen; });
           if (targetPost) {
@@ -1284,7 +1284,11 @@
     });
   });
 
-  window.addEventListener("scroll", maybeLoadMoreFeed, { passive: true });
+  if (centerScrollEl) {
+    centerScrollEl.addEventListener("scroll", maybeLoadMoreFeed, { passive: true });
+  } else {
+    window.addEventListener("scroll", maybeLoadMoreFeed, { passive: true });
+  }
   window.addEventListener("resize", scheduleFeedFillCheck);
 
   function initPageFromUrl() {

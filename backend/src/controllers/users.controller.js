@@ -1,6 +1,6 @@
 // backend/src/controllers/users.controller.js
 const { PrismaClient } = require('@prisma/client');
-const { ensureDemoCommunityData } = require('./community.controller');
+const { ensureDemoCommunityData, getCommunityFallbackImage } = require('./community.controller');
 
 const prisma = new PrismaClient();
 
@@ -505,6 +505,7 @@ async function getUserProfile(req, res) {
           take: 12,
           select: {
             id: true,
+            user_id: true,
             content: true,
             image_url: true,
             created_at: true,
@@ -558,7 +559,7 @@ async function getUserProfile(req, res) {
         posts: user.posts.map((post) => ({
           id: post.id,
           content: post.content,
-          image_url: post.image_url || '',
+          image_url: getCommunityFallbackImage(post),
           created_at: post.created_at,
           likes: post.likes.length,
           liked: !!viewerId && post.likes.some((like) => like.user_id === viewerId),

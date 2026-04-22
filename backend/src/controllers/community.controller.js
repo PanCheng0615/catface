@@ -17,6 +17,8 @@ function envNumber(name, fallback) {
 
 const TRENDING_LIKE_WEIGHT = envNumber('COMMUNITY_TRENDING_LIKE_WEIGHT', 1);
 const TRENDING_COMMENT_WEIGHT = envNumber('COMMUNITY_TRENDING_COMMENT_WEIGHT', 2);
+const COMMUNITY_FEED_DEFAULT_LIMIT = 15;
+const COMMUNITY_FALLBACK_IMAGE_RATE = 0.8;
 
 const DEMO_PASSWORD = 'demo1234';
 const DEMO_COMMUNITY_USERS = [
@@ -306,7 +308,55 @@ function formatRelativeTime(date) {
   return `${y}-${m}-${d} ${hh}:${mm}`;
 }
 
-function mapPostToFeed(post, currentUserId, followingSet) {
+function hashString(input) {
+  const text = String(input || '');
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
+}
+
+function buildCommunityFallbackFingerprint(post) {
+  return [post && post.id, post && post.user_id, post && post.content].filter(Boolean).join('|');
+}
+
+function buildCommunityFallbackImageUrl(fingerprint) {
+  const lock = hashString(fingerprint || 'community-cat');
+  return `https://loremflickr.com/900/900/cat?lock=${lock}`;
+}
+
+function getCommunityFallbackImage(post) {
+  const explicitImage = typeof post.image_url === 'string' ? post.image_url.trim() : '';
+  if (explicitImage) return explicitImage;
+
+  const fingerprint = buildCommunityFallbackFingerprint(post);
+  const hash = hashString(fingerprint);
+  const shouldAttachFallback = (hash % 10) < Math.round(COMMUNITY_FALLBACK_IMAGE_RATE * 10);
+  if (!shouldAttachFallback) return '';
+
+  return buildCommunityFallbackImageUrl(fingerprint);
+}
+
+function assignCommunityFallbackImages(posts) {
+  const assignments = new Map();
+  (Array.isArray(posts) ? posts : []).forEach((post) => {
+    if (!post || !post.id) return;
+    const image = getCommunityFallbackImage(post);
+    if (!image) return;
+    assignments.set(post.id, image);
+  });
+  return assignments;
+}
+
+function resolveCommunityPostImage(post, fallbackAssignments) {
+  if (fallbackAssignments && fallbackAssignments.has(post.id)) {
+    return fallbackAssignments.get(post.id) || '';
+  }
+  return getCommunityFallbackImage(post);
+}
+
+function mapPostToFeed(post, currentUserId, followingSet, fallbackAssignments) {
   const author = post.user;
   const authorName = author.display_name || author.username || 'User';
   const createdAt = new Date(post.created_at);
@@ -324,7 +374,7 @@ function mapPostToFeed(post, currentUserId, followingSet) {
     authorUsername: author.username || '',
     authorAvatar: author.avatar_url || '',
     authorInitial: authorName.charAt(0).toUpperCase(),
-    image: post.image_url || '',
+    image: resolveCommunityPostImage(post, fallbackAssignments),
     text: post.content,
     likes: post.likes.length,
     liked: currentUserId ? post.likes.some((x) => x.user_id === currentUserId) : false,
@@ -347,9 +397,9 @@ function computeTrendingHotScore(likesCount, commentsCount) {
 
 async function getPosts(req, res) {
   try {
-    const rawLimit = parseInt(req.query.limit || '20', 10);
+    const rawLimit = parseInt(req.query.limit || String(COMMUNITY_FEED_DEFAULT_LIMIT), 10);
     const rawOffset = parseInt(req.query.offset || '0', 10);
-    const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(rawLimit, 50)) : 20;
+    const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(rawLimit, 50)) : COMMUNITY_FEED_DEFAULT_LIMIT;
     const offset = Number.isFinite(rawOffset) ? Math.max(0, rawOffset) : 0;
     const feed = String(req.query.feed || 'recommended').toLowerCase();
     const viewerId = req.user && req.user.id;
@@ -416,7 +466,8 @@ async function getPosts(req, res) {
         ? posts.filter((p) => followingSet && followingSet.has(p.user.id))
         : posts;
 
-    const data = strictFollowedPosts.map((p) => mapPostToFeed(p, viewerId, followingSet));
+    const fallbackAssignments = assignCommunityFallbackImages(strictFollowedPosts);
+    const data = strictFollowedPosts.map((p) => mapPostToFeed(p, viewerId, followingSet, fallbackAssignments));
     return res.json({
       success: true,
       data,
@@ -476,6 +527,7 @@ async function getTrendingPosts(req, res) {
       }
     }
 
+    const fallbackAssignments = assignCommunityFallbackImages(recentPosts);
     const ranked = recentPosts
       .map((post) => {
         const likesCount = Array.isArray(post.likes) ? post.likes.length : 0;
@@ -496,7 +548,7 @@ async function getTrendingPosts(req, res) {
       })
       .slice(0, limit)
       .map((row) => {
-        const base = mapPostToFeed(row.post, viewerId, followingSet);
+        const base = mapPostToFeed(row.post, viewerId, followingSet, fallbackAssignments);
         return {
           ...base,
           likes: row.likesCount,
@@ -702,6 +754,7 @@ async function uploadPlaceholder(req, res) {
 
 module.exports = {
   ensureDemoCommunityData,
+  getCommunityFallbackImage,
   getPosts,
   getTrendingPosts,
   createPost,

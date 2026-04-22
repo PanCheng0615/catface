@@ -616,7 +616,7 @@
   </main>
 
   <script src="../js/config.js"></script>
-  <script src="../js/clinic-portal.js"></script>
+  <script src="../js/clinic-portal.js?v=20260422-org-routing-fix"></script>
   <script>
     // Sync header clinic name
     const headerName = document.getElementById('clinic-name-header');
@@ -633,19 +633,30 @@
       function updateSidebarLogoutBtn() {
         if (!sidebarLogoutBtn) return;
         var user = null;
+        var org = null;
         try { user = JSON.parse(localStorage.getItem('catface_user') || 'null'); } catch(e){}
+        try { org = JSON.parse(localStorage.getItem('catface_org_profile') || 'null'); } catch(e){}
         var token = localStorage.getItem('catface_org_token') || localStorage.getItem('catface_token');
-        sidebarLogoutBtn.style.display = (token && user) ? '' : 'none';
+        sidebarLogoutBtn.style.display = (token && (user || org)) ? '' : 'none';
       }
       updateSidebarLogoutBtn();
       if (sidebarLogoutBtn) {
         sidebarLogoutBtn.addEventListener('click', function () {
           if (devLogoutBtn) devLogoutBtn.click();
           else {
-            localStorage.removeItem('catface_token');
+            var orgToken = localStorage.getItem('catface_org_token');
+            var genericToken = localStorage.getItem('catface_token');
+            var legacyUser = null;
+            try { legacyUser = JSON.parse(localStorage.getItem('catface_user') || 'null'); } catch(e){}
             localStorage.removeItem('catface_org_token');
-            localStorage.removeItem('catface_user');
             localStorage.removeItem('catface_org_profile');
+            localStorage.removeItem('catface_org_user');
+            if (genericToken && genericToken === orgToken) {
+              localStorage.removeItem('catface_token');
+            }
+            if (legacyUser && legacyUser.account_type === 'organization') {
+              localStorage.removeItem('catface_user');
+            }
             window.location.reload();
           }
         });

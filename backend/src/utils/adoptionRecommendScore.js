@@ -33,15 +33,31 @@ const DEFAULT_WEIGHTS = {
   liked_tag: 8
 };
 
+const SCORING_MODES = {
+  LEGACY: 'legacy',
+  DEMO: 'demo'
+};
+
 let _weights = { ...DEFAULT_WEIGHTS };
+let _mode = SCORING_MODES.LEGACY;
+
+function normalizeMode(mode) {
+  const value = normalizeText(mode);
+  if (value === SCORING_MODES.LEGACY) return SCORING_MODES.LEGACY;
+  if (value === SCORING_MODES.DEMO) return SCORING_MODES.DEMO;
+  return '';
+}
 
 function loadWeights() {
   try {
     const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
     const parsed = JSON.parse(raw);
+    const nextMode = normalizeMode(parsed.mode);
+    _mode = nextMode || SCORING_MODES.LEGACY;
     _weights = { ...DEFAULT_WEIGHTS, ...parsed };
   } catch {
     _weights = { ...DEFAULT_WEIGHTS };
+    _mode = SCORING_MODES.LEGACY;
   }
   return _weights;
 }
@@ -49,19 +65,23 @@ function loadWeights() {
 loadWeights();
 
 function getWeights() {
-  return { ..._weights };
+  return { mode: _mode, ..._weights };
 }
 
 function updateWeights(patch) {
   const updated = { ..._weights };
+  const nextMode = normalizeMode(patch && patch.mode);
   for (const [key, val] of Object.entries(patch)) {
     if (key in DEFAULT_WEIGHTS && typeof val === 'number' && val >= 0) {
       updated[key] = val;
     }
   }
+  if (nextMode) {
+    _mode = nextMode;
+  }
   _weights = updated;
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(_weights, null, 2) + '\n', 'utf-8');
-  return { ..._weights };
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify({ mode: _mode, ..._weights }, null, 2) + '\n', 'utf-8');
+  return { mode: _mode, ..._weights };
 }
 
 // ── Helpers ─────────────────────────────────────────────
@@ -69,6 +89,11 @@ function updateWeights(patch) {
 function normalizeText(s) {
   if (s == null) return '';
   return String(s).trim().toLowerCase();
+}
+
+function isNeutralPreference(value) {
+  const normalized = normalizeText(value);
+  return !normalized || normalized === 'any' || normalized === 'no preference' || normalized === 'no_preference';
 }
 
 // ── Age ─────────────────────────────────────────────────
@@ -99,6 +124,15 @@ function parsePreferredAgeRangeMonths(preferred_age) {
   }
 
   return null;
+}
+
+function parsePreferredAgeRangeMonthsDemo(preferred_age) {
+  if (isNeutralPreference(preferred_age)) return null;
+  const normalized = normalizeText(preferred_age);
+  if (normalized === 'young') {
+    return { min: 6, max: 24 };
+  }
+  return parsePreferredAgeRangeMonths(preferred_age);
 }
 
 // ── Breed ───────────────────────────────────────────────
@@ -140,6 +174,16 @@ function preferenceAgeMatches(preferred_age, age_months) {
   return n >= range.min && n <= range.max;
 }
 
+function preferenceAgeMatchesDemo(preferred_age, age_months) {
+  if (isNeutralPreference(preferred_age) || age_months == null || Number.isNaN(Number(age_months))) {
+    return false;
+  }
+  const range = parsePreferredAgeRangeMonthsDemo(preferred_age);
+  if (!range) return false;
+  const n = Number(age_months);
+  return n >= range.min && n <= range.max;
+}
+
 // ── Color match ─────────────────────────────────────────
 
 function preferenceColorMatches(preferred_color, cat_color) {
@@ -158,7 +202,7 @@ function preferenceColorMatches(preferred_color, cat_color) {
  * @param {Set<string>} likedBreedSet - breeds from cats the user liked
  * @param {Set<string>} likedTagSet   - tags  from cats the user liked
  */
-function scoreCatForUser(cat, pref, likedBreedSet, likedTagSet) {
+function scoreCatForUserLegacy(cat, pref, likedBreedSet, likedTagSet) {
   const w = _weights;
   let score = 0;
   const breakdown = {
@@ -214,11 +258,111 @@ function scoreCatForUser(cat, pref, likedBreedSet, likedTagSet) {
   };
 }
 
+function scoreCatForUserDemo(cat, pref, likedBreedSet, likedTagSet) {
+  const w = _weights;
+  let score = 0;
+  let matchedPreferenceCount = 0;
+  const breakdown = {
+    preferred_breed: 0,
+    preferred_gender: 0,
+    preferred_age: 0,
+    preferred_color: 0,
+    liked_breed: 0,
+    liked_tags: 0,
+    preference_synergy: 0
+  };
+
+  if (pref) {
+    if (!isNeutralPreference(pref.preferred_breed)) {
+      if (preferenceBreedMatches(pref.preferred_breed, cat.breed)) {
+        breakdown.preferred_breed = w.preferred_breed + 10;
+        score += breakdown.preferred_breed;
+        matchedPreferenceCount += 1;
+      } else {
+        breakdown.preferred_breed = -Math.max(10, Math.round(w.preferred_breed * 0.6));
+        score += breakdown.preferred_breed;
+      }
+    }
+
+    if (!isNeutralPreference(pref.preferred_gender)) {
+      if (preferenceGenderMatches(pref.preferred_gender, cat.gender)) {
+        breakdown.preferred_gender = w.preferred_gender + 5;
+        score += breakdown.preferred_gender;
+        matchedPreferenceCount += 1;
+      } else {
+        breakdown.preferred_gender = -Math.max(6, Math.round(w.preferred_gender * 0.75));
+        score += breakdown.preferred_gender;
+      }
+    }
+
+    if (!isNeutralPreference(pref.preferred_age)) {
+      if (preferenceAgeMatchesDemo(pref.preferred_age, cat.age_months)) {
+        breakdown.preferred_age = w.preferred_age + 8;
+        score += breakdown.preferred_age;
+        matchedPreferenceCount += 1;
+      } else {
+        breakdown.preferred_age = -Math.max(6, Math.round(w.preferred_age * 0.75));
+        score += breakdown.preferred_age;
+      }
+    }
+
+    if (!isNeutralPreference(pref.preferred_color)) {
+      if (preferenceColorMatches(pref.preferred_color, cat.color)) {
+        breakdown.preferred_color = w.preferred_color + 4;
+        score += breakdown.preferred_color;
+        matchedPreferenceCount += 1;
+      } else {
+        breakdown.preferred_color = -Math.max(4, Math.round(w.preferred_color * 0.6));
+        score += breakdown.preferred_color;
+      }
+    }
+  }
+
+  if (w.liked_breed > 0) {
+    const catBreedNorm = normalizeText(cat.breed);
+    if (catBreedNorm && likedBreedSet.has(catBreedNorm)) {
+      breakdown.liked_breed = w.liked_breed + 8;
+      score += breakdown.liked_breed;
+    }
+  }
+
+  if (w.liked_tag > 0 && Array.isArray(cat.tags)) {
+    let matchedTags = 0;
+    for (const row of cat.tags) {
+      const t = normalizeText(row.tag);
+      if (t && likedTagSet.has(t)) matchedTags += 1;
+    }
+    if (matchedTags > 0) {
+      breakdown.liked_tags = Math.min(30, matchedTags * Math.max(10, w.liked_tag));
+      score += breakdown.liked_tags;
+    }
+  }
+
+  if (matchedPreferenceCount >= 2) {
+    breakdown.preference_synergy = matchedPreferenceCount >= 3 ? 18 : 10;
+    score += breakdown.preference_synergy;
+  }
+
+  return {
+    score,
+    recommendation_score: score,
+    score_breakdown: breakdown
+  };
+}
+
+function scoreCatForUser(cat, pref, likedBreedSet, likedTagSet) {
+  if (_mode === SCORING_MODES.DEMO) {
+    return scoreCatForUserDemo(cat, pref, likedBreedSet, likedTagSet);
+  }
+  return scoreCatForUserLegacy(cat, pref, likedBreedSet, likedTagSet);
+}
+
 module.exports = {
   scoreCatForUser,
   normalizeText,
   getWeights,
   updateWeights,
   loadWeights,
-  DEFAULT_WEIGHTS
+  DEFAULT_WEIGHTS,
+  SCORING_MODES
 };

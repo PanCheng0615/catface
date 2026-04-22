@@ -2,6 +2,7 @@
 
 (function () {
   const API = typeof API_BASE_URL !== 'undefined' ? API_BASE_URL : 'http://localhost:3000/api';
+  let redirectingForOrgSession = false;
 
   const params = new URLSearchParams(window.location.search);
   let selectedCatId = '';
@@ -56,7 +57,23 @@
     showStatus._t = setTimeout(function () { statusMsg.style.display = 'none'; }, 5000);
   }
 
+  function redirectForOrganizationSession() {
+    if (redirectingForOrgSession) return;
+    redirectingForOrgSession = true;
+    clinicProfile = typeof getOrgProfile === 'function' ? getOrgProfile() : clinicProfile;
+    window.location.href = clinicProfile && clinicProfile.type === 'rescue'
+      ? 'rescue-dashboard.html'
+      : 'clinic-login.html';
+  }
+
   function getClinicHeaders() {
+    if (!hasClinicSession()) {
+      redirectForOrganizationSession();
+      return {
+        'Content-Type': 'application/json',
+        Authorization: ''
+      };
+    }
     if (typeof getOrgAuthHeaders === 'function') {
       return getOrgAuthHeaders();
     }
@@ -91,6 +108,10 @@
   async function loadAuthorizedCats() {
     syncClinicProfile();
     if (!hasClinicSession()) {
+      if (clinicProfile && clinicProfile.type === 'rescue') {
+        redirectForOrganizationSession();
+        return;
+      }
       catListEl.innerHTML = '<div class="empty-state"><div class="ei">🔒</div><p>Please log in with a clinic staff account first</p></div>';
       return;
     }
@@ -543,10 +564,9 @@
             // 同时存储 token + user + org 信息
             // 兼容两种响应格式：data.user（旧）或 data.rescue_staff_user（新版）
             var staffUser = data.user || data.rescue_staff_user || {};
-            setToken(data.token);
             try {
               localStorage.setItem('catface_org_token', data.token);
-              localStorage.setItem('catface_user', JSON.stringify({
+              localStorage.setItem('catface_org_user', JSON.stringify({
                 id: staffUser.id || data.user?.id || '',
                 username: staffUser.username || staffUser.display_name || 'clinic',
                 display_name: staffUser.display_name || data.organization?.name || '診所',
@@ -558,6 +578,13 @@
                 account_type: 'organization'
               }));
               localStorage.setItem('catface_org_profile', JSON.stringify(data.organization || {}));
+              if (localStorage.getItem('catface_token') === data.token) {
+                localStorage.removeItem('catface_token');
+              }
+              var legacyUser = JSON.parse(localStorage.getItem('catface_user') || 'null');
+              if (legacyUser && legacyUser.account_type === 'organization') {
+                localStorage.removeItem('catface_user');
+              }
             } catch (e) {}
             clinicProfile = data.organization || null;
             showDevStatus('✅ 診所註冊成功！已自動登入。');
@@ -597,12 +624,11 @@
         .then(function (result) {
           if (result.success && result.data) {
             var data = result.data;
-            setToken(data.token);
             // 兼容两种响应格式：data.user（旧）或 data.rescue_staff_user（新版）
             var staffUser = data.user || data.rescue_staff_user || {};
             try {
               localStorage.setItem('catface_org_token', data.token);
-              localStorage.setItem('catface_user', JSON.stringify({
+              localStorage.setItem('catface_org_user', JSON.stringify({
                 id: staffUser.id || '',
                 username: staffUser.username || staffUser.display_name || 'clinic',
                 display_name: staffUser.display_name || data.organization?.name || '診所',
@@ -614,6 +640,13 @@
                 account_type: 'organization'
               }));
               localStorage.setItem('catface_org_profile', JSON.stringify(data.organization || {}));
+              if (localStorage.getItem('catface_token') === data.token) {
+                localStorage.removeItem('catface_token');
+              }
+              var legacyUser = JSON.parse(localStorage.getItem('catface_user') || 'null');
+              if (legacyUser && legacyUser.account_type === 'organization') {
+                localStorage.removeItem('catface_user');
+              }
             } catch (e) {}
             clinicProfile = data.organization || null;
             showDevStatus('✅ 登入成功！');
@@ -636,10 +669,18 @@
   if (devLogoutBtn) {
     devLogoutBtn.addEventListener('click', function () {
       try {
-        localStorage.removeItem('catface_token');
+        var orgToken = localStorage.getItem('catface_org_token');
+        var genericToken = localStorage.getItem('catface_token');
+        var legacyUser = JSON.parse(localStorage.getItem('catface_user') || 'null');
         localStorage.removeItem('catface_org_token');
-        localStorage.removeItem('catface_user');
         localStorage.removeItem('catface_org_profile');
+        localStorage.removeItem('catface_org_user');
+        if (genericToken && genericToken === orgToken) {
+          localStorage.removeItem('catface_token');
+        }
+        if (legacyUser && legacyUser.account_type === 'organization') {
+          localStorage.removeItem('catface_user');
+        }
       } catch (e) {}
       clinicProfile = null;
       syncDevAuthUI();

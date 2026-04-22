@@ -193,9 +193,8 @@
       }
 
       function saveOrgSession(token, userData, orgData) {
-        localStorage.setItem('catface_token', token);
         localStorage.setItem('catface_org_token', token);
-        localStorage.setItem('catface_user', JSON.stringify({
+        localStorage.setItem('catface_org_user', JSON.stringify({
           id: userData.id,
           username: userData.username || userData.display_name || 'org',
           display_name: userData.display_name || orgData.name,
@@ -207,6 +206,20 @@
           account_type: 'organization'
         }));
         localStorage.setItem('catface_org_profile', JSON.stringify(orgData));
+        try {
+          var currentToken = localStorage.getItem('catface_token');
+          var currentUser = JSON.parse(localStorage.getItem('catface_user') || 'null');
+          if (currentToken === token) localStorage.removeItem('catface_token');
+          if (currentUser && currentUser.account_type === 'organization') {
+            localStorage.removeItem('catface_user');
+          }
+        } catch (e) {}
+      }
+
+      function getOrgLandingPage(orgData) {
+        return orgData && orgData.type === 'clinic'
+          ? '/pages/clinic-portal.html'
+          : '/pages/rescue-dashboard.html';
       }
 
       form.addEventListener('submit', function (event) {
@@ -243,7 +256,7 @@
             saveOrgSession(data.token, data.rescue_staff_user, data.organization);
             setStatus('Login successful! Redirecting...', 'success');
             setTimeout(function () {
-              window.location.href = '/pages/rescue-dashboard.html';
+              window.location.href = getOrgLandingPage(data.organization);
             }, 800);
           })
           .catch(function (error) {
