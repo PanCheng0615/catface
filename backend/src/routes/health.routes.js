@@ -7,6 +7,7 @@ const {
   createOwnerHealthRecord,
   updateOwnerHealthRecord,
   deleteOwnerHealthRecord,
+  getClinicList,
   getSharePermissions,
   setHealthSharePermission
 } = require('../controllers/health.controller');
@@ -27,6 +28,9 @@ router.get('/records/:catId',   protect, getHealthRecords);
 router.post('/records/:catId',  protect, createOwnerHealthRecord);
 router.put('/records/:recordId', protect, updateOwnerHealthRecord);
 router.delete('/records/:recordId', protect, deleteOwnerHealthRecord);
+
+// 诊所列表（需要登录）
+router.get('/clinics', protect, getClinicList);
 
 // 诊所授权（需要登录）
 router.get('/share/:catId', protect, getSharePermissions);

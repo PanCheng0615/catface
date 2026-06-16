@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>貓咪健康檔案 — CatFace</title>
+  <title>Health Records — CatFace</title>
   <style>
     :root {
       --bg:         #faf6ef;
@@ -38,7 +38,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
+    html { scrollbar-gutter: stable; }
     body {
       background: var(--bg);
       color: var(--text);
@@ -46,79 +46,137 @@
                    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
       font-size: 14px;
       line-height: 1.6;
+      min-height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
     a { color: var(--primary); text-decoration: none; }
     a:hover { text-decoration: underline; }
     button, input, textarea, select { font: inherit; }
 
-    /* ── 顶部栏 ── */
-    .top-bar {
-      position: fixed; top: 0; left: 0; right: 0;
-      height: var(--header-h);
-      background: var(--surface);
-      border-bottom: 1px solid var(--border-lt);
-      display: flex; align-items: center; padding: 0 20px;
-      z-index: 200; gap: 12px;
-    }
-    .logo {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 20px; font-weight: 800; color: var(--primary);
-      text-decoration: none; white-space: nowrap;
-    }
-    .logo span { font-size: 22px; }
-    .top-bar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-    .page-badge {
-      background: var(--primary-lt); color: var(--primary);
-      padding: 5px 14px; border-radius: 999px;
-      font-size: 13px; font-weight: 700;
-      border: 1px solid rgba(200,130,26,.2);
-    }
-
-    /* ── 侧边栏 ── */
-    .sidebar {
-      position: fixed; top: var(--header-h); left: 0; bottom: 0;
-      width: var(--sidebar-w);
-      background: var(--surface);
-      border-right: 1px solid var(--border-lt);
-      display: flex; flex-direction: column;
-      padding: 16px 0; z-index: 150; overflow-y: auto;
-    }
-    .sidebar-nav { list-style: none; }
-    .sidebar-nav a {
-      display: flex; align-items: center; gap: 11px;
-      padding: 11px 20px; color: #5c4520;
-      font-size: 14px; font-weight: 500;
-      transition: background .15s, color .15s; text-decoration: none;
-    }
-    .sidebar-nav a:hover { background: var(--primary-lt); color: var(--primary); text-decoration: none; }
-    .sidebar-nav a.active { background: var(--primary-lt); color: var(--primary); font-weight: 700; }
-    .nav-icon { font-size: 18px; width: 22px; text-align: center; }
-    .sidebar-divider { height: 1px; background: var(--border-lt); margin: 10px 16px; }
-    .sidebar-bottom { padding: 12px 16px; margin-top: auto; }
-    .sidebar-user {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; border-radius: var(--r-lg);
-      background: var(--bg); border: 1px solid var(--border);
-    }
-    .user-avatar {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: var(--primary-lt); display: flex; align-items: center;
-      justify-content: center; font-size: 18px; flex-shrink: 0;
-      border: 2px solid var(--border);
-    }
-    .user-name { font-size: 13px; font-weight: 700; color: var(--text); }
-    .user-role { font-size: 11px; color: var(--muted); }
-
-    /* ── 主内容 ── */
-    .main {
-      margin-left: var(--sidebar-w);
-      margin-top: var(--header-h);
-      padding: 24px 28px 60px;
+    /* Site-wide three-column layout */
+    .layout {
+      display: grid;
+      grid-template-columns: 252px minmax(0,1fr) 308px;
+      max-width: 1200px;
+      margin: 0 auto;
       min-height: 100vh;
+      height: 100vh;
     }
 
-    /* ── 状态消息 ── */
+    /* Left nav */
+    .left-nav {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      scrollbar-width: none;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+    }
+    .left-nav::-webkit-scrollbar { display: none; }
+    .nav-hero {
+      background: linear-gradient(160deg, #C8702A 0%, #E8B050 100%);
+      padding: 18px 16px 16px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .nav-hero::after {
+      content: '🐱';
+      position: absolute;
+      right: 10px;
+      top: 8px;
+      font-size: 48px;
+      opacity: .15;
+      line-height: 1;
+      pointer-events: none;
+    }
+    .nav-hero-logo {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      color: rgba(255,255,255,.75);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
+    .nav-hero-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: rgba(255,255,255,.22);
+      border: 2.5px solid rgba(255,255,255,.55);
+      color: #fff;
+      display: grid; place-items: center;
+      font-size: 19px; flex-shrink: 0;
+    }
+    .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
+    .nav-hero-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #86EFAC; flex-shrink: 0; }
+    .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
+    .nav-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 12px;
+      font-size: 14px; font-weight: 500;
+      color: #6B4E2A;
+      transition: background .15s, color .15s;
+      cursor: pointer;
+    }
+    .nav-link:hover { background: #FDF0D8; color: #C8702A; text-decoration: none; }
+    .nav-link.active { background: #FDF0D8; color: #C8702A; font-weight: 700; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; }
+    .n-label { flex: 1; }
+    .n-badge { background: #E05B73; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px; }
+    .n-soon { font-size: 10px; font-weight: 600; color: #A87848; background: var(--bg); padding: 2px 7px; border-radius: 99px; }
+    .btn-new-post {
+      margin: 14px 10px 0; padding: 12px 0;
+      border-radius: 12px; background: #C8702A; color: #fff;
+      font-size: 14px; font-weight: 700; border: none;
+      transition: background .15s, transform .12s;
+    }
+    .btn-new-post:hover { background: #A85820; transform: translateY(-1px); }
+    .nav-user {
+      margin-top: auto; display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-top: 1px solid var(--border-lt);
+      cursor: pointer; transition: background .15s;
+    }
+    .nav-user:hover { background: #FDFAF6; }
+    .nav-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--primary-lt); border: 2px solid var(--border);
+      color: var(--primary); display: grid; place-items: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .u-handle { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .nav-user-more { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+
+    /* Center column */
+    .center {
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      min-height: 100vh;
+      height: 100vh;
+      overflow-y: auto;
+      scrollbar-gutter: stable;
+    }
+    .center-header {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+    }
+    .center-header h2 { font-size: 18px; font-weight: 800; }
+    .center-header p { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+    /* Main content */
+    .main { margin: 0; padding: 20px; min-height: auto; }
+
+    /* Toast */
     #status-msg {
       display: none;
       position: fixed;
@@ -131,35 +189,14 @@
       box-shadow: var(--shadow-lg);
     }
 
-    /* ── 开发测试面板 ── */
-    .dev-panel {
-      background: #fffcf0;
-      border: 1px dashed #e8c84a;
-      border-radius: var(--r-xl);
-      padding: 14px 18px;
-      margin-bottom: 20px;
-    }
-    .dev-panel-title {
-      font-size: 12px; font-weight: 800; color: #8a6a00;
-      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px;
-    }
-    .dev-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
-    .dev-field { display: flex; flex-direction: column; gap: 4px; }
-    .dev-field label { font-size: 11px; font-weight: 700; color: #7a5c00; }
-    .dev-field input {
-      border: 1px solid #e8c84a; border-radius: var(--r-sm);
-      padding: 7px 10px; min-width: 240px; font-size: 13px; background: #fff;
-    }
-    .dev-note { font-size: 11px; color: #997700; margin-top: 8px; }
-
-    /* ── 顶部导航行 ── */
+    /* Page nav row */
     .page-nav {
       display: flex; align-items: center; justify-content: space-between;
       flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
     }
     .page-title { font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
 
-    /* ── 标签页 ── */
+    /* Tabs */
     .tabs {
       display: flex; gap: 3px;
       background: var(--border-lt);
@@ -179,7 +216,7 @@
     .tab-pane { display: none; }
     .tab-pane.active { display: flex; flex-direction: column; gap: 14px; }
 
-    /* ── 健康护照 ── */
+    /* Health passport */
     .passport {
       background: linear-gradient(135deg, #5c3608 0%, #a86915 50%, #c8821a 100%);
       border-radius: var(--r-xl);
@@ -225,7 +262,7 @@
     .pbadge.warn { border-color: rgba(251,191,36,.5);  background: rgba(251,191,36,.12); }
     .pbadge.none { border-color: rgba(255,255,255,.1); background: rgba(0,0,0,.1); }
 
-    /* ── 卡片 ── */
+    /* Cards */
     .card {
       background: var(--surface);
       border-radius: var(--r-xl);
@@ -240,7 +277,7 @@
     }
     .section-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 
-    /* ── chip ── */
+    /* Chip */
     .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
     .chip-blue   { background: var(--blue-lt);   color: var(--blue);   }
     .chip-green  { background: var(--green-lt);  color: var(--green);  }
@@ -251,7 +288,7 @@
     .chip-teal   { background: var(--teal-lt);   color: var(--teal);   }
     .chip-warm   { background: var(--primary-lt); color: var(--primary); }
 
-    /* ── 按钮 ── */
+    /* Buttons */
     .btn {
       display: inline-flex; align-items: center; gap: 6px;
       border: none; border-radius: var(--r-md);
@@ -267,7 +304,7 @@
     .btn-blue    { background: var(--blue-lt); color: var(--blue); border: 1px solid #bfdbfe; }
     .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: var(--r-sm); }
 
-    /* ── 证书记录卡 ── */
+    /* Record list items */
     .rec-card {
       border: 1px solid var(--border);
       border-radius: var(--r-lg);
@@ -302,7 +339,7 @@
       background: var(--green-lt); color: #065f46; border: 1px solid #a7f3d0;
     }
 
-    /* ── 表单 ── */
+    /* Forms */
     .form-card {
       background: #fffaf4;
       border: 1px solid var(--border);
@@ -329,7 +366,7 @@
     select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b7355' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
     .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 
-    /* ── 授权项 ── */
+    /* Permission rows */
     .perm-item {
       display: flex; align-items: center; justify-content: space-between;
       padding: 12px 16px; border: 1px solid var(--border);
@@ -342,12 +379,12 @@
       justify-content: center; font-size: 18px; flex-shrink: 0;
     }
 
-    /* ── 空态 ── */
+    /* Empty states */
     .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
     .empty-icon  { font-size: 40px; margin-bottom: 10px; opacity: .6; }
     .empty-state p { font-size: 13px; line-height: 1.7; }
 
-    /* ── 信息提示条 ── */
+    /* Info callouts */
     .info-bar {
       font-size: 13px; color: var(--muted);
       padding: 10px 14px; border-radius: var(--r-md);
@@ -361,9 +398,36 @@
       color: #065f46;
     }
 
+    /* Right panel */
+    .right-panel {
+      padding: 20px 0 20px 20px;
+      position: sticky; top: 0; height: 100vh;
+      overflow-y: auto;
+      display: flex; flex-direction: column;
+      gap: 18px; scrollbar-width: none;
+    }
+    .right-panel::-webkit-scrollbar { display: none; }
+    .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+    .rp-link-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 18px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background .12s;
+    }
+    .rp-link-row:last-child { border-bottom: none; }
+    .rp-link-row:hover { background: var(--bg); }
+    .rp-link-icon { font-size: 20px; width: 36px; height: 36px; border-radius: 10px; background: var(--primary-lt); display: grid; place-items: center; flex-shrink: 0; }
+    .rp-link-label { flex: 1; font-size: 14px; font-weight: 600; color: #6B4E2A; }
+    .rp-link-arrow { color: var(--muted); font-size: 16px; }
+    .rp-info-block { padding: 14px 18px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 252px minmax(0,1fr); }
+      .right-panel { display: none; }
+    }
     @media (max-width: 860px) {
-      .sidebar { display: none; }
-      .main { margin-left: 0; }
+      .layout { grid-template-columns: 1fr; }
+      .left-nav { display: none; }
     }
     @media (max-width: 640px) {
       .passport-top { flex-direction: column; }
@@ -373,164 +437,127 @@
   </style>
 </head>
 <body>
-
-  <!-- ── 顶部栏 ── -->
-  <header class="top-bar">
-    <a href="index.html" class="logo">
-      <span>🐱</span> CatFace
-    </a>
-    <div class="top-bar-right">
-      <span class="page-badge">🩺 健康檔案</span>
-    </div>
-  </header>
-
-  <!-- ── 侧边栏 ── -->
-  <nav class="sidebar">
-    <ul class="sidebar-nav">
-      <li><a href="index.html">
-        <span class="nav-icon">💬</span> Community
-      </a></li>
-      <li><a href="adoption.html">
-        <span class="nav-icon">🐱</span> Adoption
-      </a></li>
-      <li><a href="index.html">
-        <span class="nav-icon">🔔</span> Notifications
-      </a></li>
-      <li><a href="account.html">
-        <span class="nav-icon">👤</span> Account
-      </a></li>
-    </ul>
-    <div class="sidebar-divider"></div>
-    <ul class="sidebar-nav">
-      <li><a href="health.html" class="active">
-        <span class="nav-icon">🩺</span> Health Records
-      </a></li>
-      <li><a href="clinic-portal.html">
-        <span class="nav-icon">🏥</span> Clinic Portal
-      </a></li>
-      <li><a href="rescue-dashboard.html">
-        <span class="nav-icon">🚑</span> Rescue Dashboard
-      </a></li>
-    </ul>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-bottom">
-      <div class="sidebar-user">
-        <div class="user-avatar">🐾</div>
+  <div class="layout">
+  <nav class="left-nav">
+    <div class="nav-hero">
+      <div class="nav-hero-logo">CatFace</div>
+      <div class="nav-hero-profile">
+        <div class="nav-hero-avatar">&#x1F464;</div>
         <div>
-          <div class="user-name">貓主人</div>
-          <div class="user-role">健康記錄管理</div>
+          <div class="nav-hero-name">Guest</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Not logged in</div>
         </div>
       </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/notifications.html', 'Please log in first')"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
+      <div class="nav-link active" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
+    </div>
+    <button class="btn-new-post" onclick="location.href='/pages/cat-facebook.html'">+ New Post</button>
+    <div class="nav-user" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')">
+      <div class="nav-avatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name">Guest</div><div class="u-handle">Log in to continue</div></div>
+      <span class="nav-user-more">&#x2026;</span>
     </div>
   </nav>
 
-  <!-- ── 主内容 ── -->
-  <main class="main">
+  <div class="center">
+    <div class="center-header">
+      <h2>&#x1FA7A; Health Records</h2>
+      <p>Manage your cat's health history, clinic reports, and sharing permissions</p>
+    </div>
+    <main class="main">
 
-    <!-- 状态消息 -->
+    <!-- Status Message -->
     <div id="status-msg"></div>
 
-    <!-- 开发测试面板 -->
-    <div class="dev-panel">
-      <div class="dev-panel-title">🛠 開發測試面板</div>
-      <div class="dev-row">
-        <div class="dev-field">
-          <label>貓咪 ID (UUID)</label>
-          <input id="test-cat-id-input" type="text" placeholder="從 pgAdmin 或 seed 資料取得">
-        </div>
-        <div class="dev-field">
-          <label>用戶 ID (UUID)</label>
-          <input id="test-user-id-input" type="text" placeholder="從 pgAdmin 或 register API 取得">
-        </div>
-        <button id="test-apply-btn" class="btn btn-primary" style="align-self:flex-end;">載入</button>
-      </div>
-      <p class="dev-note">目前貓咪：<code id="current-cat-id">未設置</code></p>
-    </div>
-
-    <!-- 导航行：标题 + 标签页 -->
+    <!-- Page Nav: Title + Tabs -->
     <div class="page-nav">
-      <div class="page-title">🐾 貓咪健康檔案</div>
+      <div class="page-title">🐾 Cat Health Records</div>
       <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('records')">📋 健康記錄</button>
-        <button class="tab-btn" onclick="switchTab('clinic')">🏥 診所認證</button>
-        <button class="tab-btn" onclick="switchTab('share')">🔑 授權管理</button>
+        <button class="tab-btn active" onclick="switchTab('records')">&#x1F4CB; My Records</button>
+        <button class="tab-btn" onclick="switchTab('clinic')">&#x1F3E5; Clinic Reports</button>
+        <button class="tab-btn" onclick="switchTab('share')">&#x1F511; Permissions</button>
       </div>
     </div>
 
-    <!-- 健康护照卡 -->
+    <!-- Health Passport Card -->
     <div class="passport">
       <div class="passport-top" style="position:relative;z-index:1;">
         <div class="passport-avatar">🐱</div>
         <div class="passport-info">
-          <h1 id="passport-name">— 健康護照</h1>
-          <p class="meta" id="passport-meta">請先輸入貓咪 ID 載入資料</p>
+          <h1 id="passport-name">— Health Passport</h1>
+          <p class="meta" id="passport-meta">Loading your cat's data...</p>
         </div>
       </div>
       <div class="passport-badges" id="passport-badges">
-        <div class="pbadge none"><span class="pb-icon">💉</span><span class="pb-label">疫苗</span><span class="pb-date">未記錄</span></div>
-        <div class="pbadge none"><span class="pb-icon">🐛</span><span class="pb-label">驅蟲</span><span class="pb-date">未記錄</span></div>
-        <div class="pbadge none"><span class="pb-icon">✂️</span><span class="pb-label">絕育</span><span class="pb-date">未記錄</span></div>
-        <div class="pbadge none"><span class="pb-icon">⚖️</span><span class="pb-label">體重</span><span class="pb-date">— kg</span></div>
+        <div class="pbadge none"><span class="pb-icon">💉</span><span class="pb-label">Vaccine</span><span class="pb-date">Not recorded</span></div>
+        <div class="pbadge none"><span class="pb-icon">🐛</span><span class="pb-label">Deworming</span><span class="pb-date">Not recorded</span></div>
+        <div class="pbadge none"><span class="pb-icon">✂️</span><span class="pb-label">Neutered</span><span class="pb-date">Not recorded</span></div>
+        <div class="pbadge none"><span class="pb-icon">⚖️</span><span class="pb-label">Weight</span><span class="pb-date">— kg</span></div>
       </div>
     </div>
 
-    <!-- ── Tab 1：健康記錄 ── -->
+    <!-- Tab 1: My Records -->
     <div id="tab-records" class="tab-pane active">
       <div class="card">
         <div class="section-header">
           <span class="section-title">
-            📋 我的健康記錄
-            <span class="chip chip-gray" id="owner-count">0 筆</span>
+            &#x1F4CB; My Health Records
+            <span class="chip chip-gray" id="owner-count">0 records</span>
           </span>
-          <button class="btn btn-primary btn-sm" id="toggle-add-btn">＋ 新增記錄</button>
+          <button class="btn btn-primary btn-sm" id="toggle-add-btn">＋ Add Record</button>
         </div>
 
-        <!-- 新增表单 -->
+        <!-- Add Record Form -->
         <div id="add-record-section" style="display:none;">
           <div style="padding:18px 22px 0;">
             <div class="form-card">
-              <h3>🗂 新增健康記錄</h3>
+              <h3>🗂 Add Health Record</h3>
               <form id="add-record-form">
                 <div class="form-grid">
                   <div class="field">
-                    <label>記錄類型 *</label>
+                    <label>Record Type *</label>
                     <select id="rec-type" required>
-                      <option value="vaccine">💉 疫苗接種</option>
-                      <option value="deworming">🐛 驅蟲</option>
-                      <option value="checkup">🩺 一般體檢</option>
-                      <option value="treatment">💊 疾病治療</option>
-                      <option value="surgery">✂️ 手術記錄</option>
-                      <option value="other">📋 其他</option>
+                      <option value="vaccine">💉 Vaccination</option>
+                      <option value="deworming">🐛 Deworming</option>
+                      <option value="checkup">🩺 General Checkup</option>
+                      <option value="treatment">💊 Treatment</option>
+                      <option value="surgery">✂️ Surgery</option>
+                      <option value="other">&#x1F4CB; Other</option>
                     </select>
                   </div>
                   <div class="field">
-                    <label>就診日期 *</label>
+                    <label>Visit Date *</label>
                     <input id="rec-date" type="date" required>
                   </div>
                   <div class="field">
-                    <label>下次提醒日期</label>
+                    <label>Next Reminder Date</label>
                     <input id="rec-next" type="date">
                   </div>
                   <div class="field">
-                    <label>體重（kg）</label>
-                    <input id="rec-weight" type="number" step="0.01" min="0" placeholder="例：4.20">
+                    <label>Weight (kg)</label>
+                    <input id="rec-weight" type="number" step="0.01" min="0" placeholder="e.g. 4.20">
                   </div>
                   <div class="field">
-                    <label>主治醫師</label>
-                    <input id="rec-vet" type="text" placeholder="例：王大明醫師">
+                    <label>Veterinarian</label>
+                    <input id="rec-vet" type="text" placeholder="e.g. Dr. Smith">
                   </div>
                   <div class="field">
-                    <label>醫療院所</label>
-                    <input id="rec-clinic" type="text" placeholder="例：愛貓動物醫院">
+                    <label>Clinic Name</label>
+                    <input id="rec-clinic" type="text" placeholder="e.g. Happy Paws Animal Hospital">
                   </div>
                 </div>
                 <div class="form-grid wide" style="margin-top:12px;">
                   <div class="field">
-                    <label>描述 / 備註 *</label>
-                    <textarea id="rec-desc" placeholder="例：完成三聯疫苗第一針（FVRCP），接種後 30 分鐘觀察無異常。" required></textarea>
+                    <label>Description / Notes *</label>
+                    <textarea id="rec-desc" placeholder="e.g. Completed first dose of FVRCP vaccine. Observed for 30 minutes with no adverse reactions." required></textarea>
                   </div>
                   <div class="field">
-                    <label>附件（圖片或 PDF · 最大 10 MB）</label>
+                    <label>Attachment (Image or PDF · Max 10 MB)</label>
                     <input id="rec-file" type="file" accept="image/*,application/pdf"
                       style="border:1px solid var(--border);border-radius:var(--r-md);padding:9px 12px;background:var(--surface);font-size:13px;cursor:pointer;width:100%;">
                     <div id="rec-file-preview" style="display:none;margin-top:8px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);"></div>
@@ -538,83 +565,103 @@
                   </div>
                 </div>
                 <div class="form-actions">
-                  <button type="button" class="btn btn-ghost" id="cancel-add-btn">取消</button>
-                  <button type="submit" class="btn btn-primary" id="rec-submit-btn">儲存記錄</button>
+                  <button type="button" class="btn btn-ghost" id="cancel-add-btn">Cancel</button>
+                  <button type="submit" class="btn btn-primary" id="rec-submit-btn">Save Record</button>
                 </div>
               </form>
             </div>
           </div>
         </div>
 
-        <!-- 记录列表 -->
+        <!-- Records List -->
         <div id="owner-records-list" style="padding:16px 22px;">
           <div class="empty-state">
-            <div class="empty-icon">📋</div>
-            <p>請先輸入貓咪 ID 並點擊「載入」</p>
+            <div class="empty-icon">&#x1F4CB;</div>
+            <p>No records yet. Click "Add Record" above to get started.</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ── Tab 2：診所認證 ── -->
+    <!-- Tab 2: Clinic Reports -->
     <div id="tab-clinic" class="tab-pane">
       <div class="card">
         <div class="section-header">
           <span class="section-title">
-            🏥 診所認證報告
-            <span class="chip chip-green" id="clinic-count">0 筆</span>
+            &#x1F3E5; Clinic Reports
+            <span class="chip chip-green" id="clinic-count">0 records</span>
           </span>
-          <span class="chip chip-teal">唯讀 · 由診所上傳</span>
+          <span class="chip chip-teal">Read-only · Uploaded by clinic</span>
         </div>
         <div class="card-body">
           <div class="info-bar info-bar-green">
-            ✅ 以下記錄由合作診所上傳，具備官方認證。如需新增報告，請由診所透過「診所門戶」操作。
+            ✅ Reports below are uploaded by partner clinics and carry official certification. To add new reports, please ask the clinic to use the Clinic Portal. Click the "🖨 Print Report" button on any report card to generate a professional document.
           </div>
           <div id="clinic-records-list">
             <div class="empty-state">
-              <div class="empty-icon">🏥</div>
-              <p>請先輸入貓咪 ID 並點擊「載入」</p>
+              <div class="empty-icon">&#x1F3E5;</div>
+              <p>No clinic reports yet. Authorize a clinic to start receiving reports.</p>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ── Tab 3：授權管理 ── -->
+    <!-- Tab 3: Permissions -->
     <div id="tab-share" class="tab-pane">
       <div class="card">
         <div class="section-header">
-          <span class="section-title">🔑 診所授權管理</span>
+          <span class="section-title">&#x1F511; Clinic Authorization</span>
         </div>
         <div class="card-body">
           <div class="info-bar">
-            授權後，診所可在「診所門戶」查看您的貓咪健康記錄，並上傳官方認證報告。
+            Authorize a clinic to let them view your cat's health records and upload official reports through the Clinic Portal.
           </div>
           <div id="share-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;">
             <div class="empty-state" style="padding:20px;">
-              <div class="empty-icon" style="font-size:28px;">🔑</div>
-              <p>請先載入資料</p>
+              <div class="empty-icon" style="font-size:28px;">&#x1F511;</div>
+              <p>Loading permissions...</p>
             </div>
           </div>
 
           <div style="border-top:1px solid var(--border-lt);padding-top:20px;">
-            <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text);">新增授權</h3>
+            <h3 style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text);">Grant / Update Permission</h3>
             <form id="share-form">
               <div class="form-grid">
                 <div class="field" style="grid-column:1/-1;">
-                  <label>診所機構 ID (UUID)</label>
-                  <input id="share-org-id" type="text" placeholder="從 GET /api/organizations 取得診所 ID">
+                  <label>Select Clinic *</label>
+                  <select id="share-org-id" required>
+                    <option value="">— Loading clinics... —</option>
+                  </select>
+                  <div id="clinic-list-loading" style="font-size:12px;color:var(--muted);margin-top:4px;">
+                    &#x23F3; Loading partner clinics...
+                  </div>
                 </div>
                 <div class="field">
-                  <label>授權狀態</label>
-                  <select id="share-allowed">
-                    <option value="true">✅ 允許查看</option>
-                    <option value="false">❌ 取消授權</option>
+                  <label>Permission Type</label>
+                  <select id="share-perm-type">
+                    <option value="full">&#x1F510; Full Access (can upload reports)</option>
+                    <option value="read_only">&#x1F441; Read Only (cannot upload)</option>
                   </select>
+                </div>
+                <div class="field">
+                  <label>Status *</label>
+                  <select id="share-allowed">
+                    <option value="true">✅ Allow access</option>
+                    <option value="false">&#x274C; Revoke access</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Expires On</label>
+                  <input id="share-expires" type="date" placeholder="Leave blank for permanent access">
+                </div>
+                <div class="field" style="grid-column:1/-1;">
+                  <label>Note (optional)</label>
+                  <input id="share-note" type="text" placeholder="e.g. For second opinion at another hospital">
                 </div>
               </div>
               <div class="form-actions">
-                <button type="submit" class="btn btn-primary">設定授權</button>
+                <button type="submit" class="btn btn-primary">Save Permission</button>
               </div>
             </form>
           </div>
@@ -622,10 +669,28 @@
       </div>
     </div>
 
-  </main>
+    </main>
+  </div>
 
-  <script src="../js/config.js"></script>
-  <script src="../js/health.js"></script>
+  <aside class="right-panel">
+    <div class="rp-card">
+      <div class="rp-card-title">Quick Actions</div>
+      <div class="rp-link-row" onclick="location.href='/pages/cat-facebook.html'"><div class="rp-link-icon">&#x1F4AC;</div><span class="rp-link-label">Community Feed</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/adoption.html', 'Please log in first')"><div class="rp-link-icon">&#x1F431;</div><span class="rp-link-label">Adoption</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')"><div class="rp-link-icon">&#x1FA7A;</div><span class="rp-link-label">Back to Account</span><span class="rp-link-arrow">&#x203A;</span></div>
+      <div class="rp-link-row" onclick="location.href='/pages/clinic-portal.html'"><div class="rp-link-icon">&#x1F3E5;</div><span class="rp-link-label">Clinic Portal</span><span class="rp-link-arrow">&#x203A;</span></div>
+    </div>
+    <div class="rp-card">
+      <div class="rp-card-title">Tips</div>
+      <div class="rp-info-block">
+        <p>Keep your vaccination, deworming, and checkup records up to date for seamless vet visits and emergency care.</p>
+      </div>
+    </div>
+  </aside>
+  </div>
+
+  <script src="../js/config.js?v=20260418-1"></script>
+  <script src="../js/health.js?v=20260418-2"></script>
   <script>
     function switchTab(name) {
       document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
@@ -634,6 +699,38 @@
       const idx = ['records', 'clinic', 'share'].indexOf(name);
       document.querySelectorAll('.tab-btn')[idx].classList.add('active');
     }
+  </script>
+  <script>
+    (function () {
+      if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+        alert('Please log in first');
+        window.location.href = '/pages/log-in.html';
+        return;
+      }
+
+      var user = null;
+      try {
+        user = JSON.parse(localStorage.getItem('catface_user') || 'null');
+      } catch (e) {}
+      var heroName = document.querySelector('.nav-hero-name');
+      var heroStatus = document.querySelector('.nav-hero-status');
+      var navName = document.querySelector('.u-name');
+      var navHandle = document.querySelector('.u-handle');
+      if (heroName) heroName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+      if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> ' + (user ? ('Logged in · ' + (user.username || '')) : 'Not logged in');
+      if (navName) navName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+      if (navHandle) navHandle.textContent = user ? (user.username ? '@' + user.username : '') : 'Log in to continue';
+
+      var unreadCount = 0;
+      try {
+        var badgeCountKey = 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
+        unreadCount = Math.max(0, parseInt(localStorage.getItem(badgeCountKey) || '0', 10) || 0);
+      } catch (e) { unreadCount = 0; }
+      document.querySelectorAll('[data-notif-badge]').forEach(function (badge) {
+        if (unreadCount <= 0) badge.style.display = 'none';
+        else { badge.style.display = ''; badge.textContent = String(unreadCount); }
+      });
+    })();
   </script>
 </body>
 </html>

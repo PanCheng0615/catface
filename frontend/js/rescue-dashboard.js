@@ -26,6 +26,8 @@
   const catLocationInput = document.getElementById("cat-location");
   const catHealthInput = document.getElementById("cat-health");
   const catPersonalityInput = document.getElementById("cat-personality");
+  const catSuggestTagsBtn = document.getElementById("cat-suggest-tags-btn");
+  const catTagSuggestionList = document.getElementById("cat-tag-suggestion-list");
   const catNotesInput = document.getElementById("cat-notes");
   const catPhotoInput = document.getElementById("cat-photo-input");
   const catPhotoPreview = document.getElementById("cat-photo-preview");
@@ -95,6 +97,7 @@
   const dashboardRecentRecords = document.getElementById("dashboard-recent-records");
   const dashboardAttentionList = document.getElementById("dashboard-attention-list");
   const orgLogoutBtn = document.getElementById("org-logout-btn");
+  const notifAddBtn = document.getElementById("notif-add-btn");
 
   if (!catListBody || !applicationListBody || !notifList) {
     return;
@@ -113,7 +116,10 @@
     pendingImages: [],
     currentGeneratedFaceId: "",
     currentGeneratedEmbedding: null,
-    currentCatPhoto: ""
+    currentCatPhoto: "",
+    suggestedCatTags: [],
+    selectedSuggestedTags: [],
+    personalityDraftBeforeSelection: ""
   };
 
   function getAuthToken() {
@@ -222,6 +228,9 @@
         if (line.indexOf("性格:") === 0) result.personality = line.replace("性格:", "").trim();
         if (line.indexOf("健康:") === 0) result.health = line.replace("健康:", "").trim();
         if (line.indexOf("備註:") === 0) result.notes = line.replace("備註:", "").trim();
+        if (line.indexOf("Personality:") === 0) result.personality = line.replace("Personality:", "").trim();
+        if (line.indexOf("Health:") === 0) result.health = line.replace("Health:", "").trim();
+        if (line.indexOf("Notes:") === 0) result.notes = line.replace("Notes:", "").trim();
       });
 
     return result;
@@ -267,6 +276,138 @@
     addCatToggleBtn.textContent = isOpen ? "Hide Form" : "Add New Cat";
   }
 
+  function parseTagInput(value) {
+    const unique = [];
+
+    String(value || "")
+      .split(",")
+      .map(function (tag) {
+        return tag.trim();
+      })
+      .filter(Boolean)
+      .forEach(function (tag) {
+        if (!unique.includes(tag)) {
+          unique.push(tag);
+        }
+      });
+
+    return unique;
+  }
+
+  function writeTagInput(tags) {
+    catPersonalityInput.value = tags.join(", ");
+  }
+
+  function syncPersonalityInputBySelection() {
+    const selected = Array.isArray(state.selectedSuggestedTags) ? state.selectedSuggestedTags : [];
+    if (selected.length) {
+      writeTagInput(selected);
+      catPersonalityInput.readOnly = true;
+      return;
+    }
+
+    catPersonalityInput.readOnly = false;
+    if (state.personalityDraftBeforeSelection) {
+      catPersonalityInput.value = state.personalityDraftBeforeSelection;
+    }
+  }
+
+  function clearSelectedTagsAndRestoreDraft() {
+    state.selectedSuggestedTags = [];
+    syncPersonalityInputBySelection();
+  }
+
+  function toggleSuggestedTag(tag) {
+    const selected = Array.isArray(state.selectedSuggestedTags) ? state.selectedSuggestedTags.slice() : [];
+    const index = selected.indexOf(tag);
+
+    if (index >= 0) {
+      selected.splice(index, 1);
+      state.selectedSuggestedTags = selected;
+      if (!selected.length) {
+        clearSelectedTagsAndRestoreDraft();
+      } else {
+        syncPersonalityInputBySelection();
+      }
+      return;
+    }
+
+    if (!selected.length) {
+      state.personalityDraftBeforeSelection = catPersonalityInput.value.trim();
+    }
+    selected.push(tag);
+    state.selectedSuggestedTags = selected;
+    syncPersonalityInputBySelection();
+  }
+
+  function renderTagSuggestions() {
+    if (!catTagSuggestionList) return;
+
+    const selectedTags = Array.isArray(state.selectedSuggestedTags) ? state.selectedSuggestedTags : [];
+    const suggestedTags = Array.isArray(state.suggestedCatTags) ? state.suggestedCatTags : [];
+
+    if (!suggestedTags.length) {
+      catTagSuggestionList.innerHTML = "";
+      catTagSuggestionList.hidden = true;
+      return;
+    }
+
+    catTagSuggestionList.hidden = false;
+    catTagSuggestionList.innerHTML = suggestedTags.map(function (tag) {
+      const selected = selectedTags.includes(tag);
+      return "<button class=\"suggestion-chip" + (selected ? " selected" : "") + "\" type=\"button\" data-suggested-tag=\"" + escapeHtml(tag) + "\">" + escapeHtml(tag) + "</button>";
+    }).join("");
+  }
+
+  function resetTagSuggestions() {
+    state.suggestedCatTags = [];
+    state.selectedSuggestedTags = [];
+    state.personalityDraftBeforeSelection = "";
+    catPersonalityInput.readOnly = false;
+    renderTagSuggestions();
+  }
+
+  function requestTagSuggestions() {
+    const personalityForSuggestion = state.selectedSuggestedTags.length
+      ? state.personalityDraftBeforeSelection
+      : catPersonalityInput.value.trim();
+    const payload = {
+      personality: personalityForSuggestion,
+      health: catHealthInput.value.trim(),
+      notes: catNotesInput.value.trim(),
+      limit: 5
+    };
+
+    if (!payload.personality && !payload.health && !payload.notes) {
+      window.alert("Add Health Summary, Rescue Notes, or a longer personality description first.");
+      return;
+    }
+
+    catSuggestTagsBtn.disabled = true;
+
+    api("/rescue/cats/tag-suggestions", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }).then(function (result) {
+      state.suggestedCatTags = Array.isArray(result.suggested_tags)
+        ? result.suggested_tags.map(function (item) {
+            return item.tag;
+          }).filter(Boolean)
+        : [];
+
+      renderTagSuggestions();
+
+      if (!state.suggestedCatTags.length) {
+        return;
+      }
+    }).catch(function (error) {
+      resetTagSuggestions();
+      window.alert(error.message || "Unable to generate tag suggestions.");
+    }).finally(function () {
+      catSuggestTagsBtn.disabled = false;
+    });
+  }
+
   function resetCatForm() {
     state.editingCatId = null;
     state.currentGeneratedEmbedding = null;
@@ -285,6 +426,7 @@
     catHealthInput.value = "";
     catPersonalityInput.value = "";
     catNotesInput.value = "";
+    resetTagSuggestions();
     state.currentCatPhoto = "";
     catPhotoInput.value = "";
     catPhotoPreview.src = "";
@@ -399,6 +541,7 @@
     catHealthInput.value = splitDescription(cat.description).health || "";
     catPersonalityInput.value = view.tags.join(", ");
     catNotesInput.value = splitDescription(cat.description).notes || "";
+    resetTagSuggestions();
     state.currentGeneratedEmbedding = null;
     setPhotoPreview(cat.photo_url || "");
     setCatFormOpen(true);
@@ -916,6 +1059,12 @@
   }
 
   function saveCatForm() {
+    const tagValues = state.selectedSuggestedTags.length
+      ? state.selectedSuggestedTags.slice()
+      : parseTagInput(catPersonalityInput.value);
+    const personalityValue = state.selectedSuggestedTags.length
+      ? state.personalityDraftBeforeSelection
+      : catPersonalityInput.value.trim();
     const payload = {
       name: catNameInput.value.trim(),
       display_id: catIdInput.value.trim() || undefined,
@@ -925,12 +1074,10 @@
       status: catStatusInput.value,
       location: catLocationInput.value.trim(),
       health: catHealthInput.value.trim(),
-      personality: catPersonalityInput.value.trim(),
+      personality: personalityValue,
       notes: catNotesInput.value.trim(),
       photo_url: state.currentCatPhoto || undefined,
-      tags: catPersonalityInput.value.split(",").map(function (tag) {
-        return tag.trim();
-      }).filter(Boolean)
+      tags: tagValues
     };
 
     if (!payload.name) {
@@ -1073,6 +1220,9 @@
   });
 
   catFormSaveBtn.addEventListener("click", saveCatForm);
+  if (catSuggestTagsBtn) {
+    catSuggestTagsBtn.addEventListener("click", requestTagSuggestions);
+  }
   openFaceIdBtn.addEventListener("click", openFaceRecognitionModal);
   faceIdCloseBtn.addEventListener("click", closeFaceRecognitionModal);
   faceIdCancelBtn.addEventListener("click", closeFaceRecognitionModal);
@@ -1134,6 +1284,21 @@
     catIdInput.value = state.currentGeneratedFaceId;
     closeFaceRecognitionModal();
   });
+
+  if (catPersonalityInput) {
+    catPersonalityInput.addEventListener("input", renderTagSuggestions);
+  }
+
+  if (catTagSuggestionList) {
+    catTagSuggestionList.addEventListener("click", function (event) {
+      const button = event.target.closest("[data-suggested-tag]");
+      if (!button) return;
+
+      const tag = button.getAttribute("data-suggested-tag");
+      toggleSuggestedTag(tag);
+      renderTagSuggestions();
+    });
+  }
 
   catListBody.addEventListener("click", function (event) {
     const profileButton = event.target.closest("[data-cat-profile]");
@@ -1393,130 +1558,12 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
   const dashboardAttentionList = document.getElementById("dashboard-attention-list");
   const applicationTableBody = applicationSection.querySelector("table tbody");
 
-  let catOrder = ["CAT-001", "CAT-002", "CAT-003"];
-  let catProfiles = {
-    "CAT-001": {
-      id: "CAT-001",
-      avatarText: "O",
-      avatarClass: "",
-      name: "Orange",
-      breed: "Domestic Shorthair",
-      status: "Available",
-      gender: "Female",
-      age: "1 year",
-      birthday: "2024-02-14",
-      personality: "Friendly and playful",
-      spayedNeutered: "Yes",
-      vaccinationStatus: "Core vaccines completed",
-      foundLocation: "Kowloon City",
-      allergyHistory: "No known allergies",
-      tags: ["Friendly", "Indoor only", "Playful"],
-      summary: "Orange is a social rescue cat who adapts well to indoor homes.",
-      health: "Vaccinated and neutered",
-      photo: ""
-    },
-    "CAT-002": {
-      id: "CAT-002",
-      avatarText: "S",
-      avatarClass: "blue",
-      name: "Shadow",
-      breed: "Tuxedo",
-      status: "Pending",
-      gender: "Male",
-      age: "3 years",
-      birthday: "2022-09-03",
-      personality: "Quiet and observant",
-      spayedNeutered: "Yes",
-      vaccinationStatus: "Vaccinated, booster pending",
-      foundLocation: "Sha Tin district",
-      allergyHistory: "Mild chicken sensitivity",
-      tags: ["Calm", "Independent", "Low-noise home"],
-      summary: "Shadow is currently in the application review stage.",
-      health: "Vaccinated, under observation",
-      photo: ""
-    },
-    "CAT-003": {
-      id: "CAT-003",
-      avatarText: "W",
-      avatarClass: "pink",
-      name: "Whiskers",
-      breed: "Senior Cat",
-      status: "Reserved",
-      gender: "Female",
-      age: "8 years",
-      birthday: "2017-06-11",
-      personality: "Gentle and calm",
-      spayedNeutered: "Yes",
-      vaccinationStatus: "Senior vaccine review needed",
-      foundLocation: "Tsuen Wan district",
-      allergyHistory: "Sensitive to dust",
-      tags: ["Senior cat", "Quiet", "Stable routine"],
-      summary: "Whiskers is a senior rescue cat who thrives in peaceful homes.",
-      health: "Senior check needed",
-      photo: ""
-    }
-  };
+  let catOrder = [];
+  let catProfiles = {};
 
-  let localApplications = [
-    {
-      id: "APP-102",
-      status: "pending",
-      user: {
-        display_name: "Jason Lee",
-        email: "jason@email.com"
-      },
-      cat: {
-        name: "Tiger",
-        breed: "Tabby"
-      },
-      created_at: "2026-03-07T12:00:00.000Z",
-      message: "Applicant has previous cat experience and asked about vaccinations."
-    },
-    {
-      id: "APP-103",
-      status: "pending",
-      user: {
-        display_name: "Grace Ho",
-        email: "grace@email.com"
-      },
-      cat: {
-        name: "Whiskers",
-        breed: "Senior Cat"
-      },
-      created_at: "2026-03-06T12:00:00.000Z",
-      message: "Applicant prefers a quiet home and requested interview scheduling."
-    }
-  ];
+  let localApplications = [];
 
-  let notificationThreads = [
-    {
-      id: "mock-jason",
-      title: "Jason Lee",
-      subtitle: "Application Review",
-      snippet: "Asked whether Tiger has completed all vaccinations.",
-      time: "6:01 PM",
-      unread: true,
-      avatarText: "JL",
-      avatarClass: "blue",
-      messages: [
-        { sender: "user", text: "I would like to know whether Tiger has completed all vaccinations.", time: "5:42 PM", images: [] },
-        { sender: "org", text: "Tiger has completed the rescue vaccination set.", time: "5:48 PM", images: [] }
-      ]
-    },
-    {
-      id: "mock-grace",
-      title: "Grace Ho",
-      subtitle: "Interview Needed",
-      snippet: "Requested an interview time for Whiskers.",
-      time: "Yesterday",
-      unread: true,
-      avatarText: "GH",
-      avatarClass: "pink",
-      messages: [
-        { sender: "user", text: "I would like to schedule an interview for Whiskers.", time: "Yesterday", images: [] }
-      ]
-    }
-  ];
+  let notificationThreads = [];
 
   let activeThreadId = null;
   let editingCatId = null;
@@ -1525,6 +1572,8 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
   let currentGeneratedFaceId = "";
   let currentCatPhoto = "";
   let usingRemoteNotifications = false;
+  let remoteThreadRefreshTimer = null;
+  let remoteThreadRefreshInFlight = false;
 
   function getToken() {
     const orgToken = localStorage.getItem("catface_org_token");
@@ -1715,6 +1764,11 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
   }
 
   function renderCatList() {
+    if (!catOrder.length) {
+      catListBody.innerHTML = '<tr><td colspan="7">No cats found for this organization.</td></tr>';
+      return;
+    }
+
     catListBody.innerHTML = catOrder.map(function (catId) {
       const profile = catProfiles[catId];
       return [
@@ -2150,6 +2204,11 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
   }
 
   function renderApplications(applications) {
+    if (!applications.length) {
+      applicationTableBody.innerHTML = '<tr><td colspan="6">No adoption applications yet.</td></tr>';
+      return;
+    }
+
     applicationTableBody.innerHTML = applications.map(function (application) {
       const applicant = application.user && (application.user.display_name || application.user.username)
         ? (application.user.display_name || application.user.username)
@@ -2400,7 +2459,7 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
 
         thread.messages = payload.messages.map(function (message) {
           return {
-            sender: message.sender && message.sender.role === "rescue_staff" ? "org" : "user",
+            sender: message.sender && message.sender.role === "user" ? "user" : "org",
             text: message.content || "",
             images: Array.isArray(message.attachments)
               ? message.attachments.map(function (attachment) {
@@ -2427,6 +2486,34 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
     notifMessageInput.focus();
   }
 
+  async function refreshActiveRemoteThread() {
+    if (!usingRemoteNotifications || !activeThreadId || remoteThreadRefreshInFlight || document.hidden) {
+      return;
+    }
+
+    remoteThreadRefreshInFlight = true;
+    try {
+      await loadRemoteThreads();
+      if (notificationThreads.some(function (thread) { return thread.id === activeThreadId; })) {
+        await openThread(activeThreadId);
+      }
+    } catch (error) {
+      console.warn("Failed to refresh active conversation:", error.message);
+    } finally {
+      remoteThreadRefreshInFlight = false;
+    }
+  }
+
+  function startRemoteThreadAutoRefresh() {
+    if (remoteThreadRefreshTimer) {
+      window.clearInterval(remoteThreadRefreshTimer);
+    }
+
+    remoteThreadRefreshTimer = window.setInterval(function () {
+      refreshActiveRemoteThread();
+    }, 4000);
+  }
+
   async function sendMessage() {
     if (!activeThreadId) return;
 
@@ -2440,29 +2527,19 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
 
     if (usingRemoteNotifications) {
       try {
-        if (pendingImages.length) {
-          await apiRequest("/chat/conversations/" + activeThreadId + "/upload", {
-            method: "POST",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({
-              content: text,
-              attachments: pendingImages.map(function (image) {
-                return {
-                  file_url: image.src,
-                  file_type: "image"
-                };
-              })
+        await apiRequest("/chat/conversations/" + activeThreadId + "/messages", {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            content: text,
+            attachments: pendingImages.map(function (image) {
+              return {
+                file_url: image.src,
+                file_type: "image/*"
+              };
             })
-          });
-        } else {
-          await apiRequest("/chat/conversations/" + activeThreadId + "/messages", {
-            method: "POST",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({
-              content: text
-            })
-          });
-        }
+          })
+        });
 
         await openThread(activeThreadId);
         return;
@@ -2490,7 +2567,10 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
     try {
       await loadRescueCats();
     } catch (error) {
-      console.warn("Cat list unavailable, keeping static cat list:", error.message);
+      catProfiles = {};
+      catOrder = [];
+      renderCatList();
+      console.warn("Cat list unavailable, showing empty state:", error.message);
     }
 
     try {
@@ -2526,7 +2606,9 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
       localApplications = applications;
       renderApplications(localApplications);
     } catch (error) {
+      localApplications = [];
       renderApplications(localApplications);
+      console.warn("Applications unavailable, showing empty state:", error.message);
     }
 
     if (getToken()) {
@@ -2765,6 +2847,18 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
     openThread(item.getAttribute("data-thread"));
   });
 
+  if (notifAddBtn) {
+    notifAddBtn.addEventListener("click", function () {
+      activateSection("notifications");
+      notifSearch.value = "";
+      renderNotificationList(notificationThreads);
+      closeOverlay(notifOverlay);
+      if (notifMessageInput) {
+        notifMessageInput.focus();
+      }
+    });
+  }
+
   notifSearch.addEventListener("input", function () {
     const keyword = notifSearch.value.trim().toLowerCase();
     Array.from(notifList.querySelectorAll(".notif-item")).forEach(function (item) {
@@ -2845,6 +2939,20 @@ window.__CATFACE_EXTERNAL_RESCUE__ = true;
   renderApplications(localApplications);
   renderNotificationList(notificationThreads);
   updateOrganizationSessionUI();
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) {
+      refreshActiveRemoteThread();
+    }
+  });
+  window.addEventListener("focus", function () {
+    refreshActiveRemoteThread();
+  });
+  window.addEventListener("beforeunload", function () {
+    if (remoteThreadRefreshTimer) {
+      window.clearInterval(remoteThreadRefreshTimer);
+    }
+  });
+  startRemoteThreadAutoRefresh();
   loadDashboardData();
 })();
 }

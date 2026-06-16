@@ -7,7 +7,11 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "import:adoption-history": "node scripts/importAdoptionHistory.js",
-    "seed:organization": "node scripts/seedOrganizationAccount.js"
+    "seed:organization": "node scripts/seedOrganizationAccount.js",
+    "seed:community-chat": "node scripts/seedCommunityChatNotifications.js",
+    "rename:cat-names": "node scripts/renameCatNamesToEnglish.js",
+    "seed": "node prisma/seed.js",
+    "eval:cat-tags": "python3 scripts/evaluate_cat_tag_suggester.py scripts/cat_tag_suggester_samples.json"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +25,7 @@
     "express": "4.18.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
+    "pg": "^8.20.0",
     "prisma": "^5.22.0",
     "xlsx": "^0.18.5"
   },

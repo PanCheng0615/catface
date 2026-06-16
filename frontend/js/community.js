@@ -1,9 +1,12 @@
 (function () {
   let posts = [];
+  let trendingById = {};
   let currentPostId = null;
   let currentFeed = "recommended";
+  let activeChipFilter = "all";
   let feedLoadState = "loading";
   let latestFeedRequestId = 0;
+let pendingPostToOpen = "";
 
   function getCurrentUserId() {
     try {
@@ -57,6 +60,7 @@
   const createForm = document.getElementById("createForm");
   const postOverlay = document.getElementById("postOverlay");
   const postDetailImage = document.getElementById("postDetailImage");
+  const postModalBody = document.querySelector(".post-modal-body");
   const detailAuthorAvatar = document.getElementById("detailAuthorAvatar");
   const detailAuthorName = document.getElementById("detailAuthorName");
   const detailTime = document.getElementById("detailTime");
@@ -72,10 +76,110 @@
   const commentSubmit = document.getElementById("commentSubmit");
   const detailAuthorRow = document.getElementById("detailAuthorRow") || document.querySelector(".post-modal-author");
   const closePostOverlayBtn = document.getElementById("closePostOverlay");
+  const quickComposer = document.querySelector(".composer-input");
+  const quickComposerSubmit = document.querySelector(".composer-submit");
+  const storiesTrack = document.querySelector(".stories-track");
+  const followSuggestionsList = document.getElementById("followSuggestionsList");
+  const chipsRow = document.querySelector(".chips-row");
+  const trendingList = document.getElementById("trendingList");
+
+  const CHIP_KEYWORDS = {
+    all: [],
+    cute: ["cute", "gentle", "sweet", "adorable", "shy", "friendly", "cuddly"],
+    handsome: ["handsome", "majestic", "elegant", "gentleman"],
+    playful: ["playful", "active", "curious", "energy", "quick", "exploring"],
+    lazy: ["lazy", "nap", "napping", "sleep", "chill", "quiet"],
+    fluffy: ["fluffy", "soft", "fur", "furry", "towel"],
+    kittens: ["kitten", "kittens", "2 months", "3 months", "4 months", "5 months"],
+    senior: ["senior", "old", "8 years", "9 years", "10 years", "11 years", "12 years"],
+    majestic: ["majestic", "graceful", "queen", "king", "royal"],
+    derpy: ["derpy", "goofy", "silly", "funny", "clumsy"]
+  };
 
   function formatLikes(num) {
-    if (num >= 10000) return (num / 1000).toFixed(0) + "k";
-    return String(num);
+    const n = Number(num) || 0;
+    if (n >= 10000) return (n / 1000).toFixed(0) + "k";
+    return String(n);
+  }
+
+  function normalizeChipLabel(chipText) {
+    return String(chipText || "")
+      .replace(/[^\w\s]/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  function getChipFilterKeyFromElement(chipEl) {
+    if (!chipEl) return "all";
+    const label = normalizeChipLabel(chipEl.textContent || "");
+    if (!label) return "all";
+    const key = label.split(/\s+/)[0];
+    return CHIP_KEYWORDS[key] ? key : "all";
+  }
+
+  function filterPostsByActiveChip(list) {
+    if (!Array.isArray(list) || !list.length) return [];
+    if (activeChipFilter === "all") return list.slice();
+    const keywords = CHIP_KEYWORDS[activeChipFilter] || [];
+    if (!keywords.length) return list.slice();
+    return list.filter(function (post) {
+      const source = String((post && post.text) || "").toLowerCase();
+      return keywords.some(function (kw) { return source.indexOf(kw) !== -1; });
+    });
+  }
+
+  function updateChipStyles() {
+    if (!chipsRow) return;
+    chipsRow.querySelectorAll(".chip").forEach(function (chip) {
+      const key = getChipFilterKeyFromElement(chip);
+      chip.classList.toggle("active", key === activeChipFilter);
+      chip.setAttribute("role", "button");
+      chip.setAttribute("tabindex", "0");
+      chip.setAttribute("aria-pressed", key === activeChipFilter ? "true" : "false");
+    });
+  }
+
+  function bindChipFilters() {
+    if (!chipsRow) return;
+    chipsRow.addEventListener("click", function (e) {
+      const chip = e.target && e.target.closest ? e.target.closest(".chip") : null;
+      if (!chip) return;
+      activeChipFilter = getChipFilterKeyFromElement(chip);
+      updateChipStyles();
+      renderFeed();
+    });
+    chipsRow.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const chip = e.target && e.target.closest ? e.target.closest(".chip") : null;
+      if (!chip) return;
+      e.preventDefault();
+      activeChipFilter = getChipFilterKeyFromElement(chip);
+      updateChipStyles();
+      renderFeed();
+    });
+    updateChipStyles();
+  }
+
+  function normalizeCommunityPost(p) {
+    const createdAt = p.created_at || null;
+    const likeNum = typeof p.likes === "number" ? p.likes : parseInt(String(p.likes == null ? "0" : p.likes), 10);
+    return {
+      id: p.id,
+      author: p.author || "User",
+      authorId: p.authorId || null,
+      authorUsername: p.authorUsername || "",
+      authorAvatar: p.authorAvatar || "",
+      authorInitial: (p.author && p.author.charAt(0) ? p.author.charAt(0) : "U").toUpperCase(),
+      fromApi: true,
+      followed: !!p.followed,
+      image: p.image || "",
+      text: p.text || "",
+      likes: Number.isFinite(likeNum) ? likeNum : 0,
+      liked: !!p.liked,
+      comments: Array.isArray(p.comments) ? p.comments : [],
+      created_at: createdAt,
+      time: formatPostTime(createdAt, p.time || "Just now")
+    };
   }
 
   function formatPostTime(createdAtIso, fallbackText) {
@@ -97,8 +201,15 @@
 
   function openCreate() {
     if (!createOverlay) return;
+    if (createImageInput) createImageInput.value = "";
+    if (createPreview) createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
+    if (createTextInput) {
+      const quickText = quickComposer ? quickComposer.value.trim() : "";
+      createTextInput.value = quickText;
+    }
     createOverlay.classList.add("is-open");
     setComposeInUrl(true);
+    updateCreateSubmitState();
   }
 
   function closeCreate() {
@@ -107,10 +218,22 @@
     setComposeInUrl(false);
   }
 
+  function updateCreateSubmitState() {
+    if (!createTextInput || !createSubmit) return;
+    createSubmit.disabled = !createTextInput.value.trim();
+  }
+
   const openCreateTop = document.getElementById("btnCreatePost") || document.getElementById("openCreateFromTop");
   if (openCreateTop) openCreateTop.addEventListener("click", openCreate);
   const openCreateQuick = document.getElementById("openCreateFromQuick");
   if (openCreateQuick) openCreateQuick.addEventListener("click", openCreate);
+  if (quickComposerSubmit) {
+    quickComposerSubmit.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      openCreate();
+    });
+  }
   Array.prototype.forEach.call(document.querySelectorAll("[data-close-create]"), function (btn) {
     btn.addEventListener("click", closeCreate);
   });
@@ -123,7 +246,6 @@
   if (createImageInput && createTextInput && createPreview && createSubmit) {
     createImageInput.addEventListener("change", function () {
       const file = createImageInput.files[0];
-      const text = createTextInput.value.trim();
       if (file) {
         const reader = new FileReader();
         reader.onload = function (ev) {
@@ -133,13 +255,11 @@
       } else {
         createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
       }
-      createSubmit.disabled = !file || !text;
+      updateCreateSubmitState();
     });
 
     createTextInput.addEventListener("input", function () {
-      const file = createImageInput.files[0];
-      const text = createTextInput.value.trim();
-      createSubmit.disabled = !file || !text;
+      updateCreateSubmitState();
     });
   }
 
@@ -148,8 +268,47 @@
       e.preventDefault();
       const file = createImageInput.files[0];
       const text = createTextInput.value.trim();
-      if (!file || !text) return;
+      if (!text) return;
       if (!requireLogin()) return;
+      createSubmit.disabled = true;
+
+      function submitPost(imageUrl) {
+        return fetch(API_BASE_URL + "/community/posts", {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            content: text,
+            image_url: imageUrl || null
+          })
+        });
+      }
+
+      function handlePostResult(result) {
+        if (!result.success || !result.data) {
+          alert(result.message || "Post failed");
+          updateCreateSubmitState();
+          return;
+        }
+        createImageInput.value = "";
+        createTextInput.value = "";
+        if (quickComposer) quickComposer.value = "";
+        createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
+        updateCreateSubmitState();
+        closeCreate();
+        switchCommunityView("recommended");
+      }
+
+      if (!file) {
+        submitPost(null)
+          .then(function (res) { return res.json(); })
+          .then(handlePostResult)
+          .catch(function () {
+            alert("Network error, please try again.");
+            updateCreateSubmitState();
+          });
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = function (ev) {
         const dataUrl = ev.target.result;
@@ -163,27 +322,13 @@
             const imageUrl = uploadResult.success && uploadResult.data && uploadResult.data.url
               ? uploadResult.data.url
               : dataUrl;
-            return fetch(API_BASE_URL + "/community/posts", {
-              method: "POST",
-              headers: getAuthHeaders(),
-              body: JSON.stringify({ content: text, image_url: imageUrl })
-            });
+            return submitPost(imageUrl);
           })
           .then(function (res) { return res.json(); })
-          .then(function (result) {
-            if (!result.success || !result.data) {
-              alert(result.message || "Post failed");
-              return;
-            }
-            createImageInput.value = "";
-            createTextInput.value = "";
-            createSubmit.disabled = true;
-            createPreview.innerHTML = "<span>Upload a cat photo to preview here</span>";
-            closeCreate();
-            switchCommunityView("recommended");
-          })
+          .then(handlePostResult)
           .catch(function () {
             alert("Network error, please try again.");
+            updateCreateSubmitState();
           });
       };
       reader.readAsDataURL(file);
@@ -191,12 +336,26 @@
   }
 
   function openPostDetail(id) {
-    const post = posts.find(function (p) { return p.id === id; });
+    let post = posts.find(function (p) { return p.id === id; });
+    if (!post && trendingById[id]) {
+      post = normalizeCommunityPost(trendingById[id]);
+      const idx = posts.findIndex(function (p) { return p.id === post.id; });
+      if (idx === -1) posts.unshift(post);
+      else posts[idx] = post;
+    }
     if (!post) return;
     currentPostId = id;
     if (!postOverlay || !postDetailImage || !detailAuthorAvatar || !detailAuthorName || !detailTime || !detailText) return;
-    postDetailImage.src = post.image || feedPlaceholderImage();
-    detailAuthorAvatar.textContent = post.authorInitial || post.author[0] || "C";
+    postDetailImage.src = post.image || "";
+    postDetailImage.style.display = post.image ? "" : "none";
+    if (postModalBody) {
+      postModalBody.classList.toggle("no-image", !post.image);
+    }
+    if (post.authorAvatar) {
+      detailAuthorAvatar.innerHTML = '<img src="' + escapeHtml(post.authorAvatar) + '" alt="">';
+    } else {
+      detailAuthorAvatar.textContent = post.authorInitial || post.author[0] || "C";
+    }
     detailAuthorName.textContent = post.author;
     detailTime.textContent = post.time;
     detailText.textContent = post.text;
@@ -425,6 +584,7 @@
     let query = "author=" + encodeURIComponent(author);
     if (post && post.authorId) query += "&authorId=" + encodeURIComponent(post.authorId);
     try {
+      window.localStorage.removeItem("catface_last_story_profile");
       if (post && post.authorId) window.localStorage.setItem("catface_last_author_id", String(post.authorId));
       if (author) window.localStorage.setItem("catface_last_author_name", String(author));
     } catch (e) {}
@@ -438,13 +598,418 @@
     return "/pages/cat-profile.html?" + query;
   }
 
+  function openStoryProfile(storyKey, storyName) {
+    const key = String(storyKey || "").trim();
+    if (!key) return;
+    const author = String(storyName || key);
+    try {
+      window.localStorage.setItem("catface_last_story_profile", key);
+      window.localStorage.removeItem("catface_last_author_id");
+      window.localStorage.setItem("catface_last_author_name", author);
+    } catch (e) {}
+    window.location.href =
+      "/pages/cat-profile.html?story=" + encodeURIComponent(key) +
+      "&author=" + encodeURIComponent(author);
+  }
+
+  function updateSidebarFollowButtonState(buttonEl, isFollowing) {
+    if (!buttonEl) return;
+    buttonEl.textContent = isFollowing ? "Following" : "Follow";
+    buttonEl.classList.toggle("is-following", !!isFollowing);
+  }
+
+  function buildFollowRecommendationReason(author) {
+    const explicitReason = String((author && author.recommendation_reason) || "").trim();
+    if (explicitReason) return explicitReason;
+    const mutualCount = Number(author && author.mutual_count) || 0;
+    const recentPostsCount = Number(author && author.recent_posts_count) || 0;
+    if (mutualCount > 0) {
+      return mutualCount + " mutual connections";
+    }
+    if (recentPostsCount >= 3) {
+      return "Active in the last 30 days";
+    }
+    return "Recommended for you";
+  }
+
+  function buildFollowMeta(author) {
+    const postsCount = Number(author && author.posts_count) || 0;
+    const followerCount = Number(author && author.followers_count) || 0;
+    const recentEngagement = Number(author && author.recent_engagement) || 0;
+    return postsCount + " posts · " + followerCount + " followers · " + recentEngagement + " hot";
+  }
+
+  function renderFollowSuggestions(authors) {
+    if (!followSuggestionsList) return;
+    const list = Array.isArray(authors) ? authors : [];
+    if (!list.length) {
+      followSuggestionsList.innerHTML =
+        '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">No suggestions yet.</div>';
+      return;
+    }
+    followSuggestionsList.innerHTML = list.map(function (author, idx) {
+      const id = String((author && author.id) || "");
+      const name = String((author && (author.display_name || author.username)) || "User");
+      const avatar = String((author && author.avatar_url) || "");
+      const recommendationReason = buildFollowRecommendationReason(author);
+      const statsMeta = buildFollowMeta(author);
+      const avatarHtml = avatar
+        ? '<img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(name) + '">'
+        : '<span style="font-size:18px;color:var(--brand);font-weight:800;">' + escapeHtml(name.charAt(0).toUpperCase()) + "</span>";
+      return (
+        '<div class="follow-row" data-author-id="' + escapeHtml(id) + '" data-profile-name="' + escapeHtml(name) + '">' +
+          '<div class="follow-rank">#' + escapeHtml(String(idx + 1)) + "</div>" +
+          '<div class="follow-avatar">' + avatarHtml + "</div>" +
+          '<div class="follow-info">' +
+            '<div class="follow-name">' + escapeHtml(name) + "</div>" +
+            '<div class="follow-reason">' + escapeHtml(recommendationReason) + "</div>" +
+            '<div class="follow-sub">' + escapeHtml(statsMeta) + "</div>" +
+          "</div>" +
+          '<button class="follow-btn" type="button">Follow</button>' +
+        "</div>"
+      );
+    }).join("");
+  }
+
+  function renderTrendingPanel() {
+    const wrap = trendingList;
+    if (!wrap) return;
+    wrap.innerHTML =
+      '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading trending posts…</div>';
+    fetch(API_BASE_URL + "/community/trending?limit=10", {
+      method: "GET",
+      headers: typeof getAuthHeaders === "function" ? getAuthHeaders() : { "Content-Type": "application/json" }
+    })
+      .then(function (res) {
+        return res.json();
+      })
+      .then(function (result) {
+        if (!result || !result.success || !Array.isArray(result.data)) {
+          wrap.innerHTML =
+            '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Could not load trending.</div>';
+          return;
+        }
+        trendingById = {};
+        result.data.forEach(function (p) {
+          if (p && p.id) trendingById[p.id] = p;
+        });
+        if (!result.data.length) {
+          wrap.innerHTML =
+            '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">No posts from the past 30 days yet.</div>';
+          return;
+        }
+        wrap.innerHTML = "";
+        result.data.forEach(function (p, idx) {
+          const row = document.createElement("div");
+          row.className = "trend-row";
+          row.setAttribute("role", "button");
+          row.tabIndex = 0;
+          row.style.cursor = "pointer";
+          const titleText = String(p.text || "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 56) || "Community post";
+          const likesCount = Number(p.likes) || 0;
+          const commentsCount = Number(p.comments_count) || 0;
+          const metaLine = "by " + (p.author || "Member") + " · ❤ " + likesCount + " · 💬 " + commentsCount;
+          const rankLabel = "#" + String(idx + 1);
+          const imgSrc = p.image || "";
+          const thumb = imgSrc
+            ? '<img class="trend-img" src="' + escapeHtml(imgSrc) + '" alt="">'
+            : '<div class="trend-img" style="display:grid;place-items:center;background:var(--brand-light);font-size:20px;">&#x1F4AC;</div>';
+          row.innerHTML =
+            '<span class="trend-rank">' + escapeHtml(rankLabel) + '</span>' +
+            thumb +
+            '<div class="trend-info"><div class="trend-title">' +
+            escapeHtml(titleText) +
+            '</div><div class="trend-meta">' +
+            escapeHtml(metaLine) +
+            '</div></div><span class="trend-num">' +
+            "Open" +
+            "</span>";
+          row.addEventListener("click", function () {
+            if (p.id) openPostDetail(p.id);
+          });
+          row.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              if (p.id) openPostDetail(p.id);
+            }
+          });
+          wrap.appendChild(row);
+        });
+      })
+      .catch(function () {
+        wrap.innerHTML =
+          '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Could not load trending.</div>';
+      });
+  }
+
+  function bindSidebarProfileCards() {
+    document.querySelectorAll(".trend-row[data-profile-story]").forEach(function (rowEl) {
+      rowEl.style.cursor = "pointer";
+      const imgEl = rowEl.querySelector(".trend-img");
+      if (imgEl) {
+        imgEl.style.cursor = "pointer";
+        imgEl.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          openStoryProfile(rowEl.getAttribute("data-profile-story"), rowEl.getAttribute("data-profile-name"));
+        });
+      }
+    });
+
+    if (followSuggestionsList) {
+      followSuggestionsList.addEventListener("click", function (e) {
+        const rowEl = e.target && e.target.closest ? e.target.closest(".follow-row[data-author-id]") : null;
+        if (!rowEl || !followSuggestionsList.contains(rowEl)) return;
+        if (e.target && e.target.closest && e.target.closest(".follow-btn")) return;
+        const authorId = String(rowEl.getAttribute("data-author-id") || "").trim();
+        const authorName = String(rowEl.getAttribute("data-profile-name") || "User");
+        if (!authorId) return;
+        navigateToAuthor({ author: authorName, authorId: authorId }, authorName);
+      });
+    }
+  }
+
+  function bindSidebarFollowActions() {
+    if (!followSuggestionsList) return;
+    followSuggestionsList.innerHTML =
+      '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Loading suggestions…</div>';
+
+    fetch(API_BASE_URL + "/users/follow-suggestions?limit=18", {
+      method: "GET",
+      headers: getAuthHeaders()
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (result) {
+        if (!result || !result.success || !Array.isArray(result.data)) {
+          followSuggestionsList.innerHTML =
+            '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Could not load suggestions.</div>';
+          return;
+        }
+        renderFollowSuggestions(result.data);
+      })
+      .catch(function () {
+        followSuggestionsList.innerHTML =
+          '<div class="trend-meta" style="padding:12px 18px;color:var(--text-muted);font-size:13px;">Could not load suggestions.</div>';
+      });
+
+    followSuggestionsList.addEventListener("click", function (e) {
+      const buttonEl = e.target && e.target.closest ? e.target.closest(".follow-btn") : null;
+      if (!buttonEl || !followSuggestionsList.contains(buttonEl)) return;
+      const rowEl = buttonEl.closest(".follow-row[data-author-id]");
+      if (!rowEl) return;
+      const authorId = String(rowEl.getAttribute("data-author-id") || "").trim();
+      if (!authorId) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (!requireLogin()) return;
+      buttonEl.disabled = true;
+      fetch(API_BASE_URL + "/users/" + encodeURIComponent(authorId) + "/follow", {
+        method: "POST",
+        headers: getAuthHeaders()
+      })
+        .then(function (res) {
+          if (res.status === 401) {
+            window.location.href = "/pages/log-in.html";
+            return null;
+          }
+          return res.json();
+        })
+        .then(function (followResult) {
+          if (!followResult || !followResult.success || !followResult.data) {
+            alert((followResult && followResult.message) || "Follow failed");
+            return;
+          }
+          const on = !!followResult.data.following;
+          updateSidebarFollowButtonState(buttonEl, on);
+          posts.forEach(function (p) {
+            if (p.authorId === authorId) p.followed = on;
+          });
+          if (currentPostId != null) {
+            const currentPost = posts.find(function (p) { return p.id === currentPostId; });
+            if (currentPost && currentPost.authorId === authorId) updateFollowButton(currentPost);
+          }
+          renderFeed();
+          loadFollowedStories();
+        })
+        .catch(function () {
+          alert("Network error, please try again.");
+        })
+        .finally(function () {
+          buttonEl.disabled = false;
+        });
+    });
+  }
+
   function openProfile(author) {
     const post = posts.find(function (p) { return p.id === currentPostId; });
     navigateToAuthor(post, author);
   }
 
-  function feedPlaceholderImage() {
-    return "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=600&h=800&q=80";
+  function ensureStoryA11y() {
+    if (!storiesTrack) return;
+    storiesTrack.querySelectorAll(".story").forEach(function (storyEl) {
+      if (storyEl.classList.contains("story-add")) return;
+      if (!storyEl.hasAttribute("tabindex")) storyEl.setAttribute("tabindex", "0");
+      storyEl.setAttribute("role", "button");
+    });
+  }
+
+  function activateStory(storyEl) {
+    if (!storyEl || storyEl.classList.contains("story-add")) return;
+    const authorId = String(storyEl.getAttribute("data-author-id") || "").trim();
+    const nameEl = storyEl.querySelector(".story-name");
+    const name = nameEl ? nameEl.textContent.trim() : "";
+    if (authorId) {
+      navigateToAuthor({ author: name || "User", authorId: authorId }, name || "User");
+      return;
+    }
+    const key = storyEl.getAttribute("data-user") || "";
+    const href = storyEl.getAttribute("data-story-href");
+    if (href) {
+      try {
+        window.localStorage.setItem("catface_last_story_profile", key);
+        window.localStorage.removeItem("catface_last_author_id");
+        window.localStorage.setItem("catface_last_author_name", name || key);
+      } catch (e) {}
+      window.location.href = href;
+      return;
+    }
+    openStoryProfile(key, name || key);
+  }
+
+  if (storiesTrack) {
+    storiesTrack.addEventListener("click", function (e) {
+      const storyEl = e.target && e.target.closest ? e.target.closest(".story") : null;
+      if (!storyEl || !storiesTrack.contains(storyEl)) return;
+      activateStory(storyEl);
+    });
+    storiesTrack.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const storyEl = e.target && e.target.closest ? e.target.closest(".story") : null;
+      if (!storyEl || !storiesTrack.contains(storyEl)) return;
+      e.preventDefault();
+      activateStory(storyEl);
+    });
+  }
+  ensureStoryA11y();
+
+  function buildYourStoryHtml() {
+    return '<div class="story story-add" role="button" tabindex="0" onclick="document.getElementById(\'btnCreatePost\').click()"><div class="story-ring"><div class="story-inner">+</div></div><span class="story-name">Your story</span></div>';
+  }
+
+  function buildStoryListHtml(users) {
+    const list = Array.isArray(users) ? users : [];
+    return list.slice(0, 12).map(function (user) {
+      const display = (user && (user.display_name || user.username)) ? (user.display_name || user.username) : "User";
+      const avatar = user && user.avatar_url ? String(user.avatar_url) : "";
+      const id = user && user.id ? String(user.id) : "";
+      const avatarInner = avatar
+        ? '<img src="' + escapeHtml(avatar) + '" alt="' + escapeHtml(display) + '">'
+        : '<span style="font-size:20px;color:var(--brand);font-weight:800;">' + escapeHtml(display.charAt(0).toUpperCase()) + "</span>";
+      return (
+        '<div class="story" data-author-id="' + escapeHtml(id) + '">' +
+          '<div class="story-ring"><div class="story-inner">' + avatarInner + "</div></div>" +
+          '<span class="story-name">' + escapeHtml(display) + "</span>" +
+        "</div>"
+      );
+    }).join("");
+  }
+
+  function renderStories(users) {
+    if (!storiesTrack) return;
+    const list = Array.isArray(users) ? users : [];
+    const following = list.filter(function (user) {
+      return String((user && user.story_source) || "") === "following";
+    });
+    const suggested = list.filter(function (user) {
+      return String((user && user.story_source) || "") === "suggested";
+    });
+
+    let html = buildYourStoryHtml();
+    if (following.length) html += buildStoryListHtml(following);
+    if (following.length && suggested.length) html += '<div class="story-divider" aria-hidden="true"></div>';
+    if (suggested.length) html += buildStoryListHtml(suggested);
+
+    storiesTrack.innerHTML = html;
+    ensureStoryA11y();
+  }
+
+  function fetchStoryFallbackUsers() {
+    return fetch(API_BASE_URL + "/users/follow-suggestions?limit=12", {
+      method: "GET",
+      headers: getAuthHeaders()
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        const payload = response.payload || {};
+        if (!response.ok || !payload.success || !Array.isArray(payload.data)) return [];
+        return payload.data.map(function (user) {
+          return Object.assign({}, user, { story_source: "suggested" });
+        });
+      })
+      .catch(function () {
+        return [];
+      });
+  }
+
+  function mergeStoryUsers(following, suggested) {
+    const merged = [];
+    const seen = new Set();
+
+    (Array.isArray(following) ? following : []).forEach(function (user) {
+      const id = String((user && user.id) || "").trim();
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      merged.push(Object.assign({}, user, { story_source: "following" }));
+    });
+
+    (Array.isArray(suggested) ? suggested : []).forEach(function (user) {
+      const id = String((user && user.id) || "").trim();
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      merged.push(Object.assign({}, user, { story_source: "suggested" }));
+    });
+
+    return merged.slice(0, 12);
+  }
+
+  function loadFollowedStories() {
+    if (!storiesTrack) return;
+    if (!getToken()) {
+      fetchStoryFallbackUsers().then(renderStories);
+      return;
+    }
+    fetch(API_BASE_URL + "/users/follows?type=following", {
+      method: "GET",
+      headers: getAuthHeaders()
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        const payload = response.payload || {};
+        if (!response.ok || !payload.success || !Array.isArray(payload.data)) {
+          return fetchStoryFallbackUsers().then(renderStories);
+        }
+        const following = payload.data.map(function (user) {
+          return Object.assign({}, user, { story_source: "following" });
+        });
+        return fetchStoryFallbackUsers().then(function (suggested) {
+          renderStories(mergeStoryUsers(following, suggested));
+        });
+      })
+      .catch(function () {
+        fetchStoryFallbackUsers().then(renderStories);
+      });
   }
 
   function renderFeed() {
@@ -457,39 +1022,50 @@
       feedEl.innerHTML = '<div class="feed-empty">Could not load posts. Check backend service.</div>';
       return;
     }
-    if (!posts.length) {
+    const visiblePosts = filterPostsByActiveChip(posts);
+    if (!visiblePosts.length) {
       const emptyMsg = currentFeed === "followed"
         ? (!getToken()
             ? "Log in to see posts from creators you follow."
             : "No posts here yet. Follow someone from Recommended, then check back.")
-        : "No community posts yet.";
+        : (activeChipFilter === "all"
+            ? "No community posts yet."
+            : "No posts match this tag right now.");
       feedEl.innerHTML = '<div class="feed-empty">' + emptyMsg + "</div>";
       return;
     }
-    posts.forEach(function (post) {
+    visiblePosts.forEach(function (post) {
       const card = document.createElement("article");
       card.className = "post-card";
       card.dataset.id = post.id;
-      const imgSrc = post.image ? post.image : feedPlaceholderImage();
+      const postImage = post.image || "";
+      const imgHtml = postImage
+        ? '<img class="post-img" src="' + escapeHtml(post.image) + '" alt="" data-open-detail="1">'
+        : "";
       const safeAuthor = post.author || "User";
       const safeAuthorInitial = post.authorInitial || safeAuthor[0] || "U";
+      const avatarInner = post.authorAvatar
+        ? '<img src="' + escapeHtml(post.authorAvatar) + '" alt="">'
+        : "<span>" + escapeHtml(safeAuthorInitial) + "</span>";
+      const likeIcon = post.liked ? "&#x2665;" : "&#x2661;";
       card.innerHTML =
-        '<div class="post-image-wrap" data-open-detail="1">' +
-        '<img class="post-image" src="' + escapeHtml(imgSrc) + '" alt="Post image of cat">' +
-        "</div>" +
+        '<div class="post-avatar" data-author-click="1">' + avatarInner + "</div>" +
         '<div class="post-body">' +
-        '<h3 class="post-title" data-open-detail="1">' + escapeHtml(post.text || "") + "</h3>" +
-        '<div class="post-footer">' +
-        '<a class="post-author" data-author-click="1" href="' + escapeHtml(getAuthorProfileHref(post)) + '" aria-label="View author profile">' +
-        '<span class="post-author-avatar">' + escapeHtml(safeAuthorInitial) + "</span>" +
-        "<span>" + escapeHtml(safeAuthor) + "</span>" +
-        "</a>" +
-        '<div class="post-stats" data-open-detail="1">' +
-        '<div class="post-stat"><span>♡</span><span>' + formatLikes(post.likes) + "</span></div>" +
-        '<div class="post-stat"><span>💬</span><span>' + post.comments.length + "</span></div>" +
+        '<div class="post-meta">' +
+        '<span class="post-name" data-author-click="1">' + escapeHtml(safeAuthor) + "</span>" +
+        '<span class="post-dot">&#x2022;</span>' +
+        '<span class="post-time" data-open-detail="1">' + escapeHtml(post.time || "") + "</span>" +
         "</div>" +
-        "</div>" +
-        "</div>";
+        '<p class="post-text" data-open-detail="1">' + escapeHtml(post.text || "") + "</p>" +
+        imgHtml +
+        '<div class="post-actions">' +
+        '<button type="button" class="act' + (post.liked ? " liked" : "") + '" data-open-detail="1">' +
+        '<span class="ai">' + likeIcon + "</span> " + formatLikes(post.likes) +
+        "</button>" +
+        '<button type="button" class="act" data-open-detail="1">' +
+        '<span class="ai">&#x1F4AC;</span> ' + post.comments.length +
+        "</button>" +
+        "</div></div>";
       card.addEventListener("click", function (e) {
         const targetNode = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
         const fromAuthor = targetNode && targetNode.closest
@@ -514,7 +1090,9 @@
 
   function updateTabStyles(mode) {
     document.querySelectorAll(".feed-nav [data-feed]").forEach(function (b) {
-      b.classList.toggle("is-active", b.getAttribute("data-feed") === mode);
+      var on = b.getAttribute("data-feed") === mode;
+      b.classList.toggle("is-active", on);
+      b.classList.toggle("active", on);
     });
   }
 
@@ -547,24 +1125,7 @@
           renderFeed();
           return;
         }
-        let mappedPosts = result.data.map(function (p) {
-          const createdAt = p.created_at || null;
-          return {
-            id: p.id,
-            author: p.author || "User",
-            authorId: p.authorId || null,
-            authorInitial: p.authorInitial || "U",
-            fromApi: true,
-            followed: !!p.followed,
-            image: p.image || "",
-            text: p.text || "",
-            likes: typeof p.likes === "number" ? p.likes : 0,
-            liked: !!p.liked,
-            comments: Array.isArray(p.comments) ? p.comments : [],
-            created_at: createdAt,
-            time: formatPostTime(createdAt, p.time || "Just now")
-          };
-        });
+        let mappedPosts = result.data.map(normalizeCommunityPost);
 
         if (feed === "followed") {
           mappedPosts = mappedPosts.filter(function (p) {
@@ -576,6 +1137,16 @@
         feedLoadState = "ok";
         posts = mappedPosts;
         renderFeed();
+        if (pendingPostToOpen) {
+          const targetPost = posts.find(function (p) { return p.id === pendingPostToOpen; });
+          if (targetPost) {
+            const postId = pendingPostToOpen;
+            pendingPostToOpen = "";
+            window.setTimeout(function () {
+              openPostDetail(postId);
+            }, 0);
+          }
+        }
       })
       .catch(function () {
         if (requestId !== latestFeedRequestId || currentFeed !== feed) return;
@@ -601,6 +1172,7 @@
     const params = new URLSearchParams(window.location.search);
     const compose = String(params.get("compose") || "").trim() === "1";
     const feed = String(params.get("feed") || "").trim().toLowerCase();
+    pendingPostToOpen = String(params.get("post") || "").trim();
     let forceOpenCreate = false;
     try {
       window.localStorage.removeItem("catface_preferred_feed");
@@ -608,7 +1180,6 @@
       if (forceOpenCreate) window.localStorage.removeItem("catface_open_create_modal");
     } catch (e) {}
 
-    // Default community entry is always Recommended unless URL explicitly asks Followed.
     if (feed === "followed") switchCommunityView("followed");
     else switchCommunityView("recommended");
 
@@ -618,6 +1189,11 @@
   }
 
   initPageFromUrl();
+  renderTrendingPanel();
+  bindSidebarProfileCards();
+  bindSidebarFollowActions();
+  loadFollowedStories();
+  bindChipFilters();
 })();
 
 (function () {
@@ -632,14 +1208,31 @@
     }
   }
   const loginBtn = document.querySelector(".login-btn");
-  if (!loginBtn) return;
+  const navUserRow = document.getElementById("communityNavUser");
   const user = loadUser();
+  if (loginBtn) {
+    if (user) {
+      loginBtn.textContent = "My Account";
+      loginBtn.href = "/pages/account.html";
+    } else {
+      loginBtn.textContent = "Log in";
+      loginBtn.href = "/pages/log-in.html";
+    }
+  }
+  var heroName = document.querySelector(".nav-hero-name");
+  var heroHandle = document.querySelector(".u-handle");
   if (user) {
-    loginBtn.textContent = "My Account";
-    loginBtn.href = "/pages/account.html";
-  } else {
-    loginBtn.textContent = "Log in";
-    loginBtn.href = "/pages/log-in.html";
+    if (heroName) heroName.textContent = user.display_name || user.username || user.email || "User";
+    if (heroHandle) heroHandle.textContent = user.username ? "@" + user.username : "";
+  }
+  if (navUserRow) {
+    navUserRow.addEventListener("click", function () {
+      if (user) {
+        window.location.href = "/pages/chat.html";
+        return;
+      }
+      requireLoginForNavigation("/pages/chat.html", "Please log in first");
+    });
   }
 })();
 

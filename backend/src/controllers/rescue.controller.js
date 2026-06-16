@@ -6,6 +6,12 @@ const path = require('path');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
 const { runKamFaceInference, findCatFaceMatches } = require('../services/cat-face.service');
+const {
+  extractDelimitedTags,
+  getCatTagVocabulary,
+  normalizeManualTagValues,
+  suggestCatTags
+} = require('../services/cat-tag.service');
 
 const prisma = new PrismaClient();
 const execFileAsync = promisify(execFile);
@@ -19,12 +25,28 @@ function getThreshold() {
 }
 
 function mapInferenceErrorToStatus(errorCode) {
-  if (errorCode === 'RuntimeMissing' || errorCode === 'PipelineInitFailed') {
+  if (errorCode === 'RuntimeMissing' || errorCode === 'PipelineInitFailed' || errorCode === 'PythonRuntimeMissing') {
     return 503;
   }
 
   if (errorCode === 'InvalidImageData' || errorCode === 'InputImageMissing') {
     return 422;
+  }
+
+  return 500;
+}
+
+function mapTagSuggestionErrorToStatus(error) {
+  if (error?.statusCode) {
+    return error.statusCode;
+  }
+
+  if (error?.code === 'ValidationError') {
+    return 422;
+  }
+
+  if (error?.code === 'InvalidPythonResponse') {
+    return 502;
   }
 
   return 500;
@@ -169,6 +191,66 @@ async function registerCatFaceEmbedding(req, res) {
     });
   }
 }
+
+async function getCatTagSuggestions(req, res) {
+  try {
+    const scope = ensureOrganizationScope(req, res);
+    if (!scope) return;
+
+    const personality = typeof req.body.personality === 'string' ? req.body.personality.trim() : '';
+    const health = typeof req.body.health === 'string' ? req.body.health.trim() : '';
+    const notes = typeof req.body.notes === 'string' ? req.body.notes.trim() : '';
+
+    if (!personality && !health && !notes) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: 'At least one of personality, health, or notes is required'
+      });
+    }
+
+    const vocabulary = await getCatTagVocabulary();
+    const requestedCandidateTags = Array.isArray(req.body.candidate_tags)
+      ? req.body.candidate_tags
+          .map((tag) => String(tag || '').trim())
+          .filter(Boolean)
+      : [];
+    const candidateTags = requestedCandidateTags.length
+      ? requestedCandidateTags
+      : vocabulary.tags.map((entry) => entry.tag);
+
+    const result = await suggestCatTags({
+      personality,
+      health,
+      notes,
+      candidateTags,
+      limit: req.body.limit
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        provider: result.provider,
+        available_tags: result.available_tags,
+        suggested_tags: result.suggested_tags,
+        keywords: result.keywords,
+        explanation: result.explanation,
+        note: result.note,
+        warning: result.warning || null
+      },
+      message: 'Cat tag suggestions generated'
+    });
+  } catch (error) {
+    console.error('getCatTagSuggestions error:', error);
+
+    return res.status(mapTagSuggestionErrorToStatus(error)).json({
+      success: false,
+      error: error.code || 'ServerError',
+      message: error.message || 'Cat tag suggestion failed'
+    });
+  }
+}
+
 function mapCat(cat) {
   return {
     id: cat.id,
@@ -269,27 +351,14 @@ function buildCatDescription({ notes, health, personality }) {
   return lines.join('\n') || null;
 }
 
-function normalizeTagValues(tags, personality) {
-  const values = [];
-
-  if (Array.isArray(tags)) {
-    tags.forEach((tag) => {
-      const normalized = String(tag || '').trim();
-      if (normalized) {
-        values.push(normalized);
-      }
-    });
-  }
+async function normalizeTagValues(tags, personality) {
+  const values = Array.isArray(tags) ? tags.slice() : [];
 
   if (typeof personality === 'string' && personality.trim()) {
-    personality
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter(Boolean)
-      .forEach((tag) => values.push(tag));
+    extractDelimitedTags(personality).forEach((tag) => values.push(tag));
   }
 
-  return Array.from(new Set(values)).slice(0, 12);
+  return normalizeManualTagValues(values);
 }
 
 function mapApplication(application) {
@@ -418,7 +487,7 @@ async function createCat(req, res) {
       });
     }
 
-    const tagValues = normalizeTagValues(tags, personality);
+    const tagValues = await normalizeTagValues(tags, personality);
     const requestedFaceCode = typeof display_id === 'string' && display_id.trim()
       ? display_id.trim()
       : null;
@@ -601,7 +670,7 @@ async function updateCat(req, res) {
       tags
     } = req.body;
 
-    const tagValues = normalizeTagValues(tags, personality);
+    const tagValues = await normalizeTagValues(tags, personality);
     const updatedCat = await prisma.cat.update({
       where: { id: req.params.id },
       data: {
@@ -793,7 +862,14 @@ async function reviewApplication(req, res) {
     if (status === 'approved') {
       await prisma.cat.update({
         where: { id: updatedApplication.cat_id },
-        data: { status: 'adopted' }
+        data: {
+          status: 'adopted',
+          owner_id: updatedApplication.user_id
+        }
+      });
+      await prisma.user.update({
+        where: { id: updatedApplication.user_id },
+        data: { has_cat: true }
       });
     }
 
@@ -820,6 +896,7 @@ async function getAnalytics(req, res) {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const catWhere = scope.isAdmin ? undefined : { org_id: scope.organizationId };
+    const availableCatWhere = { status: 'available' };
     const applicationWhere = scope.isAdmin
       ? undefined
       : {
@@ -833,6 +910,7 @@ async function getAnalytics(req, res) {
 
     const [
       cats,
+      availableCatCount,
       applications,
       conversations
     ] = await Promise.all([
@@ -844,6 +922,9 @@ async function getAnalytics(req, res) {
           status: true,
           created_at: true
         }
+      }),
+      prisma.cat.count({
+        where: availableCatWhere
       }),
       prisma.adoptionApplication.findMany({
         where: applicationWhere,
@@ -900,7 +981,7 @@ async function getAnalytics(req, res) {
     const pendingApplications = applications.filter((item) => item.status === 'pending').length;
     const approvedApplications = applications.filter((item) => item.status === 'approved').length;
     const rejectedApplications = applications.filter((item) => item.status === 'rejected').length;
-    const availableCats = cats.filter((item) => item.status === 'available').length;
+    const availableCats = availableCatCount;
     const activeConversations = conversations.length;
     const monthlyApprovedApplications = applications.filter((item) => {
       return item.status === 'approved' && item.updated_at >= monthStart;
@@ -1063,6 +1144,7 @@ async function getAnalytics(req, res) {
 module.exports = {
   identifyCatFace,
   registerCatFaceEmbedding,
+  getCatTagSuggestions,
   getCats,
   createCat,
   updateCat,

@@ -3,2176 +3,1079 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adoption Recommendations — Cat Platform</title>
+  <title>CatFace · Adoption</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      background: linear-gradient(180deg, #fff7f8 0%, #f5f5f5 220px);
-      color: #333;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px 16px 40px;
-      gap: 16px;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF; --surface-2: #FDFAF6;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4; --border-light: #F3E8D8; --like-color: #E05B73;
+      --radius-lg: 16px; --radius-md: 12px; --radius-sm: 8px;
     }
-    h1, h2, h3, h4, p { margin: 0; }
-    button, input, textarea { font: inherit; }
-    a { color: #2f6feb; text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    html { scrollbar-gutter: stable; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; overflow-y: auto; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
 
-    .page-shell {
-      width: 100%;
-      max-width: 1120px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-    .page-topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-    .back-link {
-      color: #555;
-      font-size: 14px;
-    }
-    .topbar-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .ghost-btn,
-    .solid-btn,
-    .action-link {
-      border: none;
-      border-radius: 999px;
-      padding: 10px 16px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-    }
-    .ghost-btn {
-      background: #fff;
-      color: #333;
-      box-shadow: 0 4px 14px rgba(0,0,0,.08);
-    }
-    .solid-btn {
-      background: #ff5a76;
-      color: #fff;
-      box-shadow: 0 8px 20px rgba(255,90,118,.25);
-    }
-    .action-link {
-      background: transparent;
-      color: #2f6feb;
-      padding: 0;
-    }
-    .ghost-btn:hover,
-    .solid-btn:hover {
-      transform: translateY(-1px);
-    }
+    /* LEFT NAV */
+    .left-nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; background: var(--surface); border-right: 1px solid var(--border); }
+    .left-nav::-webkit-scrollbar { display: none; }
+    .nav-hero { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 100%); padding: 18px 16px 16px; position: relative; overflow: hidden; flex-shrink: 0; }
+    .nav-hero::after { content: '🐱'; position: absolute; right: 10px; top: 8px; font-size: 48px; opacity: .15; line-height: 1; pointer-events: none; }
+    .nav-hero-logo { font-size: 13px; font-weight: 800; letter-spacing: .5px; color: rgba(255,255,255,.75); text-transform: uppercase; margin-bottom: 12px; }
+    .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
+    .nav-hero-avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.22); border: 2.5px solid rgba(255,255,255,.55); color: #fff; display: grid; place-items: center; font-size: 19px; flex-shrink: 0; }
+    .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
+    .nav-hero-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; cursor: pointer; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #86EFAC; flex-shrink: 0; }
+    .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--text-sub); transition: background .15s, color .15s; cursor: pointer; }
+    .nav-link:hover { background: var(--brand-light); color: var(--brand); }
+    .nav-link.active { background: var(--brand-light); color: var(--brand); font-weight: 700; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; }
+    .n-label { flex: 1; }
+    .n-badge { background: var(--like-color); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px; }
+    .n-soon { font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--bg); padding: 2px 7px; border-radius: 99px; }
+    .btn-new-post { margin: 14px 10px 0; padding: 12px 0; border-radius: 12px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; transition: background .15s, transform .12s; }
+    .btn-new-post:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .nav-user { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--border-light); cursor: pointer; transition: background .15s; }
+    .nav-user:hover { background: var(--surface-2); }
+    .nav-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--brand-light); border: 2px solid var(--border); color: var(--brand); display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .u-handle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .nav-user-more { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
 
-    header {
-      background: #fff;
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(17, 24, 39, .06);
-      display: flex;
-      justify-content: space-between;
-      gap: 24px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-    .header-copy {
-      max-width: 680px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      width: fit-content;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: #fff0f3;
-      color: #ff3355;
-      font-size: 13px;
-      font-weight: 700;
-    }
-    header h1 { font-size: 28px; }
-    .header-copy p {
-      color: #666;
-      line-height: 1.6;
-    }
-    .header-flow {
-      min-width: 260px;
-      background: #fff8ed;
-      border: 1px solid #ffe0b3;
-      border-radius: 18px;
-      padding: 18px;
-    }
-    .header-flow h2 {
-      font-size: 16px;
-      margin-bottom: 10px;
-    }
-    .header-flow ol {
-      margin: 0;
-      padding-left: 18px;
-      color: #67563d;
-      line-height: 1.7;
-      font-size: 14px;
-    }
+    /* CENTER */
+    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; display: flex; flex-direction: column; }
+    .center-header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); padding: 16px 20px; }
+    .center-header h2 { font-size: 18px; font-weight: 800; }
+    .center-header p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .adoption-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 20px; gap: 20px; }
+    .flow-pills { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .flow-pill { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 99px; background: var(--brand-light); color: var(--brand); font-size: 12px; font-weight: 700; border: 1.5px solid var(--brand); }
+    .flow-sep { color: var(--text-muted); font-size: 12px; align-self: center; }
+    .deck-area { position: relative; width: 100%; max-width: 460px; height: 580px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 20px; }
+    .card-stack { position: relative; width: 100%; height: 520px; }
+    .cat-card { position: absolute; inset: 0; border-radius: 24px; box-shadow: 0 12px 40px rgba(0,0,0,.16); cursor: pointer; overflow: hidden; }
+    .cat-card:nth-child(1) { transform: translate(0,-10px) scale(1); z-index: 9; }
+    .cat-card:nth-child(2) { transform: translate(0,8px) scale(.96); opacity: .9; z-index: 8; }
+    .cat-card:nth-child(3) { transform: translate(0,22px) scale(.92); opacity: .7; z-index: 7; }
+    .cat-card:nth-child(4) { transform: translate(0,36px) scale(.88); opacity: .5; z-index: 6; }
+    .cat-card:nth-child(5) { transform: translate(0,50px) scale(.84); opacity: .3; z-index: 5; }
+    .cat-card:nth-child(6) { transform: translate(0,62px) scale(.80); opacity: .22; z-index: 4; }
+    .cat-card:nth-child(7) { transform: translate(0,72px) scale(.76); opacity: .16; z-index: 3; }
+    .cat-card:nth-child(8) { transform: translate(0,82px) scale(.72); opacity: .11; z-index: 2; }
+    .cat-card:nth-child(9) { transform: translate(0,92px) scale(.68); opacity: .07; z-index: 1; }
+    .cat-card.swipe-left { transition: transform .32s ease-out, opacity .32s ease-out; transform: translateX(-140%) rotate(-18deg); opacity: 0; }
+    .cat-card.swipe-right { transition: transform .32s ease-out, opacity .32s ease-out; transform: translateX(140%) rotate(18deg); opacity: 0; }
+    .card-bg { position: absolute; inset: 0; }
+    .card-bg img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.82); }
+    .card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,.75) 100%); }
+    .card-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; color: #fff; }
+    .card-name { font-size: 24px; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,.5); }
+    .card-sub { font-size: 13px; opacity: .9; margin-top: 4px; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
+    .card-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .card-tag { padding: 4px 10px; border-radius: 99px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.35); font-size: 11px; color: #fff; }
+    .swipe-btns { display: flex; gap: 28px; }
+    .swipe-btn { width: 62px; height: 62px; border-radius: 50%; border: none; background: #fff; box-shadow: 0 6px 18px rgba(0,0,0,.18); font-size: 26px; display: grid; place-items: center; transition: transform .15s; }
+    .swipe-btn:hover { transform: scale(1.08); }
+    .swipe-btn.nope { color: var(--brand); }
+    .swipe-btn.like { color: #2ecc71; }
+    .swipe-hint { font-size: 13px; color: var(--text-muted); text-align: center; }
 
-    main {
-      width: 100%;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 320px;
-      gap: 20px;
-      align-items: stretch;
-    }
+    /* liked sidebar section */
+    .liked-section { padding: 20px 24px 24px; border-top: 1px solid var(--border); background: var(--surface-2); }
+    .liked-section h3 { font-size: 16px; font-weight: 800; margin-bottom: 14px; }
+    .app-section { padding: 20px 24px 24px; border-top: 1px solid var(--border); background: #fff; }
+    .app-section h3 { font-size: 16px; font-weight: 800; margin-bottom: 14px; }
+    .app-list { display: flex; flex-direction: column; gap: 10px; }
+    .app-empty { font-size: 14px; color: var(--text-muted); padding: 20px 16px; border: 1.5px dashed var(--border); border-radius: 14px; text-align: center; line-height: 1.6; background: #fff; }
+    .app-item { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: #fffaf3; border: 1px solid var(--border); }
+    .app-item-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .app-item-name { font-size: 14px; font-weight: 700; }
+    .app-item-sub { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+    .app-item-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .status-chip { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+    .status-chip.pending { background: #fff7ed; color: #c2410c; }
+    .status-chip.approved { background: #ecfdf3; color: #027a48; }
+    .status-chip.rejected { background: #fef2f2; color: #dc2626; }
+    .liked-empty { font-size: 14px; color: var(--text-muted); padding: 20px 16px; border: 1.5px dashed var(--border); border-radius: 14px; text-align: center; line-height: 1.6; }
+    #likedList { max-height: 520px; overflow-y: auto; padding-right: 6px; scrollbar-gutter: stable; }
+    #likedList::-webkit-scrollbar { width: 8px; }
+    #likedList::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+    .liked-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+    .liked-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,.04); transition: box-shadow .15s; }
+    .liked-item:hover { box-shadow: 0 4px 14px rgba(0,0,0,.09); }
+    .liked-item-info { flex: 1; min-width: 0; }
+    .liked-item-name { font-size: 14px; font-weight: 700; }
+    .liked-item-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .liked-item-btn { padding: 7px 14px; border-radius: 99px; border: 1.5px solid var(--brand); color: var(--brand); background: none; font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .liked-item-btn:hover { background: var(--brand); color: #fff; }
 
-    .adoption-stage {
-      background: #fff;
-      border-radius: 24px;
-      box-shadow: 0 10px 30px rgba(17, 24, 39, .06);
-      padding: 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-    .stage-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-    }
-    .stage-top p {
-      color: #666;
-      line-height: 1.6;
-      max-width: 560px;
-    }
+    /* RIGHT PANEL */
+    .right-panel { padding: 20px 8px 28px 20px; display: flex; flex-direction: column; gap: 18px; }
+    .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+    .rp-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); transition: background .15s; }
+    .rp-row:last-child { border-bottom: none; }
+    .rp-row[data-id] { cursor: pointer; }
+    .rp-row[data-id]:hover { background: var(--surface-2); }
+    .rp-row-img { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: var(--brand-light); }
+    .rp-row-info { flex: 1; }
+    .rp-row-name { font-size: 13px; font-weight: 700; }
+    .rp-row-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .rp-row-badge { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; background: #ecfdf3; color: #027a48; flex-shrink: 0; }
+    .rp-info-block { padding: 16px 18px; }
+    .rp-info-block h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+    .rp-info-block ol { padding-left: 18px; font-size: 13px; color: var(--text-muted); line-height: 1.8; }
+    .rp-stat-row { display: flex; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .rp-stat { flex: 1; text-align: center; }
+    .rp-stat-num { font-size: 20px; font-weight: 800; color: var(--brand); }
+    .rp-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .rescue-card { background: #fff8e6; border: 1px solid #f59e0b; border-radius: 18px; padding: 16px 18px; display: flex; gap: 12px; align-items: center; cursor: pointer; transition: background .15s; }
+    .rescue-card:hover { background: #fef3c7; }
+    .rescue-icon { font-size: 28px; }
+    .rescue-title { font-size: 14px; font-weight: 700; color: #92400e; }
+    .rescue-sub { font-size: 12px; color: #b45309; }
+    .rescue-arrow { margin-left: auto; font-size: 20px; color: #d97706; }
 
-    .deck-wrapper {
-      position: relative;
-      height: min(70vh, 540px);
-      min-height: 420px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 18px;
-    }
-    .card-stack {
-      position: relative;
-      width: min(420px, 100%);
-      height: 100%;
-    }
-    .cat-card {
-      position: absolute;
-      inset: 0;
-      border-radius: 24px;
-      box-shadow: 0 12px 40px rgba(0,0,0,.16);
-      transform-style: preserve-3d;
-      cursor: pointer;
-    }
-    .card-inner {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      border-radius: 24px;
-      overflow: hidden;
-    }
-    .card-face {
-      position: absolute;
-      inset: 0;
-      border-radius: 24px;
-      overflow: hidden;
-      transition: opacity 0.3s ease, transform 0.3s ease;
-    }
-    .card-front {
-      background: transparent;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 16px 16px 20px;
-      opacity: 1;
-      transform: scale(1);
-    }
-    .card-front::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(0,0,0,.04) 0%, rgba(0,0,0,.7) 100%);
-      z-index: 1;
-    }
-    .card-back {
-      background: #fff;
-      color: #333;
-      padding: 20px 18px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 12px;
-      font-size: 14px;
-      opacity: 0;
-      transform: scale(0.95);
-      pointer-events: none;
-    }
-    .cat-card.flipped .card-front {
-      opacity: 0;
-      transform: scale(0.95);
-      pointer-events: none;
-    }
-    .cat-card.flipped .card-back {
-      opacity: 1;
-      transform: scale(1);
-      pointer-events: auto;
-    }
-    .card-back p {
-      line-height: 1.6;
-    }
-    .card-back-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .card-back-actions button {
-      border: none;
-      border-radius: 999px;
-      padding: 10px 14px;
-      background: #f3f4f6;
-      color: #333;
-      cursor: pointer;
-    }
-    .cat-card:nth-child(1) { transform: translate(0, -12px) scale(1); z-index: 5; }
-    .cat-card:nth-child(2) { transform: translate(0, 10px) scale(.96); opacity: .9; z-index: 4; }
-    .cat-card:nth-child(3) { transform: translate(0, 28px) scale(.92); opacity: .7; z-index: 3; }
-    .cat-card:nth-child(4) { transform: translate(0, 46px) scale(.88); opacity: .5; z-index: 2; }
-    .cat-card:nth-child(5) { transform: translate(0, 64px) scale(.84); opacity: .3; z-index: 1; }
-    .cat-bg {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      overflow: hidden;
-    }
-    .cat-bg img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      filter: brightness(.88);
-    }
-    .cat-info {
-      position: relative;
-      z-index: 2;
-      text-shadow: 0 4px 16px rgba(0,0,0,.85);
-    }
-    .cat-name {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-    .cat-meta {
-      font-size: 14px;
-      opacity: .92;
-      margin-bottom: 8px;
-    }
-    .cat-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      font-size: 12px;
-    }
-    .cat-tag {
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.35);
-      border: 1px solid rgba(255,255,255,.35);
-    }
-
-    .swipe-actions {
-      display: flex;
-      justify-content: center;
-      gap: 28px;
-      margin-top: 10px;
-    }
-    .swipe-btn {
-      width: 66px;
-      height: 66px;
-      border-radius: 50%;
-      border: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      cursor: pointer;
-      box-shadow: 0 6px 18px rgba(0,0,0,.18);
-      background: #fff;
-    }
-    .swipe-btn.nope {
-      color: #ff2442;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-    .swipe-btn.nope.is-active {
-      background: #ff2442;
-      color: #fff;
-    }
-    .swipe-btn.like {
-      color: #2ecc71;
-      transition: background-color 0.2s ease, color 0.2s ease;
-    }
-    .swipe-btn.like.is-active {
-      background: #2ecc71;
-      color: #fff;
-    }
-    .swipe-btn:hover { transform: translateY(-1px); }
-
-    .hint {
-      font-size: 13px;
-      color: #777;
-      text-align: center;
-      margin-top: 4px;
-      line-height: 1.6;
-      max-width: 520px;
-    }
-    .cat-card.swipe-left {
-      transition: transform 0.32s ease-out, opacity 0.32s ease-out;
-      transform: translateX(-120%) rotate(-18deg);
-      opacity: 0;
-    }
-    .cat-card.swipe-right {
-      transition: transform 0.32s ease-out, opacity 0.32s ease-out;
-      transform: translateX(120%) rotate(18deg);
-      opacity: 0;
-    }
-
-    .liked-panel {
-      background: #fff;
-      border-radius: 24px;
-      box-shadow: 0 10px 30px rgba(17, 24, 39, .06);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      height: 100%;
-    }
-    .liked-panel-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-    }
-    .liked-panel-header p {
-      color: #666;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .liked-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      flex: 1;
-      overflow: hidden;
-    }
-    .liked-item,
-    .empty-state {
-      border: 1px solid #ececec;
-      border-radius: 18px;
-      padding: 14px;
-      background: #fafafa;
-    }
-    .liked-item {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .liked-item-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-    }
-    .liked-item small,
-    .empty-state {
-      color: #777;
-      line-height: 1.6;
-    }
-    .liked-item-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .liked-panel-footer {
-      margin-top: auto;
-      padding-top: 2px;
-    }
-    footer {
-      padding-left: 16px;
-    }
-    .liked-panel-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border: none;
-      background: transparent;
-      color: #2f6feb;
-      font-size: 14px;
-      padding: 0;
-      cursor: pointer;
-    }
-    .liked-panel-link:hover {
-      text-decoration: underline;
-    }
-    .liked-panel-link[hidden] {
-      display: none;
-    }
-    .pill-status {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      background: #ecfdf3;
-      color: #027a48;
-    }
-
-    .toast {
-      position: fixed;
-      right: 20px;
-      bottom: 20px;
-      width: min(360px, calc(100vw - 32px));
-      background: #1f2937;
-      color: #fff;
-      border-radius: 18px;
-      padding: 16px;
-      box-shadow: 0 18px 40px rgba(0,0,0,.24);
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-      z-index: 80;
-    }
-    .toast.show { display: flex; }
-    .toast p { line-height: 1.6; color: #e5e7eb; }
-    .toast-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .toast-actions button {
-      border: none;
-      border-radius: 999px;
-      padding: 10px 14px;
-      cursor: pointer;
-    }
-    .toast-actions .primary {
-      background: #fff;
-      color: #111827;
-    }
-    .toast-actions .secondary {
-      background: rgba(255,255,255,.14);
-      color: #fff;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(17,24,39,.56);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      z-index: 120;
-    }
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(17,24,39,.56); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 120; }
     .modal-overlay.open { display: flex; }
-    .modal {
-      width: min(900px, 100%);
-      max-height: min(88vh, 900px);
-      overflow: auto;
-      background: #fff;
-      border-radius: 28px;
-      box-shadow: 0 24px 60px rgba(0,0,0,.2);
-      position: relative;
-    }
-    .modal.narrow {
-      width: min(620px, 100%);
-    }
-    .modal.medium {
-      width: min(760px, 100%);
-    }
-    .modal-close {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      width: 38px;
-      height: 38px;
-      border: none;
-      border-radius: 50%;
-      background: #f3f4f6;
-      color: #333;
-      cursor: pointer;
-      font-size: 18px;
-    }
-    .profile-layout {
-      display: grid;
-      grid-template-columns: 320px minmax(0, 1fr);
-      gap: 0;
-    }
-    .profile-cover {
-      min-height: 100%;
-      background: #111827;
-      color: #fff;
-      padding: 28px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 16px;
-    }
-    .profile-cover img {
-      width: 100%;
-      aspect-ratio: 1 / 1.08;
-      object-fit: cover;
-      border-radius: 22px;
-    }
-    .profile-cover p {
-      color: rgba(255,255,255,.82);
-      line-height: 1.6;
-    }
-    .profile-main {
-      padding: 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 22px;
-    }
-    .profile-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-      align-items: flex-start;
-    }
-    .profile-head p {
-      color: #666;
-      margin-top: 6px;
-      line-height: 1.6;
-    }
-    .tag-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .tag-row span {
-      display: inline-flex;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: #f3f4f6;
-      font-size: 12px;
-      color: #374151;
-    }
-    .profile-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-    }
-    .info-card {
-      border: 1px solid #ececec;
-      border-radius: 18px;
-      padding: 16px;
-      background: #fafafa;
-    }
-    .info-card h4 {
-      margin-bottom: 10px;
-      font-size: 15px;
-    }
-    .info-card.full {
-      grid-column: 1 / -1;
-    }
-    .info-card p,
-    .info-card li {
-      color: #555;
-      line-height: 1.7;
-      font-size: 14px;
-    }
-    .profile-list {
-      display: grid;
-      gap: 10px;
-    }
-    .profile-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #ececec;
-    }
-    .profile-row:last-child {
-      padding-bottom: 0;
-      border-bottom: none;
-    }
-    .profile-label {
-      color: #667085;
-      font-size: 13px;
-      font-weight: 600;
-    }
-    .profile-value {
-      color: #111827;
-      font-size: 14px;
-      font-weight: 600;
-      text-align: right;
-    }
-    .profile-photo-wrap img {
-      width: 100%;
-      height: 260px;
-      object-fit: cover;
-      border-radius: 16px;
-      display: block;
-      background: #fff;
-    }
-    .info-card ul {
-      margin: 0;
-      padding-left: 18px;
-    }
-    .timeline {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .timeline-item {
-      border-left: 3px solid #ffd3dc;
-      padding-left: 12px;
-      line-height: 1.6;
-      color: #555;
-      font-size: 14px;
-    }
-    .profile-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+    .modal { width: min(820px,100%); max-height: 88vh; overflow: auto; background: #fff; border-radius: 24px; box-shadow: 0 24px 60px rgba(0,0,0,.2); position: relative; }
+    .modal-close { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border: none; border-radius: 50%; background: var(--bg); color: var(--text); cursor: pointer; font-size: 18px; z-index: 5; }
+    .profile-grid { display: grid; grid-template-columns: 280px 1fr; }
+    .profile-left { background: #18100A; color: #fff; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+    .profile-left img { width: 100%; aspect-ratio: 1/1.05; object-fit: cover; border-radius: 18px; }
+    .profile-badge { display: inline-flex; padding: 6px 12px; border-radius: 99px; background: #86EFAC; color: #14532d; font-size: 12px; font-weight: 700; align-self: flex-start; }
+    .profile-right { padding: 28px; display: flex; flex-direction: column; gap: 18px; }
+    .profile-right h2 { font-size: 22px; font-weight: 800; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .info-row { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; background: var(--surface-2); border-radius: 12px; border: 1px solid var(--border); }
+    .info-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+    .info-value { font-size: 14px; font-weight: 700; color: var(--text); }
+    .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-primary { padding: 11px 22px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: background .15s; }
+    .btn-primary:hover { background: var(--brand-hover); }
+    .btn-ghost { padding: 11px 22px; border-radius: 99px; background: none; border: 1.5px solid var(--border); color: var(--text-sub); font-size: 14px; font-weight: 700; cursor: pointer; transition: border-color .15s; }
+    .btn-ghost:hover { border-color: var(--brand); color: var(--brand); }
 
-    .form-shell {
-      padding: 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-    .form-shell p {
-      color: #666;
-      line-height: 1.6;
-    }
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-    }
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .field.full { grid-column: 1 / -1; }
-    .field label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #374151;
-    }
-    .field input,
-    .field textarea,
-    .field select {
-      width: 100%;
-      border: 1px solid #d8dce3;
-      border-radius: 14px;
-      padding: 12px 14px;
-      background: #fff;
-      color: #111827;
-    }
-    .field textarea {
-      min-height: 110px;
-      resize: vertical;
-    }
-    .form-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-    }
-    .status-box {
-      border-radius: 18px;
-      padding: 14px 16px;
-      background: #eff6ff;
-      color: #1d4ed8;
-      line-height: 1.6;
-      display: none;
-    }
-    .status-box.show {
-      display: block;
-    }
-    .liked-full-list {
-      padding: 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .liked-full-list .empty-state {
-      background: #fafafa;
-    }
-    .chat-shell {
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      min-height: min(78vh, 760px);
-    }
-    .chat-header {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      padding-right: 52px;
-    }
-    .chat-header-main {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      min-width: 0;
-    }
-    .chat-avatar {
-      width: 64px;
-      height: 64px;
-      border-radius: 18px;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-    .chat-header-copy p {
-      margin-top: 4px;
-      color: #666;
-      line-height: 1.5;
-    }
-    .chat-status-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 7px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      background: #eff6ff;
-      color: #1d4ed8;
-      white-space: nowrap;
-    }
-    .chat-thread {
-      flex: 1;
-      min-height: 320px;
-      max-height: 440px;
-      overflow: auto;
-      border: 1px solid #ececec;
-      border-radius: 22px;
-      background: linear-gradient(180deg, #fafafa 0%, #fff 100%);
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .chat-message {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      max-width: 78%;
-    }
-    .chat-message.user {
-      align-self: flex-end;
-      align-items: flex-end;
-    }
-    .chat-message.org {
-      align-self: flex-start;
-      align-items: flex-start;
-    }
-    .chat-message.system {
-      align-self: center;
-      max-width: 90%;
-      align-items: center;
-    }
-    .chat-bubble {
-      border-radius: 18px;
-      padding: 12px 14px;
-      line-height: 1.6;
-      font-size: 14px;
-      word-break: break-word;
-      box-shadow: 0 6px 18px rgba(17, 24, 39, .05);
-    }
-    .chat-message.user .chat-bubble {
-      background: #ff5a76;
-      color: #fff;
-      border-bottom-right-radius: 6px;
-    }
-    .chat-message.org .chat-bubble {
-      background: #fff;
-      color: #333;
-      border: 1px solid #ececec;
-      border-bottom-left-radius: 6px;
-    }
-    .chat-message.system .chat-bubble {
-      background: #f3f4f6;
-      color: #555;
-      text-align: center;
-      font-size: 13px;
-      box-shadow: none;
-    }
-    .chat-meta {
-      font-size: 12px;
-      color: #8b8b8b;
-      padding: 0 4px;
-    }
-    .chat-images {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
-      gap: 8px;
-      width: 100%;
-    }
-    .chat-images img {
-      width: 100%;
-      height: 108px;
-      object-fit: cover;
-      border-radius: 14px;
-      border: 1px solid rgba(0,0,0,.06);
-      background: #fff;
-    }
-    .chat-note {
-      color: #666;
-      font-size: 13px;
-      line-height: 1.6;
-    }
-    .chat-preview {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .chat-preview[hidden] {
-      display: none;
-    }
-    .chat-preview-item {
-      position: relative;
-      width: 88px;
-      height: 88px;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid #e5e7eb;
-      background: #fff;
-    }
-    .chat-preview-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .chat-preview-item button {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      width: 24px;
-      height: 24px;
-      border: none;
-      border-radius: 50%;
-      background: rgba(17,24,39,.72);
-      color: #fff;
-      cursor: pointer;
-      font-size: 12px;
-    }
-    .chat-composer {
-      border: 1px solid #ececec;
-      border-radius: 22px;
-      padding: 16px;
-      background: #fff;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .chat-input {
-      width: 100%;
-      border: none;
-      outline: none;
-      resize: none;
-      min-height: 92px;
-      font: inherit;
-      color: #111827;
-      background: transparent;
-      line-height: 1.6;
-    }
-    .chat-composer-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .chat-left-actions,
-    .chat-right-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-    .attach-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border: none;
-      border-radius: 999px;
-      background: #f3f4f6;
-      color: #333;
-      padding: 10px 14px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .attach-btn input {
-      display: none;
-    }
-    .chat-send-btn {
-      border: none;
-      border-radius: 999px;
-      background: #ff5a76;
-      color: #fff;
-      padding: 10px 18px;
-      cursor: pointer;
-      box-shadow: 0 8px 20px rgba(255,90,118,.24);
-    }
-    .chat-secondary-btn {
-      border: none;
-      border-radius: 999px;
-      background: #fff;
-      color: #333;
-      padding: 10px 14px;
-      cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0,0,0,.08);
-    }
-
-    @media (max-width: 980px) {
-      main {
-        grid-template-columns: 1fr;
-      }
-      .liked-panel {
-        order: -1;
-      }
-      .profile-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-    @media (max-width: 680px) {
-      body {
-        padding-left: 12px;
-        padding-right: 12px;
-      }
-      header,
-      .adoption-stage,
-      .liked-panel {
-        padding: 18px;
-      }
-      .deck-wrapper {
-        min-height: 360px;
-      }
-      .form-grid,
-      .profile-grid {
-        grid-template-columns: 1fr;
-      }
-      .chat-header {
-        padding-right: 42px;
-      }
-      .chat-header-main {
-        align-items: flex-start;
-      }
-      .chat-thread {
-        max-height: 360px;
-      }
-    }
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; background: #18100A; color: #fff; border-radius: 16px; padding: 14px 18px; font-size: 14px; display: none; align-items: center; gap: 12px; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,.3); }
+    .toast.show { display: flex; }
+    .toast-btn { padding: 6px 14px; border-radius: 99px; border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff; font-size: 13px; cursor: pointer; }
   </style>
 </head>
 <body>
-  <div class="page-shell">
-    <div class="page-topbar">
-      <a class="back-link" href="index.html">← Back to Home</a>
-      <div class="topbar-actions">
-        <button class="ghost-btn" type="button" id="open-liked-panel">Liked Cats (<span id="liked-count-top">0</span>)</button>
+<div class="layout">
+  <!-- LEFT NAV -->
+  <nav class="left-nav">
+    <div class="nav-hero">
+      <div class="nav-hero-logo">CatFace</div>
+      <div class="nav-hero-profile">
+        <div class="nav-hero-avatar">&#x1F464;</div>
+        <div>
+          <div class="nav-hero-name">Guest</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Not logged in</div>
+        </div>
       </div>
     </div>
+    <div class="nav-section">
+      <div class="nav-link" onclick="location.href='/pages/cat-facebook.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+      <div class="nav-link active"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/notifications.html', 'Please log in first')"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge" data-notif-badge style="display:none;"></span></div>
+      <div class="nav-link" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
+    </div>
+    <button class="btn-new-post" onclick="location.href='/pages/cat-facebook.html'">+ New Post</button>
+    <div class="nav-user" onclick="requireLoginForNavigation('/pages/account.html', 'Please log in first')">
+      <div class="nav-avatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name">Guest</div><div class="u-handle">Log in to continue</div></div>
+      <span class="nav-user-more">&#x2026;</span>
+    </div>
+  </nav>
 
-    <header>
-      <div class="header-copy">
-        <div class="eyebrow">Adoption + Cat Account Flow</div>
-        <h1>Adoption Recommendations</h1>
-        <p>
-          Swipe right to like a cat. After liking, the cat is saved to your interested list, where you can open the
-          cat's full account page, review the rescue notes and health summary, then contact the rescue organization or
-          submit a formal adoption application.
-        </p>
+  <!-- CENTER -->
+  <div class="center">
+    <div class="center-header">
+      <h2>&#x1F431; Adoption</h2>
+      <p>Swipe right to like · Click card to flip · Like to start the adoption process</p>
+    </div>
+    <div class="adoption-body">
+      <div class="deck-area">
+        <div class="card-stack" id="cardStack">
+          <div class="cat-card" data-id="loading">
+            <div class="card-overlay"></div>
+            <div class="card-info">
+              <div class="card-name">Loading cats...</div>
+              <div class="card-sub">Fetching the latest adoption feed from the database.</div>
+              <div class="card-tags"><span class="card-tag">Please wait</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="swipe-btns">
+          <button class="swipe-btn nope" id="nopeBtn">&#x2715;</button>
+          <button class="swipe-btn like" id="likeBtn">&#x2665;</button>
+        </div>
       </div>
-      <aside class="header-flow" aria-label="Flow summary">
-        <h2>Suggested flow</h2>
-        <ol>
-          <li>Like a cat</li>
-          <li>Open full cat account</li>
-          <li>Contact rescue organization</li>
-          <li>Submit application for review</li>
-        </ol>
-      </aside>
-    </header>
-
-    <main>
-      <section class="adoption-stage" aria-label="Adoption cards and actions">
-        <div class="stage-top">
-          <div>
-            <h2>Swipe to discover</h2>
-            <p>Click a card to flip and preview the rescue details.</p>
-          </div>
-        </div>
-
-        <section aria-label="Cats for Adoption Cards" class="deck-wrapper">
-          <div class="card-stack">
-            <article class="cat-card" data-cat-id="orange">
-              <div class="card-inner">
-                <div class="card-face card-front">
-                  <div class="cat-bg"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000&q=80" alt="Orange cat"></div>
-                  <div class="cat-info">
-                    <div class="cat-name">Orange · Orange Boy</div>
-                    <div class="cat-meta">1 year old · Male · Affectionate · Neutered · Vaccinated</div>
-                    <div class="cat-tags">
-                      <span class="cat-tag">Friendly</span>
-                      <span class="cat-tag">Good for First-Time Owners</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="card-face card-back">
-                  <div>
-                    <h3>Orange · Orange Boy</h3>
-                    <p><strong>Gender:</strong> Male</p>
-                    <p><strong>Age:</strong> 1 year old</p>
-                    <p><strong>Vaccinated:</strong> Yes (Triple vaccine + Rabies vaccine)</p>
-                    <p><strong>Found at:</strong> XX District Stray Cat Rescue Center</p>
-                    <p style="margin-top: 8px; color: #666;">Orange is very friendly and affectionate, loves being held and playing with wand toys, and is ideal for first-time cat adopters.</p>
-                  </div>
-                  <div class="card-back-actions">
-                    <button type="button" class="open-profile-btn">View Full Profile</button>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article class="cat-card" data-cat-id="shadow">
-              <div class="card-inner">
-                <div class="card-face card-front">
-                  <div class="cat-bg"><img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000&q=80" alt="Cow cat"></div>
-                  <div class="cat-info">
-                    <div class="cat-name">Shadow · Tuxedo Cat</div>
-                    <div class="cat-meta">3 years old · Male · A bit shy · Super affectionate once familiar</div>
-                    <div class="cat-tags">
-                      <span class="cat-tag">Cat Experience Preferred</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="card-face card-back">
-                  <div>
-                    <h3>Shadow · Tuxedo Cat</h3>
-                    <p><strong>Gender:</strong> Male</p>
-                    <p><strong>Age:</strong> 3 years old</p>
-                    <p><strong>Vaccinated:</strong> Yes (Triple vaccine + Rabies vaccine)</p>
-                    <p><strong>Found at:</strong> Near XX Park (Stray rescue)</p>
-                    <p style="margin-top: 8px; color: #666;">Shadow is shy at first, but quickly becomes affectionate after trust is built. Best for adopters with some cat experience.</p>
-                  </div>
-                  <div class="card-back-actions">
-                    <button type="button" class="open-profile-btn">View Full Profile</button>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article class="cat-card" data-cat-id="tiger">
-              <div class="card-inner">
-                <div class="card-face card-front">
-                  <div class="cat-bg"><img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000&q=80" alt="Tabby kitten"></div>
-                  <div class="cat-info">
-                    <div class="cat-name">Tiger · Tabby Kitten</div>
-                    <div class="cat-meta">6 months old · Male · Playful · Neutered · Vaccinated</div>
-                    <div class="cat-tags">
-                      <span class="cat-tag">Good with Kids</span>
-                      <span class="cat-tag">Very Active</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="card-face card-back">
-                  <div>
-                    <h3>Tiger · Tabby Kitten</h3>
-                    <p><strong>Gender:</strong> Male</p>
-                    <p><strong>Age:</strong> 6 months old</p>
-                    <p><strong>Vaccinated:</strong> Yes (Triple vaccine + Rabies vaccine)</p>
-                    <p><strong>Found at:</strong> XX Animal Shelter</p>
-                    <p style="margin-top: 8px; color: #666;">Tiger is energetic, social and playful, and would fit an active family that can give him plenty of interaction and toys.</p>
-                  </div>
-                  <div class="card-back-actions">
-                    <button type="button" class="open-profile-btn">View Full Profile</button>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article class="cat-card" data-cat-id="whiskers">
-              <div class="card-inner">
-                <div class="card-face card-front">
-                  <div class="cat-bg"><img src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000&q=80" alt="Senior cat"></div>
-                  <div class="cat-info">
-                    <div class="cat-name">Whiskers · Senior Cat</div>
-                    <div class="cat-meta">8 years old · Female · Calm · Neutered · Vaccinated</div>
-                    <div class="cat-tags">
-                      <span class="cat-tag">Quiet Home Preferred</span>
-                      <span class="cat-tag">Good for Seniors</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="card-face card-back">
-                  <div>
-                    <h3>Whiskers · Senior Cat</h3>
-                    <p><strong>Gender:</strong> Female</p>
-                    <p><strong>Age:</strong> 8 years old</p>
-                    <p><strong>Vaccinated:</strong> Yes (Triple vaccine + Rabies vaccine)</p>
-                    <p><strong>Found at:</strong> XX Senior Cat Rescue</p>
-                    <p style="margin-top: 8px; color: #666;">Whiskers is gentle and very calm, making her a strong match for adopters seeking a quiet companion and a stable home routine.</p>
-                  </div>
-                  <div class="card-back-actions">
-                    <button type="button" class="open-profile-btn">View Full Profile</button>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article class="cat-card" data-cat-id="snow">
-              <div class="card-inner">
-                <div class="card-face card-front">
-                  <div class="cat-bg"><img src="https://images.unsplash.com/photo-1517331156700-3c241d2b4d83?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=1000&q=80" alt="White Persian cat"></div>
-                  <div class="cat-info">
-                    <div class="cat-name">Snow · White Persian Mix</div>
-                    <div class="cat-meta">1 month · Female · Elegant · Vaccinated</div>
-                    <div class="cat-tags">
-                      <span class="cat-tag">Quiet Environment</span>
-                      <span class="cat-tag">Needs Grooming</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="card-face card-back">
-                  <div>
-                    <h3>Snow · White Persian Mix</h3>
-                    <p><strong>Gender:</strong> Female</p>
-                    <p><strong>Age:</strong> 1 month</p>
-                    <p><strong>Vaccinated:</strong> First dose completed</p>
-                    <p><strong>Found at:</strong> XX Cat Rescue (Owner surrender)</p>
-                    <p style="margin-top: 8px; color: #666;">Snow is a young kitten who needs a gentle environment, regular grooming support and an adopter ready for kitten-stage care.</p>
-                  </div>
-                  <div class="card-back-actions">
-                    <button type="button" class="open-profile-btn">View Full Profile</button>
-                  </div>
-                </div>
-              </div>
-            </article>
-          </div>
-
-          <div class="swipe-actions">
-            <button class="swipe-btn nope" type="button" aria-label="Dislike (swipe left)">✕</button>
-            <button class="swipe-btn like" type="button" aria-label="Like (swipe right)">❤</button>
-          </div>
-          <div class="hint">Click ✕ for dislike and ❤ for like.</div>
-        </section>
-      </section>
-
-      <aside class="liked-panel" aria-label="Liked cats">
-        <div class="liked-panel-header">
-          <div>
-            <h2>Liked Cats</h2>
-            <p>Save interested cats first, then open the full cat account to continue the adoption process.</p>
-          </div>
-          <span class="pill-status"><span id="liked-count-side">0</span> saved</span>
-        </div>
-        <div class="liked-list" id="liked-list">
-          <div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>
-        </div>
-        <div class="liked-panel-footer">
-          <button class="liked-panel-link" type="button" id="open-liked-list-link" hidden>Open liked cats list →</button>
-        </div>
-      </aside>
-    </main>
-
-    <footer><a href="index.html">Back to Home</a></footer>
+      <p class="swipe-hint">Click card to view details · Drag or use buttons to swipe</p>
+    </div>
+    <!-- Liked list at bottom -->
+    <div class="liked-section">
+      <h3>&#x2665; Liked Cats (<span id="likedCount">0</span>)</h3>
+      <div id="likedList"><div class="liked-empty">No liked cats yet. Swipe right to save cats here.</div></div>
+    </div>
+    <div class="app-section">
+      <h3>&#x1F4DD; My Applications</h3>
+      <div class="app-list" id="applicationList">
+        <div class="app-empty">Loading your application history...</div>
+      </div>
+    </div>
   </div>
 
-  <section class="toast" id="like-toast" aria-live="polite">
-    <h3 id="toast-title">Saved to liked cats</h3>
-    <p id="toast-copy">You can now open the full cat account and continue to contact the rescue organization.</p>
-    <div class="toast-actions">
-      <button type="button" class="primary" id="toast-open-profile">View Full Profile</button>
-      <button type="button" class="secondary" id="toast-open-liked">Open Liked Cats</button>
-    </div>
-  </section>
-
-  <section class="modal-overlay" id="profile-overlay" aria-hidden="true">
-    <div class="modal" role="dialog" aria-label="Cat full profile">
-      <button class="modal-close" type="button" data-close="profile-overlay">×</button>
-      <div class="profile-layout">
-        <aside class="profile-cover">
-          <div>
-            <img id="profile-image" src="" alt="Cat profile image">
-            <div style="margin-top: 16px;">
-              <div class="eyebrow" id="profile-status">Available for Adoption</div>
-              <h2 id="profile-name" style="margin-top: 12px;"></h2>
-              <p id="profile-short"></p>
-            </div>
-          </div>
-          <div>
-            <p id="profile-account-note"></p>
-          </div>
-        </aside>
-        <div class="profile-main">
-          <div class="profile-head">
-            <div>
-              <h2>Cat Profile</h2>
-              <p id="profile-org"></p>
-            </div>
-            <div class="tag-row" id="profile-tags"></div>
-          </div>
-
-          <div class="profile-grid">
-            <article class="info-card">
-              <h4>Basic Information</h4>
-              <div class="profile-list">
-                <div class="profile-row"><span class="profile-label">Cat ID</span><span class="profile-value" id="profile-cat-id">CAT-001</span></div>
-                <div class="profile-row"><span class="profile-label">Cat Name</span><span class="profile-value" id="profile-cat-name-value">Orange</span></div>
-                <div class="profile-row"><span class="profile-label">Breed</span><span class="profile-value" id="profile-breed">Domestic Shorthair</span></div>
-                <div class="profile-row"><span class="profile-label">Gender</span><span class="profile-value" id="profile-gender">Female</span></div>
-                <div class="profile-row"><span class="profile-label">Age</span><span class="profile-value" id="profile-age">1 year</span></div>
-                <div class="profile-row"><span class="profile-label">Birthday</span><span class="profile-value" id="profile-birthday">2024-02-14</span></div>
-              </div>
-            </article>
-            <article class="info-card">
-              <h4>Health and Adoption Information</h4>
-              <div class="profile-list">
-                <div class="profile-row"><span class="profile-label">Personality</span><span class="profile-value" id="profile-personality">Friendly and playful</span></div>
-                <div class="profile-row"><span class="profile-label">Spayed / Neutered</span><span class="profile-value" id="profile-spayed">Yes</span></div>
-                <div class="profile-row"><span class="profile-label">Vaccination Status</span><span class="profile-value" id="profile-vaccination-status">Core vaccines completed</span></div>
-                <div class="profile-row"><span class="profile-label">Found Location</span><span class="profile-value" id="profile-found-location">Kowloon City</span></div>
-                <div class="profile-row"><span class="profile-label">Allergy History</span><span class="profile-value" id="profile-allergy-history">No known allergies</span></div>
-                <div class="profile-row"><span class="profile-label">Adoption Status</span><span class="profile-value" id="profile-adoption-status">Available</span></div>
-              </div>
-            </article>
-          </div>
-
-          <article class="info-card full">
-            <h4>Display Photo</h4>
-            <div class="profile-photo-wrap">
-              <img id="profile-display-photo" src="" alt="Cat display photo">
-            </div>
-          </article>
-
-          <div class="profile-actions">
-            <button class="solid-btn" type="button" id="contact-org-btn">Contact Rescue Organization</button>
-            <button class="ghost-btn" type="button" id="apply-adopt-btn">Apply to Adopt</button>
-          </div>
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+    <div class="rp-card">
+      <div class="rp-stat-row">
+        <div class="rp-stat"><div class="rp-stat-num" id="availableCatsCount">0</div><div class="rp-stat-label">Available cats</div></div>
+        <div class="rp-stat"><div class="rp-stat-num">12</div><div class="rp-stat-label">Adopted this month</div></div>
+      </div>
+      <div class="rp-info-block">
+        <h4>Adoption flow</h4>
+        <ol>
+          <li>Like a cat you're interested in</li>
+          <li>Open the full cat profile</li>
+          <li>Contact the rescue organization</li>
+          <li>Submit a formal adoption application</li>
+        </ol>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+          <button class="liked-item-btn" type="button" id="openLikedCatsBtn">View Liked Cats</button>
+          <button class="liked-item-btn" type="button" id="openPreferencesBtn">Update Preferences</button>
         </div>
       </div>
     </div>
-  </section>
+    <div class="rp-card">
+      <div class="rp-card-title">&#x1F4CB; Recently Available</div>
+      <div id="recentlyAvailableList">
+        <div class="rp-row">
+          <div class="rp-row-info">
+            <div class="rp-row-name">Loading...</div>
+            <div class="rp-row-sub">Fetching recent cats from the database</div>
+          </div>
+          <span class="rp-row-badge">...</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
 
-  <section class="modal-overlay" id="liked-overlay" aria-hidden="true">
-    <div class="modal medium" role="dialog" aria-label="Full liked cats list">
-      <button class="modal-close" type="button" data-close="liked-overlay">×</button>
-      <div class="form-shell">
+<!-- Profile Modal -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">&#x2715;</button>
+    <div class="profile-grid">
+      <div class="profile-left">
+        <img id="profileImg" src="" alt="">
+        <span class="profile-badge">&#x2705; Available</span>
+        <div style="color:rgba(255,255,255,.8);font-size:13px;line-height:1.6;" id="profileNote"></div>
+      </div>
+      <div class="profile-right">
         <div>
-          <h2>Liked Cats List</h2>
-          <p>Review all the cats you have liked, then open the full cat account or contact the rescue organization from here.</p>
+          <h2 id="profileName"></h2>
+          <p style="color:var(--text-muted);font-size:13px;margin-top:4px;" id="profileOrg"></p>
         </div>
-        <div class="liked-full-list" id="liked-full-list">
-          <div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>
+        <div class="info-grid" id="profileInfoGrid"></div>
+        <div class="modal-actions">
+          <button class="btn-primary" id="contactBtn">Contact Rescue</button>
+          <button class="btn-ghost" id="applyBtn">Apply to Adopt</button>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</div>
 
-  <section class="modal-overlay" id="contact-overlay" aria-hidden="true">
-    <div class="modal medium" role="dialog" aria-label="Contact rescue organization">
-      <button class="modal-close" type="button" data-close="contact-overlay">×</button>
-      <div class="chat-shell">
-        <div class="chat-header">
-          <div class="chat-header-main">
-            <img class="chat-avatar" id="chat-cat-image" src="" alt="Cat avatar">
-            <div class="chat-header-copy">
-              <h2 id="contact-title">Contact Rescue Organization</h2>
-              <p id="contact-subtitle">Start a consultation about this cat and continue the conversation with the rescue organization.</p>
-            </div>
-          </div>
-          <span class="chat-status-badge" id="chat-status-badge">Awaiting your message</span>
-        </div>
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toastText">Saved!</span>
+  <button class="toast-btn" id="toastViewBtn">View Profile</button>
+</div>
 
-        <div class="chat-thread" id="chat-thread" aria-live="polite"></div>
+<script src="../js/config.js"></script>
+<script>
+(function(){
+  if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+    alert('Please log in first');
+    window.location.href = '/pages/log-in.html';
+    return;
+  }
 
-        <div class="chat-note">
-          This is a lightweight consultation chat for adoption questions. You can send text and up to 3 images in one message.
-        </div>
+  function resolveCatImg(src) {
+    if (!src) return '';
+    if (/^(https?:)?\/\//i.test(src) || /^data:/i.test(src) || /^blob:/i.test(src) || src.indexOf('../') === 0) return src;
+    return '../' + src.replace(/^\.?\//, '');
+  }
 
-        <div class="chat-preview" id="chat-preview" hidden></div>
+  var FALLBACK_IMAGES = [
+    '../assets/adoption/luno-blep.png',
+    '../assets/adoption/orange-cage.png',
+    '../assets/adoption/luna-hetero.png',
+    '../assets/adoption/tabby-white.png'
+  ];
+  var cats = {};
+  var catOrder = [];
+  var liked = [];
+  var active = null;
+  var animating = false;
+  var toastTimer;
+  var stack = document.getElementById('cardStack');
+  var likedCount = document.getElementById('likedCount');
+  var likedList = document.getElementById('likedList');
+  var modal = document.getElementById('profileModal');
+  var toast = document.getElementById('toast');
+  var recentlyAvailableList = document.getElementById('recentlyAvailableList');
+  var availableCatsCount = document.getElementById('availableCatsCount');
+  var applicationList = document.getElementById('applicationList');
+  var openLikedCatsBtn = document.getElementById('openLikedCatsBtn');
+  var openPreferencesBtn = document.getElementById('openPreferencesBtn');
+  var applications = [];
+  var likedSecondFetchScheduled = false;
 
-        <form id="contact-form" class="chat-composer">
-          <textarea class="chat-input" id="chat-message-input" name="message" placeholder="Type your message about this cat..."></textarea>
-          <div class="chat-composer-row">
-            <div class="chat-left-actions">
-              <label class="attach-btn" for="chat-image-input">
-                <span>＋ Add image</span>
-                <input id="chat-image-input" type="file" accept="image/*" multiple>
-              </label>
-            </div>
-            <div class="chat-right-actions">
-              <button class="chat-secondary-btn" type="button" id="chat-apply-link">Apply to Adopt</button>
-              <button class="chat-send-btn" type="submit">Send</button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </section>
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
 
-  <section class="modal-overlay" id="apply-overlay" aria-hidden="true">
-    <div class="modal narrow" role="dialog" aria-label="Apply to adopt">
-      <button class="modal-close" type="button" data-close="apply-overlay">×</button>
-      <div class="form-shell">
-        <div>
-          <h2>Apply to Adopt</h2>
-          <p id="apply-subtitle">Submit a formal adoption request after reading the full cat account and rescue requirements.</p>
-        </div>
+  function getLikedStorageKey() {
+    try {
+      var currentUser = JSON.parse(localStorage.getItem('catface_user') || 'null');
+      return 'catface_liked_cats_v1_' + ((currentUser && currentUser.id) || 'guest');
+    } catch (e) {
+      return 'catface_liked_cats_v1_guest';
+    }
+  }
 
-        <form id="apply-form">
-          <div class="form-grid">
-            <div class="field">
-              <label for="apply-name">Full name</label>
-              <input id="apply-name" name="name" type="text" placeholder="Enter your name" required>
-            </div>
-            <div class="field">
-              <label for="apply-phone">Contact number</label>
-              <input id="apply-phone" name="phone" type="text" placeholder="Enter phone / WhatsApp" required>
-            </div>
-            <div class="field">
-              <label for="apply-experience">Cat experience</label>
-              <select id="apply-experience" name="experience" required>
-                <option value="">Select</option>
-                <option>First-time adopter</option>
-                <option>Have adopted before</option>
-                <option>Currently own other cats</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="apply-home">Home situation</label>
-              <select id="apply-home" name="home" required>
-                <option value="">Select</option>
-                <option>Apartment</option>
-                <option>House</option>
-                <option>Shared living</option>
-              </select>
-            </div>
-            <div class="field full">
-              <label for="apply-reason">Why do you want to adopt this cat?</label>
-              <textarea id="apply-reason" name="reason" placeholder="Describe why this cat is a good match for you." required></textarea>
-            </div>
-          </div>
+  function persistLiked() {
+    try {
+      localStorage.setItem(getLikedStorageKey(), JSON.stringify(liked));
+    } catch (e) {}
+  }
 
-          <div class="status-box" id="apply-status"></div>
+  function restoreLiked() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(getLikedStorageKey()) || '[]');
+      liked = Array.isArray(saved) ? saved : [];
+    } catch (e) {
+      liked = [];
+    }
+  }
 
-          <div class="form-actions">
-            <button class="ghost-btn" type="button" data-close="apply-overlay">Cancel</button>
-            <button class="solid-btn" type="submit">Submit Application</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </section>
+  function recordSwipeOnServer(catId, likedBool) {
+    if (!catId || catId === 'loading' || catId === 'empty' || catId === 'error') return;
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) return;
+    fetch(API_BASE_URL + '/adoption/swipe', {
+      method: 'POST',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cat_id: catId, liked: Boolean(likedBool) })
+    }).catch(function () {});
+  }
 
-  <script src="../js/chat.js"></script>
-  <script>
-    (function () {
-      if (window.__CATFACE_EXTERNAL_ADOPTION__) return;
-      const cats = {
-        orange: {
-          id: "orange",
-          catId: "CAT-001",
-          name: "Orange",
-          title: "Orange Boy",
-          age: "1 year",
-          gender: "Male",
-          breed: "Domestic Shorthair",
-          birthday: "2025-02-14",
-          personalityProfile: "Friendly and playful",
-          spayedNeutered: "Yes",
-          vaccinationStatus: "Core vaccines completed",
-          foundLocation: "Market district rescue zone",
-          allergyHistory: "No known allergies",
-          temperament: "Affectionate, friendly, playful",
-          status: "Available",
-          image: "https://images.unsplash.com/photo-1592194996308-7b43878e84a6?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&h=1000&q=80",
-          summary: "A rescue-center favorite with a gentle temperament and strong interest in people.",
-          health: "Neutered, vaccinated, and recently completed a general health check with no major concerns.",
-          rescueOrg: "XX District Stray Cat Rescue Center",
-          rescueNotes: "Orange was rescued from a market area and adapted quickly to indoor foster care. He enjoys wand toys and seeks human contact.",
-          accountNote: "This cat account collects Orange's rescue timeline, health updates, and adoption requirements in one place.",
-          tags: ["Friendly", "Good for First-Time Owners", "Indoor Ready"],
-          requirements: [
-            "Indoor home only",
-            "Stable adopter contact information",
-            "Willing to provide adjustment time during the first 2 weeks"
-          ],
-          basic: "Male · 1 year old · Domestic Shorthair · Neutered · Good with people",
-          updates: [
-            "2026-03-02: Finished booster vaccination and routine health review.",
-            "2026-02-20: Foster parent reported strong appetite and playful daily routine.",
-            "2026-02-10: Rescue center uploaded a new personality assessment."
-          ]
-        },
-        shadow: {
-          id: "shadow",
-          catId: "CAT-002",
-          name: "Shadow",
-          title: "Tuxedo Cat",
-          age: "3 years",
-          gender: "Male",
-          breed: "Tuxedo Domestic Cat",
-          birthday: "2022-09-03",
-          personalityProfile: "Quiet and observant",
-          spayedNeutered: "Yes",
-          vaccinationStatus: "Vaccinated, booster pending",
-          foundLocation: "Park-side rescue point",
-          allergyHistory: "Mild chicken sensitivity",
-          temperament: "Shy at first, affectionate after bonding",
-          status: "Available",
-          image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&h=1000&q=80",
-          summary: "A calm tuxedo cat who needs patience in the beginning and rewards trust with deep attachment.",
-          health: "Vaccinated and neutered. No critical medical issues, but needs a quieter home environment.",
-          rescueOrg: "Shadow Park Foster Network",
-          rescueNotes: "Shadow was rescued near a park and took longer to settle in, so the rescue team recommends an adopter with some cat-care experience.",
-          accountNote: "Shadow's account focuses on trust-building updates and long-term temperament observations from foster care.",
-          tags: ["Experienced Adopter Preferred", "Quiet Home", "Slow Warm-Up"],
-          requirements: [
-            "Low-noise environment preferred",
-            "Adopter should understand shy-cat adjustment behavior",
-            "Home visit or virtual environment check before final approval"
-          ],
-          basic: "Male · 3 years old · Tuxedo cat · Vaccinated · Best with patient adopters",
-          updates: [
-            "2026-03-01: Started sleeping near the foster's desk during work hours.",
-            "2026-02-24: Rescue team noted improved confidence around visitors.",
-            "2026-02-06: New enrichment toys introduced to reduce stress."
-          ]
-        },
-        tiger: {
-          id: "tiger",
-          catId: "CAT-004",
-          name: "Tiger",
-          title: "Tabby Kitten",
-          age: "6 months",
-          gender: "Male",
-          breed: "Tabby Domestic Shorthair",
-          birthday: "2025-09-01",
-          personalityProfile: "Energetic and social",
-          spayedNeutered: "Yes",
-          vaccinationStatus: "Kitten vaccination schedule in progress",
-          foundLocation: "Shelter intake transfer",
-          allergyHistory: "No known allergies",
-          temperament: "Energetic, curious, social",
-          status: "Available",
-          image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&h=1000&q=80",
-          summary: "A young kitten with high energy and strong play needs, ideal for an active household.",
-          health: "Vaccinated and neutered. Active and healthy, with no notable health issues reported.",
-          rescueOrg: "XX Animal Shelter",
-          rescueNotes: "Tiger was transferred from shelter intake into a foster home and quickly showed strong social behavior with people and toys.",
-          accountNote: "Tiger's account shows growth updates, play habits, and suitability notes for family adopters.",
-          tags: ["Good with Kids", "Very Active", "Playful"],
-          requirements: [
-            "Needs daily play and enrichment",
-            "Adopter should prepare safe kitten-proof indoor space",
-            "Prefer a family ready for regular interaction"
-          ],
-          basic: "Male · 6 months old · Tabby kitten · Neutered · Highly interactive",
-          updates: [
-            "2026-03-03: Foster uploaded new play-session photos.",
-            "2026-02-18: Weight and appetite reviewed with normal growth.",
-            "2026-02-01: Tiger completed first socialization milestone."
-          ]
-        },
-        whiskers: {
-          id: "whiskers",
-          catId: "CAT-003",
-          name: "Whiskers",
-          title: "Senior Cat",
-          age: "8 years",
-          gender: "Female",
-          breed: "Domestic Shorthair",
-          birthday: "2017-06-11",
-          personalityProfile: "Gentle and calm",
-          spayedNeutered: "Yes",
-          vaccinationStatus: "Senior vaccine review needed",
-          foundLocation: "Owner-care transition case",
-          allergyHistory: "Sensitive to dust",
-          temperament: "Calm, gentle, quiet",
-          status: "Available",
-          image: "https://images.unsplash.com/photo-1573865526739-10659fec78a5?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&h=1000&q=80",
-          summary: "A mature companion cat who prefers slow routines, quiet affection, and predictable surroundings.",
-          health: "Vaccinated, neutered and under routine senior wellness observation. No current urgent concerns.",
-          rescueOrg: "XX Senior Cat Rescue",
-          rescueNotes: "Whiskers entered rescue after an owner-care transition and adjusted well to a peaceful foster home.",
-          accountNote: "Whiskers' account highlights senior care routines, wellness checks, and daily comfort needs.",
-          tags: ["Quiet Home Preferred", "Senior Friendly", "Low Activity"],
-          requirements: [
-            "Quiet indoor household preferred",
-            "Routine wellness check commitment",
-            "Adopter should be comfortable with senior cat care"
-          ],
-          basic: "Female · 8 years old · Senior cat · Calm personality · Good fit for gentle homes",
-          updates: [
-            "2026-03-04: Updated senior wellness report added by foster partner.",
-            "2026-02-22: Rescue team recorded excellent appetite and rest schedule.",
-            "2026-02-11: New comfort-bed photos uploaded to account."
-          ]
-        },
-        snow: {
-          id: "snow",
-          catId: "CAT-005",
-          name: "Snow",
-          title: "White Persian Mix",
-          age: "1 month",
-          gender: "Female",
-          breed: "White Persian Mix",
-          birthday: "2026-01-28",
-          personalityProfile: "Gentle and sensitive",
-          spayedNeutered: "No",
-          vaccinationStatus: "First vaccination dose completed",
-          foundLocation: "Owner surrender intake",
-          allergyHistory: "No allergy record",
-          temperament: "Gentle, young, sensitive",
-          status: "Available",
-          image: "https://images.unsplash.com/photo-1517331156700-3c241d2b4d83?ixlib=rb-4.0.3&auto=format&fit=crop&w=900&h=1000&q=80",
-          summary: "A very young kitten who needs attentive care, a clean indoor setup, and regular grooming support.",
-          health: "First vaccination dose completed. Needs ongoing kitten monitoring and regular grooming preparation.",
-          rescueOrg: "XX Cat Rescue",
-          rescueNotes: "Snow came from an owner surrender case and is now under foster observation to ensure healthy early development.",
-          accountNote: "Snow's account tracks kitten-stage health milestones and grooming needs for the rescue team and future adopter.",
-          tags: ["Kitten Care", "Needs Grooming", "Quiet Environment"],
-          requirements: [
-            "Adopter must understand kitten feeding and follow-up vaccination schedule",
-            "Indoor-only environment",
-            "Commitment to grooming and regular updates during adjustment period"
-          ],
-          basic: "Female · 1 month · Persian mix kitten · Early-stage care required",
-          updates: [
-            "2026-03-05: Foster added feeding and sleep routine notes.",
-            "2026-02-26: First vaccination dose recorded in account.",
-            "2026-02-12: Intake notes and owner-surrender summary uploaded."
-          ]
-        }
-      };
+  function mergeCatsFromApiList(list, indexOffset) {
+    if (!Array.isArray(list)) return;
+    list.forEach(function (cat, idx) {
+      if (!cat || !cat.id) return;
+      var mapped = mapCat(cat, (indexOffset || 0) + idx);
+      cats[mapped.id] = mapped;
+    });
+  }
 
-      const stack = document.querySelector(".card-stack");
-      if (!stack) return;
+  function mergeLocalLikesIntoServer(serverIds) {
+    var set = {};
+    (serverIds || []).forEach(function (id) { set[id] = true; });
+    try {
+      var local = JSON.parse(localStorage.getItem(getLikedStorageKey()) || '[]');
+      if (!Array.isArray(local)) return;
+      local.forEach(function (id) {
+        if (!id || set[id]) return;
+        recordSwipeOnServer(id, true);
+      });
+    } catch (e) {}
+  }
 
-      const nopeBtn = document.querySelector(".swipe-btn.nope");
-      const likeBtn = document.querySelector(".swipe-btn.like");
-      const openLikedPanelBtn = document.getElementById("open-liked-panel");
-      const likedList = document.getElementById("liked-list");
-      const likedFullList = document.getElementById("liked-full-list");
-      const openLikedListLink = document.getElementById("open-liked-list-link");
-      const likedCountTop = document.getElementById("liked-count-top");
-      const likedCountSide = document.getElementById("liked-count-side");
-
-      const likeToast = document.getElementById("like-toast");
-      const toastTitle = document.getElementById("toast-title");
-      const toastCopy = document.getElementById("toast-copy");
-      const toastOpenProfile = document.getElementById("toast-open-profile");
-      const toastOpenLiked = document.getElementById("toast-open-liked");
-
-      const profileOverlay = document.getElementById("profile-overlay");
-      const likedOverlay = document.getElementById("liked-overlay");
-      const contactOverlay = document.getElementById("contact-overlay");
-      const applyOverlay = document.getElementById("apply-overlay");
-
-      const profileImage = document.getElementById("profile-image");
-      const profileStatus = document.getElementById("profile-status");
-      const profileName = document.getElementById("profile-name");
-      const profileShort = document.getElementById("profile-short");
-      const profileAccountNote = document.getElementById("profile-account-note");
-      const profileOrg = document.getElementById("profile-org");
-      const profileTags = document.getElementById("profile-tags");
-      const profileCatId = document.getElementById("profile-cat-id");
-      const profileCatNameValue = document.getElementById("profile-cat-name-value");
-      const profileBreed = document.getElementById("profile-breed");
-      const profileGender = document.getElementById("profile-gender");
-      const profileAge = document.getElementById("profile-age");
-      const profileBirthday = document.getElementById("profile-birthday");
-      const profilePersonality = document.getElementById("profile-personality");
-      const profileSpayed = document.getElementById("profile-spayed");
-      const profileVaccinationStatus = document.getElementById("profile-vaccination-status");
-      const profileFoundLocation = document.getElementById("profile-found-location");
-      const profileAllergyHistory = document.getElementById("profile-allergy-history");
-      const profileAdoptionStatus = document.getElementById("profile-adoption-status");
-      const profileDisplayPhoto = document.getElementById("profile-display-photo");
-
-      const contactTitle = document.getElementById("contact-title");
-      const contactSubtitle = document.getElementById("contact-subtitle");
-      const applySubtitle = document.getElementById("apply-subtitle");
-      const contactForm = document.getElementById("contact-form");
-      const applyForm = document.getElementById("apply-form");
-      const applyStatus = document.getElementById("apply-status");
-      const chatThread = document.getElementById("chat-thread");
-      const chatStatusBadge = document.getElementById("chat-status-badge");
-      const chatCatImage = document.getElementById("chat-cat-image");
-      const chatMessageInput = document.getElementById("chat-message-input");
-      const chatImageInput = document.getElementById("chat-image-input");
-      const chatPreview = document.getElementById("chat-preview");
-      const chatApplyLink = document.getElementById("chat-apply-link");
-
-      const contactOrgBtn = document.getElementById("contact-org-btn");
-      const applyAdoptBtn = document.getElementById("apply-adopt-btn");
-
-      const likedCats = [];
-      const conversations = {};
-      let activeCatId = null;
-      let toastTimer = null;
-      let isAnimating = false;
-      let pendingChatImages = [];
-      const likedPreviewLimit = 2;
-
-      function getCurrentCard() {
-        return stack.querySelector(".cat-card:first-child");
-      }
-
-      function getCardId(card) {
-        return card ? card.getAttribute("data-cat-id") : null;
-      }
-
-      function openModal(overlay) {
-        overlay.classList.add("open");
-        overlay.setAttribute("aria-hidden", "false");
-      }
-
-      function closeModal(overlay) {
-        overlay.classList.remove("open");
-        overlay.setAttribute("aria-hidden", "true");
-      }
-
-      function escapeHtml(text) {
-        return String(text)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      }
-
-      function formatTime(value) {
-        const date = typeof value === "string" ? new Date(value) : value;
-        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      }
-
-      function getOrgReply(cat, userMessage) {
-        const lastText = (userMessage.text || "").trim();
-        if (lastText) {
-          return "Thanks for contacting " + cat.rescueOrg + " about " + cat.name + ". We received your message and will review it with the rescue notes before guiding you to the next adoption step.";
-        }
-        return "We received your images for " + cat.name + ". The rescue team will review them and continue the conversation shortly.";
-      }
-
-      function createConversation(cat) {
-        return {
-          status: "Awaiting your message",
-          messages: [
-            {
-              sender: "system",
-              text: "Conversation created for " + cat.name + ". Introduce yourself, share why you are interested, and attach photos if you want to show your home setup.",
-              images: [],
-              time: new Date().toISOString()
-            },
-            {
-              sender: "org",
-              text: "Hello, this is " + cat.rescueOrg + ". Feel free to ask questions about " + cat.name + "'s personality, health status, or adoption requirements.",
-              images: [],
-              time: new Date().toISOString()
-            }
-          ]
-        };
-      }
-
-      function ensureConversation(catId) {
-        if (!conversations[catId]) {
-          conversations[catId] = createConversation(cats[catId]);
-        }
-        return conversations[catId];
-      }
-
-      function renderChatPreview() {
-        if (!pendingChatImages.length) {
-          chatPreview.hidden = true;
-          chatPreview.innerHTML = "";
-          return;
-        }
-
-        chatPreview.hidden = false;
-        chatPreview.innerHTML = pendingChatImages.map(function (image, index) {
-          return [
-            '<div class="chat-preview-item" data-preview-index="' + index + '">',
-            '  <img src="' + image.src + '" alt="' + escapeHtml(image.name) + '">',
-            '  <button type="button" aria-label="Remove image">×</button>',
-            '</div>'
-          ].join("");
-        }).join("");
-      }
-
-      function renderChatThread(catId) {
-        const conversation = ensureConversation(catId);
-        const cat = cats[catId];
-
-        chatCatImage.src = cat.image;
-        chatCatImage.alt = cat.name + " avatar";
-        contactTitle.textContent = "Chat about " + cat.name;
-        contactSubtitle.textContent = cat.rescueOrg + " can review your messages and images before moving the adoption process forward.";
-        chatStatusBadge.textContent = conversation.status;
-
-        chatThread.innerHTML = conversation.messages.map(function (message) {
-          const textHtml = message.text ? '<div class="chat-bubble">' + escapeHtml(message.text).replace(/\n/g, "<br>") + "</div>" : "";
-          const imagesHtml = message.images && message.images.length
-            ? '<div class="chat-images">' + message.images.map(function (image) {
-                return '<img src="' + image.src + '" alt="' + escapeHtml(image.name || "Chat image") + '">';
-              }).join("") + "</div>"
-            : "";
-
-          return [
-            '<div class="chat-message ' + message.sender + '">',
-            textHtml,
-            imagesHtml,
-            '<div class="chat-meta">' + formatTime(message.time) + "</div>",
-            "</div>"
-          ].join("");
-        }).join("");
-
-        chatThread.scrollTop = chatThread.scrollHeight;
-      }
-
-      function resetChatComposer() {
-        chatMessageInput.value = "";
-        chatImageInput.value = "";
-        pendingChatImages = [];
-        renderChatPreview();
-      }
-
-      function renderLikedItem(cat) {
-        return [
-          '<article class="liked-item" data-liked-id="' + cat.id + '">',
-          '  <div class="liked-item-top">',
-          '    <div>',
-          '      <h3>' + cat.name + ' · ' + cat.title + '</h3>',
-          '      <small>' + cat.age + ' · ' + cat.gender + ' · ' + cat.temperament + '</small>',
-          '    </div>',
-          '    <span class="pill-status">Saved</span>',
-          '  </div>',
-          '  <small>' + cat.summary + '</small>',
-          '  <div class="liked-item-actions">',
-          '    <button class="ghost-btn open-liked-profile" type="button">View Full Profile</button>',
-          '    <button class="ghost-btn open-liked-contact" type="button">Contact Organization</button>',
-          '  </div>',
-          '</article>'
-        ].join("");
-      }
-
-      function updateLikedUI() {
-        likedCountTop.textContent = likedCats.length;
-        likedCountSide.textContent = likedCats.length;
-
-        if (!likedCats.length) {
-          likedList.innerHTML = '<div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>';
-          likedFullList.innerHTML = '<div class="empty-state">No liked cats yet. Swipe right on a cat to save it here and continue to profile review.</div>';
-          openLikedListLink.hidden = true;
-          return;
-        }
-
-        likedList.innerHTML = likedCats.slice(0, likedPreviewLimit).map(function (catId) {
-          return renderLikedItem(cats[catId]);
-        }).join("");
-
-        likedFullList.innerHTML = likedCats.map(function (catId) {
-          return renderLikedItem(cats[catId]);
-        }).join("");
-
-        if (likedCats.length > likedPreviewLimit) {
-          openLikedListLink.hidden = false;
-          openLikedListLink.textContent = "Open liked cats list (" + likedCats.length + ")";
-        } else {
-          openLikedListLink.hidden = true;
-        }
-      }
-
-      function showToast(cat) {
-        toastTitle.textContent = cat.name + " was added to your liked cats";
-        toastCopy.textContent = "Open " + cat.name + "'s full account to view profile details, rescue notes, and continue the adoption contact flow.";
-        likeToast.classList.add("show");
-        if (toastTimer) clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () {
-          likeToast.classList.remove("show");
-        }, 5000);
-      }
-
-      function ensureLiked(catId) {
-        if (likedCats.indexOf(catId) === -1) {
-          likedCats.unshift(catId);
-          updateLikedUI();
-        }
-      }
-
-      function renderProfile(catId) {
-        const cat = cats[catId];
-        if (!cat) return;
-        activeCatId = catId;
-
-        profileImage.src = cat.image;
-        profileImage.alt = cat.name + " profile image";
-        profileStatus.textContent = cat.status;
-        profileName.textContent = cat.name;
-        profileShort.textContent = (cat.catId || cat.id.toUpperCase()) + " · " + cat.breed;
-        profileAccountNote.textContent = cat.summary;
-        profileOrg.textContent = "Rescue organization: " + cat.rescueOrg;
-        profileCatId.textContent = cat.catId || cat.id.toUpperCase();
-        profileCatNameValue.textContent = cat.name;
-        profileBreed.textContent = cat.breed;
-        profileGender.textContent = cat.gender;
-        profileAge.textContent = cat.age;
-        profileBirthday.textContent = cat.birthday || "Unknown";
-        profilePersonality.textContent = cat.personalityProfile || cat.temperament;
-        profileSpayed.textContent = cat.spayedNeutered || "Not provided";
-        profileVaccinationStatus.textContent = cat.vaccinationStatus || cat.health;
-        profileFoundLocation.textContent = cat.foundLocation || "Not provided";
-        profileAllergyHistory.textContent = cat.allergyHistory || "No allergy record";
-        profileAdoptionStatus.textContent = cat.status;
-        profileDisplayPhoto.src = cat.image;
-        profileDisplayPhoto.alt = cat.name + " display photo";
-
-        profileTags.innerHTML = cat.tags.map(function (tag) {
-          return "<span>" + tag + "</span>";
-        }).join("");
-      }
-
-      function openProfile(catId) {
-        ensureLiked(catId);
-        renderProfile(catId);
-        openModal(profileOverlay);
-      }
-
-      function openContact(catId) {
-        const cat = cats[catId];
-        if (!cat) return;
-        activeCatId = catId;
-        ensureConversation(catId);
-        resetChatComposer();
-        renderChatThread(catId);
-        openModal(contactOverlay);
-      }
-
-      function openApply(catId) {
-        const cat = cats[catId];
-        if (!cat) return;
-        activeCatId = catId;
-        applySubtitle.textContent = "Submit a formal adoption request for " + cat.name + ". The rescue organization will review your application and continue the process.";
-        applyStatus.classList.remove("show");
-        applyStatus.textContent = "";
-        openModal(applyOverlay);
-      }
-
-      function swipe(direction) {
-        if (isAnimating) return;
-        const current = getCurrentCard();
-        if (!current) return;
-
-        const currentCatId = getCardId(current);
-        isAnimating = true;
-
-        if (direction === "left" && nopeBtn) {
-          nopeBtn.classList.add("is-active");
-          setTimeout(function () {
-            nopeBtn.classList.remove("is-active");
-          }, 260);
-        }
-
-        if (direction === "right" && likeBtn) {
-          likeBtn.classList.add("is-active");
-          setTimeout(function () {
-            likeBtn.classList.remove("is-active");
-          }, 260);
-          ensureLiked(currentCatId);
-          showToast(cats[currentCatId]);
-        }
-
-        current.style.transition = "";
-        current.style.transform = "";
-
-        const cls = direction === "right" ? "swipe-right" : "swipe-left";
-        current.classList.add(cls);
-
-        current.addEventListener("transitionend", function handler() {
-          current.removeEventListener("transitionend", handler);
-          current.classList.remove(cls);
-          current.style.transition = "";
-          current.classList.remove("flipped");
-          stack.appendChild(current);
-          isAnimating = false;
+  function loadLikedFromServer() {
+    fetch(API_BASE_URL + '/adoption/liked', {
+      method: 'GET',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
         });
-      }
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success) return;
+        var list = Array.isArray(payload.data) ? payload.data : [];
+        mergeCatsFromApiList(list, catOrder.length);
+        var serverIds = list.map(function (c) { return c.id; }).filter(Boolean);
+        liked = serverIds.slice();
 
-      nopeBtn.addEventListener("click", function () {
-        swipe("left");
-      });
-
-      likeBtn.addEventListener("click", function () {
-        const current = getCurrentCard();
-        const catId = getCardId(current);
-        swipe("right");
-        activeCatId = catId;
-      });
-
-      openLikedPanelBtn.addEventListener("click", function () {
-        openModal(likedOverlay);
-      });
-
-      openLikedListLink.addEventListener("click", function () {
-        openModal(likedOverlay);
-      });
-
-      toastOpenProfile.addEventListener("click", function () {
-        if (activeCatId) openProfile(activeCatId);
-      });
-
-      toastOpenLiked.addEventListener("click", function () {
-        openModal(likedOverlay);
-      });
-
-      stack.querySelectorAll(".cat-card").forEach(function (card) {
-        const profileButton = card.querySelector(".open-profile-btn");
-        const cardId = getCardId(card);
-
-        if (profileButton) {
-          profileButton.addEventListener("click", function (event) {
-            event.stopPropagation();
-            openProfile(cardId);
-          });
-        }
-
-        card.addEventListener("click", function () {
-          if (isAnimating) return;
-          card.classList.toggle("flipped");
-        });
-
-        let startX = null;
-        let currentX = null;
-        let dragging = false;
-
-        function onPointerDown(event) {
-          if (isAnimating) return;
-          if (event.target.closest(".open-profile-btn")) return;
-          const e = event.touches ? event.touches[0] : event;
-          startX = e.clientX;
-          currentX = startX;
-          dragging = true;
-          card.style.transition = "";
-        }
-
-        function onPointerMove(event) {
-          if (!dragging || isAnimating) return;
-          const e = event.touches ? event.touches[0] : event;
-          currentX = e.clientX;
-          const deltaX = currentX - startX;
-          const current = getCurrentCard();
-
-          if (current !== card) return;
-
-          card.style.transform = "translateX(" + deltaX + "px) rotate(" + (deltaX / 15) + "deg)";
-          card.style.boxShadow = "0 16px 40px rgba(0,0,0,.25)";
-
-          if (event.cancelable) {
-            event.preventDefault();
-          }
-        }
-
-        function onPointerUp() {
-          if (!dragging || isAnimating) return;
-          dragging = false;
-
-          const current = getCurrentCard();
-          if (current !== card) {
-            card.style.transform = "";
-            card.style.boxShadow = "";
-            return;
-          }
-
-          const deltaX = currentX - startX;
-          const threshold = 80;
-
-          if (Math.abs(deltaX) > threshold) {
-            const direction = deltaX > 0 ? "right" : "left";
-            card.style.transform = "";
-            card.style.boxShadow = "";
-            activeCatId = cardId;
-            swipe(direction);
-          } else {
-            card.style.transition = "transform 0.25s ease, box-shadow 0.25s ease";
-            card.style.transform = "translateX(0) rotate(0deg)";
-            card.style.boxShadow = "";
-            card.addEventListener("transitionend", function handle() {
-              card.removeEventListener("transitionend", handle);
-              card.style.transition = "";
+        var hadLocalOnly = false;
+        try {
+          var local = JSON.parse(localStorage.getItem(getLikedStorageKey()) || '[]');
+          if (Array.isArray(local)) {
+            hadLocalOnly = local.some(function (id) {
+              return id && serverIds.indexOf(id) === -1;
             });
           }
-        }
+        } catch (e) {}
 
-        card.addEventListener("mousedown", function (event) {
-          if (event.button !== 0) return;
-          onPointerDown(event);
-          window.addEventListener("mousemove", onPointerMove);
-          window.addEventListener("mouseup", function handleUp(upEvent) {
-            window.removeEventListener("mousemove", onPointerMove);
-            window.removeEventListener("mouseup", handleUp);
-            onPointerUp(upEvent);
-          });
+        mergeLocalLikesIntoServer(serverIds);
+        persistLiked();
+        renderLiked();
+
+        if (hadLocalOnly && !likedSecondFetchScheduled) {
+          likedSecondFetchScheduled = true;
+          setTimeout(function () {
+            loadLikedFromServer();
+          }, 900);
+        }
+      })
+      .catch(function () {});
+  }
+
+  function formatAge(ageMonths) {
+    var months = Number(ageMonths);
+    if (!Number.isFinite(months) || months <= 0) return 'Unknown age';
+    if (months < 12) return months + (months === 1 ? ' month' : ' months');
+    var years = Math.floor(months / 12);
+    var remain = months % 12;
+    if (!remain) return years + (years === 1 ? ' year' : ' years');
+    return years + 'y ' + remain + 'm';
+  }
+
+  function formatGender(gender) {
+    if (gender === 'male') return 'Male';
+    if (gender === 'female') return 'Female';
+    return 'Unknown';
+  }
+
+  function yesNoUnknown(flag) {
+    if (flag === true) return 'Yes';
+    if (flag === false) return 'No';
+    return 'Unknown';
+  }
+
+  function buildTagList(cat, fallbackTag) {
+    var tags = Array.isArray(cat.tags)
+      ? cat.tags.map(function (item) { return item && item.tag ? String(item.tag).trim() : ''; }).filter(Boolean)
+      : [];
+    if (!tags.length && fallbackTag) tags = [fallbackTag];
+    return tags.slice(0, 2);
+  }
+
+  function mapCat(cat, index) {
+    var fallbackImage = FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
+    var note = cat.description || 'No rescue notes have been added yet.';
+    return {
+      id: cat.id,
+      name: cat.name || 'Unnamed Cat',
+      org: cat.organization && cat.organization.name ? cat.organization.name : 'Rescue organization',
+      img: resolveCatImg(cat.photo_url || fallbackImage),
+      age: formatAge(cat.age_months),
+      gender: formatGender(cat.gender),
+      breed: cat.breed || 'Mixed breed',
+      neuter: yesNoUnknown(cat.is_neutered),
+      vaccine: yesNoUnknown(cat.is_vaccinated),
+      found: cat.found_location || 'Not provided',
+      note: note,
+      tags: buildTagList(cat, (cat.status || 'available').replace(/^\w/, function (s) { return s.toUpperCase(); })),
+      status: cat.status || 'available'
+    };
+  }
+
+  function applyFeedList(data) {
+    cats = {};
+    catOrder = [];
+    data.forEach(function (cat, index) {
+      var mapped = mapCat(cat, index);
+      cats[mapped.id] = mapped;
+      catOrder.push(mapped.id);
+    });
+    if (availableCatsCount) availableCatsCount.textContent = String(catOrder.length);
+    renderDeck();
+    renderRecentlyAvailable();
+    renderLiked();
+    loadLikedFromServer();
+  }
+
+  function fetchAvailableCatsFallback() {
+    return fetch(API_BASE_URL + '/cats?status=available', {
+      method: 'GET',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
         });
-
-        card.addEventListener("touchstart", onPointerDown, { passive: false });
-        card.addEventListener("touchmove", onPointerMove, { passive: false });
-        card.addEventListener("touchend", onPointerUp);
-        card.addEventListener("touchcancel", onPointerUp);
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || 'Unable to load available cats.');
+        }
+        return Array.isArray(payload.data) ? payload.data : [];
       });
+  }
 
-      function handleLikedListActions(event) {
-        const item = event.target.closest("[data-liked-id]");
-        if (!item) return;
-        const catId = item.getAttribute("data-liked-id");
+  function renderDeck() {
+    if (!catOrder.length) {
+      stack.innerHTML = [
+        '<div class="cat-card" data-id="empty">',
+        '  <div class="card-overlay"></div>',
+        '  <div class="card-info">',
+        '    <div class="card-name">No available cats yet</div>',
+        '    <div class="card-sub">Once a rescue organization adds an available cat, it will appear here automatically.</div>',
+        '    <div class="card-tags"><span class="card-tag">Database connected</span></div>',
+        '  </div>',
+        '</div>'
+      ].join('');
+      return;
+    }
 
-        if (event.target.closest(".open-liked-profile")) {
-          openProfile(catId);
+    stack.innerHTML = catOrder.map(function (id) {
+      var cat = cats[id];
+      return [
+        '<div class="cat-card" data-id="' + escapeHtml(id) + '">',
+        '  <div class="card-bg"><img src="' + escapeHtml(cat.img) + '" alt="' + escapeHtml(cat.name) + '"></div>',
+        '  <div class="card-overlay"></div>',
+        '  <div class="card-info">',
+        '    <div class="card-name">' + escapeHtml(cat.name) + '</div>',
+        '    <div class="card-sub">' + escapeHtml(cat.age + ' · ' + cat.gender + ' · ' + cat.breed) + '</div>',
+        '    <div class="card-tags">' + cat.tags.map(function (tag) {
+              return '<span class="card-tag">' + escapeHtml(tag) + '</span>';
+            }).join('') + '</div>',
+        '  </div>',
+        '</div>'
+      ].join('');
+    }).join('');
+  }
+
+  function renderRecentlyAvailable() {
+    var items = catOrder.slice(0, 7);
+    if (!items.length) {
+      recentlyAvailableList.innerHTML = [
+        '<div class="rp-row">',
+        '  <div class="rp-row-info">',
+        '    <div class="rp-row-name">No cats yet</div>',
+        '    <div class="rp-row-sub">New rescue cats will appear here.</div>',
+        '  </div>',
+        '  <span class="rp-row-badge">Soon</span>',
+        '</div>'
+      ].join('');
+      return;
+    }
+
+    recentlyAvailableList.innerHTML = items.map(function (id) {
+      var cat = cats[id];
+      return [
+        '<div class="rp-row" data-id="' + escapeHtml(id) + '">',
+        '  <img class="rp-row-img" src="' + escapeHtml(cat.img) + '" alt="' + escapeHtml(cat.name) + '">',
+        '  <div class="rp-row-info">',
+        '    <div class="rp-row-name">' + escapeHtml(cat.name) + '</div>',
+        '    <div class="rp-row-sub">' + escapeHtml(cat.age + ' · ' + cat.gender + ' · ' + cat.breed) + '</div>',
+        '  </div>',
+        '  <span class="rp-row-badge">New</span>',
+        '</div>'
+      ].join('');
+    }).join('');
+  }
+
+  function renderLiked() {
+    likedCount.textContent = liked.length;
+    if (!liked.length) {
+      likedList.innerHTML = '<div class="liked-empty">No liked cats yet. Swipe right to save cats here.</div>';
+      return;
+    }
+    likedList.innerHTML = '<div class="liked-grid">' + liked.map(function(cid){
+      var c = cats[cid];
+      if (!c) return '';
+      return '<div class="liked-item"><div class="liked-item-info"><div class="liked-item-name">' + escapeHtml(c.name) + '</div><div class="liked-item-sub">' + escapeHtml(c.age + ' · ' + c.gender) + '</div></div><div class="liked-item-actions"><button class="liked-item-btn" onclick="openProfile(\'' + escapeHtml(cid) + '\')">View</button><button class="liked-item-btn" type="button" data-cancel-liked="' + escapeHtml(cid) + '">Cancel</button></div></div>';
+    }).join('') + '</div>';
+  }
+
+  function cancelLikedCat(catId) {
+    if (!catId) return;
+    fetch(API_BASE_URL + '/adoption/swipes/' + encodeURIComponent(catId), {
+      method: 'DELETE',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || 'Unable to cancel liked cat.');
         }
-
-        if (event.target.closest(".open-liked-contact")) {
-          openContact(catId);
+        liked = liked.filter(function (id) { return id !== catId; });
+        persistLiked();
+        if (cats[catId] && catOrder.indexOf(catId) === -1) {
+          catOrder.unshift(catId);
         }
+        renderDeck();
+        renderRecentlyAvailable();
+        renderLiked();
+      })
+      .catch(function (error) {
+        alert(error.message || 'Unable to cancel liked cat.');
+      });
+  }
+
+  function formatApplicationStatus(status) {
+    if (status === 'approved') return 'Approved';
+    if (status === 'rejected') return 'Rejected';
+    return 'Pending review';
+  }
+
+  function hasApplicationForCat(catId) {
+    if (!catId) return false;
+    return applications.some(function (application) {
+      return application && application.cat && application.cat.id === catId;
+    });
+  }
+
+  function scrollToApplications(catId) {
+    if (applicationList && typeof applicationList.scrollIntoView === 'function') {
+      applicationList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (!catId) return;
+    window.setTimeout(function () {
+      var target = applicationList && applicationList.querySelector('[data-application-cat="' + catId.replace(/"/g, '\\"') + '"]');
+      if (target && typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
+    }, 160);
+  }
 
-      likedList.addEventListener("click", handleLikedListActions);
-      likedFullList.addEventListener("click", handleLikedListActions);
-
-      contactOrgBtn.addEventListener("click", function () {
-        if (activeCatId) openContact(activeCatId);
-      });
-
-      applyAdoptBtn.addEventListener("click", function () {
-        if (activeCatId) openApply(activeCatId);
-      });
-
-      chatPreview.addEventListener("click", function (event) {
-        const previewItem = event.target.closest("[data-preview-index]");
-        if (!previewItem || !event.target.closest("button")) return;
-        const index = Number(previewItem.getAttribute("data-preview-index"));
-        pendingChatImages.splice(index, 1);
-        renderChatPreview();
-      });
-
-      chatImageInput.addEventListener("change", function (event) {
-        const files = Array.from(event.target.files || []).slice(0, 3);
-        if (!files.length) return;
-
-        Promise.all(files.map(function (file) {
-          return new Promise(function (resolve) {
-            const reader = new FileReader();
-            reader.onload = function () {
-              resolve({ name: file.name, src: reader.result });
-            };
-            reader.readAsDataURL(file);
-          });
-        })).then(function (images) {
-          pendingChatImages = images;
-          renderChatPreview();
+  function openRescueChat(catId) {
+    if (!catId) return Promise.resolve();
+    return fetch(API_BASE_URL + '/chat/conversations', {
+      method: 'POST',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cat_id: catId })
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
         });
-      });
-
-      chatApplyLink.addEventListener("click", function () {
-        if (activeCatId) {
-          closeModal(contactOverlay);
-          openApply(activeCatId);
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success || !payload.data || !payload.data.id) {
+          throw new Error(payload.message || 'Unable to open rescue chat.');
         }
+        window.location.href = '/pages/chat.html?conversation=' + encodeURIComponent(payload.data.id);
       });
+  }
 
-      contactForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-        if (!activeCatId) return;
+  function renderApplications() {
+    if (!applications.length) {
+      applicationList.innerHTML = '<div class="app-empty">No adoption applications yet. Open a cat profile and click "Apply to Adopt" to start one.</div>';
+      return;
+    }
 
-        const conversationCatId = activeCatId;
-        const text = chatMessageInput.value.trim();
-        if (!text && !pendingChatImages.length) return;
+    applicationList.innerHTML = applications.map(function (application) {
+      var cat = application.cat || {};
+      var canCancel = application.status === 'pending';
+      var orgName = cat.organization && cat.organization.name ? cat.organization.name : 'Rescue organization';
+      var reviewedNote = application.reject_note
+        ? 'Review note: ' + application.reject_note
+        : (application.status === 'approved' ? 'Great news! This application has been approved.' : '');
 
-        const conversation = ensureConversation(conversationCatId);
-        const userMessage = {
-          sender: "user",
-          text: text,
-          images: pendingChatImages.slice(),
-          time: new Date().toISOString()
-        };
+      return [
+        '<div class="app-item" data-application-id="' + escapeHtml(application.id) + '" data-application-cat="' + escapeHtml(cat.id || '') + '">',
+        '  <div class="app-item-head">',
+        '    <div class="app-item-name">' + escapeHtml(cat.name || 'Unknown cat') + '</div>',
+        '    <span class="status-chip ' + escapeHtml(application.status || 'pending') + '">' + escapeHtml(formatApplicationStatus(application.status)) + '</span>',
+        '  </div>',
+        '  <div class="app-item-sub">Rescue: ' + escapeHtml(orgName) + '</div>',
+        '  <div class="app-item-sub">Submitted: ' + escapeHtml(new Date(application.created_at).toLocaleString()) + '</div>',
+        reviewedNote ? '  <div class="app-item-sub">' + escapeHtml(reviewedNote) + '</div>' : '',
+        '  <div class="app-item-actions">',
+        '    <button class="liked-item-btn" type="button" data-open-application-cat="' + escapeHtml(cat.id || '') + '">View Cat</button>',
+        (cat.id ? '    <button class="liked-item-btn" type="button" data-open-application-chat="' + escapeHtml(cat.id) + '">Contact Rescue</button>' : ''),
+        canCancel ? '    <button class="liked-item-btn" type="button" data-cancel-application="' + escapeHtml(application.id) + '">Cancel Request</button>' : '',
+        '  </div>',
+        '</div>'
+      ].join('');
+    }).join('');
+  }
 
-        conversation.messages.push(userMessage);
-        conversation.status = "Waiting for rescue reply";
-        renderChatThread(conversationCatId);
-        resetChatComposer();
+  function loadApplications() {
+    applicationList.innerHTML = '<div class="app-empty">Loading your application history...</div>';
+    fetch(API_BASE_URL + '/adoption/applications/me', {
+      method: 'GET',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || 'Unable to load application history.');
+        }
+        applications = Array.isArray(payload.data) ? payload.data : [];
+        renderApplications();
+      })
+      .catch(function (error) {
+        applicationList.innerHTML = '<div class="app-empty">' + escapeHtml(error.message || 'Unable to load application history.') + '</div>';
+      });
+  }
 
-        window.setTimeout(function () {
-          const cat = cats[conversationCatId];
-          conversation.messages.push({
-            sender: "org",
-            text: getOrgReply(cat, userMessage),
-            images: [],
-            time: new Date().toISOString()
+  function loadFeed() {
+    stack.innerHTML = [
+      '<div class="cat-card" data-id="loading">',
+      '  <div class="card-overlay"></div>',
+      '  <div class="card-info">',
+      '    <div class="card-name">Loading cats...</div>',
+      '    <div class="card-sub">Fetching the latest adoption feed from the database.</div>',
+      '    <div class="card-tags"><span class="card-tag">Please wait</span></div>',
+      '  </div>',
+      '</div>'
+    ].join('');
+
+    fetch(API_BASE_URL + '/adoption/feed?limit=30', {
+      method: 'GET',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        var data = Array.isArray(payload.data) ? payload.data : [];
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || 'Unable to load adoption feed.');
+        }
+        if (data.length) {
+          applyFeedList(data);
+          return null;
+        }
+        return fetchAvailableCatsFallback().then(applyFeedList);
+      })
+      .catch(function (error) {
+        fetchAvailableCatsFallback()
+          .then(applyFeedList)
+          .catch(function (fallbackError) {
+            stack.innerHTML = [
+              '<div class="cat-card" data-id="error">',
+              '  <div class="card-overlay"></div>',
+              '  <div class="card-info">',
+              '    <div class="card-name">Unable to load cats</div>',
+              '    <div class="card-sub">' + escapeHtml(fallbackError.message || error.message || 'Database feed is unavailable right now.') + '</div>',
+              '    <div class="card-tags"><span class="card-tag">Retry later</span></div>',
+              '  </div>',
+              '</div>'
+            ].join('');
+            recentlyAvailableList.innerHTML = [
+              '<div class="rp-row">',
+              '  <div class="rp-row-info">',
+              '    <div class="rp-row-name">Feed unavailable</div>',
+              '    <div class="rp-row-sub">Could not load recent cats from the database.</div>',
+              '  </div>',
+              '  <span class="rp-row-badge">Error</span>',
+              '</div>'
+            ].join('');
           });
-          conversation.status = "Conversation active";
-          if (activeCatId === conversationCatId) {
-            renderChatThread(conversationCatId);
-          }
-        }, 900);
       });
+  }
 
-      applyForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-        const cat = cats[activeCatId];
-        applyStatus.textContent = "Your adoption application for " + cat.name + " has been submitted. Current status: Submitted. The rescue organization will review your information before arranging further contact.";
-        applyStatus.classList.add("show");
-        applyForm.reset();
+  function currentCard(){ return stack.querySelector('.cat-card:first-child'); }
+
+  function swipe(dir){
+    if(animating) return;
+    var card = currentCard();
+    if(!card || card.dataset.id === 'loading' || card.dataset.id === 'empty' || card.dataset.id === 'error') return;
+    animating = true;
+    var id = card.dataset.id;
+    if(dir==='right'){ addLiked(id); showToast(id); }
+    recordSwipeOnServer(id, dir === 'right');
+    card.classList.add(dir==='right'?'swipe-right':'swipe-left');
+    card.addEventListener('transitionend',function h(){
+      card.removeEventListener('transitionend',h);
+      card.classList.remove('swipe-right','swipe-left');
+      stack.appendChild(card);
+      animating=false;
+    });
+  }
+
+  function addLiked(id){
+    if(liked.indexOf(id)!==-1) return;
+    liked.push(id);
+    persistLiked();
+    renderLiked();
+  }
+
+  window.openProfile = function(id){
+    var cat=cats[id];
+    if (!cat) return;
+    active=id;
+    document.getElementById('profileImg').src=resolveCatImg(cat.img);
+    document.getElementById('profileName').textContent=cat.name;
+    document.getElementById('profileOrg').textContent='Rescue: '+cat.org;
+    document.getElementById('profileNote').textContent=cat.note;
+    document.getElementById('profileInfoGrid').innerHTML=
+      '<div class="info-row"><div class="info-label">Age</div><div class="info-value">'+cat.age+'</div></div>'+
+      '<div class="info-row"><div class="info-label">Gender</div><div class="info-value">'+cat.gender+'</div></div>'+
+      '<div class="info-row"><div class="info-label">Breed</div><div class="info-value">'+cat.breed+'</div></div>'+
+      '<div class="info-row"><div class="info-label">Neutered</div><div class="info-value">'+cat.neuter+'</div></div>'+
+      '<div class="info-row"><div class="info-label">Vaccine</div><div class="info-value">'+cat.vaccine+'</div></div>'+
+      '<div class="info-row"><div class="info-label">Found at</div><div class="info-value">'+cat.found+'</div></div>';
+    modal.classList.add('open');
+  };
+
+  function showToast(id){
+    var cat=cats[id];
+    if (!cat) return;
+    document.getElementById('toastText').textContent=cat.name+' saved to liked cats!';
+    toast.classList.add('show');
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){toast.classList.remove('show');},4000);
+    document.getElementById('toastViewBtn').onclick=function(){openProfile(id);};
+  }
+
+  document.getElementById('nopeBtn').onclick=function(){swipe('left');};
+  document.getElementById('likeBtn').onclick=function(){
+    var id=currentCard()&&currentCard().dataset.id;
+    swipe('right');
+    active=id;
+  };
+  document.getElementById('modalClose').onclick=function(){modal.classList.remove('open');};
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('open');});
+  likedList.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest ? e.target.closest('[data-cancel-liked]') : null;
+    if (!btn || !likedList.contains(btn)) return;
+    cancelLikedCat(String(btn.getAttribute('data-cancel-liked') || '').trim());
+  });
+  document.getElementById('contactBtn').onclick=function(){
+    if (!active || !cats[active]) return;
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+      alert('Please log in first.');
+      window.location.href = '/pages/log-in.html';
+      return;
+    }
+    try {
+      window.localStorage.setItem('catface_contact_rescue_cat', active);
+    } catch (e) {}
+    var hasApplied = hasApplicationForCat(active);
+    modal.classList.remove('open');
+    openRescueChat(active)
+      .then(function () {
+        if (!hasApplied) {
+          alert('You can chat with rescue first. To proceed with adoption review, please also submit "Apply to Adopt" for ' + cats[active].name + '.');
+        }
+      })
+      .catch(function (error) {
+        alert(error.message || 'Unable to open rescue chat.');
       });
-
-      document.querySelectorAll("[data-close]").forEach(function (button) {
-        button.addEventListener("click", function () {
-          const targetId = button.getAttribute("data-close");
-          const target = document.getElementById(targetId);
-          if (target) closeModal(target);
+  };
+  document.getElementById('applyBtn').onclick=function(){
+    if (!active || !cats[active]) return;
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+      alert('Please log in first.');
+      window.location.href = '/pages/log-in.html';
+      return;
+    }
+    try {
+      window.localStorage.setItem('catface_pending_adoption_cat', active);
+    } catch (e) {}
+    var applyBtn = document.getElementById('applyBtn');
+    if (applyBtn) applyBtn.disabled = true;
+    fetch(API_BASE_URL + '/adoption/applications', {
+      method: 'POST',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cat_id: active,
+        message: 'Submitted from the Adoption page.'
+      })
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
         });
-      });
-
-      [profileOverlay, likedOverlay, contactOverlay, applyOverlay].forEach(function (overlay) {
-        overlay.addEventListener("click", function (event) {
-          if (event.target === overlay) {
-            closeModal(overlay);
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success) {
+          if (response.ok === false && payload && payload.error === 'ValidationError') {
+            loadApplications();
+            scrollToApplications(active);
           }
-        });
+          throw new Error(payload.message || 'Unable to submit adoption request.');
+        }
+        alert('Application submitted for ' + cats[active].name + '. You can now track it in "My Applications".');
+        modal.classList.remove('open');
+        loadApplications();
+        scrollToApplications(active);
+      })
+      .catch(function (error) {
+        alert(error.message || 'Unable to submit adoption request.');
+      })
+      .finally(function () {
+        if (applyBtn) applyBtn.disabled = false;
       });
+  };
 
-      updateLikedUI();
-      const firstCard = getCurrentCard();
-      if (firstCard) {
-        activeCatId = getCardId(firstCard);
+  // Click card to open profile
+  stack.addEventListener('click', function(e){
+    var card = e.target.closest('.cat-card');
+    if(!card || animating) return;
+    // only open if it's the top card (first-child)
+    if(card !== currentCard()) return;
+    openProfile(card.dataset.id);
+  });
+
+  recentlyAvailableList.addEventListener('click', function(e){
+    var row = e.target.closest('.rp-row[data-id]');
+    if (!row) return;
+    openProfile(row.dataset.id);
+  });
+
+  applicationList.addEventListener('click', function (e) {
+    var openBtn = e.target.closest('[data-open-application-cat]');
+    if (openBtn) {
+      openProfile(openBtn.getAttribute('data-open-application-cat'));
+      return;
+    }
+
+    var chatBtn = e.target.closest('[data-open-application-chat]');
+    if (chatBtn) {
+      openRescueChat(chatBtn.getAttribute('data-open-application-chat')).catch(function (error) {
+        alert(error.message || 'Unable to open rescue chat.');
+      });
+      return;
+    }
+
+    var cancelBtn = e.target.closest('[data-cancel-application]');
+    if (!cancelBtn) return;
+    var appId = cancelBtn.getAttribute('data-cancel-application');
+    if (!appId) return;
+    if (!window.confirm('Cancel this pending adoption request?')) return;
+
+    fetch(API_BASE_URL + '/adoption/applications/' + encodeURIComponent(appId), {
+      method: 'DELETE',
+      headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' }
+    })
+      .then(function (res) {
+        return res.json().then(function (payload) {
+          return { ok: res.ok, payload: payload };
+        });
+      })
+      .then(function (response) {
+        var payload = response.payload || {};
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || 'Unable to cancel application.');
+        }
+        alert('Application cancelled successfully.');
+        loadApplications();
+      })
+      .catch(function (error) {
+        alert(error.message || 'Unable to cancel application.');
+      });
+  });
+
+  if (openLikedCatsBtn) {
+    openLikedCatsBtn.addEventListener('click', function () {
+      var section = document.querySelector('.liked-section');
+      if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  if (openPreferencesBtn) {
+    openPreferencesBtn.addEventListener('click', function () {
+      window.location.href = '/pages/account.html';
+    });
+  }
+
+  // Drag support
+  (function(){
+    var startX, startTime, dragging=false, moved=false;
+    stack.addEventListener('mousedown',function(e){startX=e.clientX;startTime=Date.now();dragging=true;moved=false;});
+    window.addEventListener('mousemove',function(e){
+      if(!dragging||animating) return;
+      var d=e.clientX-startX;
+      if(Math.abs(d)>6) moved=true;
+      var card=currentCard();
+      if(card&&moved){card.style.transform='translateX('+d+'px) rotate('+(d/15)+'deg)';}
+    });
+    window.addEventListener('mouseup',function(e){
+      if(!dragging) return;
+      dragging=false;
+      var card=currentCard();
+      if(!card) return;
+      var d=e.clientX-startX;
+      card.style.transform='';
+      if(Math.abs(d)>80){
+        active=card.dataset.id;
+        swipe(d>0?'right':'left');
       }
-    })();
-  </script>
+      // if barely moved, let the click handler deal with it
+      moved=false;
+    });
+  })();
+
+  restoreLiked();
+  renderLiked();
+  loadFeed();
+  loadApplications();
+})();
+</script>
+<script>
+  (function () {
+    var user = null;
+    try {
+      user = JSON.parse(localStorage.getItem('catface_user') || 'null');
+    } catch (e) {}
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+      alert('Please log in first');
+      window.location.href = '/pages/log-in.html';
+      return;
+    }
+    var heroName = document.querySelector('.nav-hero-name');
+    var heroStatus = document.querySelector('.nav-hero-status');
+    var navName = document.querySelector('.u-name');
+    var navHandle = document.querySelector('.u-handle');
+    if (heroName) heroName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+    if (heroStatus) heroStatus.innerHTML = '<span class="status-dot"></span> ' + (user ? ('Logged in · ' + (user.username || '')) : 'Not logged in');
+    if (navName) navName.textContent = user ? (user.display_name || user.username || 'User') : 'Guest';
+    if (navHandle) navHandle.textContent = user ? ('@' + (user.username || '')) : 'Log in to continue';
+    var unreadCount = 0;
+    try {
+      var badgeCountKey = 'catface_notifications_badge_count_v1_' + ((user && user.id) || 'guest');
+      unreadCount = Math.max(0, parseInt(localStorage.getItem(badgeCountKey) || '0', 10) || 0);
+    } catch (e) {}
+    document.querySelectorAll('[data-notif-badge]').forEach(function (badge) {
+      if (unreadCount <= 0) {
+        badge.style.display = 'none';
+      } else {
+        badge.style.display = '';
+        badge.textContent = String(unreadCount);
+      }
+    });
+  })();
+</script>
 </body>
 </html>

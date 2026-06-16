@@ -17,6 +17,11 @@ async function getHealthRecords(req, res) {
       }),
       prisma.ownerHealthRecord.findMany({
         where: { cat_id: catId },
+        include: {
+          endorsements: {
+            include: { organization: { select: { id: true, name: true } } }
+          }
+        },
         orderBy: { date: 'desc' }
       }),
       prisma.clinicHealthReport.findMany({
@@ -153,19 +158,25 @@ async function deleteOwnerHealthRecord(req, res) {
   }
 }
 
-// GET /api/health/share/:catId
-// 获取某只猫的诊所授权列表
-async function getSharePermissions(req, res) {
+// GET /api/health/clinics
+// 获取所有诊所列表（供用户选择授权诊所）
+async function getClinicList(req, res) {
   try {
-    const { catId } = req.params;
-
-    const permissions = await prisma.healthSharePermission.findMany({
-      where: { cat_id: catId }
+    const orgs = await prisma.organization.findMany({
+      where: { type: 'clinic' },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        phone: true,
+        is_verified: true
+      },
+      orderBy: { name: 'asc' }
     });
 
-    return res.json({ success: true, data: permissions, message: '获取授权列表成功' });
+    return res.json({ success: true, data: orgs, message: '获取诊所列表成功' });
   } catch (error) {
-    console.error('getSharePermissions error:', error);
+    console.error('getClinicList error:', error);
     return res.status(500).json({ success: false, error: 'ServerError', message: '服务器错误' });
   }
 }
@@ -183,7 +194,7 @@ async function setHealthSharePermission(req, res) {
         message: '无法识别当前用户，请重新登录'
       });
     }
-    const { cat_id, org_id, is_allowed } = req.body;
+    const { cat_id, org_id, is_allowed, permission_type, expires_at, note } = req.body;
 
     if (!cat_id || !org_id || typeof is_allowed !== 'boolean') {
       return res.status(422).json({
@@ -193,10 +204,33 @@ async function setHealthSharePermission(req, res) {
       });
     }
 
+    const VALID_PERMISSION_TYPES = ['full', 'read_only'];
+    if (permission_type && !VALID_PERMISSION_TYPES.includes(permission_type)) {
+      return res.status(422).json({
+        success: false,
+        error: 'ValidationError',
+        message: `permission_type 必须是以下之一：${VALID_PERMISSION_TYPES.join(', ')}`
+      });
+    }
+
     const permission = await prisma.healthSharePermission.upsert({
       where:  { cat_id_org_id: { cat_id, org_id } },
-      update: { user_id: userId, is_allowed },
-      create: { cat_id, user_id: userId, org_id, is_allowed }
+      update: {
+        user_id: userId,
+        is_allowed,
+        permission_type: permission_type || 'full',
+        expires_at: expires_at ? new Date(expires_at) : null,
+        note: note || null
+      },
+      create: {
+        cat_id,
+        user_id: userId,
+        org_id,
+        is_allowed,
+        permission_type: permission_type || 'full',
+        expires_at: expires_at ? new Date(expires_at) : null,
+        note: note || null
+      }
     });
 
     return res.json({ success: true, data: permission, message: '授权设置成功' });
@@ -206,11 +240,35 @@ async function setHealthSharePermission(req, res) {
   }
 }
 
+// GET /api/health/share/:catId
+// 获取某只猫的诊所授权列表（含诊所详情）
+async function getSharePermissions(req, res) {
+  try {
+    const { catId } = req.params;
+
+    const permissions = await prisma.healthSharePermission.findMany({
+      where: { cat_id: catId },
+      include: {
+        cat: { select: { name: true } },
+        user: { select: { username: true, display_name: true } },
+        org: { select: { id: true, name: true, type: true, phone: true, is_verified: true } }
+      },
+      orderBy: { updated_at: 'desc' }
+    });
+
+    return res.json({ success: true, data: permissions, message: '获取授权列表成功' });
+  } catch (error) {
+    console.error('getSharePermissions error:', error);
+    return res.status(500).json({ success: false, error: 'ServerError', message: '服务器错误' });
+  }
+}
+
 module.exports = {
   getHealthRecords,
   createOwnerHealthRecord,
   updateOwnerHealthRecord,
   deleteOwnerHealthRecord,
+  getClinicList,
   getSharePermissions,
   setHealthSharePermission
 };

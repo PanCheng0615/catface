@@ -21,6 +21,7 @@ model User {
   password     String
   username     String   @unique
   display_name String?
+  has_cat      Boolean  @default(false)
   avatar_url   String?
   bio          String?
   role         Role     @default(user)
@@ -42,6 +43,8 @@ model User {
   conversations_as_org     Conversation[]          @relation("org_conversations") // 以机构账号身份参与的对话
   sent_messages            Message[] // 该用户发送的消息
   reviewed_applications    AdoptionApplication[]   @relation("reviewer") // 该用户（机构工作人员）审核过的申请
+  adoption_swipes         AdoptionSwipe[] // 领养推荐页滑动记录（喜欢 / 跳过）
+  notification_reads       NotificationRead[]      // 通知已读记录
 
   @@map("users")
 }
@@ -54,7 +57,7 @@ enum Role {
 }
 
 // ─────────────────────────────────────────
-// Member 3 — 关注关系
+// Member 3 — 关注关系 & 通知
 // ─────────────────────────────────────────
 
 model UserFollow {
@@ -71,7 +74,7 @@ model UserFollow {
 }
 
 // ─────────────────────────────────────────
-// Member 5 — 救助机构 / 诊所
+// Member 5 — 救助机构 / 诊所 / 健康管理
 // ─────────────────────────────────────────
 
 model Organization {
@@ -89,9 +92,11 @@ model Organization {
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
-  cats            Cat[] // 该机构登记的猫咪档案
-  clinic_reports  ClinicHealthReport[] // 该机构上传的诊所健康报告
-  adoption_events AdoptionEvent[] // 该机构举办的领养活动
+  cats            Cat[]
+  clinic_reports  ClinicHealthReport[]
+  endorsements    ClinicRecordEndorsement[]
+  adoption_events AdoptionEvent[]
+  health_share_permissions HealthSharePermission[]
 
   @@map("organizations")
 }
@@ -101,25 +106,14 @@ enum OrgType {
   clinic
 }
 
-// ─────────────────────────────────────────
-// Member 5 — 领养活动（对应 Excel 中的"届"）
-// ─────────────────────────────────────────
-
 model AdoptionEvent {
   id          String    @id @default(uuid())
-  // 活动名称，例如"第2届领养会"
   name        String
-  // 活动届次编号，例如 2、3、4，允许为空
   edition     Int?
-  // 活动开始日期
   start_date  DateTime
-  // 活动结束日期，允许为空（单日活动可不填）
   end_date    DateTime?
-  // 活动地点，允许为空
   location    String?
-  // 活动说明，允许为空
   description String?
-  // 举办该活动的机构 ID，允许为空（独立活动可不绑定机构）
   org_id      String?
   created_at  DateTime  @default(now())
   updated_at  DateTime  @updatedAt
@@ -133,11 +127,12 @@ model AdoptionEvent {
 
 // ─────────────────────────────────────────
 // Member 2 — 猫咪档案 + 领养模块
+// Member 4 — 猫脸识别特征表
 // ─────────────────────────────────────────
 
 model Cat {
-  id             String     @id @default(uuid())
   // 猫咪名字，必填
+  id             String     @id @default(uuid())
   name           String
   // 猫脸识别生成的人类可读编号，允许为空；用于跨页面展示和人工核对
   face_code      String?    @unique
@@ -185,27 +180,37 @@ model Cat {
   owner_health_records     OwnerHealthRecord[] // 猫主人记录的健康档案
   clinic_reports           ClinicHealthReport[] // 诊所上传的官方健康报告
   health_share_permissions HealthSharePermission[] // 健康数据共享授权记录
+  adoption_swipes          AdoptionSwipe[] // 领养推荐页滑动记录
 
   @@map("cats")
 }
 
-// 猫咪性别枚举
 enum CatGender {
   male // 公猫
   female // 母猫
   unknown // 性别未知（幼猫或未确认）
 }
 
-// 猫咪状态枚举
-// available: 可领养，展示在领养列表中
-// adopted: 已领养，不再展示但保留档案
-// fostered: 寄养中，暂时不对外开放领养
-// deceased: 已离世，仅作历史记录保留
 enum CatStatus {
   available
   adopted
   fostered
   deceased
+}
+
+// 领养推荐页：用户对某只猫的滑动结果
+model AdoptionSwipe {
+  id         String   @id @default(uuid())
+  user_id    String
+  cat_id     String
+  liked      Boolean
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, cat_id])
+  @@map("adoption_swipes")
 }
 
 model CatFaceEmbedding {
@@ -227,6 +232,7 @@ model CatFaceEmbedding {
   @@index([cat_id])
   @@map("cat_face_embeddings")
 }
+
 model CatTag {
   id         String   @id @default(uuid())
   cat_id     String
@@ -267,6 +273,13 @@ model AdopterPreference {
   preferred_age    String?
   preferred_gender String?
   preferred_breed  String?
+  preferred_color String?  // 偏好毛色，如 "orange"、"black"、"calico"
+  accept_special_need Boolean?
+  home_type        String?
+  home_environment String?
+  personality_tags Json?
+  has_other_pets   Boolean?
+  has_children     Boolean?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
@@ -314,11 +327,26 @@ model Post {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  user     User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  likes    PostLike[]
-  comments Comment[]
+  user       User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  likes      PostLike[]
+  comments   Comment[]
+  moderation PostModeration?
 
   @@map("posts")
+}
+
+model PostModeration {
+  id                    String   @id @default(uuid())
+  post_id               String   @unique
+  final_decision        String
+  final_primary_label   String
+  final_secondary_label String
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@map("post_moderations")
 }
 
 model PostLike {
@@ -370,6 +398,11 @@ enum ClinicReportType {
   other
 }
 
+enum SharePermissionType {
+  full
+  read_only
+}
+
 model OwnerHealthRecord {
   id            String            @id @default(uuid())
   cat_id        String
@@ -387,20 +420,26 @@ model OwnerHealthRecord {
 
   cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  endorsements ClinicRecordEndorsement[]
 
   @@map("owner_health_records")
 }
 
 model ClinicHealthReport {
-  id          String           @id @default(uuid())
-  cat_id      String
-  org_id      String
-  report_type ClinicReportType
-  description String
-  file_url    String?
-  date        DateTime
-  created_at  DateTime         @default(now())
-  updated_at  DateTime         @updatedAt
+  id             String           @id @default(uuid())
+  cat_id         String
+  org_id         String
+  report_type    ClinicReportType
+  description    String
+  findings       String?
+  recommendations String?
+  vet_name       String?
+  vet_license    String?
+  org_name       String?
+  file_url       String?
+  date           DateTime
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
 
   cat          Cat          @relation(fields: [cat_id], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
@@ -408,17 +447,36 @@ model ClinicHealthReport {
   @@map("clinic_health_reports")
 }
 
+model ClinicRecordEndorsement {
+  id            String   @id @default(uuid())
+  record_id     String
+  org_id        String
+  endorsement   String
+  note          String?
+  created_at    DateTime @default(now())
+
+  record     OwnerHealthRecord @relation(fields: [record_id], references: [id], onDelete: Cascade)
+  organization Organization      @relation(fields: [org_id], references: [id], onDelete: Cascade)
+
+  @@unique([record_id, org_id])
+  @@map("clinic_record_endorsements")
+}
+
 model HealthSharePermission {
-  id         String   @id @default(uuid())
-  cat_id     String
-  user_id    String
-  org_id     String
-  is_allowed Boolean  @default(false)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id             String             @id @default(uuid())
+  cat_id         String
+  user_id        String
+  org_id         String
+  permission_type SharePermissionType @default(full)
+  is_allowed     Boolean            @default(false)
+  expires_at     DateTime?
+  note           String?
+  created_at     DateTime           @default(now())
+  updated_at     DateTime           @updatedAt
 
   cat  Cat  @relation(fields: [cat_id], references: [id], onDelete: Cascade)
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  org  Organization @relation(fields: [org_id], references: [id], onDelete: Cascade)
 
   @@unique([cat_id, org_id])
   @@map("health_share_permissions")
@@ -466,4 +524,20 @@ model MessageAttachment {
   message Message @relation(fields: [message_id], references: [id], onDelete: Cascade)
 
   @@map("message_attachments")
+}
+
+// ─────────────────────────────────────────
+// Member 3 — 通知已读记录
+// ─────────────────────────────────────────
+
+model NotificationRead {
+  id         String   @id @default(uuid())
+  user_id    String
+  notif_id   String
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, notif_id])
+  @@map("notification_reads")
 }

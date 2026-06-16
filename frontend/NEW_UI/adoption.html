@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CatFace · Adoption</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF; --surface-2: #FDFAF6;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4; --border-light: #F3E8D8; --like-color: #E05B73;
+      --radius-lg: 16px; --radius-md: 12px; --radius-sm: 8px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+
+    /* LEFT NAV */
+    .left-nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; background: var(--surface); border-right: 1px solid var(--border); }
+    .left-nav::-webkit-scrollbar { display: none; }
+    .nav-hero { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 100%); padding: 18px 16px 16px; position: relative; overflow: hidden; flex-shrink: 0; }
+    .nav-hero::after { content: '🐱'; position: absolute; right: 10px; top: 8px; font-size: 48px; opacity: .15; line-height: 1; pointer-events: none; }
+    .nav-hero-logo { font-size: 13px; font-weight: 800; letter-spacing: .5px; color: rgba(255,255,255,.75); text-transform: uppercase; margin-bottom: 12px; }
+    .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
+    .nav-hero-avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.22); border: 2.5px solid rgba(255,255,255,.55); color: #fff; display: grid; place-items: center; font-size: 19px; flex-shrink: 0; }
+    .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
+    .nav-hero-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; cursor: pointer; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #86EFAC; flex-shrink: 0; }
+    .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--text-sub); transition: background .15s, color .15s; cursor: pointer; }
+    .nav-link:hover { background: var(--brand-light); color: var(--brand); }
+    .nav-link.active { background: var(--brand-light); color: var(--brand); font-weight: 700; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; }
+    .n-label { flex: 1; }
+    .n-badge { background: var(--like-color); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px; }
+    .n-soon { font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--bg); padding: 2px 7px; border-radius: 99px; }
+    .btn-new-post { margin: 14px 10px 0; padding: 12px 0; border-radius: 12px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; transition: background .15s, transform .12s; }
+    .btn-new-post:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .nav-user { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--border-light); cursor: pointer; transition: background .15s; }
+    .nav-user:hover { background: var(--surface-2); }
+    .nav-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--brand-light); border: 2px solid var(--border); color: var(--brand); display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); }
+    .u-handle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .nav-user-more { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
+
+    /* CENTER */
+    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; display: flex; flex-direction: column; }
+    .center-header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); padding: 16px 20px; }
+    .center-header h2 { font-size: 18px; font-weight: 800; }
+    .center-header p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .adoption-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 20px; gap: 20px; }
+    .flow-pills { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .flow-pill { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 99px; background: var(--brand-light); color: var(--brand); font-size: 12px; font-weight: 700; border: 1.5px solid var(--brand); }
+    .flow-sep { color: var(--text-muted); font-size: 12px; align-self: center; }
+    .deck-area { position: relative; width: 100%; max-width: 460px; height: 580px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 20px; }
+    .card-stack { position: relative; width: 100%; height: 520px; }
+    .cat-card { position: absolute; inset: 0; border-radius: 24px; box-shadow: 0 12px 40px rgba(0,0,0,.16); cursor: pointer; overflow: hidden; }
+    .cat-card:nth-child(1) { transform: translate(0,-10px) scale(1); z-index: 9; }
+    .cat-card:nth-child(2) { transform: translate(0,8px) scale(.96); opacity: .9; z-index: 8; }
+    .cat-card:nth-child(3) { transform: translate(0,22px) scale(.92); opacity: .7; z-index: 7; }
+    .cat-card:nth-child(4) { transform: translate(0,36px) scale(.88); opacity: .5; z-index: 6; }
+    .cat-card:nth-child(5) { transform: translate(0,50px) scale(.84); opacity: .3; z-index: 5; }
+    .cat-card:nth-child(6) { transform: translate(0,62px) scale(.80); opacity: .22; z-index: 4; }
+    .cat-card:nth-child(7) { transform: translate(0,72px) scale(.76); opacity: .16; z-index: 3; }
+    .cat-card:nth-child(8) { transform: translate(0,82px) scale(.72); opacity: .11; z-index: 2; }
+    .cat-card:nth-child(9) { transform: translate(0,92px) scale(.68); opacity: .07; z-index: 1; }
+    .cat-card.swipe-left { transition: transform .32s ease-out, opacity .32s ease-out; transform: translateX(-140%) rotate(-18deg); opacity: 0; }
+    .cat-card.swipe-right { transition: transform .32s ease-out, opacity .32s ease-out; transform: translateX(140%) rotate(18deg); opacity: 0; }
+    .card-bg { position: absolute; inset: 0; }
+    .card-bg img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.82); }
+    .card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,.75) 100%); }
+    .card-info { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; color: #fff; }
+    .card-name { font-size: 24px; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,.5); }
+    .card-sub { font-size: 13px; opacity: .9; margin-top: 4px; text-shadow: 0 1px 4px rgba(0,0,0,.4); }
+    .card-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .card-tag { padding: 4px 10px; border-radius: 99px; background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.35); font-size: 11px; color: #fff; }
+    .swipe-btns { display: flex; gap: 28px; }
+    .swipe-btn { width: 62px; height: 62px; border-radius: 50%; border: none; background: #fff; box-shadow: 0 6px 18px rgba(0,0,0,.18); font-size: 26px; display: grid; place-items: center; transition: transform .15s; }
+    .swipe-btn:hover { transform: scale(1.08); }
+    .swipe-btn.nope { color: var(--brand); }
+    .swipe-btn.like { color: #2ecc71; }
+    .swipe-hint { font-size: 13px; color: var(--text-muted); text-align: center; }
+
+    /* liked sidebar section */
+    .liked-section { padding: 20px 24px 24px; border-top: 1px solid var(--border); background: var(--surface-2); }
+    .liked-section h3 { font-size: 16px; font-weight: 800; margin-bottom: 14px; }
+    .liked-empty { font-size: 14px; color: var(--text-muted); padding: 20px 16px; border: 1.5px dashed var(--border); border-radius: 14px; text-align: center; line-height: 1.6; }
+    .liked-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+    .liked-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,.04); transition: box-shadow .15s; }
+    .liked-item:hover { box-shadow: 0 4px 14px rgba(0,0,0,.09); }
+    .liked-item-img { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+    .liked-item-info { flex: 1; min-width: 0; }
+    .liked-item-name { font-size: 14px; font-weight: 700; }
+    .liked-item-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .liked-item-btn { padding: 7px 14px; border-radius: 99px; border: 1.5px solid var(--brand); color: var(--brand); background: none; font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .liked-item-btn:hover { background: var(--brand); color: #fff; }
+
+    /* RIGHT PANEL */
+    .right-panel { padding: 20px 0 20px 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; scrollbar-width: none; }
+    .right-panel::-webkit-scrollbar { display: none; }
+    .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+    .rp-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+    .rp-row:last-child { border-bottom: none; }
+    .rp-row-img { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; flex-shrink: 0; background: var(--brand-light); }
+    .rp-row-info { flex: 1; }
+    .rp-row-name { font-size: 13px; font-weight: 700; }
+    .rp-row-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .rp-row-badge { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; background: #ecfdf3; color: #027a48; flex-shrink: 0; }
+    .rp-info-block { padding: 16px 18px; }
+    .rp-info-block h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+    .rp-info-block ol { padding-left: 18px; font-size: 13px; color: var(--text-muted); line-height: 1.8; }
+    .rp-stat-row { display: flex; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .rp-stat { flex: 1; text-align: center; }
+    .rp-stat-num { font-size: 20px; font-weight: 800; color: var(--brand); }
+    .rp-stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .rescue-card { background: #fff8e6; border: 1px solid #f59e0b; border-radius: 18px; padding: 16px 18px; display: flex; gap: 12px; align-items: center; cursor: pointer; transition: background .15s; }
+    .rescue-card:hover { background: #fef3c7; }
+    .rescue-icon { font-size: 28px; }
+    .rescue-title { font-size: 14px; font-weight: 700; color: #92400e; }
+    .rescue-sub { font-size: 12px; color: #b45309; }
+    .rescue-arrow { margin-left: auto; font-size: 20px; color: #d97706; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(17,24,39,.56); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 120; }
+    .modal-overlay.open { display: flex; }
+    .modal { width: min(820px,100%); max-height: 88vh; overflow: auto; background: #fff; border-radius: 24px; box-shadow: 0 24px 60px rgba(0,0,0,.2); position: relative; }
+    .modal-close { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border: none; border-radius: 50%; background: var(--bg); color: var(--text); cursor: pointer; font-size: 18px; z-index: 5; }
+    .profile-grid { display: grid; grid-template-columns: 280px 1fr; }
+    .profile-left { background: #18100A; color: #fff; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+    .profile-left img { width: 100%; aspect-ratio: 1/1.05; object-fit: cover; border-radius: 18px; }
+    .profile-badge { display: inline-flex; padding: 6px 12px; border-radius: 99px; background: #86EFAC; color: #14532d; font-size: 12px; font-weight: 700; align-self: flex-start; }
+    .profile-right { padding: 28px; display: flex; flex-direction: column; gap: 18px; }
+    .profile-right h2 { font-size: 22px; font-weight: 800; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .info-row { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; background: var(--surface-2); border-radius: 12px; border: 1px solid var(--border); }
+    .info-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+    .info-value { font-size: 14px; font-weight: 700; color: var(--text); }
+    .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-primary { padding: 11px 22px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; cursor: pointer; transition: background .15s; }
+    .btn-primary:hover { background: var(--brand-hover); }
+    .btn-ghost { padding: 11px 22px; border-radius: 99px; background: none; border: 1.5px solid var(--border); color: var(--text-sub); font-size: 14px; font-weight: 700; cursor: pointer; transition: border-color .15s; }
+    .btn-ghost:hover { border-color: var(--brand); color: var(--brand); }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; background: #18100A; color: #fff; border-radius: 16px; padding: 14px 18px; font-size: 14px; display: none; align-items: center; gap: 12px; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,.3); }
+    .toast.show { display: flex; }
+    .toast-btn { padding: 6px 14px; border-radius: 99px; border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff; font-size: 13px; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <!-- LEFT NAV -->
+  <nav class="left-nav">
+    <div class="nav-hero">
+      <div class="nav-hero-logo">CatFace</div>
+      <div class="nav-hero-profile">
+        <div class="nav-hero-avatar">&#x1F464;</div>
+        <div>
+          <div class="nav-hero-name">Demo User</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Logged in · LV001</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-link" onclick="location.href='index.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+      <div class="nav-link active"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="location.href='notifications.html'"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge">3</span></div>
+      <div class="nav-link" onclick="location.href='account.html'"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
+    </div>
+    <button class="btn-new-post" onclick="location.href='index.html'">+ New Post</button>
+    <div class="nav-user" onclick="location.href='account.html'">
+      <div class="nav-avatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name">Demo User</div><div class="u-handle">@LV001</div></div>
+      <span class="nav-user-more">&#x2026;</span>
+    </div>
+  </nav>
+
+  <!-- CENTER -->
+  <div class="center">
+    <div class="center-header">
+      <h2>&#x1F431; Adoption</h2>
+      <p>Swipe right to like · Click card to flip · Like to start the adoption process</p>
+    </div>
+    <div class="adoption-body">
+      <div class="deck-area">
+        <div class="card-stack" id="cardStack">
+          <div class="cat-card" data-id="um_luno">
+            <div class="card-bg"><img src="assets/adoption/luno-blep.png" alt="Luno"></div>
+            <div class="card-overlay"></div>
+            <div class="card-info">
+              <div class="card-name">Luno</div>
+              <div class="card-sub">3 months · Male · Heterochromia · UM campus</div>
+              <div class="card-tags"><span class="card-tag">Gentle</span><span class="card-tag">Unique eyes</span></div>
+            </div>
+          </div>
+          <div class="cat-card" data-id="um_marmalade">
+            <div class="card-bg"><img src="assets/adoption/orange-cage.png" alt="Marmalade"></div>
+            <div class="card-overlay"></div>
+            <div class="card-info">
+              <div class="card-name">Marmalade</div>
+              <div class="card-sub">~4 months · Female · Orange &amp; white · UM foster</div>
+              <div class="card-tags"><span class="card-tag">Sweet</span><span class="card-tag">Indoor-ready</span></div>
+            </div>
+          </div>
+          <div class="cat-card" data-id="um_luna">
+            <div class="card-bg"><img src="assets/adoption/luna-hetero.png" alt="Luna"></div>
+            <div class="card-overlay"></div>
+            <div class="card-info">
+              <div class="card-name">Luna</div>
+              <div class="card-sub">3 months · Female · Ginger &amp; white · Heterochromia</div>
+              <div class="card-tags"><span class="card-tag">Curious</span><span class="card-tag">UM rescue</span></div>
+            </div>
+          </div>
+          <div class="cat-card" data-id="um_bean">
+            <div class="card-bg"><img src="assets/adoption/tabby-white.png" alt="Bean"></div>
+            <div class="card-overlay"></div>
+            <div class="card-info">
+              <div class="card-name">Bean</div>
+              <div class="card-sub">3 months · Male · Tabby &amp; white · Playful</div>
+              <div class="card-tags"><span class="card-tag">People-friendly</span><span class="card-tag">Active</span></div>
+            </div>
+          </div>
+          <div class="cat-card" data-id="orange">
+            <div class="card-bg"><img src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=800&q=80" alt="Orange"></div>
+            <div class="card-overlay"></div>
+            <div class="card-info">
+              <div class="card-name">Orange</div>
+              <div class="card-sub">1 year · Male · Affectionate · Vaccinated</div>
+              <div class="card-tags"><span class="card-tag">Friendly</span><span class="card-tag">Good for First-Time Owners</span></div>
+            </div>
+          </div>
+          <div class="cat-card" data-id="shadow">
+            <div class="card-bg"><img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&q=80" alt="Shadow"></div>
+            <div class="card-overlay"></div>
+            <div class="card-info">
+              <div class="card-name">Shadow</div>
+              <div class="card-sub">3 years · Male · Shy at first · Vaccinated</div>
+              <div class="card-tags"><span class="card-tag">Cat Experience Preferred</span></div>
+            </div>
+          </div>
+          <div class="cat-card" data-id="tiger">
+            <div class="card-bg"><img src="https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800&q=80" alt="Tiger"></div>
+            <div class="card-overlay"></div>
+            <div class="card-info">
+              <div class="card-name">Tiger</div>
+              <div class="card-sub">6 months · Male · Playful · Neutered</div>
+              <div class="card-tags"><span class="card-tag">Good with Kids</span><span class="card-tag">Very Active</span></div>
+            </div>
+          </div>
+          <div class="cat-card" data-id="whiskers">
+            <div class="card-bg"><img src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=800&q=80" alt="Whiskers"></div>
+            <div class="card-overlay"></div>
+            <div class="card-info">
+              <div class="card-name">Whiskers</div>
+              <div class="card-sub">8 years · Female · Calm · Senior</div>
+              <div class="card-tags"><span class="card-tag">Quiet Home</span><span class="card-tag">Good for Seniors</span></div>
+            </div>
+          </div>
+          <div class="cat-card" data-id="snow">
+            <div class="card-bg"><img src="https://images.unsplash.com/photo-1517331156700-3c241d2b4d83?w=800&q=80" alt="Snow"></div>
+            <div class="card-overlay"></div>
+            <div class="card-info">
+              <div class="card-name">Snow</div>
+              <div class="card-sub">1 month · Female · Persian Mix</div>
+              <div class="card-tags"><span class="card-tag">Needs Grooming</span><span class="card-tag">Quiet Environment</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="swipe-btns">
+          <button class="swipe-btn nope" id="nopeBtn">&#x2715;</button>
+          <button class="swipe-btn like" id="likeBtn">&#x2665;</button>
+        </div>
+      </div>
+      <p class="swipe-hint">Click card to view details · Drag or use buttons to swipe</p>
+    </div>
+    <!-- Liked list at bottom -->
+    <div class="liked-section">
+      <h3>&#x2665; Liked Cats (<span id="likedCount">0</span>)</h3>
+      <div id="likedList"><div class="liked-empty">No liked cats yet. Swipe right to save cats here.</div></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+    <div class="rp-card">
+      <div class="rp-stat-row">
+        <div class="rp-stat"><div class="rp-stat-num">52</div><div class="rp-stat-label">Available cats</div></div>
+        <div class="rp-stat"><div class="rp-stat-num">12</div><div class="rp-stat-label">Adopted this month</div></div>
+      </div>
+      <div class="rp-info-block">
+        <h4>Adoption flow</h4>
+        <ol>
+          <li>Like a cat you're interested in</li>
+          <li>Open the full cat profile</li>
+          <li>Contact the rescue organization</li>
+          <li>Submit a formal adoption application</li>
+        </ol>
+      </div>
+    </div>
+    <div class="rp-card">
+      <div class="rp-card-title">&#x1F4CB; Recently Available</div>
+      <div class="rp-row"><img class="rp-row-img" src="assets/adoption/luno-blep.png" alt="Luno"><div class="rp-row-info"><div class="rp-row-name">Luno</div><div class="rp-row-sub">3 mo · Male · Heterochromia</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row"><img class="rp-row-img" src="assets/adoption/orange-cage.png" alt="Marmalade"><div class="rp-row-info"><div class="rp-row-name">Marmalade</div><div class="rp-row-sub">~4 mo · Female · UM foster</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row"><img class="rp-row-img" src="assets/adoption/luna-hetero.png" alt="Luna"><div class="rp-row-info"><div class="rp-row-name">Luna</div><div class="rp-row-sub">3 mo · Female · Unique eyes</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row"><img class="rp-row-img" src="assets/adoption/tabby-white.png" alt="Bean"><div class="rp-row-info"><div class="rp-row-name">Bean</div><div class="rp-row-sub">3 mo · Male · Tabby &amp; white</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row"><img class="rp-row-img" src="https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=100&q=80" alt="Orange"><div class="rp-row-info"><div class="rp-row-name">Orange</div><div class="rp-row-sub">1 yr · Male · Friendly</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row"><img class="rp-row-img" src="https://images.unsplash.com/photo-1517331156700-3c241d2b4d83?w=100&q=80" alt="Snow"><div class="rp-row-info"><div class="rp-row-name">Snow</div><div class="rp-row-sub">1 month · Female · Persian</div></div><span class="rp-row-badge">New</span></div>
+      <div class="rp-row"><img class="rp-row-img" src="https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=100&q=80" alt="Whiskers"><div class="rp-row-info"><div class="rp-row-name">Whiskers</div><div class="rp-row-sub">8 yrs · Female · Senior</div></div><span class="rp-row-badge">&#x2665; Senior</span></div>
+    </div>
+    <div class="rescue-card">
+      <span class="rescue-icon">&#x1F691;</span>
+      <div><div class="rescue-title">Rescue Dashboard</div><div class="rescue-sub">2 strays reported nearby</div></div>
+      <span class="rescue-arrow">&#x203A;</span>
+    </div>
+  </aside>
+</div>
+
+<!-- Profile Modal -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">&#x2715;</button>
+    <div class="profile-grid">
+      <div class="profile-left">
+        <img id="profileImg" src="" alt="">
+        <span class="profile-badge">&#x2705; Available</span>
+        <div style="color:rgba(255,255,255,.8);font-size:13px;line-height:1.6;" id="profileNote"></div>
+      </div>
+      <div class="profile-right">
+        <div>
+          <h2 id="profileName"></h2>
+          <p style="color:var(--text-muted);font-size:13px;margin-top:4px;" id="profileOrg"></p>
+        </div>
+        <div class="info-grid" id="profileInfoGrid"></div>
+        <div class="modal-actions">
+          <button class="btn-primary" id="contactBtn">Contact Rescue</button>
+          <button class="btn-ghost" id="applyBtn">Apply to Adopt</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toastText">Saved!</span>
+  <button class="toast-btn" id="toastViewBtn">View Profile</button>
+</div>
+
+<script>
+(function(){
+  var cats = {
+    um_luno:      { name:'Luno', org:'University of Macau (UM) Cat Care', img:'assets/adoption/luno-blep.png', age:'3 months', gender:'Male', breed:'Tabby & white (heterochromia)', neuter:'Pending age', vaccine:'In progress', found:'UM campus', note:'Quiet and curious; one blue eye and one amber. Loves pets and treats. Deworming completed.' },
+    um_marmalade: { name:'Marmalade', org:'University of Macau (UM) Cat Care', img:'assets/adoption/orange-cage.png', age:'~4 months', gender:'Female', breed:'Orange & white tabby', neuter:'Pending', vaccine:'In progress', found:'UM foster / temp cage', note:'Bright orange markings with white chest; calm in foster. Looking for a stable indoor home.' },
+    um_luna:      { name:'Luna', org:'University of Macau (UM) Cat Care', img:'assets/adoption/luna-hetero.png', age:'3 months', gender:'Female', breed:'Ginger & white (heterochromia)', neuter:'Pending age', vaccine:'In progress', found:'UM campus', note:'Striking mismatched eyes and soft personality. Raised alongside other UM rescues.' },
+    um_bean:      { name:'Bean', org:'University of Macau (UM) Cat Care', img:'assets/adoption/tabby-white.png', age:'3 months', gender:'Male', breed:'Tabby & white', neuter:'Pending age', vaccine:'In progress', found:'UM campus', note:'Alert and curious; tabby cap with white muzzle. Enjoys people and playtime.' },
+    orange:   { name:'Orange', org:'XX District Stray Cat Rescue', img:'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?w=600&q=80', age:'1 year', gender:'Male', breed:'Domestic Shorthair', neuter:'Yes', vaccine:'Completed', found:'Market district', note:'A rescue-center favorite with a gentle temperament and strong interest in people.' },
+    shadow:   { name:'Shadow', org:'Shadow Park Foster Network', img:'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&q=80', age:'3 years', gender:'Male', breed:'Tuxedo Cat', neuter:'Yes', vaccine:'Vaccinated', found:'Park-side', note:'A calm tuxedo cat who needs patience and rewards trust with deep attachment.' },
+    tiger:    { name:'Tiger', org:'XX Animal Shelter', img:'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=600&q=80', age:'6 months', gender:'Male', breed:'Tabby Shorthair', neuter:'Yes', vaccine:'In progress', found:'Shelter intake', note:'A young kitten with high energy and strong play needs.' },
+    whiskers: { name:'Whiskers', org:'XX Senior Cat Rescue', img:'https://images.unsplash.com/photo-1573865526739-10659fec78a5?w=600&q=80', age:'8 years', gender:'Female', breed:'Domestic Shorthair', neuter:'Yes', vaccine:'Senior review', found:'Owner transition', note:'A mature companion cat who prefers slow routines and quiet affection.' },
+    snow:     { name:'Snow', org:'XX Cat Rescue', img:'https://images.unsplash.com/photo-1517331156700-3c241d2b4d83?w=600&q=80', age:'1 month', gender:'Female', breed:'Persian Mix', neuter:'No', vaccine:'First dose done', found:'Owner surrender', note:'A very young kitten who needs attentive care and regular grooming.' }
+  };
+  var liked = [], active = null, animating = false, toastTimer;
+  var stack = document.getElementById('cardStack');
+  var likedCount = document.getElementById('likedCount');
+  var likedList = document.getElementById('likedList');
+  var modal = document.getElementById('profileModal');
+  var toast = document.getElementById('toast');
+
+  function currentCard(){ return stack.querySelector('.cat-card:first-child'); }
+
+  function swipe(dir){
+    if(animating) return;
+    var card = currentCard();
+    if(!card) return;
+    animating = true;
+    var id = card.dataset.id;
+    if(dir==='right'){ addLiked(id); showToast(id); }
+    card.classList.add(dir==='right'?'swipe-right':'swipe-left');
+    card.addEventListener('transitionend',function h(){
+      card.removeEventListener('transitionend',h);
+      card.classList.remove('swipe-right','swipe-left');
+      stack.appendChild(card);
+      animating=false;
+    });
+  }
+
+  function addLiked(id){
+    if(liked.indexOf(id)!==-1) return;
+    liked.push(id);
+    likedCount.textContent=liked.length;
+    likedList.innerHTML='<div class="liked-grid">'+liked.map(function(cid){
+      var c=cats[cid];
+      return '<div class="liked-item"><img class="liked-item-img" src="'+c.img+'" alt="'+c.name+'"><div class="liked-item-info"><div class="liked-item-name">'+c.name+'</div><div class="liked-item-sub">'+c.age+' · '+c.gender+'</div></div><button class="liked-item-btn" onclick="openProfile(\''+cid+'\')">View</button></div>';
+    }).join('')+'</div>';
+  }
+
+  window.openProfile = function(id){
+    var cat=cats[id];
+    active=id;
+    document.getElementById('profileImg').src=cat.img;
+    document.getElementById('profileName').textContent=cat.name;
+    document.getElementById('profileOrg').textContent='Rescue: '+cat.org;
+    document.getElementById('profileNote').textContent=cat.note;
+    document.getElementById('profileInfoGrid').innerHTML=
+      '<div class="info-row"><div class="info-label">Age</div><div class="info-value">'+cat.age+'</div></div>'+
+      '<div class="info-row"><div class="info-label">Gender</div><div class="info-value">'+cat.gender+'</div></div>'+
+      '<div class="info-row"><div class="info-label">Breed</div><div class="info-value">'+cat.breed+'</div></div>'+
+      '<div class="info-row"><div class="info-label">Neutered</div><div class="info-value">'+cat.neuter+'</div></div>'+
+      '<div class="info-row"><div class="info-label">Vaccine</div><div class="info-value">'+cat.vaccine+'</div></div>'+
+      '<div class="info-row"><div class="info-label">Found at</div><div class="info-value">'+cat.found+'</div></div>';
+    modal.classList.add('open');
+  };
+
+  function showToast(id){
+    var cat=cats[id];
+    document.getElementById('toastText').textContent=cat.name+' saved to liked cats!';
+    toast.classList.add('show');
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){toast.classList.remove('show');},4000);
+    document.getElementById('toastViewBtn').onclick=function(){openProfile(id);};
+  }
+
+  document.getElementById('nopeBtn').onclick=function(){swipe('left');};
+  document.getElementById('likeBtn').onclick=function(){
+    var id=currentCard()&&currentCard().dataset.id;
+    swipe('right');
+    active=id;
+  };
+  document.getElementById('modalClose').onclick=function(){modal.classList.remove('open');};
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.classList.remove('open');});
+  document.getElementById('contactBtn').onclick=function(){alert('Contact '+cats[active].org+' about '+cats[active].name+'.\n\n(In the real app, this opens a chat window.)');};
+  document.getElementById('applyBtn').onclick=function(){alert('Adoption application for '+cats[active].name+' submitted!\n\n(In the real app, this opens the application form.)');};
+
+  // Click card to open profile
+  stack.addEventListener('click', function(e){
+    var card = e.target.closest('.cat-card');
+    if(!card || animating) return;
+    // only open if it's the top card (first-child)
+    if(card !== currentCard()) return;
+    openProfile(card.dataset.id);
+  });
+
+  // Drag support
+  (function(){
+    var startX, startTime, dragging=false, moved=false;
+    stack.addEventListener('mousedown',function(e){startX=e.clientX;startTime=Date.now();dragging=true;moved=false;});
+    window.addEventListener('mousemove',function(e){
+      if(!dragging||animating) return;
+      var d=e.clientX-startX;
+      if(Math.abs(d)>6) moved=true;
+      var card=currentCard();
+      if(card&&moved){card.style.transform='translateX('+d+'px) rotate('+(d/15)+'deg)';}
+    });
+    window.addEventListener('mouseup',function(e){
+      if(!dragging) return;
+      dragging=false;
+      var card=currentCard();
+      if(!card) return;
+      var d=e.clientX-startX;
+      card.style.transform='';
+      if(Math.abs(d)>80){
+        active=card.dataset.id;
+        swipe(d>0?'right':'left');
+      }
+      // if barely moved, let the click handler deal with it
+      moved=false;
+    });
+  })();
+})();
+</script>
+</body>
+</html>

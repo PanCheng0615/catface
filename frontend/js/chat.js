@@ -285,7 +285,7 @@ window.__CATFACE_EXTERNAL_ADOPTION__ = true;
   function mapRemoteMessage(message) {
     const senderRole = message.sender && message.sender.role;
     return {
-      sender: senderRole === "rescue_staff" ? "org" : "user",
+      sender: senderRole === "user" ? "user" : "org",
       text: message.content || "",
       images: Array.isArray(message.attachments)
         ? message.attachments.map(function (attachment) {
@@ -301,7 +301,7 @@ window.__CATFACE_EXTERNAL_ADOPTION__ = true;
 
   async function loadRemoteConversation(catId) {
     const cat = cats[catId];
-    if (!getToken() || !cat.org_id) {
+    if (!getToken()) {
       return null;
     }
 
@@ -309,7 +309,7 @@ window.__CATFACE_EXTERNAL_ADOPTION__ = true;
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify({
-        org_id: cat.org_id
+        cat_id: cat.id
       })
     });
 
@@ -563,29 +563,19 @@ window.__CATFACE_EXTERNAL_ADOPTION__ = true;
       throw new Error("Missing remote conversation");
     }
 
-    if (images.length) {
-      await apiRequest("/chat/conversations/" + conversationId + "/upload", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          content: text,
-          attachments: images.map(function (image) {
-            return {
-              file_url: image.src,
-              file_type: "image"
-            };
-          })
+    await apiRequest("/chat/conversations/" + conversationId + "/messages", {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        content: text,
+        attachments: images.map(function (image) {
+          return {
+            file_url: image.src,
+            file_type: "image/*"
+          };
         })
-      });
-    } else {
-      await apiRequest("/chat/conversations/" + conversationId + "/messages", {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify({
-          content: text
-        })
-      });
-    }
+      })
+    });
 
     localConversations[catId] = await loadRemoteConversation(catId);
   }

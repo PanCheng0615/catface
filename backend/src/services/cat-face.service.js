@@ -9,9 +9,36 @@ const execFileAsync = promisify(execFile);
 
 const PROJECT_ROOT = path.join(__dirname, '../..');
 const FACE_SCRIPT_PATH = path.join(PROJECT_ROOT, 'scripts/kam_face_service.py');
-const FACE_PYTHON_BIN = fsSync.existsSync(path.join(PROJECT_ROOT, '.venv-catface-id/bin/python'))
-  ? path.join(PROJECT_ROOT, '.venv-catface-id/bin/python')
-  : 'python3';
+
+function resolvePythonRuntime() {
+  const envPython = process.env.KAM_FACE_PYTHON_BIN
+    ? path.resolve(PROJECT_ROOT, process.env.KAM_FACE_PYTHON_BIN)
+    : null;
+  const venvWindowsPython = path.join(PROJECT_ROOT, '.venv-catface-id', 'Scripts', 'python.exe');
+  const venvUnixPython = path.join(PROJECT_ROOT, '.venv-catface-id', 'bin', 'python');
+  const directCandidates = [envPython, venvWindowsPython, venvUnixPython].filter(Boolean);
+
+  for (const candidate of directCandidates) {
+    if (fsSync.existsSync(candidate)) {
+      return {
+        command: candidate,
+        argsPrefix: []
+      };
+    }
+  }
+
+  if (process.platform === 'win32') {
+    return {
+      command: 'py',
+      argsPrefix: ['-3']
+    };
+  }
+
+  return {
+    command: 'python3',
+    argsPrefix: []
+  };
+}
 
 function decodeImageDataUrl(imageDataUrl) {
   const match = String(imageDataUrl || '').match(/^data:(.+?);base64,(.+)$/);
@@ -48,10 +75,38 @@ async function withTempImage(imageDataUrl, callback) {
 
 async function runKamFaceInference(imageDataUrl) {
   return withTempImage(imageDataUrl, async (imagePath) => {
-    const { stdout, stderr } = await execFileAsync(FACE_PYTHON_BIN, [FACE_SCRIPT_PATH, imagePath], {
-      cwd: PROJECT_ROOT,
-      maxBuffer: 1024 * 1024 * 20
-    });
+    const runtime = resolvePythonRuntime();
+    let stdout;
+    let stderr;
+
+    try {
+      const result = await execFileAsync(runtime.command, [...runtime.argsPrefix, FACE_SCRIPT_PATH, imagePath], {
+        cwd: PROJECT_ROOT,
+        maxBuffer: 1024 * 1024 * 20
+      });
+      stdout = result.stdout;
+      stderr = result.stderr;
+    } catch (error) {
+      const combinedMessage = [error.message, error.stderr, error.stdout]
+        .filter(Boolean)
+        .join('\n')
+        .trim();
+      const runtimeError = new Error(
+        combinedMessage || 'Python runtime for cat face recognition is unavailable.'
+      );
+      if (
+        error.code === 'ENOENT' ||
+        /Unable to create process/i.test(combinedMessage) ||
+        /CommandNotFoundException/i.test(combinedMessage)
+      ) {
+        runtimeError.code = 'PythonRuntimeMissing';
+        runtimeError.message =
+          'Cat face recognition requires a working Python runtime. Install Python, create `backend/.venv-catface-id`, and install `KAM_Face_pipeline_demo/requirements.txt`.';
+      } else {
+        runtimeError.code = error.code || 'PythonExecutionFailed';
+      }
+      throw runtimeError;
+    }
 
     let payload;
 

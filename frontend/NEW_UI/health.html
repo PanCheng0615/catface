@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CatFace · Health Records</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand: #C8702A; --brand-hover: #A85820; --brand-light: #FDF0D8;
+      --accent: #E8B050; --bg: #F7F2EC; --surface: #FFFFFF; --surface-2: #FDFAF6;
+      --text: #18100A; --text-sub: #6B4E2A; --text-muted: #A87848;
+      --border: #EAD9C4; --border-light: #F3E8D8; --like-color: #E05B73;
+      --radius-lg: 16px; --radius-md: 12px; --radius-sm: 8px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; } button { font: inherit; cursor: pointer; }
+    .layout { display: grid; grid-template-columns: 252px minmax(0,1fr) 308px; max-width: 1200px; margin: 0 auto; min-height: 100vh; }
+
+    /* LEFT NAV */
+    .left-nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; scrollbar-width: none; background: var(--surface); border-right: 1px solid var(--border); }
+    .left-nav::-webkit-scrollbar { display: none; }
+    .nav-hero { background: linear-gradient(160deg, var(--brand) 0%, var(--accent) 100%); padding: 18px 16px 16px; position: relative; overflow: hidden; flex-shrink: 0; }
+    .nav-hero::after { content: '🐱'; position: absolute; right: 10px; top: 8px; font-size: 48px; opacity: .15; line-height: 1; pointer-events: none; }
+    .nav-hero-logo { font-size: 13px; font-weight: 800; letter-spacing: .5px; color: rgba(255,255,255,.75); text-transform: uppercase; margin-bottom: 12px; }
+    .nav-hero-profile { display: flex; align-items: center; gap: 10px; }
+    .nav-hero-avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.22); border: 2.5px solid rgba(255,255,255,.55); color: #fff; display: grid; place-items: center; font-size: 19px; flex-shrink: 0; }
+    .nav-hero-name { font-size: 15px; font-weight: 800; color: #fff; }
+    .nav-hero-status { display: flex; align-items: center; gap: 5px; font-size: 12px; color: rgba(255,255,255,.75); margin-top: 3px; cursor: pointer; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #86EFAC; flex-shrink: 0; }
+    .nav-section { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px 0; }
+    .nav-link { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--text-sub); transition: background .15s, color .15s; cursor: pointer; }
+    .nav-link:hover { background: var(--brand-light); color: var(--brand); }
+    .nav-link.active { background: var(--brand-light); color: var(--brand); font-weight: 700; }
+    .n-icon { font-size: 19px; width: 24px; text-align: center; flex-shrink: 0; } .n-label { flex: 1; }
+    .n-badge { background: var(--like-color); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 99px; }
+    .n-soon { font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--bg); padding: 2px 7px; border-radius: 99px; }
+    .btn-new-post { margin: 14px 10px 0; padding: 12px 0; border-radius: 12px; background: var(--brand); color: #fff; font-size: 14px; font-weight: 700; border: none; transition: background .15s, transform .12s; }
+    .btn-new-post:hover { background: var(--brand-hover); transform: translateY(-1px); }
+    .nav-user { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-top: 1px solid var(--border-light); cursor: pointer; transition: background .15s; }
+    .nav-user:hover { background: var(--surface-2); }
+    .nav-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--brand-light); border: 2px solid var(--border); color: var(--brand); display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
+    .u-name { font-size: 13px; font-weight: 700; color: var(--text); } .u-handle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+    .nav-user-more { color: var(--text-muted); font-size: 16px; flex-shrink: 0; }
+
+    /* CENTER */
+    .center { border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--surface); min-height: 100vh; overflow-y: auto; }
+    .center-header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(18px); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .center-header-left h2 { font-size: 18px; font-weight: 800; }
+    .center-header-left p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .btn-add { padding: 9px 18px; border-radius: 99px; background: var(--brand); color: #fff; font-size: 13px; font-weight: 700; border: none; cursor: pointer; transition: background .15s; white-space: nowrap; }
+    .btn-add:hover { background: var(--brand-hover); }
+    .health-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .cat-banner { background: linear-gradient(135deg, #FDF0D8 0%, #F7F2EC 100%); border: 1px solid var(--border); border-radius: 18px; padding: 16px 20px; display: flex; align-items: center; gap: 14px; }
+    .cat-banner-img { width: 56px; height: 56px; border-radius: 14px; object-fit: cover; background: var(--brand-light); flex-shrink: 0; display: grid; place-items: center; font-size: 28px; }
+    .cat-banner-info h3 { font-size: 17px; font-weight: 800; }
+    .cat-banner-info p { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .cat-banner-stats { margin-left: auto; display: flex; gap: 16px; }
+    .cat-banner-stat { text-align: center; }
+    .cat-banner-stat-num { font-size: 18px; font-weight: 800; color: var(--brand); }
+    .cat-banner-stat-label { font-size: 11px; color: var(--text-muted); }
+    .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .section-card-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .section-card-title { font-size: 15px; font-weight: 700; }
+    .btn-outline { padding: 7px 14px; border-radius: 99px; border: 1.5px solid var(--brand); color: var(--brand); background: none; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s; }
+    .btn-outline:hover { background: var(--brand); color: #fff; }
+    .vaccine-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border-light); }
+    .vaccine-item:last-child { border-bottom: none; }
+    .vaccine-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .vaccine-dot.done { background: #22c55e; }
+    .vaccine-dot.due { background: #f59e0b; }
+    .vaccine-dot.overdue { background: #ef4444; }
+    .vaccine-name { flex: 1; font-size: 14px; font-weight: 600; }
+    .vaccine-date { font-size: 13px; color: var(--text-muted); }
+    .vaccine-badge { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+    .vaccine-badge.done { background: #ecfdf3; color: #027a48; }
+    .vaccine-badge.due { background: #fff8e6; color: #b45309; }
+    .vaccine-badge.overdue { background: #fef2f2; color: #dc2626; }
+    .record-item { display: flex; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border-light); }
+    .record-item:last-child { border-bottom: none; }
+    .record-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--brand-light); display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
+    .record-info { flex: 1; }
+    .record-title { font-size: 14px; font-weight: 700; }
+    .record-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; line-height: 1.5; }
+    .record-date { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .share-row { padding: 14px 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .share-btn { flex: 1; padding: 11px 0; border-radius: 12px; text-align: center; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: background .15s; }
+    .share-btn.primary { background: var(--brand); color: #fff; }
+    .share-btn.primary:hover { background: var(--brand-hover); }
+    .share-btn.ghost { background: none; border: 1.5px solid var(--border); color: var(--text-sub); }
+    .share-btn.ghost:hover { border-color: var(--brand); color: var(--brand); }
+
+    /* RIGHT PANEL */
+    .right-panel { padding: 20px 0 20px 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; scrollbar-width: none; }
+    .right-panel::-webkit-scrollbar { display: none; }
+    .rp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+    .rp-card-title { font-size: 17px; font-weight: 800; padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+    .rp-info-block { padding: 14px 18px; font-size: 13px; color: var(--text-muted); line-height: 1.8; }
+    .clinic-row { display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+    .clinic-row:last-child { border-bottom: none; }
+    .clinic-row:hover { background: var(--bg); }
+    .clinic-icon { font-size: 22px; width: 38px; height: 38px; border-radius: 12px; background: #eff6ff; display: grid; place-items: center; flex-shrink: 0; }
+    .clinic-info { flex: 1; }
+    .clinic-name { font-size: 13px; font-weight: 700; }
+    .clinic-sub { font-size: 12px; color: var(--text-muted); }
+    .clinic-arrow { color: var(--text-muted); font-size: 16px; }
+    .next-appt { background: linear-gradient(135deg, #fff8e6, #fef3c7); border: 1px solid #f59e0b; border-radius: 18px; padding: 16px 18px; }
+    .next-appt h4 { font-size: 14px; font-weight: 700; color: #92400e; margin-bottom: 8px; }
+    .next-appt p { font-size: 13px; color: #b45309; line-height: 1.5; }
+    .next-appt-date { font-size: 18px; font-weight: 800; color: var(--brand); margin-top: 8px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <!-- LEFT NAV -->
+  <nav class="left-nav">
+    <div class="nav-hero">
+      <div class="nav-hero-logo">CatFace</div>
+      <div class="nav-hero-profile">
+        <div class="nav-hero-avatar">&#x1F464;</div>
+        <div>
+          <div class="nav-hero-name">Demo User</div>
+          <div class="nav-hero-status"><span class="status-dot"></span> Logged in · LV001</div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-link" onclick="location.href='index.html'"><span class="n-icon">&#x1F4AC;</span><span class="n-label">Community</span></div>
+      <div class="nav-link" onclick="location.href='adoption.html'"><span class="n-icon">&#x1F431;</span><span class="n-label">Adoption</span></div>
+      <div class="nav-link" onclick="location.href='notifications.html'"><span class="n-icon">&#x1F514;</span><span class="n-label">Notifications</span><span class="n-badge">3</span></div>
+      <div class="nav-link" onclick="location.href='account.html'"><span class="n-icon">&#x1F464;</span><span class="n-label">Account</span></div>
+      <div class="nav-link" style="opacity:.5;cursor:default;"><span class="n-icon">&#x1F6CD;&#xFE0F;</span><span class="n-label">Store</span><span class="n-soon">Soon</span></div>
+    </div>
+    <button class="btn-new-post" onclick="location.href='index.html'">+ New Post</button>
+    <div class="nav-user" onclick="location.href='account.html'">
+      <div class="nav-avatar">&#x1F464;</div>
+      <div style="flex:1;min-width:0;"><div class="u-name">Demo User</div><div class="u-handle">@LV001</div></div>
+      <span class="nav-user-more">&#x2026;</span>
+    </div>
+  </nav>
+
+  <!-- CENTER -->
+  <div class="center">
+    <div class="center-header">
+      <div class="center-header-left">
+        <h2>&#x1FA7A; Health Records</h2>
+        <p>Accessed from <span onclick="location.href='account.html'" style="color:var(--brand);cursor:pointer;">Account</span> · Manage your cat's medical history</p>
+      </div>
+      <button class="btn-add">+ Add Record</button>
+    </div>
+    <div class="health-body">
+      <!-- Cat Banner -->
+      <div class="cat-banner">
+        <div class="cat-banner-img">&#x1F431;</div>
+        <div class="cat-banner-info">
+          <h3>Whiskers · Demo Cat</h3>
+          <p>Domestic Shorthair · Female · 3 years old · Neutered</p>
+        </div>
+        <div class="cat-banner-stats">
+          <div class="cat-banner-stat"><div class="cat-banner-stat-num">8</div><div class="cat-banner-stat-label">Records</div></div>
+          <div class="cat-banner-stat"><div class="cat-banner-stat-num">4</div><div class="cat-banner-stat-label">Vaccines</div></div>
+        </div>
+      </div>
+
+      <!-- Vaccinations -->
+      <div class="section-card">
+        <div class="section-card-head"><span class="section-card-title">&#x1F489; Vaccination Status</span><button class="btn-outline">+ Add</button></div>
+        <div class="vaccine-item"><div class="vaccine-dot done"></div><div class="vaccine-name">Rabies Vaccine</div><div class="vaccine-date">2025-11-12</div><span class="vaccine-badge done">Completed</span></div>
+        <div class="vaccine-item"><div class="vaccine-dot done"></div><div class="vaccine-name">FVRCP (Triple Vaccine)</div><div class="vaccine-date">2025-11-12</div><span class="vaccine-badge done">Completed</span></div>
+        <div class="vaccine-item"><div class="vaccine-dot due"></div><div class="vaccine-name">Rabies Booster</div><div class="vaccine-date">Due: 2026-11-12</div><span class="vaccine-badge due">Upcoming</span></div>
+        <div class="vaccine-item"><div class="vaccine-dot due"></div><div class="vaccine-name">FVRCP Booster</div><div class="vaccine-date">Due: 2026-11-12</div><span class="vaccine-badge due">Upcoming</span></div>
+      </div>
+
+      <!-- Medical Records -->
+      <div class="section-card">
+        <div class="section-card-head"><span class="section-card-title">&#x1F4CB; Medical Records</span><button class="btn-outline">+ Add</button></div>
+        <div class="record-item">
+          <div class="record-icon">&#x1F3E5;</div>
+          <div class="record-info">
+            <div class="record-title">Annual Wellness Check</div>
+            <div class="record-sub">All vitals normal. Weight: 3.8 kg. Vet noted excellent coat condition and healthy teeth. Recommended dental cleaning in 6 months.</div>
+            <div class="record-date">2026-02-10 · Happy Paws Veterinary Clinic</div>
+          </div>
+        </div>
+        <div class="record-item">
+          <div class="record-icon">&#x1F48A;</div>
+          <div class="record-info">
+            <div class="record-title">Antiparasitic Treatment</div>
+            <div class="record-sub">Monthly flea & tick prevention applied. Next treatment scheduled for April 2026.</div>
+            <div class="record-date">2026-03-01 · Self-administered</div>
+          </div>
+        </div>
+        <div class="record-item">
+          <div class="record-icon">&#x2695;&#xFE0F;</div>
+          <div class="record-info">
+            <div class="record-title">Spay/Neuter Surgery</div>
+            <div class="record-sub">Successful spay surgery. Full recovery completed in 2 weeks. No complications reported.</div>
+            <div class="record-date">2024-06-15 · City Animal Hospital</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Share -->
+      <div class="section-card">
+        <div class="section-card-head"><span class="section-card-title">&#x1F4E4; Share with Clinic</span></div>
+        <div class="rp-info-block" style="padding:14px 16px;">Share your cat's health records securely with a veterinary clinic. They can view vaccination status, past records, and add clinical notes.</div>
+        <div class="share-row">
+          <button class="share-btn primary">Generate Share Code</button>
+          <button class="share-btn ghost">Export as PDF</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel">
+    <div class="next-appt">
+      <h4>&#x1F4C5; Next Appointment</h4>
+      <p>Annual booster at Happy Paws Clinic</p>
+      <div class="next-appt-date">Nov 12, 2026</div>
+    </div>
+    <div class="rp-card">
+      <div class="rp-card-title">&#x1F3E5; Linked Clinics</div>
+      <div class="clinic-row"><div class="clinic-icon">&#x2695;&#xFE0F;</div><div class="clinic-info"><div class="clinic-name">Happy Paws Veterinary</div><div class="clinic-sub">Linked · Last visit Feb 2026</div></div><div class="clinic-arrow">&#x203A;</div></div>
+      <div class="clinic-row"><div class="clinic-icon">&#x1F3E5;</div><div class="clinic-info"><div class="clinic-name">City Animal Hospital</div><div class="clinic-sub">Linked · Surgery Jun 2024</div></div><div class="clinic-arrow">&#x203A;</div></div>
+    </div>
+    <div class="rp-card">
+      <div class="rp-card-title">&#x1F4A1; Health Tips</div>
+      <div class="rp-info-block">
+        <p>&#x2022; Annual wellness checks are recommended for cats of all ages.</p><br>
+        <p>&#x2022; Senior cats (7+) should have twice-yearly vet visits.</p><br>
+        <p>&#x2022; Keep vaccination records updated for travel or boarding.</p>
+      </div>
+    </div>
+  </aside>
+</div>
+</body>
+</html>
